@@ -41,7 +41,7 @@ const keyValue = v.object({
 
 const moneyBreakdown = v.object({
   label: v.string(),
-  amountCents: v.number(),
+  amountCents: v.int64(),
   formula: v.optional(v.string()),
   source: v.union(v.literal("calculator"), v.literal("operator"), v.literal("import")),
 });
@@ -158,7 +158,7 @@ export default defineSchema({
       v.literal("other"),
     ),
     densityKgM3: v.optional(v.number()),
-    costCents: v.number(),
+    costCents: v.int64(),
     costUnit: v.union(v.literal("kg"), v.literal("m"), v.literal("m2"), v.literal("piece")),
     supplier: v.optional(v.string()),
     active: v.boolean(),
@@ -171,8 +171,8 @@ export default defineSchema({
   machines: defineTable({
     name: v.string(),
     process: processKey,
-    hourlyRateCents: v.number(),
-    setupRateCents: v.number(),
+    hourlyRateCents: v.int64(),
+    setupRateCents: v.int64(),
     capabilities: v.array(keyValue),
     active: v.boolean(),
     updatedAt: timestamp,
@@ -184,8 +184,8 @@ export default defineSchema({
     name: v.string(),
     process: processKey,
     currency: currencyCode,
-    setupMinimumCents: v.number(),
-    minimumOrderCents: v.number(),
+    setupMinimumCents: v.int64(),
+    minimumOrderCents: v.int64(),
     marginPercent: v.number(),
     rushMultiplier: v.number(),
     active: v.boolean(),
@@ -258,7 +258,7 @@ export default defineSchema({
     process: processKey,
     description: v.string(),
     quantity: v.number(),
-    amountCents: v.number(),
+    amountCents: v.int64(),
     calculatorVersion: v.string(),
     breakdown: v.array(moneyBreakdown),
     assumptions: v.array(keyValue),
