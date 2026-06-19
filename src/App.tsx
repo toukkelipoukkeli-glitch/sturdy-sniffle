@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
+import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import "./App.css"
 
@@ -254,6 +255,24 @@ function App() {
     [cycleMinutes, quantity, rush, selectedItem, setupMinutes],
   )
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
+  const offer = useMemo(
+    () =>
+      buildCncOfferDraft({
+        offerNumber: offerNumberFor(selectedItem),
+        customer: {
+          name: selectedItem.customer,
+          contactName: selectedItem.contact,
+        },
+        issuedAt: "2026-06-19",
+        validUntil: "2026-07-03",
+        lineDescription: selectedItem.subject,
+        notes: selectedItem.notes,
+        quote,
+        rfqReference: selectedItem.id,
+        subject: selectedItem.subject,
+      }),
+    [quote, selectedItem],
+  )
 
   return (
     <main className="workspace-shell">
@@ -276,7 +295,7 @@ function App() {
             <CalendarDays aria-hidden="true" />
             Due holds
           </Button>
-          <Button type="button" size="sm">
+          <Button onClick={() => setActiveView("offer")} type="button" size="sm">
             <FileText aria-hidden="true" />
             Draft offer
           </Button>
@@ -383,7 +402,7 @@ function App() {
               setupMinutes={setupMinutes}
             />
           ) : null}
-          {activeView === "offer" ? <OfferView item={selectedItem} quote={quote} /> : null}
+          {activeView === "offer" ? <OfferView offer={offer} /> : null}
         </section>
 
         <aside className="inspector-panel" aria-label="Quote inspector">
@@ -536,24 +555,30 @@ function CostingView({
   )
 }
 
-function OfferView({ item, quote }: { item: QuoteWorkItem; quote: CncQuoteResult }) {
+function OfferView({ offer }: { offer: OfferDraft }) {
+  const offerText = renderOfferText(offer)
+
   return (
     <div className="workspace-section">
       <div className="section-title">
         <h3>Offer draft</h3>
-        <span className="offer-number">OFFER-{item.id.slice(-3).toUpperCase()}</span>
+        <span className="offer-number">{offer.offerNumber}</span>
       </div>
       <div className="offer-layout">
-        <Metric label="Customer" value={item.customer} />
-        <Metric label="Validity" value="14 days" />
-        <Metric label="Lead time" value={`${quote.leadTimeDays} working days`} />
-        <Metric label="Total" value={formatCurrency(quote.totalCents, quote.currency)} />
+        <Metric label="Customer" value={offer.customer.name} />
+        <Metric label="Validity" value={`Until ${offer.validUntil}`} />
+        <Metric label="Lead time" value={`${maxLeadTimeDays(offer)} working days`} />
+        <Metric label="Total" value={formatCurrency(offer.totalCents, offer.currency)} />
       </div>
       <div className="terms-list">
-        <div>Prices exclude VAT.</div>
-        <div>Material and machining assumptions follow the attached calculation.</div>
-        <div>Delivery date starts after written approval and final drawing release.</div>
+        {offer.terms.map((term) => (
+          <div key={term.key}>{term.value}</div>
+        ))}
       </div>
+      <label className="offer-text-field">
+        <span>Plain text offer</span>
+        <textarea aria-label="Plain text offer" readOnly value={offerText} />
+      </label>
     </div>
   )
 }
@@ -621,6 +646,14 @@ function defaultEditState(item: QuoteWorkItem): QuoteEditState {
     rush: item.quoteInput.priority === "rush",
     setupMinutes: item.quoteInput.operation.setupMinutes,
   }
+}
+
+function offerNumberFor(item: QuoteWorkItem) {
+  return `OFFER-${item.id.slice(-3).toUpperCase()}`
+}
+
+function maxLeadTimeDays(offer: OfferDraft) {
+  return Math.max(...offer.items.map((item) => item.leadTimeDays))
 }
 
 function formatCurrency(cents: number, currency: string) {
