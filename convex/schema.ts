@@ -245,9 +245,6 @@ export default defineSchema({
     currency: currencyCode,
     leadTimeDays: v.number(),
     validUntil: v.optional(timestamp),
-    subtotalCents: v.number(),
-    marginCents: v.number(),
-    totalCents: v.number(),
     createdAt: timestamp,
     updatedAt: timestamp,
   })
@@ -261,13 +258,13 @@ export default defineSchema({
     process: processKey,
     description: v.string(),
     quantity: v.number(),
-    unitPriceCents: v.number(),
-    totalCents: v.number(),
+    amountCents: v.number(),
     calculatorVersion: v.string(),
     breakdown: v.array(moneyBreakdown),
     assumptions: v.array(keyValue),
     sortOrder: v.number(),
     createdAt: timestamp,
+    updatedAt: timestamp,
   })
     .index("by_quote", ["quoteId"])
     .index("by_part", ["partId"])
@@ -347,6 +344,8 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_provider", ["provider"])
+    .index("by_input_hash", ["inputHash"])
+    .index("by_provider_input_hash", ["provider", "inputHash"])
     .index("by_rfq", ["rfqId"]),
 
   activities: defineTable({
