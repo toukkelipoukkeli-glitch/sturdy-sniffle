@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest"
 
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "../quoting/cnc.fixtures"
 import { calculateCncQuote } from "../quoting/cnc"
-import { buildCncOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
+import { weldedFrameFixture } from "../quoting/fabrication.fixtures"
+import { pomGuideFixture } from "../quoting/plastics.fixtures"
+import { calculateQuote, type QuoteEngineResult } from "../quoting/registry"
+import { laserBentBracketFixture } from "../quoting/sheetMetal.fixtures"
+import { toolSteelKeywayFixture } from "../quoting/wireEdm.fixtures"
+import { buildCncOfferDraft, buildOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
 
 describe("offer builder", () => {
   it("builds a deterministic CNC offer draft from calculator output", () => {
@@ -64,6 +69,46 @@ describe("offer builder", () => {
 
     expect(quote.unitRemainderCents).toBe(18)
     expect(renderOfferText(offer)).toContain("Rounding allocation: EUR 0.18 included in line total")
+  })
+
+  it("builds offer lines from every shared quote engine process", () => {
+    const cases: Array<{ quote: QuoteEngineResult; processLabel: string }> = [
+      {
+        quote: calculateQuote({ process: "sheet_metal", input: laserBentBracketFixture }),
+        processLabel: "Sheet metal",
+      },
+      {
+        quote: calculateQuote({ process: "plastic", input: pomGuideFixture }),
+        processLabel: "Plastic machining",
+      },
+      {
+        quote: calculateQuote({ process: "wire_edm", input: toolSteelKeywayFixture }),
+        processLabel: "Wire EDM",
+      },
+      {
+        quote: calculateQuote({ process: "fabrication", input: weldedFrameFixture }),
+        processLabel: "Fabrication",
+      },
+    ]
+
+    cases.forEach(({ quote, processLabel }, index) => {
+      const offer = buildOfferDraft({
+        offerNumber: `OFFER-PROCESS-${index + 1}`,
+        customer: { name: "Process Buyer" },
+        issuedAt: "2026-06-19",
+        validUntil: "2026-07-03",
+        quote,
+      })
+
+      expect(offer.items[0]).toMatchObject({
+        key: `${quote.process}:${quote.partNumber}`,
+        partNumber: quote.partNumber,
+        description: processLabel,
+        processLabel,
+        totalCents: quote.totalCents,
+      })
+      expect(renderOfferText(offer)).toContain(`Process: ${processLabel}`)
+    })
   })
 
   it("formats integer-cent amounts without locale drift", () => {
