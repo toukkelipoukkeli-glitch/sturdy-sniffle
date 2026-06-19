@@ -16,10 +16,13 @@ See [ROADMAP.md](./ROADMAP.md) for the planned FactoryBid OS product slices.
 
 ## Local Checks
 
+Convex codegen requires a configured `.env.local` or an injected `CONVEX_DEPLOYMENT`.
+
 ```sh
 bun install
 bun run lint
 bun run test
 bun run test:e2e
+bun run convex:codegen
 bun run build
 ```

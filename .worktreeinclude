@@ -1,0 +1,3 @@
+# Copy the ignored local environment file into managed Codex worktrees.
+# This file lists the path only; never commit .env.local contents.
+.env.local
