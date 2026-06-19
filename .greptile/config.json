@@ -1,0 +1,7 @@
+{
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax", "style"],
+  "triggerOnUpdates": true,
+  "triggerOnDrafts": true,
+  "ignorePatterns": "node_modules/**\ndist/**\nconvex/_generated/**\nbun.lock\n**/*.svg"
+}

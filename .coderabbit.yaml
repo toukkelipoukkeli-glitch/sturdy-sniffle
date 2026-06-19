@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+chat:
+  auto_reply: true
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: true
+    base_branches:
+      - main
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/convex/_generated/**"
+    - "!**/*.svg"
+    - "!bun.lock"
+  path_instructions:
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        Focus on correctness, deterministic behavior, type safety, and test coverage. Flag client-side exposure of secrets or production credentials.
+    - path: "convex/**"
+      instructions: |
+        Treat Convex functions as the backend boundary. Check schema changes, auth assumptions, indexes, and generated-file handling.
