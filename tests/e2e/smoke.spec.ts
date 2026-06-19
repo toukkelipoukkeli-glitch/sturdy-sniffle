@@ -9,6 +9,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.getByRole("button", { name: /Baltic Hydraulics/ }).click()
   await expect(page.getByRole("heading", { name: "Turned spacer FB-TURN-019" })).toBeVisible()
 
+  await page.getByRole("button", { exact: true, name: "Costing" }).click()
   await page.getByLabel("Setup minutes").fill("42")
   await page.getByLabel("Cycle minutes").fill("24")
   await page.getByLabel("Rush").uncheck()
