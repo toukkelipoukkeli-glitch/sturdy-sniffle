@@ -86,7 +86,9 @@ export interface CncQuoteResult {
   quantity: number
   currency: QuoteCurrencyCode
   leadTimeDays: number
+  /** Base integer unit price; add unitRemainderCents once when reconstructing totalCents. */
   unitPriceCents: number
+  unitRemainderCents: number
   totalCents: number
   breakdown: QuoteBreakdownLine[]
   assumptions: QuoteAssumption[]
@@ -106,9 +108,6 @@ export function calculateCncQuote(input: CncQuoteInput): CncQuoteResult {
     validateFinishedEnvelope(input.process, input.stockDimensions, input.finishedDimensions)
   }
   const removalRatio = finishedVolumeMm3 === undefined ? undefined : (stockVolumeMm3 - finishedVolumeMm3) / stockVolumeMm3
-  if (finishedVolumeMm3 !== undefined && finishedVolumeMm3 > stockVolumeMm3) {
-    throw new Error("finishedDimensions cannot exceed stockDimensions for a subtractive CNC quote")
-  }
 
   const setupMinutes =
     input.operation.setupMinutes + (input.operation.programmingMinutes ?? 0) + (input.operation.fixtureMinutes ?? 0)
@@ -127,9 +126,9 @@ export function calculateCncQuote(input: CncQuoteInput): CncQuoteResult {
   const inspectionMinutes = (input.operation.inspectionMinutesPerPart ?? 0) * quantity
   const inspectionCents = prorateHourlyCents(input.machine.setupRateCents, inspectionMinutes)
   const consumablesCents = safeCents((input.operation.consumableCentsPerPart ?? 0) * quantity)
-  const outsideServiceLines = (input.operation.outsideServices ?? []).map((service) =>
+  const outsideServiceLines = (input.operation.outsideServices ?? []).map((service, index) =>
     line(
-      `outside_service:${normalizeKey(service.label)}`,
+      `outside_service:${normalizeKey(service.label) || "service"}_${index + 1}`,
       service.label,
       safeCents(service.amountCents),
       "operator-supplied outside service cost",
@@ -207,6 +206,8 @@ export function calculateCncQuote(input: CncQuoteInput): CncQuoteResult {
   }
 
   const totalCents = sumLines(breakdown)
+  const unitPriceCents = Math.floor(totalCents / quantity)
+  const unitRemainderCents = safeCents(totalCents - unitPriceCents * quantity)
   const loadDays = Math.ceil((setupMinutes + runMinutes) / (input.machine.capacityMinutesPerDay ?? 420))
   const standardLeadTimeDays = input.rateCard.baseLeadTimeDays + loadDays
   const leadTimeDays =
@@ -222,7 +223,8 @@ export function calculateCncQuote(input: CncQuoteInput): CncQuoteResult {
     quantity,
     currency: input.rateCard.currency,
     leadTimeDays,
-    unitPriceCents: Math.ceil(totalCents / quantity),
+    unitPriceCents,
+    unitRemainderCents,
     totalCents,
     breakdown,
     assumptions: buildAssumptions(input, materialKgPerPart, cycleMinutesPerPart, removalRatio),
@@ -236,14 +238,14 @@ function validateInput(input: CncQuoteInput) {
   }
 
   assertPositiveInteger(input.quantity, "quantity")
-  assertNonNegative(input.material.costCentsPerKg, "material.costCentsPerKg")
+  assertCents(input.material.costCentsPerKg, "material.costCentsPerKg")
   assertPositive(input.material.densityKgM3, "material.densityKgM3")
   assertPositive(input.material.yieldFactor ?? 1, "material.yieldFactor")
-  assertPositive(input.machine.hourlyRateCents, "machine.hourlyRateCents")
-  assertPositive(input.machine.setupRateCents, "machine.setupRateCents")
+  assertPositiveCents(input.machine.hourlyRateCents, "machine.hourlyRateCents")
+  assertPositiveCents(input.machine.setupRateCents, "machine.setupRateCents")
   assertPositive(input.machine.capacityMinutesPerDay ?? 420, "machine.capacityMinutesPerDay")
-  assertNonNegative(input.rateCard.setupMinimumCents, "rateCard.setupMinimumCents")
-  assertNonNegative(input.rateCard.minimumOrderCents, "rateCard.minimumOrderCents")
+  assertCents(input.rateCard.setupMinimumCents, "rateCard.setupMinimumCents")
+  assertCents(input.rateCard.minimumOrderCents, "rateCard.minimumOrderCents")
   assertNonNegative(input.rateCard.marginPercent, "rateCard.marginPercent")
   assertPositive(input.rateCard.rushMultiplier, "rateCard.rushMultiplier")
   if (input.rateCard.rushMultiplier < 1) {
@@ -258,14 +260,14 @@ function validateInput(input: CncQuoteInput) {
   assertNonNegative(input.operation.fixtureMinutes ?? 0, "operation.fixtureMinutes")
   assertPositive(input.operation.cycleMinutesPerPart, "operation.cycleMinutesPerPart")
   assertNonNegative(input.operation.inspectionMinutesPerPart ?? 0, "operation.inspectionMinutesPerPart")
-  assertNonNegative(input.operation.consumableCentsPerPart ?? 0, "operation.consumableCentsPerPart")
+  assertCents(input.operation.consumableCentsPerPart ?? 0, "operation.consumableCentsPerPart")
   assertPositive(input.operation.complexityMultiplier ?? 1, "operation.complexityMultiplier")
 
   for (const service of input.operation.outsideServices ?? []) {
     if (!service.label.trim()) {
       throw new Error("outside service label is required")
     }
-    assertNonNegative(service.amountCents, `outside service ${service.label}`)
+    assertCents(service.amountCents, `outside service ${service.label}`)
   }
 }
 
@@ -392,6 +394,18 @@ function assertPositiveInteger(value: number | undefined, fieldName: string) {
 function assertPositive(value: number | undefined, fieldName: string) {
   if (!Number.isFinite(value) || value === undefined || value <= 0) {
     throw new Error(`${fieldName} must be positive`)
+  }
+}
+
+function assertCents(value: number | undefined, fieldName: string) {
+  if (!Number.isSafeInteger(value) || value === undefined || value < 0) {
+    throw new Error(`${fieldName} must be a non-negative integer cent amount`)
+  }
+}
+
+function assertPositiveCents(value: number | undefined, fieldName: string) {
+  if (!Number.isSafeInteger(value) || value === undefined || value <= 0) {
+    throw new Error(`${fieldName} must be a positive integer cent amount`)
   }
 }
 
