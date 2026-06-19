@@ -370,20 +370,32 @@ function extractMaterial(text: string): { value: string; confidence: number } | 
 }
 
 function extractQuantities(text: string): number[] {
-  const quantities = new Set<number>()
+  const quantities: Array<{ quantity: number; start: number; end: number }> = []
+  const seenRanges = new Set<string>()
 
   for (const pattern of quantityPatterns) {
     pattern.lastIndex = 0
     for (const match of text.matchAll(pattern)) {
       const rawQuantity = match[1]
+      if (!rawQuantity) {
+        continue
+      }
+
       const quantity = Number(rawQuantity)
-      if (Number.isInteger(quantity) && quantity > 0) {
-        quantities.add(quantity)
+      const matchStart = match.index ?? 0
+      const captureOffset = match[0].lastIndexOf(rawQuantity)
+      const start = matchStart + captureOffset
+      const end = start + rawQuantity.length
+      const rangeKey = `${start}:${end}`
+
+      if (Number.isInteger(quantity) && quantity > 0 && captureOffset >= 0 && !seenRanges.has(rangeKey)) {
+        quantities.push({ quantity, start, end })
+        seenRanges.add(rangeKey)
       }
     }
   }
 
-  return [...quantities]
+  return quantities.sort((left, right) => left.start - right.start).map((item) => item.quantity)
 }
 
 function extractPartNumbers(text: string): string[] {

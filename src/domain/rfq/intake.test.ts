@@ -89,6 +89,22 @@ describe("parseRfqIntake", () => {
     ])
   })
 
+  it("preserves repeated equal per-part quantity occurrences", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ: repeated quantities",
+      senderEmail: "buyer@example.com",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Part: BRK-A qty 5. Part: BRK-B qty 10. Part: BRK-C qty 5.",
+    })
+
+    expect(parsed.parts).toMatchObject([
+      { partNumber: "BRK-A", quantity: 5 },
+      { partNumber: "BRK-B", quantity: 10 },
+      { partNumber: "BRK-C", quantity: 5 },
+    ])
+  })
+
   it("infers customer names from organizational labels in subdomain email senders", () => {
     const parsed = parseRfqIntake({
       subject: "RFQ from subdomain",
