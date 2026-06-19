@@ -245,7 +245,7 @@ function classifyAttachmentKind(fileName: string, contentType?: string): RfqAtta
     return "photo"
   }
 
-  if (/\.(step|stp|iges|igs|stl|dxf|dwg|x_t|x_b|3mf)$/i.test(fileName)) {
+  if (/^model\//i.test(contentType ?? "") || /\.(step|stp|iges|igs|stl|dxf|dwg|x_t|x_b|3mf)$/i.test(fileName)) {
     return "cad"
   }
 
@@ -286,8 +286,9 @@ function extractDueAt(text: string): number | undefined {
 }
 
 function parseDateToken(value: string): number | undefined {
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
-    return Date.parse(`${value}T12:00:00.000Z`)
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value)
+  if (iso) {
+    return parseUtcDateComponents(Number(iso[1]), Number(iso[2]), Number(iso[3]))
   }
 
   const numeric = /^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/.exec(value)
@@ -299,9 +300,25 @@ function parseDateToken(value: string): number | undefined {
   const month = Number(numeric[2])
   const rawYear = Number(numeric[3])
   const year = rawYear < 100 ? 2000 + rawYear : rawYear
-  const timestamp = Date.UTC(year, month - 1, day, 12)
+  return parseUtcDateComponents(year, month, day)
+}
 
-  return Number.isNaN(timestamp) ? undefined : timestamp
+function parseUtcDateComponents(year: number, month: number, day: number): number | undefined {
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return undefined
+  }
+
+  const timestamp = Date.UTC(year, month - 1, day, 12)
+  if (Number.isNaN(timestamp)) {
+    return undefined
+  }
+
+  const check = new Date(timestamp)
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+    return undefined
+  }
+
+  return timestamp
 }
 
 function extractCurrency(text: string): RfqCurrencyCode {
@@ -317,12 +334,12 @@ function extractCurrency(text: string): RfqCurrencyCode {
 }
 
 function extractPriority(text: string): RfqPriority {
-  if (/\b(?:urgent|rush|asap|expedite|kiire)\b/i.test(text)) {
-    return "rush"
-  }
-
   if (/\b(?:no rush|when possible|low priority)\b/i.test(text)) {
     return "low"
+  }
+
+  if (/\b(?:urgent|rush|asap|expedite|kiire)\b/i.test(text)) {
+    return "rush"
   }
 
   return "normal"
@@ -432,7 +449,8 @@ function inferCustomerName(senderName?: string, email?: string): string | undefi
     return trimmedName
   }
 
-  const domain = email?.split("@")[1]?.split(".")[0]
+  const labels = email?.split("@")[1]?.split(".").filter(Boolean)
+  const domain = labels && labels.length >= 2 ? labels[labels.length - 2] : labels?.[0]
   if (!domain || ["gmail", "outlook", "hotmail", "icloud", "yahoo"].includes(domain)) {
     return undefined
   }
@@ -492,19 +510,22 @@ function buildPartDrafts(input: {
   attachments: RfqAttachmentDraft[]
 }): RfqPartDraft[] {
   const partNumbers = input.partNumbers.length > 0 ? input.partNumbers : inferPartNumbersFromAttachments(input.attachments)
-  const primaryQuantity = input.quantities[0]
   const attachmentNames = input.attachments
     .filter((attachment) => attachment.kind === "cad" || attachment.kind === "drawing")
     .map((attachment) => attachment.fileName)
 
-  return partNumbers.map((partNumber) => ({
-    partNumber,
-    process: input.process,
-    materialText: input.materialText,
-    quantity: primaryQuantity,
-    dimensions: input.dimensions,
-    attachmentNames,
-  }))
+  return partNumbers.map((partNumber, index) => {
+    const quantity = resolvePartQuantity(input.quantities, partNumbers.length, index)
+
+    return {
+      partNumber,
+      process: input.process,
+      materialText: input.materialText,
+      quantity,
+      dimensions: input.dimensions,
+      attachmentNames,
+    }
+  })
 }
 
 function inferPartNumbersFromAttachments(attachments: RfqAttachmentDraft[]): string[] {
@@ -514,4 +535,16 @@ function inferPartNumbersFromAttachments(attachments: RfqAttachmentDraft[]): str
     .filter(Boolean)
 
   return [...new Set(names)]
+}
+
+function resolvePartQuantity(quantities: number[], partCount: number, partIndex: number): number | undefined {
+  if (quantities.length === 1) {
+    return quantities[0]
+  }
+
+  if (quantities.length === partCount) {
+    return quantities[partIndex]
+  }
+
+  return undefined
 }

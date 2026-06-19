@@ -47,12 +47,66 @@ describe("parseRfqIntake", () => {
     expect(fieldValue(parsed, "quantity")).toBe("100")
     expect(fieldValue(parsed, "tolerance")).toBe("+/- 0.20 mm")
   })
+
+  it("treats explicit no-rush phrasing as low priority", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ: spacer blocks",
+      senderEmail: "buyer@example.com",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Please quote these spacer blocks when possible. No rush on this one.",
+    })
+
+    expect(parsed.priority).toBe("low")
+    expect(fieldValue(parsed, "priority")).toBe("low")
+  })
+
+  it("ignores impossible numeric due dates instead of rolling them forward", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ: impossible target date",
+      senderEmail: "buyer@example.com",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Please quote part: BAD-DATE-1. Deadline 31.02.2026.",
+    })
+
+    expect(parsed.dueAt).toBeUndefined()
+    expect(fieldValue(parsed, "due_at")).toBeUndefined()
+  })
+
+  it("maps per-part quantities only when part and quantity counts match", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ: matched quantities",
+      senderEmail: "buyer@example.com",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Part: BRK-A qty 5. Part: BRK-B qty 10. CNC milling, aluminum 6082.",
+    })
+
+    expect(parsed.parts).toMatchObject([
+      { partNumber: "BRK-A", quantity: 5 },
+      { partNumber: "BRK-B", quantity: 10 },
+    ])
+  })
+
+  it("infers customer names from organizational labels in subdomain email senders", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ from subdomain",
+      senderEmail: "buyer@mail.acme-industries.com",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Please quote part: ACME-42, quantity 12.",
+    })
+
+    expect(parsed.customerName).toBe("Acme Industries")
+  })
 })
 
 describe("classifyAttachment", () => {
   it("classifies common RFQ attachment formats", () => {
     expect(classifyAttachment({ fileName: "layout.pdf" }).kind).toBe("drawing")
     expect(classifyAttachment({ fileName: "part.stp" }).kind).toBe("cad")
+    expect(classifyAttachment({ fileName: "part.bin", contentType: "model/step" }).kind).toBe("cad")
     expect(classifyAttachment({ fileName: "bom.csv" }).kind).toBe("spreadsheet")
     expect(classifyAttachment({ fileName: "sample.jpg" }).kind).toBe("photo")
     expect(classifyAttachment({ fileName: "notes.txt" }).kind).toBe("other")
