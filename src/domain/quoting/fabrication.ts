@@ -220,6 +220,12 @@ function validateInput(input: FabricationQuoteInput) {
   if (!input.partNumber.trim()) {
     throw new Error("partNumber is required")
   }
+  if (input.priority !== "normal" && input.priority !== "rush") {
+    throw new Error("priority must be one of: normal, rush")
+  }
+  if (input.rateCard.currency !== "EUR" && input.rateCard.currency !== "USD" && input.rateCard.currency !== "GBP") {
+    throw new Error("rateCard.currency must be one of: EUR, USD, GBP")
+  }
 
   assertPositiveInteger(input.quantity, "quantity")
   if (input.materials.length === 0) {

@@ -4,6 +4,7 @@ import { rushMinimumWeldedFrameFixture, weldedFrameFixture } from "./fabrication
 import {
   FABRICATION_CALCULATOR_VERSION,
   calculateFabricationQuote,
+  type FabricationQuoteInput,
   type FabricationQuoteResult,
 } from "./fabrication"
 
@@ -114,6 +115,25 @@ describe("calculateFabricationQuote", () => {
         materials: [],
       }),
     ).toThrow("materials must include at least one line")
+  })
+
+  it("rejects invalid runtime priority and currency values", () => {
+    expect(() =>
+      calculateFabricationQuote({
+        ...weldedFrameFixture,
+        priority: "urgent" as FabricationQuoteInput["priority"],
+      }),
+    ).toThrow("priority must be one of: normal, rush")
+
+    expect(() =>
+      calculateFabricationQuote({
+        ...weldedFrameFixture,
+        rateCard: {
+          ...weldedFrameFixture.rateCard,
+          currency: "JPY" as FabricationQuoteInput["rateCard"]["currency"],
+        },
+      }),
+    ).toThrow("rateCard.currency must be one of: EUR, USD, GBP")
   })
 
   it("rejects non-integer cent inputs before calculation", () => {
