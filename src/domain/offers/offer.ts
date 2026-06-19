@@ -1,4 +1,5 @@
-import type { CncQuoteResult, QuoteAssumption, QuoteCurrencyCode } from "../quoting/cnc"
+import type { CncQuoteResult } from "../quoting/cnc"
+import type { QuoteEngineAssumption, QuoteEngineCurrencyCode, QuoteEngineResult, QuoteProcessKey } from "../quoting/registry"
 
 export const OFFER_BUILDER_VERSION = "offer.v1"
 
@@ -26,8 +27,8 @@ export interface OfferLineItem {
   unitRemainderCents: number
   totalCents: number
   leadTimeDays: number
-  calculatorVersion: CncQuoteResult["calculatorVersion"]
-  assumptions: QuoteAssumption[]
+  calculatorVersion: QuoteEngineResult["calculatorVersion"]
+  assumptions: QuoteEngineAssumption[]
   warnings: string[]
 }
 
@@ -40,7 +41,7 @@ export interface OfferDraft {
   subject?: string
   issuedAt: string
   validUntil: string
-  currency: QuoteCurrencyCode
+  currency: QuoteEngineCurrencyCode
   items: OfferLineItem[]
   terms: OfferTerm[]
   notes: string[]
@@ -54,6 +55,19 @@ export interface BuildCncOfferDraftInput {
   issuedAt: string
   validUntil: string
   quote: CncQuoteResult
+  lineDescription?: string
+  notes?: string[]
+  rfqReference?: string
+  subject?: string
+  terms?: OfferTerm[]
+}
+
+export interface BuildOfferDraftInput {
+  offerNumber: string
+  customer: OfferCustomer
+  issuedAt: string
+  validUntil: string
+  quote: QuoteEngineResult
   lineDescription?: string
   notes?: string[]
   rfqReference?: string
@@ -80,6 +94,10 @@ export const DEFAULT_OFFER_TERMS: OfferTerm[] = [
 ]
 
 export function buildCncOfferDraft(input: BuildCncOfferDraftInput): OfferDraft {
+  return buildOfferDraft(input)
+}
+
+export function buildOfferDraft(input: BuildOfferDraftInput): OfferDraft {
   const offerNumber = nonBlank(input.offerNumber, "offerNumber")
   const customer = normalizeCustomer(input.customer)
   const issuedAt = normalizeIsoDate(input.issuedAt, "issuedAt")
@@ -90,7 +108,7 @@ export function buildCncOfferDraft(input: BuildCncOfferDraftInput): OfferDraft {
 
   validateQuote(input.quote)
   const item: OfferLineItem = {
-    key: `cnc:${input.quote.partNumber}`,
+    key: `${input.quote.process}:${input.quote.partNumber}`,
     partNumber: input.quote.partNumber,
     description: input.lineDescription?.trim() || processLabel(input.quote.process),
     processLabel: processLabel(input.quote.process),
@@ -179,7 +197,7 @@ export function renderOfferText(offer: OfferDraft): string {
   return lines.join("\n")
 }
 
-export function formatOfferMoney(cents: number, currency: QuoteCurrencyCode): string {
+export function formatOfferMoney(cents: number, currency: QuoteEngineCurrencyCode): string {
   assertCents(cents, "cents")
 
   const sign = cents < 0 ? "-" : ""
@@ -214,7 +232,7 @@ function validateOfferDraft(offer: OfferDraft) {
   normalizeTerms(offer.terms)
 }
 
-function validateQuote(quote: CncQuoteResult) {
+function validateQuote(quote: QuoteEngineResult) {
   nonBlank(quote.partNumber, "quote.partNumber")
   assertPositiveInteger(quote.quantity, "quote.quantity")
   assertPositiveInteger(quote.leadTimeDays, "quote.leadTimeDays")
@@ -296,11 +314,24 @@ function dateValue(value: string): number {
   return Date.parse(`${value}T00:00:00.000Z`)
 }
 
-function processLabel(process: CncQuoteResult["process"]): string {
-  return process === "cnc_milling" ? "CNC milling" : "CNC turning"
+function processLabel(process: QuoteProcessKey): string {
+  switch (process) {
+    case "cnc_milling":
+      return "CNC milling"
+    case "cnc_turning":
+      return "CNC turning"
+    case "sheet_metal":
+      return "Sheet metal"
+    case "plastic":
+      return "Plastic machining"
+    case "wire_edm":
+      return "Wire EDM"
+    case "fabrication":
+      return "Fabrication"
+  }
 }
 
-function formatAssumptions(assumptions: QuoteAssumption[]): string {
+function formatAssumptions(assumptions: QuoteEngineAssumption[]): string {
   return assumptions.map((assumption) => `${humanizeKey(assumption.key)} ${assumption.value}`).join("; ")
 }
 
