@@ -17,5 +17,6 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
 
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
   await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
-  await expect(page.getByText("OFFER-019")).toBeVisible()
+  await expect(page.locator(".offer-number", { hasText: "OFFER-019" })).toBeVisible()
+  await expect(page.getByLabel("Plain text offer")).toHaveValue(/Total excluding VAT: EUR 500\.00/)
 })

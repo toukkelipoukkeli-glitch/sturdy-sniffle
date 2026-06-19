@@ -187,6 +187,7 @@
 .queue-item:focus-visible,
 .segment-button:focus-visible,
 .field input:focus,
+.offer-text-field textarea:focus,
 .range-field input:focus-visible {
   outline: 2px solid oklch(0.58 0.12 200);
   outline-offset: 2px;
@@ -390,6 +391,7 @@
 
 .metric span,
 .field span,
+.offer-text-field span,
 .range-field span {
   font-size: 0.72rem;
   font-weight: 750;
@@ -416,6 +418,26 @@
   display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+
+.offer-text-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.offer-text-field textarea {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  color: oklch(0.2 0.03 250);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  min-height: 260px;
+  padding: 12px;
+  resize: vertical;
+  width: 100%;
 }
 
 .note-row,
