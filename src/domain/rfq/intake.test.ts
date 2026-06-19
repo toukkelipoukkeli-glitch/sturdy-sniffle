@@ -100,6 +100,18 @@ describe("parseRfqIntake", () => {
 
     expect(parsed.customerName).toBe("Acme Industries")
   })
+
+  it("infers customer names from multi-part TLD email senders", () => {
+    const parsed = parseRfqIntake({
+      subject: "RFQ from UK domain",
+      senderEmail: "buyer@mail.acme-fabrication.co.uk",
+      receivedAt: "2026-06-18T09:00:00.000Z",
+      source: { provider: "gmail" },
+      bodyText: "Please quote part: UK-42, quantity 12.",
+    })
+
+    expect(parsed.customerName).toBe("Acme Fabrication")
+  })
 })
 
 describe("classifyAttachment", () => {

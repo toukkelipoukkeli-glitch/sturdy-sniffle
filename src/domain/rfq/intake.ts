@@ -449,8 +449,8 @@ function inferCustomerName(senderName?: string, email?: string): string | undefi
     return trimmedName
   }
 
-  const labels = email?.split("@")[1]?.split(".").filter(Boolean)
-  const domain = labels && labels.length >= 2 ? labels[labels.length - 2] : labels?.[0]
+  const labels = email?.split("@")[1]?.toLowerCase().split(".").filter(Boolean)
+  const domain = inferOrganizationalDomainLabel(labels)
   if (!domain || ["gmail", "outlook", "hotmail", "icloud", "yahoo"].includes(domain)) {
     return undefined
   }
@@ -460,6 +460,19 @@ function inferCustomerName(senderName?: string, email?: string): string | undefi
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
+}
+
+function inferOrganizationalDomainLabel(labels?: string[]): string | undefined {
+  if (!labels || labels.length === 0) {
+    return undefined
+  }
+
+  const secondLevelSuffixes = new Set(["ac", "co", "com", "edu", "gov", "net", "org"])
+  if (labels.length >= 3 && secondLevelSuffixes.has(labels[labels.length - 2])) {
+    return labels[labels.length - 3]
+  }
+
+  return labels.length >= 2 ? labels[labels.length - 2] : labels[0]
 }
 
 function field(
