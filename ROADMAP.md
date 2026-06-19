@@ -1,6 +1,6 @@
 # FactoryBid OS Roadmap
 
-FactoryBid OS is a production-grade automatic tarjouslaskenta system for factories. Core quote math stays deterministic, testable, and usable without AI; AI and external services sit behind explicit provider adapters with local/mock fallbacks.
+FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation) system for factories. Core quote math stays deterministic, testable, and usable without AI; AI and external services sit behind explicit provider adapters with local/mock fallbacks.
 
 ## Milestones
 
