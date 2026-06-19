@@ -4,6 +4,8 @@ Local-first manufacturing quote automation workspace.
 
 This repository is currently in bootstrap mode. The first pull request is only intended to verify the development stack, CI, and automated review bots before product features are added.
 
+See [ROADMAP.md](./ROADMAP.md) for the planned FactoryBid OS product slices.
+
 ## Stack
 
 - Bun
