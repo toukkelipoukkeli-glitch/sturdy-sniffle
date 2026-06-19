@@ -15,12 +15,14 @@
 - Lint: `bun run lint`
 - Unit tests: `bun run test`
 - Browser smoke tests: `bun run test:e2e`
+- Regenerate Convex types: `bun run convex:codegen`
 - Start local Convex once: `bun run convex:once`
 
 ## Conventions
 
 - Keep product logic deterministic and testable. AI integrations must sit behind explicit server-side adapters and must not be required for core quote calculations.
 - Do not commit secrets. Use `.env.local` for local values; keep public examples in `.env.example`.
+- `.worktreeinclude` lists `.env.local` so managed Codex worktrees can copy local ignored deployment settings without committing their contents.
 - Treat `convex/_generated/**` as generated code. Regenerate it with Convex tooling instead of editing it manually.
 - Keep early PRs small enough for CodeRabbit and Greptile to review well.
 - Prefer feature branches named `codex/<short-description>`.
