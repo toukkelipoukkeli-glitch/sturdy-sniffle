@@ -12,8 +12,21 @@ import type {
 export const OFFER_RELEASE_EXECUTION_VERSION = "offer-release-execution.v1"
 
 export type OfferReleaseExecutionMode = "commit" | "dry_run"
-export type OfferReleaseExecutionStatus = "blocked" | "failed" | "needs_review" | "partial" | "prepared" | "succeeded"
-export type OfferReleaseCommandExecutionStatus = "applied" | "blocked" | "failed" | "prepared" | "requires_review"
+export type OfferReleaseExecutionStatus =
+  | "blocked"
+  | "failed"
+  | "needs_review"
+  | "partial"
+  | "pending"
+  | "prepared"
+  | "succeeded"
+export type OfferReleaseCommandExecutionStatus =
+  | "applied"
+  | "blocked"
+  | "failed"
+  | "pending"
+  | "prepared"
+  | "requires_review"
 
 export interface OfferReleaseCommandOutcomeInput {
   key: string
@@ -141,7 +154,7 @@ function commandExecutionStatus(
   if (mode === "dry_run") {
     return "prepared"
   }
-  return outcome?.status ?? "applied"
+  return outcome?.status ?? "pending"
 }
 
 function executionStatus(
@@ -161,11 +174,15 @@ function executionStatus(
 
   const appliedCount = commands.filter((command) => command.status === "applied").length
   const failedCount = commands.filter((command) => command.status === "failed").length
+  const pendingCount = commands.filter((command) => command.status === "pending").length
   if (appliedCount === commands.length) {
     return "succeeded"
   }
-  if (appliedCount === 0 && failedCount > 0) {
+  if (failedCount === commands.length) {
     return "failed"
+  }
+  if (pendingCount === commands.length) {
+    return "pending"
   }
   return "partial"
 }
@@ -185,9 +202,17 @@ function executionNextActions(
   if (status === "succeeded") {
     return ["Release execution completed."]
   }
-  return commands
-    .filter((command) => command.status === "failed")
-    .map((command) => `Resolve failed release command: ${command.label}.`)
+  if (status === "pending") {
+    return [`Record execution outcomes for ${commands.length} release command${commands.length === 1 ? "" : "s"}.`]
+  }
+  return [
+    ...commands
+      .filter((command) => command.status === "failed")
+      .map((command) => `Resolve failed release command: ${command.label}.`),
+    ...commands
+      .filter((command) => command.status === "pending")
+      .map((command) => `Record execution outcome for release command: ${command.label}.`),
+  ]
 }
 
 function executionWarnings(plan: OfferReleasePlan, commands: OfferReleaseCommandExecution[]): string[] {

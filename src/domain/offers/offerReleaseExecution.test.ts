@@ -86,11 +86,32 @@ describe("offer release execution audit", () => {
       status: "failed",
       warnings: ["Retry after quota reset."],
     })
-    expect(run.nextActions).toEqual(["Resolve failed release command: Create follow-up calendar event."])
+    expect(run.nextActions).toContain("Resolve failed release command: Create follow-up calendar event.")
+    expect(run.nextActions).toContain("Record execution outcome for release command: Mark offer sent.")
     expect(run.warnings).toEqual([
       "Create follow-up calendar event: Retry after quota reset.",
       "Create follow-up calendar event failed: Calendar quota exhausted",
     ])
+  })
+
+  it("keeps commit commands pending until provider outcomes are supplied", () => {
+    const run = buildOfferReleaseExecutionRun({
+      actor: "Sari",
+      mode: "commit",
+      plan: readyReleasePlan(),
+    })
+
+    expect(run.status).toBe("pending")
+    expect(run.commands.map((command) => command.status)).toEqual([
+      "pending",
+      "pending",
+      "pending",
+      "pending",
+      "pending",
+      "pending",
+    ])
+    expect(run.nextActions).toEqual(["Record execution outcomes for 6 release commands."])
+    expect(run.warnings).toEqual([])
   })
 
   it("does not materialize artifacts for blocked release plans", () => {
