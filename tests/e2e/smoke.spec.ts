@@ -123,6 +123,9 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(
     page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Retries" }),
   ).toContainText("0")
+  await expect(
+    page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Actions" }),
+  ).toContainText("5")
   await expect(page.getByLabel("Offer release execution history")).toContainText("No repeated release fingerprints.")
   await page.getByRole("button", { name: "Sync replies" }).click()
   await expect(page.getByLabel("Offer reply sync")).toContainText("2 matched reply signals")
