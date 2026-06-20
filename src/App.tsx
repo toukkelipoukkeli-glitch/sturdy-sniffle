@@ -61,6 +61,13 @@ import {
   type CapacityProcessCommitment,
 } from "./domain/workspace/capacityCommitment"
 import {
+  buildMaterialAvailabilityPlan,
+  type MaterialAvailabilityCommitment,
+  type MaterialAvailabilityPlan,
+  type MaterialInventoryLot,
+  type MaterialSupplierOption,
+} from "./domain/workspace/materialAvailability"
+import {
   buildOutsideServicePlan,
   type OutsideServiceCommitment,
   type OutsideServicePlan,
@@ -91,6 +98,7 @@ import "./App.css"
 type WorkspaceView = "triage" | "costing" | "offer"
 
 const demoToday = "2026-06-20"
+const demoNow = "2026-06-20T09:00:00+03:00"
 const capacityPlanningDays = 5
 const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
   cnc_milling: 420,
@@ -125,6 +133,49 @@ const outsideServiceSupplierRules: OutsideServiceSupplierRule[] = [
     leadTimeDays: 4,
     match: "plating",
     supplierName: "Baltic Plating Co.",
+  },
+]
+const materialInventoryLots: MaterialInventoryLot[] = [
+  {
+    availableKg: 10,
+    id: "lot-al-6082-rack-a2",
+    location: "Rack A2",
+    materialName: "Aluminum 6082",
+    reservedKg: 1,
+  },
+  {
+    availableKg: 0.25,
+    certificateStatus: "missing",
+    id: "lot-316l-bin-s1",
+    location: "Bin S1",
+    materialName: "Stainless steel 316L",
+  },
+  {
+    availableKg: 3.5,
+    id: "lot-al-7075-rack-a8",
+    location: "Rack A8",
+    materialName: "Aluminum 7075",
+    reservedKg: 0.5,
+  },
+]
+const materialSupplierOptions: MaterialSupplierOption[] = [
+  {
+    leadTimeDays: 5,
+    match: "aluminum_6082",
+    minimumOrderKg: 5,
+    supplierName: "MetalHub Helsinki",
+  },
+  {
+    leadTimeDays: 4,
+    match: "aluminum_7075",
+    minimumOrderKg: 10,
+    supplierName: "Aero Alloy Supply",
+  },
+  {
+    leadTimeDays: 3,
+    match: "stainless_steel_316l",
+    minimumOrderKg: 3,
+    supplierName: "Stainless Stock Oy",
   },
 ]
 
@@ -490,7 +541,7 @@ function App() {
     }),
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
-  const [queueNow] = useState(() => new Date().toISOString())
+  const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
@@ -582,6 +633,31 @@ function App() {
         }),
         now: queueNow,
         supplierRules: outsideServiceSupplierRules,
+      }),
+    [editsById, queueNow, statusById],
+  )
+  const materialAvailabilityPlan = useMemo(
+    () =>
+      buildMaterialAvailabilityPlan({
+        inventoryLots: materialInventoryLots,
+        items: workItems.map((item) => {
+          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          return {
+            customerName: item.customer,
+            dueAt: item.dueAt,
+            id: item.id,
+            materialName: itemQuoteInput.material.name,
+            priority: itemQuoteInput.priority,
+            process: itemQuoteInput.process,
+            receivedAt: item.receivedAt,
+            requiredKg: estimateMaterialRequirementKg(itemQuoteInput),
+            status: statusById[item.id] ?? item.status,
+            subject: item.subject,
+          }
+        }),
+        now: queueNow,
+        purchaseBufferDays: 1,
+        supplierOptions: materialSupplierOptions,
       }),
     [editsById, queueNow, statusById],
   )
@@ -872,6 +948,7 @@ function App() {
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
           <ProcessCapabilityPanel activeProcess={selectedItem.quoteInput.process} matrix={processCapabilityMatrix} />
           <CapacityCommitmentPanel plan={capacityCommitmentPlan} selectedItem={selectedItem} />
+          <MaterialAvailabilityPanel plan={materialAvailabilityPlan} selectedItem={selectedItem} />
           <OutsideServicePanel plan={outsideServicePlan} selectedItem={selectedItem} />
 
           {activeView === "triage" ? (
@@ -1364,6 +1441,99 @@ function CapacityCommitmentPanel({ plan, selectedItem }: { plan: CapacityCommitm
         </div>
       </div>
     </section>
+  )
+}
+
+function MaterialAvailabilityPanel({ plan, selectedItem }: { plan: MaterialAvailabilityPlan; selectedItem: QuoteWorkItem }) {
+  const selectedCommitment = plan.commitments.find((commitment) => commitment.itemId === selectedItem.id)
+  const visibleCommitments = prioritizeMaterialCommitments(plan.commitments, selectedItem.id)
+
+  return (
+    <section className="material-availability-panel" aria-label="Material availability plan">
+      <div className="material-availability-heading">
+        <div>
+          <span className="eyebrow">
+            <PackageCheck aria-hidden="true" />
+            Materials
+          </span>
+          <strong>
+            {plan.materialCount} material families · {materialAvailabilityStatusLabel(plan.status)}
+          </strong>
+        </div>
+        <span className={`material-availability-status material-availability-status-${plan.status}`}>
+          {materialAvailabilityStatusLabel(plan.status)}
+        </span>
+      </div>
+      <div className="material-availability-summary">
+        <Metric label="Demand" value={formatKilograms(plan.totalRequiredKg)} />
+        <Metric label="Allocated" value={formatKilograms(plan.totalAllocatedKg)} />
+        <Metric label="Purchase" value={formatKilograms(plan.totalPurchaseKg)} />
+        <Metric label="Risk" value={String(plan.atRiskCount + plan.blockedCount)} />
+      </div>
+      {selectedCommitment ? (
+        <div className="material-selected-rfq" data-status={selectedCommitment.status}>
+          <div>
+            <span>Selected RFQ</span>
+            <strong>{selectedItem.quoteInput.partNumber}</strong>
+          </div>
+          <div>
+            <span>Material</span>
+            <strong>{selectedCommitment.materialName}</strong>
+          </div>
+          <div>
+            <span>Required</span>
+            <strong>{formatKilograms(selectedCommitment.requiredKg)}</strong>
+          </div>
+          <div>
+            <span>Action</span>
+            <strong>{formatMaterialAction(selectedCommitment)}</strong>
+          </div>
+        </div>
+      ) : null}
+      <div className="material-availability-list">
+        {visibleCommitments.map((commitment) => (
+          <MaterialAvailabilityRow
+            commitment={commitment}
+            key={commitment.itemId}
+            selected={commitment.itemId === selectedItem.id}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function MaterialAvailabilityRow({
+  commitment,
+  selected,
+}: {
+  commitment: MaterialAvailabilityCommitment
+  selected: boolean
+}) {
+  return (
+    <article className="material-availability-row" data-selected={selected} data-status={commitment.status}>
+      <div>
+        <strong>{commitment.materialName}</strong>
+        <span>{commitment.customerName}</span>
+      </div>
+      <div>
+        <span>Allocated</span>
+        <strong>{formatKilograms(commitment.allocatedKg)}</strong>
+      </div>
+      <div>
+        <span>Purchase</span>
+        <strong>{formatKilograms(commitment.purchaseKg)}</strong>
+      </div>
+      <div>
+        <span>Supplier</span>
+        <strong>{commitment.supplierName ?? "Stock"}</strong>
+      </div>
+      <div>
+        <span>Request by</span>
+        <strong>{commitment.requestBy ?? "Ready"}</strong>
+      </div>
+      <small>{formatMaterialIssueSummary(commitment)}</small>
+    </article>
   )
 }
 
@@ -2098,6 +2268,27 @@ function estimateCapacityWorkMinutes(input: CncQuoteInput) {
   return Math.ceil(setupMinutes + runMinutes + inspectionMinutes)
 }
 
+function estimateMaterialRequirementKg(input: CncQuoteInput) {
+  const materialYieldFactor = input.material.yieldFactor ?? 1
+  const kg = calculateStockVolumeMm3(input) * 1e-9 * input.material.densityKgM3 * materialYieldFactor * input.quantity
+  return Math.max(0.001, roundKilograms(kg))
+}
+
+function calculateStockVolumeMm3(input: CncQuoteInput) {
+  const dimensions = input.stockDimensions
+  if (input.process === "cnc_turning") {
+    const diameterMm = dimensions.diameterMm ?? 0
+    const lengthMm = dimensions.lengthMm ?? 0
+    return Math.PI * (diameterMm / 2) ** 2 * lengthMm
+  }
+
+  return (dimensions.lengthMm ?? 0) * (dimensions.widthMm ?? 0) * (dimensions.heightMm ?? 0)
+}
+
+function roundKilograms(value: number) {
+  return Math.round(value * 1000) / 1000
+}
+
 function findCommitmentForItem(plan: CapacityCommitmentPlan, itemId: string): CapacityItemCommitment | undefined {
   for (const processPlan of plan.processPlans) {
     const commitment = processPlan.commitments.find((candidate) => candidate.itemId === itemId)
@@ -2105,6 +2296,49 @@ function findCommitmentForItem(plan: CapacityCommitmentPlan, itemId: string): Ca
       return commitment
     }
   }
+}
+
+function prioritizeMaterialCommitments(commitments: MaterialAvailabilityCommitment[], selectedItemId: string) {
+  const selectedCommitment = commitments.find((commitment) => commitment.itemId === selectedItemId)
+  const nextCommitments = commitments.filter((commitment) => commitment.itemId !== selectedItemId).slice(0, 2)
+  return selectedCommitment ? [selectedCommitment, ...nextCommitments] : commitments.slice(0, 3)
+}
+
+function materialAvailabilityStatusLabel(status: MaterialAvailabilityPlan["status"]) {
+  switch (status) {
+    case "at_risk":
+      return "At risk"
+    case "blocked":
+      return "Blocked"
+    case "covered":
+      return "Covered"
+    case "needs_purchase":
+      return "Needs purchase"
+  }
+}
+
+function formatMaterialAction(commitment: MaterialAvailabilityCommitment) {
+  if (commitment.purchaseKg > 0) {
+    return `Buy ${formatKilograms(commitment.purchaseKg)}${commitment.requestBy ? ` by ${commitment.requestBy}` : ""}`
+  }
+  if (commitment.issues.some((issue) => issue.code === "certificate_expired" || issue.code === "certificate_missing")) {
+    return "Review certificates"
+  }
+  return "Stock covered"
+}
+
+function formatMaterialCoverage(commitment: MaterialAvailabilityCommitment) {
+  if (commitment.allocations.length === 0) {
+    return "No stock allocation is available for this material."
+  }
+  return `Covered by ${commitment.allocations.length} lot${commitment.allocations.length === 1 ? "" : "s"}.`
+}
+
+function formatMaterialIssueSummary(commitment: MaterialAvailabilityCommitment) {
+  if (commitment.issues.length === 0) {
+    return formatMaterialCoverage(commitment)
+  }
+  return commitment.issues.map((issue) => issue.message).join(" ")
 }
 
 function outsideServiceStatusFor(item: QuoteWorkItem, serviceLabel: string) {
@@ -2519,6 +2753,12 @@ function formatMinutes(minutes: number) {
   }
   const hours = minutes / 60
   return `${Number.isInteger(hours) ? hours.toFixed(0) : hours.toFixed(1)}h`
+}
+
+function formatKilograms(value: number) {
+  const rounded = roundKilograms(value)
+  const label = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")
+  return `${label} kg`
 }
 
 function formatSignedCurrencyDelta(cents: number, currency: string) {
