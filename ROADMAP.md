@@ -49,11 +49,23 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
    - Score ideas by quote accuracy, time saved, integration risk, and reviewability.
    - Promote only small, testable slices into implementation PRs.
 
-## Near-Term PR Slices
+## Implemented Foundation
 
-- Convex schema and local generation workflow.
-- RFQ intake data types, fixtures, and deterministic parser scaffold.
-- First CNC quote calculator with unit-test fixtures.
-- Quote workspace shell using shadcn/ui primitives.
-- Offer builder data model and plain-text export.
-- Provider adapter interface with mock and local fallbacks.
+- Convex schema and local generation workflow, including worktree-safe `.env.local` propagation through `.worktreeinclude`.
+- Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, and provenance fields.
+- Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
+- Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, and process workload summaries.
+- Offer builder domain model with plain-text offer export, offer document content, lifecycle timeline, and follow-up task tracking.
+- CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, and metadata-only fallback behavior.
+- Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters.
+- Provider-adapter AI layer with mock/local/provider boundaries plus provider run audit records.
+- Feature-scout backlog scoring for small, reviewable product improvement slices.
+
+## Next PR Slices
+
+- Wire the process workload summary and quote queue ranking into the visible workspace UI with required Computer Use QA or documented Browser fallback if macOS permissions block it.
+- Add Convex mutations/queries for RFQ queue, quote scenarios, process workload buckets, and offer follow-up tasks while keeping calculators deterministic server-side.
+- Add import/export fixtures for PDF-ready offer content and calendar follow-up plans, including snapshot tests for generated text.
+- Build a provider-run review surface that shows prompts, metadata, mock/local fallbacks, and redacted output summaries without exposing secrets.
+- Add CAD metadata adapter boundaries for STEP/DXF/PDF parsing with metadata-only fallback tests.
+- Add Gmail customer reply ingestion for offer status changes and follow-up completion signals behind the existing provider interface.
