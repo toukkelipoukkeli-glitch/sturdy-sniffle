@@ -125,6 +125,28 @@ describe("workspace audit feed", () => {
     ])
   })
 
+  it("keeps connector event keys stable when payload order changes", () => {
+    const payload = connectorPayload("linked")
+    const reversedPayload: ConvexConnectorRfqSyncPayload = {
+      activities: [...payload.activities].reverse(),
+      links: [...payload.links].reverse(),
+    }
+    const options = { generatedAt: "2026-06-20T09:00:00.000Z" }
+
+    const original = buildWorkspaceAuditFeed(
+      { connectorSyncs: [{ payload, recordedAt: "2026-06-20T08:05:00.000Z" }] },
+      options,
+    )
+    const reversed = buildWorkspaceAuditFeed(
+      { connectorSyncs: [{ payload: reversedPayload, recordedAt: "2026-06-20T08:05:00.000Z" }] },
+      options,
+    )
+
+    expect(new Set(original.events.map((event) => event.key))).toEqual(
+      new Set(reversed.events.map((event) => event.key)),
+    )
+  })
+
   it("rejects invalid generated timestamps and limits", () => {
     expect(() =>
       buildWorkspaceAuditFeed({}, { generatedAt: "not-a-date" }),

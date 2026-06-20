@@ -121,10 +121,12 @@ function actionEvent(action: WorkspaceActionRecord): WorkspaceAuditEvent {
 
 function connectorEvents(sync: WorkspaceAuditConnectorSync): WorkspaceAuditEvent[] {
   const recordedAt = normalizeIsoTimestamp(sync.recordedAt, "connectorSync.recordedAt")
-  const activityEvents = sync.payload.activities.map((activity, index) =>
+  const activityEvents = sync.payload.activities.map((activity) =>
     compactEvent({
       actor: activity.actorName,
-      key: `connector:activity:${index}:${hashKey(activity.message)}`,
+      key: `connector:activity:${hashKey(
+        `${activity.kind}|${activity.message}|${activity.actorName ?? ""}|${activity.rfqId ?? ""}|${recordedAt}`,
+      )}`,
       label: connectorActivityLabel(activity.kind),
       message: activity.message,
       occurredAt: recordedAt,
@@ -134,9 +136,11 @@ function connectorEvents(sync: WorkspaceAuditConnectorSync): WorkspaceAuditEvent
       status: activity.kind,
     }),
   )
-  const linkEvents = sync.payload.links.map((link, index) =>
+  const linkEvents = sync.payload.links.map((link) =>
     compactEvent({
-      key: `connector:link:${link.provider}:${link.externalId}:${index}`,
+      key: `connector:link:${hashKey(
+        `${link.provider}|${link.externalId}|${link.syncStatus}|${link.rfqId ?? ""}|${recordedAt}`,
+      )}`,
       label: `${link.provider.toUpperCase()} link`,
       message: `${link.provider} link ${link.externalId} is ${link.syncStatus}.`,
       occurredAt: recordedAt,
