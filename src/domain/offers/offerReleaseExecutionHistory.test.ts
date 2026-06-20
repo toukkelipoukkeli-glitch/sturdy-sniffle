@@ -85,6 +85,14 @@ describe("offer release execution history", () => {
         }),
       ]),
     ).toThrow("executionFingerprint is required")
+
+    expect(() =>
+      summarizeOfferReleaseExecutionHistory([
+        releaseRun({
+          executedAt: "2026-06-31T09:00:00Z",
+        }),
+      ]),
+    ).toThrow("executedAt must be a valid ISO timestamp")
   })
 })
 
