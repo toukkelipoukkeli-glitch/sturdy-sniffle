@@ -41,6 +41,7 @@ import {
 import { rankQuoteQueue, type QuoteQueueStatus, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
 import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
 import { buildWorkspaceAction, type WorkspaceActionRecord } from "./domain/workspace/workspaceActions"
+import { createLocalWorkspacePersistence, type WorkspacePersistenceSnapshot } from "./domain/workspace/workspacePersistence"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -399,6 +400,7 @@ function App() {
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
+  const [workspacePersistence] = useState(() => createLocalWorkspacePersistence())
   const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = actionsById[selectedId] ?? []
@@ -494,13 +496,14 @@ function App() {
     })
     setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
   }
-  const recordWorkspaceAction = (action: WorkspaceActionRecord) => {
-    setActionsById((current) => ({
-      ...current,
-      [action.rfqId]: [...(current[action.rfqId] ?? []), action].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
-    }))
+  const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
+    setActionsById(snapshot.actionsById)
+    setStatusById(snapshot.statusById)
   }
-  const advanceStatus = () => {
+  const recordWorkspaceAction = async (action: WorkspaceActionRecord) => {
+    applyWorkspaceSnapshot(await workspacePersistence.recordAction(action))
+  }
+  const advanceStatus = async () => {
     const toStatus = nextStatusFor(selectedStatus)
     if (!toStatus) {
       return
@@ -513,11 +516,10 @@ function App() {
       rfqId: selectedItem.id,
       toStatus,
     })
-    setStatusById((current) => ({ ...current, [selectedItem.id]: toStatus }))
-    recordWorkspaceAction(action)
+    await recordWorkspaceAction(action)
   }
-  const saveScenario = () => {
-    recordWorkspaceAction(
+  const saveScenario = async () => {
+    await recordWorkspaceAction(
       buildWorkspaceAction({
         actor: "Sari",
         kind: "scenario_saved",
@@ -528,8 +530,8 @@ function App() {
       }),
     )
   }
-  const createFollowUp = () => {
-    recordWorkspaceAction(
+  const createFollowUp = async () => {
+    await recordWorkspaceAction(
       buildWorkspaceAction({
         actor: "Sari",
         followUpDueAt: followUpDueAtFor(selectedItem),
@@ -540,12 +542,12 @@ function App() {
       }),
     )
   }
-  const addHandoffNote = () => {
+  const addHandoffNote = async () => {
     const note = handoffDraft.trim()
     if (!note) {
       return
     }
-    recordWorkspaceAction(
+    await recordWorkspaceAction(
       buildWorkspaceAction({
         actor: "Sari",
         kind: "handoff_note",
