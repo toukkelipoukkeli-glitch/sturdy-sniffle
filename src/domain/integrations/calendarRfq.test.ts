@@ -78,6 +78,40 @@ describe("calendar RFQ planning", () => {
     })
   })
 
+  it("rejects invalid calendar timestamps", () => {
+    expect(() =>
+      buildRfqCalendarPlan({
+        rfqId: "rfq-001",
+        parsedRfq: {
+          ...parsedCncRfq,
+          dueAt: Number.NaN,
+        },
+        timezone: "Europe/Helsinki",
+      }),
+    ).toThrow("parsedRfq.dueAt must be a finite timestamp")
+
+    expect(() =>
+      buildOfferFollowUpEvent({
+        offerId: "offer-001",
+        offerNumber: "OFFER-204",
+        customerName: "North Forge",
+        followUpAt: "07/02/2026 07:00:00",
+        timezone: "Europe/Helsinki",
+      }),
+    ).toThrow("followUpAt must be a valid ISO timestamp")
+
+    expect(() =>
+      buildRfqCalendarPlan({
+        rfqId: "rfq-001",
+        parsedRfq: {
+          ...parsedCncRfq,
+          dueAt: 1e100,
+        },
+        timezone: "Europe/Helsinki",
+      }),
+    ).toThrow("parsedRfq.dueAt must be a valid timestamp")
+  })
+
   it("schedules RFQ plans through the configured provider", async () => {
     const scheduler = createCalendarRfqScheduler({
       provider: createMockCalendarRfqProvider(),
