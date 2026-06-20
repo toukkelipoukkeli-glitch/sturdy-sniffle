@@ -54,6 +54,7 @@ describe("offer export fixtures", () => {
       Subject: Turned spacer RFQ
       Issued: 2026-06-19
       Valid until: 2026-07-03
+      Revision: 1
       Total excluding VAT: EUR 500.00
 
       Pricing
@@ -74,6 +75,10 @@ describe("offer export fixtures", () => {
       Review flags
       Part | Flag
       FB-TURN-019 | Minimum order adjustment applied.
+
+      Revision history
+      Rev | Date | By | Reason
+      1 | 2026-06-19 | FactoryBid OS | Initial draft
 
       Notes
       Rush lead time included.

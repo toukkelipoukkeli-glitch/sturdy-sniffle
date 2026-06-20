@@ -2,7 +2,7 @@ import { formatOfferMoney, type OfferDraft, type OfferLineItem } from "./offer"
 
 export const OFFER_DOCUMENT_VERSION = "offer-document.v1"
 
-export type OfferDocumentSectionKind = "summary" | "pricing" | "assumptions" | "review_flags" | "notes" | "terms"
+export type OfferDocumentSectionKind = "summary" | "pricing" | "assumptions" | "review_flags" | "revision_history" | "notes" | "terms"
 
 export interface OfferDocumentField {
   label: string
@@ -42,6 +42,7 @@ export function buildOfferDocument(offer: OfferDraft): OfferDocument {
     buildPricingSection(offer),
     buildAssumptionsSection(offer.items),
     ...buildReviewFlagSection(offer.items),
+    buildRevisionHistorySection(offer),
     ...buildNotesSection(offer.notes),
     buildTermsSection(offer),
   ]
@@ -76,6 +77,7 @@ function buildSummarySection(offer: OfferDraft): OfferDocumentSection {
       ["Subject", offer.subject],
       ["Issued", offer.issuedAt],
       ["Valid until", offer.validUntil],
+      ["Revision", String(offer.revisionHistory.at(-1)?.revision ?? 1)],
       ["Total excluding VAT", formatOfferMoney(offer.totalCents, offer.currency)],
     ]),
   }
@@ -135,6 +137,23 @@ function buildReviewFlagSection(items: OfferLineItem[]): OfferDocumentSection[] 
       },
     },
   ]
+}
+
+function buildRevisionHistorySection(offer: OfferDraft): OfferDocumentSection {
+  return {
+    key: "revision_history",
+    title: "Revision history",
+    kind: "revision_history",
+    table: {
+      columns: ["Rev", "Date", "By", "Reason"],
+      rows: offer.revisionHistory.map((revision) => [
+        String(revision.revision),
+        revision.createdAt,
+        revision.createdBy,
+        revision.reason,
+      ]),
+    },
+  }
 }
 
 function buildNotesSection(notes: string[]): OfferDocumentSection[] {
