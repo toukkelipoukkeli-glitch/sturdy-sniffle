@@ -5,17 +5,40 @@ import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
 export type IntegrationHealthStatus = "live" | "fallback" | "attention" | "blocked"
 export type IntegrationSourceSeverity = "healthy" | "attention" | "blocked"
+export type IntegrationStatusSourceKey =
+  | "calendar_follow_up"
+  | "connector"
+  | "offer_replies"
+  | "persistence"
+  | "provider_runs"
+export type IntegrationStatusSourceStatus =
+  | "audited"
+  | "blocked"
+  | "convex"
+  | "failed"
+  | "fallback"
+  | "linked"
+  | "local"
+  | "matched"
+  | "no_match"
+  | "none"
+  | "pending"
+  | "review"
+  | "scheduled"
+  | "stale"
+  | "unlinked"
 
 export interface IntegrationStatusSource {
-  key: string
+  key: IntegrationStatusSourceKey
   label: string
   severity: IntegrationSourceSeverity
-  status: string
+  status: IntegrationStatusSourceStatus
   detail: string
   count?: number
 }
 
 export interface WorkspaceIntegrationStatusInput {
+  connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
@@ -33,6 +56,7 @@ export interface WorkspaceIntegrationStatus {
 }
 
 export function summarizeWorkspaceIntegrationStatus({
+  connectorErrorCount = 0,
   connectorSnapshot,
   followUpScheduledAt,
   persistenceMode,
@@ -43,7 +67,7 @@ export function summarizeWorkspaceIntegrationStatus({
 }: WorkspaceIntegrationStatusInput): WorkspaceIntegrationStatus {
   const sources = [
     persistenceSource(persistenceMode, syncErrorCount),
-    connectorSource(connectorSnapshot, rfqId),
+    connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
@@ -91,11 +115,26 @@ function persistenceSource(mode: WorkspacePersistenceMode, syncErrorCount: numbe
   }
 }
 
-function connectorSource(snapshot: ConnectorSyncPersistenceSnapshot, rfqId: string): IntegrationStatusSource {
+function connectorSource(
+  snapshot: ConnectorSyncPersistenceSnapshot,
+  rfqId: string,
+  connectorErrorCount: number,
+): IntegrationStatusSource {
   const links = snapshot.payloads.flatMap((payload) => payload.links).filter((link) => link.rfqId === rfqId)
   const activities = snapshot.payloads.flatMap((payload) => payload.activities).filter((activity) => activity.rfqId === rfqId)
   const blockedCount = links.filter((link) => link.syncStatus === "blocked").length
   const staleCount = links.filter((link) => link.syncStatus === "stale").length
+
+  if (connectorErrorCount > 0) {
+    return {
+      count: connectorErrorCount,
+      detail: `${connectorErrorCount} connector sync attempt${connectorErrorCount === 1 ? "" : "s"} failed for this RFQ.`,
+      key: "connector",
+      label: "RFQ connectors",
+      severity: "blocked",
+      status: "failed",
+    }
+  }
 
   if (blockedCount > 0) {
     return {

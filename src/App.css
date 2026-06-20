@@ -2630,9 +2630,13 @@
   .offer-release-history-summary,
   .offer-release-history-retries,
   .offer-reply-summary,
-  .integration-action-row,
   .integration-source-row {
     grid-template-columns: 1fr;
+  }
+
+  .integration-action-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .alternate-row div:not(:first-child) {
@@ -2640,7 +2644,8 @@
   }
 
   .operator-action-grid .inline-flex,
-  .handoff-editor .inline-flex {
+  .handoff-editor .inline-flex,
+  .integration-action-row .inline-flex {
     justify-self: stretch;
     width: 100%;
   }

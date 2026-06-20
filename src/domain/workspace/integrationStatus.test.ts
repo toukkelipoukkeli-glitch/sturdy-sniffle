@@ -68,6 +68,31 @@ describe("workspace integration status", () => {
       "offer_replies",
     ])
   })
+
+  it("keeps connector sync failures separate from persistence fallback health", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorErrorCount: 1,
+      connectorSnapshot: { payloads: [], syncCount: 0 },
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("blocked")
+    expect(status.sources.find((source) => source.key === "persistence")).toMatchObject({
+      severity: "healthy",
+      status: "convex",
+    })
+    expect(status.sources.find((source) => source.key === "connector")).toMatchObject({
+      count: 1,
+      severity: "blocked",
+      status: "failed",
+    })
+    expect(status.warnings).not.toContain("Persistence: Workspace writes are routed through Convex.")
+  })
 })
 
 function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): ConnectorSyncPersistenceSnapshot {

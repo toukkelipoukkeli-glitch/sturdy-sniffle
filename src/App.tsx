@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react"
+import { useMemo, useRef, useState, type ReactNode } from "react"
 import {
   AlertTriangle,
   Calculator,
@@ -568,12 +568,14 @@ function App() {
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
+  const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
-  const [connectorSyncErrorCount, setConnectorSyncErrorCount] = useState(0)
+  const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
+  const connectorSyncLocksRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
@@ -587,6 +589,8 @@ function App() {
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
   const selectedStatus = statusById[selectedId] ?? selectedItem.status
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
+  const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
+  const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
   const updateSelectedEdit = (patch: Partial<QuoteEditState>) => {
@@ -852,19 +856,20 @@ function App() {
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
+        connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
         providerRuns: selectedItem.providerRuns,
         replySync: offerReplySync,
         rfqId: selectedItem.id,
-        syncErrorCount: persistenceSyncErrorCount + connectorSyncErrorCount,
+        syncErrorCount: persistenceSyncErrorCount,
       }),
     [
-      connectorSyncErrorCount,
       offerFollowUpScheduledAt,
       offerReplySync,
       persistenceSyncErrorCount,
+      selectedConnectorSyncErrorCount,
       selectedConnectorSnapshot,
       selectedItem.id,
       selectedItem.providerRuns,
@@ -872,7 +877,17 @@ function App() {
     ],
   )
   const syncConnectorInbox = async () => {
-    const fallbackMessages = buildConnectorRfqMessages(selectedItem)
+    const item = selectedItem
+    const rfqId = item.id
+    if (connectorSyncLocksRef.current.has(rfqId)) {
+      return
+    }
+
+    connectorSyncLocksRef.current.add(rfqId)
+    setConnectorSyncingById((current) => ({ ...current, [rfqId]: true }))
+
+    const connectorSnapshot = connectorSnapshotsById[rfqId] ?? emptyConnectorSnapshot
+    const fallbackMessages = buildConnectorRfqMessages(item)
     const orchestrator = createConnectorRfqSyncOrchestrator({
       calendarScheduler: createCalendarRfqScheduler({
         fallbackProvider: createMockCalendarRfqProvider(),
@@ -882,13 +897,13 @@ function App() {
         fallbackProvider: createMockGmailRfqProvider({ messages: fallbackMessages }),
         provider: createMockGmailRfqProvider({ shouldFail: true }),
       }),
-      resolveRfqId: () => selectedItem.id,
+      resolveRfqId: () => rfqId,
     })
     const persistence = createLocalConnectorSyncPersistence({
-      initialSnapshot: selectedConnectorSnapshot,
+      initialSnapshot: connectorSnapshot,
       payloadOptions: {
         actorName: "FactoryBid connector",
-        resolveRfqId: (rfqId) => (rfqId === selectedItem.id ? selectedItem.id : undefined),
+        resolveRfqId: (candidateRfqId) => (candidateRfqId === rfqId ? rfqId : undefined),
       },
     })
 
@@ -897,15 +912,18 @@ function App() {
         dueReminderMinutes: 30,
         gmail: {
           maxResults: 1,
-          query: `rfq ${selectedItem.quoteInput.partNumber}`,
+          query: `rfq ${item.quoteInput.partNumber}`,
         },
         quoteWorkMinutes: 120,
         timezone: "Europe/Helsinki",
       })
       const snapshot = await persistence.recordSync(result)
-      setConnectorSnapshotsById((current) => ({ ...current, [selectedItem.id]: snapshot }))
+      setConnectorSnapshotsById((current) => ({ ...current, [rfqId]: snapshot }))
     } catch {
-      setConnectorSyncErrorCount((count) => count + 1)
+      setConnectorSyncErrorCountById((current) => ({ ...current, [rfqId]: (current[rfqId] ?? 0) + 1 }))
+    } finally {
+      connectorSyncLocksRef.current.delete(rfqId)
+      setConnectorSyncingById((current) => ({ ...current, [rfqId]: false }))
     }
   }
   const syncOfferReplies = async () => {
@@ -1003,6 +1021,7 @@ function App() {
             syncErrorCount={persistenceSyncErrorCount}
           />
           <Button
+            disabled={selectedConnectorSyncing}
             onClick={() => {
               void syncConnectorInbox()
             }}
@@ -1212,6 +1231,7 @@ function App() {
             )}
           </div>
           <IntegrationStatusPanel
+            isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
             onSyncReplies={syncOfferReplies}
             status={integrationStatus}
@@ -1244,10 +1264,12 @@ function PersistenceStatus({
 }
 
 function IntegrationStatusPanel({
+  isConnectorSyncing,
   onSyncConnector,
   onSyncReplies,
   status,
 }: {
+  isConnectorSyncing: boolean
   onSyncConnector: () => void
   onSyncReplies: () => void
   status: WorkspaceIntegrationStatus
@@ -1267,9 +1289,9 @@ function IntegrationStatusPanel({
         </span>
       </div>
       <div className="integration-action-row">
-        <Button onClick={() => void onSyncConnector()} type="button" variant="outline" size="sm">
+        <Button disabled={isConnectorSyncing} onClick={() => void onSyncConnector()} type="button" variant="outline" size="sm">
           <Mail aria-hidden="true" />
-          RFQ sync
+          {isConnectorSyncing ? "Syncing" : "RFQ sync"}
         </Button>
         <Button onClick={() => void onSyncReplies()} type="button" variant="outline" size="sm">
           <RefreshCw aria-hidden="true" />
