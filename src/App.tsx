@@ -13,6 +13,7 @@ import {
   Mail,
   PackageCheck,
   PanelRight,
+  RefreshCw,
   Ruler,
   ShieldCheck,
   TrendingUp,
@@ -20,6 +21,11 @@ import {
 
 import { Button } from "./components/ui/button"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
+import {
+  createGmailOfferReplyAdapter,
+  type GmailOfferReplySyncResult,
+} from "./domain/integrations/gmailOfferReply"
+import { createMockGmailRfqProvider, type GmailRfqMessage } from "./domain/integrations/gmailRfq"
 import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
@@ -388,6 +394,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
@@ -465,6 +472,20 @@ function App() {
       }),
     [quote, selectedItem],
   )
+  const offerReplySync = offerRepliesById[selectedId]
+  const syncOfferReplies = async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      fallbackProvider: createMockGmailRfqProvider({ messages: buildOfferReplyMessages(selectedItem, offer) }),
+      provider: createMockGmailRfqProvider({ shouldFail: true }),
+    })
+    const result = await adapter.sync({
+      followUpTaskIds: [`follow-up-${selectedItem.id}`],
+      maxResults: 5,
+      offerNumber: offer.offerNumber,
+      query: `offer ${offer.offerNumber}`,
+    })
+    setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
+  }
 
   return (
     <main className="workspace-shell">
@@ -479,7 +500,15 @@ function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          <Button type="button" variant="outline" size="sm">
+          <Button
+            onClick={() => {
+              setActiveView("offer")
+              void syncOfferReplies()
+            }}
+            type="button"
+            variant="outline"
+            size="sm"
+          >
             <Mail aria-hidden="true" />
             Gmail sync
           </Button>
@@ -602,7 +631,7 @@ function App() {
               setupMinutes={setupMinutes}
             />
           ) : null}
-          {activeView === "offer" ? <OfferView offer={offer} /> : null}
+          {activeView === "offer" ? <OfferView offer={offer} replySync={offerReplySync} onSyncReplies={syncOfferReplies} /> : null}
         </section>
 
         <aside className="inspector-panel" aria-label="Quote inspector">
@@ -996,7 +1025,15 @@ function CadMetadataPanel({ preview }: { preview: PartPreviewModel }) {
   )
 }
 
-function OfferView({ offer }: { offer: OfferDraft }) {
+function OfferView({
+  offer,
+  onSyncReplies,
+  replySync,
+}: {
+  offer: OfferDraft
+  onSyncReplies: () => void
+  replySync?: GmailOfferReplySyncResult
+}) {
   const offerText = renderOfferText(offer)
 
   return (
@@ -1016,11 +1053,73 @@ function OfferView({ offer }: { offer: OfferDraft }) {
           <div key={term.key}>{term.value}</div>
         ))}
       </div>
+      <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
       </label>
     </div>
+  )
+}
+
+function OfferReplyPanel({
+  onSyncReplies,
+  replySync,
+}: {
+  onSyncReplies: () => void
+  replySync?: GmailOfferReplySyncResult
+}) {
+  const matchedRecords = replySync?.records.filter((record) => record.parsed.matched) ?? []
+
+  return (
+    <section className="offer-reply-panel" aria-label="Offer reply sync">
+      <div className="offer-reply-heading">
+        <div>
+          <span className="eyebrow">
+            <Mail aria-hidden="true" />
+            Customer replies
+          </span>
+          <strong>{replySync ? `${matchedRecords.length} matched reply signals` : "Ready to sync from Gmail"}</strong>
+        </div>
+        <Button onClick={onSyncReplies} type="button" variant="outline" size="sm">
+          <RefreshCw aria-hidden="true" />
+          Sync replies
+        </Button>
+      </div>
+      {replySync ? (
+        <>
+          <div className="offer-reply-summary">
+            <Metric label="Provider" value={replySync.provider} />
+            <Metric label="Status" value={replySync.status} />
+            <Metric label="Query" value={replySync.query} />
+          </div>
+          <div className="offer-reply-list">
+            {replySync.records.map((record) => (
+              <article className="offer-reply-card" data-matched={record.parsed.matched} key={record.message.id}>
+                <div>
+                  <strong>{record.message.subject}</strong>
+                  <span>{record.message.senderName ?? record.message.senderEmail ?? "Unknown sender"}</span>
+                </div>
+                <div>
+                  <span>{record.parsed.signal ? humanizeKey(record.parsed.signal) : "No offer match"}</span>
+                  <strong>{record.parsed.event ? humanizeKey(record.parsed.event.kind) : "Ignored"}</strong>
+                </div>
+              </article>
+            ))}
+          </div>
+          {replySync.warnings.length > 0 ? (
+            <div className="provider-warning-list">
+              {replySync.warnings.map((warning) => (
+                <div className="flag" key={warning}>
+                  <AlertTriangle aria-hidden="true" />
+                  <span>{warning}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </section>
   )
 }
 
@@ -1253,6 +1352,50 @@ function buildCadMetadataResult({
 
 function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
+}
+
+function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {
+  const followUpTaskId = `follow-up-${item.id}`
+  const accepted = item.priority === "rush"
+  const replyText = accepted
+    ? `We accept offer ${offer.offerNumber}. Please proceed and close follow-up ${followUpTaskId}.`
+    : `Thanks for the offer ${offer.offerNumber}. We will review internally this week.`
+
+  return [
+    {
+      fromHeader: `${item.contact} <${item.contact.toLowerCase().replace(/\s+/g, ".")}@example.test>`,
+      id: `${item.id}-reply-001`,
+      plainText: replyText,
+      receivedAt: "2026-06-20T11:15:00+03:00",
+      senderEmail: `${item.contact.toLowerCase().replace(/\s+/g, ".")}@example.test`,
+      senderName: item.contact,
+      snippet: replyText,
+      subject: `Re: ${offer.offerNumber} ${item.subject}`,
+      threadId: `${item.id}-offer-thread`,
+    },
+    {
+      fromHeader: `${item.contact} <${item.contact.toLowerCase().replace(/\s+/g, ".")}@example.test>`,
+      id: `${item.id}-reply-002`,
+      plainText: `Received offer ${offer.offerNumber}, thanks for the quote. This closes follow-up ${followUpTaskId}.`,
+      receivedAt: "2026-06-20T11:16:00+03:00",
+      senderEmail: `${item.contact.toLowerCase().replace(/\s+/g, ".")}@example.test`,
+      senderName: item.contact,
+      snippet: `Received offer ${offer.offerNumber}, thanks for the quote.`,
+      subject: `Re: follow-up ${offer.offerNumber}`,
+      threadId: `${item.id}-offer-thread`,
+    },
+    {
+      fromHeader: "Purchasing <purchasing@example.test>",
+      id: `${item.id}-reply-ignored`,
+      plainText: "Can you also send a separate quote for the spare fixture?",
+      receivedAt: "2026-06-20T11:18:00+03:00",
+      senderEmail: "purchasing@example.test",
+      senderName: "Purchasing",
+      snippet: "Separate quote request",
+      subject: "Separate fixture request",
+      threadId: `${item.id}-side-thread`,
+    },
+  ]
 }
 
 function maxLeadTimeDays(offer: OfferDraft) {
