@@ -34,6 +34,11 @@ import {
   type OfferAlternateQuoteInput,
   type OfferExportPackage,
 } from "./domain/offers/offerExportPackage"
+import {
+  evaluateOfferSendReadiness,
+  type OfferSendReadinessCheckStatus,
+  type OfferSendReadinessResult,
+} from "./domain/offers/offerSendReadiness"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
@@ -57,6 +62,8 @@ import {
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
+
+const demoToday = "2026-06-20"
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -422,7 +429,7 @@ function App() {
   const workspacePersistence = workspacePersistenceRuntime.adapter
   const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
-  const selectedActions = actionsById[selectedId] ?? []
+  const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
   const selectedStatus = statusById[selectedId] ?? selectedItem.status
   const handoffDraft = handoffDraftById[selectedId] ?? ""
@@ -488,6 +495,7 @@ function App() {
       buildCncOfferDraft({
         offerNumber: offerNumberFor(selectedItem),
         customer: {
+          email: contactEmailFor(selectedItem),
           name: selectedItem.customer,
           contactName: selectedItem.contact,
         },
@@ -508,6 +516,17 @@ function App() {
         alternates: buildOfferAlternateInputs(quoteInput),
       }),
     [offer, quoteInput],
+  )
+  const offerFollowUpScheduledAt = useMemo(() => latestOfferFollowUpScheduledAt(selectedActions, offer), [offer, selectedActions])
+  const offerSendReadiness = useMemo(
+    () =>
+      evaluateOfferSendReadiness({
+        exportPackage: offerExportPackage,
+        followUpScheduledAt: offerFollowUpScheduledAt,
+        nowDate: demoToday,
+        offer,
+      }),
+    [offer, offerExportPackage, offerFollowUpScheduledAt],
   )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
@@ -751,6 +770,7 @@ function App() {
             <OfferView
               exportPackage={offerExportPackage}
               offer={offer}
+              readiness={offerSendReadiness}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
             />
@@ -1268,11 +1288,13 @@ function OfferView({
   exportPackage,
   offer,
   onSyncReplies,
+  readiness,
   replySync,
 }: {
   exportPackage: OfferExportPackage
   offer: OfferDraft
   onSyncReplies: () => void
+  readiness: OfferSendReadinessResult
   replySync?: GmailOfferReplySyncResult
 }) {
   const offerText = exportPackage.plainText
@@ -1295,6 +1317,7 @@ function OfferView({
         ))}
       </div>
       <OfferExportPackagePanel exportPackage={exportPackage} />
+      <OfferSendReadinessPanel readiness={readiness} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
@@ -1302,6 +1325,63 @@ function OfferView({
       </label>
     </div>
   )
+}
+
+function OfferSendReadinessPanel({ readiness }: { readiness: OfferSendReadinessResult }) {
+  const blockerCount = readiness.issues.filter((issue) => issue.severity === "blocker").length
+  const warningCount = readiness.issues.filter((issue) => issue.severity === "warning").length
+  const statusLabel = offerReadinessStatusLabel(readiness.status)
+
+  return (
+    <section className="offer-readiness-panel" aria-label="Offer send readiness">
+      <div className="offer-readiness-heading">
+        <div>
+          <span className="eyebrow">
+            <ShieldCheck aria-hidden="true" />
+            Send readiness
+          </span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <span className={`offer-readiness-status offer-readiness-status-${readiness.status}`}>{humanizeKey(readiness.status)}</span>
+      </div>
+      <div className="offer-readiness-summary">
+        <Metric label="Blockers" value={String(blockerCount)} />
+        <Metric label="Warnings" value={String(warningCount)} />
+        <Metric label="Checked" value={readiness.checkedAt} />
+      </div>
+      <div className="offer-readiness-checks">
+        {readiness.checks.map((check) => (
+          <div className="offer-readiness-check" data-status={check.status} key={check.key}>
+            <ReadinessCheckIcon status={check.status} />
+            <div>
+              <strong>{check.label}</strong>
+              <span>{check.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ReadinessCheckIcon({ status }: { status: OfferSendReadinessCheckStatus }) {
+  const Icon = status === "passed" ? CheckCircle2 : AlertTriangle
+  return (
+    <span className="offer-readiness-check-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function offerReadinessStatusLabel(status: OfferSendReadinessResult["status"]) {
+  switch (status) {
+    case "blocked":
+      return "Blocked"
+    case "needs_review":
+      return "Needs review"
+    case "ready":
+      return "Ready to send"
+  }
 }
 
 function OfferExportPackagePanel({ exportPackage }: { exportPackage: OfferExportPackage }) {
@@ -1669,6 +1749,16 @@ function buildCadMetadataResult({
 
 function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
+}
+
+function contactEmailFor(item: QuoteWorkItem) {
+  const local = item.contact.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "")
+  return `${local || "buyer"}@example.test`
+}
+
+function latestOfferFollowUpScheduledAt(actions: WorkspaceActionRecord[], offer: OfferDraft) {
+  const offerId = offer.offerNumber.toLowerCase()
+  return actions.find((action) => action.kind === "follow_up_created" && action.offerId === offerId)?.followUpDueAt
 }
 
 function nextStatusFor(status: QuoteQueueStatus): QuoteQueueStatus | undefined {
