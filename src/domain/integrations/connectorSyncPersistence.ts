@@ -33,7 +33,7 @@ export function createLocalConnectorSyncPersistence({
   payloadOptions,
 }: LocalConnectorSyncPersistenceOptions = {}): ConnectorSyncPersistenceAdapter {
   let snapshotState: ConnectorSyncPersistenceSnapshot = {
-    payloads: [...(initialSnapshot?.payloads ?? [])],
+    payloads: (initialSnapshot?.payloads ?? []).map(clonePayload),
     syncCount: initialSnapshot?.syncCount ?? initialSnapshot?.payloads?.length ?? 0,
   }
 
@@ -72,7 +72,11 @@ export function createConvexConnectorSyncPersistence({
       try {
         await runMutation(mutationRef, compactArgs(payload))
       } catch (error) {
-        onSyncError?.(error, payload)
+        try {
+          onSyncError?.(error, payload)
+        } catch {
+          // Keep local fallback persistence resilient even if observers fail.
+        }
       }
 
       return await localFallback.recordSync(result)

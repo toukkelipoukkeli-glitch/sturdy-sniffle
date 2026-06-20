@@ -674,14 +674,14 @@ export const listIntegrationLinksByRfq = query({
       ? []
       : await ctx.db
           .query("integrationLinks")
-          .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
+          .withIndex("by_tenant_rfq_updated_at", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
           .order("desc")
           .take(limit);
     const legacyLinks = rfq.tenantId
       ? []
       : await ctx.db
           .query("integrationLinks")
-          .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", undefined).eq("rfqId", args.rfqId))
+          .withIndex("by_tenant_rfq_updated_at", (q) => q.eq("tenantId", undefined).eq("rfqId", args.rfqId))
           .order("desc")
           .take(limit);
     const links = mergeIntegrationLinksByUpdatedAt(tenantLinks, legacyLinks).slice(0, limit);
@@ -703,14 +703,14 @@ export const listIntegrationLinksByOffer = query({
       ? []
       : await ctx.db
           .query("integrationLinks")
-          .withIndex("by_tenant_offer", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .withIndex("by_tenant_offer_updated_at", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
           .order("desc")
           .take(limit);
     const legacyLinks = offer.tenantId
       ? []
       : await ctx.db
           .query("integrationLinks")
-          .withIndex("by_tenant_offer", (q) => q.eq("tenantId", undefined).eq("offerId", args.offerId))
+          .withIndex("by_tenant_offer_updated_at", (q) => q.eq("tenantId", undefined).eq("offerId", args.offerId))
           .order("desc")
           .take(limit);
     const links = mergeIntegrationLinksByUpdatedAt(tenantLinks, legacyLinks).slice(0, limit);
@@ -727,26 +727,30 @@ export const getIntegrationLinkByExternalId = query({
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
     const externalId = nonBlank(args.externalId, "externalId");
-    const tenantLink = actor.tenantId === undefined
-      ? null
+    const tenantLinks = actor.tenantId === undefined
+      ? []
       : await ctx.db
           .query("integrationLinks")
           .withIndex("by_tenant_provider_external_id", (q) =>
             q.eq("tenantId", actor.tenantId).eq("provider", args.provider).eq("externalId", externalId),
           )
-          .unique();
+          .collect();
+    const tenantLink = mergeIntegrationLinksByUpdatedAt(tenantLinks)[0];
     if (tenantLink && belongsToActorTenant(tenantLink, actor)) {
       return compactIntegrationLink(tenantLink);
     }
 
-    const legacyLink = await ctx.db
+    const legacyLinks = await ctx.db
       .query("integrationLinks")
       .withIndex("by_tenant_provider_external_id", (q) =>
         q.eq("tenantId", undefined).eq("provider", args.provider).eq("externalId", externalId),
       )
-      .unique();
+      .collect();
+    const legacyLink = mergeIntegrationLinksByUpdatedAt(legacyLinks)[0];
 
-    return legacyLink && belongsToActorTenant(legacyLink, actor) ? compactIntegrationLink(legacyLink) : null;
+    return legacyLink && await legacyIntegrationLinkBelongsToActor(ctx, legacyLink, actor)
+      ? compactIntegrationLink(legacyLink)
+      : null;
   },
 });
 
@@ -1310,6 +1314,25 @@ function childBelongsToActorTenant(
   return parent.tenantId === undefined ? belongsToActorTenant(child, actor) : child.tenantId === actor.tenantId;
 }
 
+async function legacyIntegrationLinkBelongsToActor(
+  ctx: DbReaderLike,
+  link: Pick<IntegrationLinkDocument, "offerId" | "rfqId" | "tenantId">,
+  actor: FactoryBidActor,
+): Promise<boolean> {
+  if (link.tenantId !== undefined) {
+    return belongsToActorTenant(link, actor);
+  }
+  if (link.rfqId) {
+    const rfq = await ctx.db.get<RfqDocument>(link.rfqId);
+    return Boolean(rfq && belongsToActorTenant(rfq, actor));
+  }
+  if (link.offerId) {
+    const offer = await ctx.db.get<OfferDocument>(link.offerId);
+    return Boolean(offer && belongsToActorTenant(offer, actor));
+  }
+  return false;
+}
+
 async function resolveActivityReferences(
   ctx: DbReaderLike,
   args: { offerId?: GenericId<"offers">; quoteId?: GenericId<"quoteScenarios">; rfqId?: GenericId<"rfqs"> },
@@ -1386,12 +1409,13 @@ async function upsertConnectorIntegrationLink(
 
   const externalId = nonBlank(link.externalId, "link.externalId");
   const externalUrl = optionalNonBlank(link.externalUrl);
-  const existing = await ctx.db
+  const existingLinks = await ctx.db
     .query("integrationLinks")
     .withIndex("by_tenant_provider_external_id", (q) =>
       q.eq("tenantId", actor.tenantId).eq("provider", link.provider).eq("externalId", externalId),
     )
-    .unique();
+    .collect();
+  const existing = mergeIntegrationLinksByUpdatedAt(existingLinks)[0];
 
   if (!existing) {
     return {
