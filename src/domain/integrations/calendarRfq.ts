@@ -73,6 +73,7 @@ export interface CalendarRfqScheduleResult {
 
 export interface CalendarRfqScheduler {
   adapterVersion: string
+  scheduleOfferFollowUpPlan(request: BuildOfferFollowUpCalendarPlanRequest): Promise<CalendarRfqScheduleResult>
   scheduleRfqPlan(request: BuildRfqCalendarPlanRequest): Promise<CalendarRfqScheduleResult>
 }
 
@@ -97,57 +98,67 @@ export function createCalendarRfqScheduler(options: CalendarRfqSchedulerOptions 
 
   return {
     adapterVersion: CALENDAR_RFQ_ADAPTER_VERSION,
-    async scheduleRfqPlan(request) {
-      const plan = buildRfqCalendarPlan(request)
-      if (plan.events.length === 0) {
-        return {
-          provider: provider.provider,
-          adapterVersion: provider.adapterVersion,
-          status: "skipped",
-          plan,
-          results: [],
-          warnings: plan.warnings,
-        }
-      }
-
-      try {
-        const results = await provider.createEvents(plan.events)
-        return {
-          provider: provider.provider,
-          adapterVersion: provider.adapterVersion,
-          status: "succeeded",
-          plan,
-          results,
-          warnings: plan.warnings,
-        }
-      } catch (error) {
-        const primaryWarning = `Calendar provider ${provider.provider} failed: ${errorToMessage(error)}.`
-        try {
-          const fallbackResults = await fallbackProvider.createEvents(plan.events)
-          return {
-            provider: fallbackProvider.provider,
-            adapterVersion: fallbackProvider.adapterVersion,
-            status: "fallback",
-            plan,
-            results: fallbackResults,
-            warnings: [...plan.warnings, primaryWarning, `Used ${fallbackProvider.provider} calendar fallback.`],
-          }
-        } catch (fallbackError) {
-          return {
-            provider: fallbackProvider.provider,
-            adapterVersion: fallbackProvider.adapterVersion,
-            status: "failed",
-            plan,
-            results: [],
-            warnings: [
-              ...plan.warnings,
-              primaryWarning,
-              `Fallback calendar provider ${fallbackProvider.provider} failed: ${errorToMessage(fallbackError)}.`,
-            ],
-          }
-        }
-      }
+    async scheduleOfferFollowUpPlan(request) {
+      return scheduleCalendarPlan(buildOfferFollowUpCalendarPlan(request), provider, fallbackProvider)
     },
+    async scheduleRfqPlan(request) {
+      return scheduleCalendarPlan(buildRfqCalendarPlan(request), provider, fallbackProvider)
+    },
+  }
+}
+
+async function scheduleCalendarPlan(
+  plan: CalendarRfqPlan,
+  provider: CalendarRfqProviderAdapter,
+  fallbackProvider: CalendarRfqProviderAdapter,
+): Promise<CalendarRfqScheduleResult> {
+  if (plan.events.length === 0) {
+    return {
+      provider: provider.provider,
+      adapterVersion: provider.adapterVersion,
+      status: "skipped",
+      plan,
+      results: [],
+      warnings: plan.warnings,
+    }
+  }
+
+  try {
+    const results = await provider.createEvents(plan.events)
+    return {
+      provider: provider.provider,
+      adapterVersion: provider.adapterVersion,
+      status: "succeeded",
+      plan,
+      results,
+      warnings: plan.warnings,
+    }
+  } catch (error) {
+    const primaryWarning = `Calendar provider ${provider.provider} failed: ${errorToMessage(error)}.`
+    try {
+      const fallbackResults = await fallbackProvider.createEvents(plan.events)
+      return {
+        provider: fallbackProvider.provider,
+        adapterVersion: fallbackProvider.adapterVersion,
+        status: "fallback",
+        plan,
+        results: fallbackResults,
+        warnings: [...plan.warnings, primaryWarning, `Used ${fallbackProvider.provider} calendar fallback.`],
+      }
+    } catch (fallbackError) {
+      return {
+        provider: fallbackProvider.provider,
+        adapterVersion: fallbackProvider.adapterVersion,
+        status: "failed",
+        plan,
+        results: [],
+        warnings: [
+          ...plan.warnings,
+          primaryWarning,
+          `Fallback calendar provider ${fallbackProvider.provider} failed: ${errorToMessage(fallbackError)}.`,
+        ],
+      }
+    }
   }
 }
 
