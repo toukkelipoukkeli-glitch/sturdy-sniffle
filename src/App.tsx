@@ -26,11 +26,21 @@ import {
 
 import { Button } from "./components/ui/button"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
+import { createCalendarRfqScheduler, createMockCalendarRfqProvider } from "./domain/integrations/calendarRfq"
+import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
+import {
+  createLocalConnectorSyncPersistence,
+  type ConnectorSyncPersistenceSnapshot,
+} from "./domain/integrations/connectorSyncPersistence"
 import {
   createGmailOfferReplyAdapter,
   type GmailOfferReplySyncResult,
 } from "./domain/integrations/gmailOfferReply"
-import { createMockGmailRfqProvider, type GmailRfqMessage } from "./domain/integrations/gmailRfq"
+import {
+  createGmailRfqIntakeAdapter,
+  createMockGmailRfqProvider,
+  type GmailRfqMessage,
+} from "./domain/integrations/gmailRfq"
 import { buildCncOfferDraft, type OfferDraft } from "./domain/offers/offer"
 import {
   buildOfferExportPackage,
@@ -87,6 +97,11 @@ import {
   type OutsideServicePlan,
   type OutsideServiceSupplierRule,
 } from "./domain/workspace/outsideServicePlanner"
+import {
+  summarizeWorkspaceIntegrationStatus,
+  type IntegrationStatusSource,
+  type WorkspaceIntegrationStatus,
+} from "./domain/workspace/integrationStatus"
 import {
   evaluateQuoteApproval,
   type QuoteApprovalCheckStatus,
@@ -197,6 +212,10 @@ const materialSupplierOptions: MaterialSupplierOption[] = [
     supplierName: "Stainless Stock Oy",
   },
 ]
+const emptyConnectorSnapshot: ConnectorSyncPersistenceSnapshot = {
+  payloads: [],
+  syncCount: 0,
+}
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -548,9 +567,11 @@ function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
+  const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
+  const [connectorSyncErrorCount, setConnectorSyncErrorCount] = useState(0)
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
   const [workspacePersistenceRuntime] = useState(() =>
@@ -565,6 +586,7 @@ function App() {
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
   const selectedStatus = statusById[selectedId] ?? selectedItem.status
+  const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
   const updateSelectedEdit = (patch: Partial<QuoteEditState>) => {
@@ -827,6 +849,65 @@ function App() {
     [offerReleaseExecution],
   )
   const offerReplySync = offerRepliesById[selectedId]
+  const integrationStatus = useMemo(
+    () =>
+      summarizeWorkspaceIntegrationStatus({
+        connectorSnapshot: selectedConnectorSnapshot,
+        followUpScheduledAt: offerFollowUpScheduledAt,
+        persistenceMode: workspacePersistenceRuntime.mode,
+        providerRuns: selectedItem.providerRuns,
+        replySync: offerReplySync,
+        rfqId: selectedItem.id,
+        syncErrorCount: persistenceSyncErrorCount + connectorSyncErrorCount,
+      }),
+    [
+      connectorSyncErrorCount,
+      offerFollowUpScheduledAt,
+      offerReplySync,
+      persistenceSyncErrorCount,
+      selectedConnectorSnapshot,
+      selectedItem.id,
+      selectedItem.providerRuns,
+      workspacePersistenceRuntime.mode,
+    ],
+  )
+  const syncConnectorInbox = async () => {
+    const fallbackMessages = buildConnectorRfqMessages(selectedItem)
+    const orchestrator = createConnectorRfqSyncOrchestrator({
+      calendarScheduler: createCalendarRfqScheduler({
+        fallbackProvider: createMockCalendarRfqProvider(),
+        provider: createMockCalendarRfqProvider({ shouldFail: true }),
+      }),
+      gmailAdapter: createGmailRfqIntakeAdapter({
+        fallbackProvider: createMockGmailRfqProvider({ messages: fallbackMessages }),
+        provider: createMockGmailRfqProvider({ shouldFail: true }),
+      }),
+      resolveRfqId: () => selectedItem.id,
+    })
+    const persistence = createLocalConnectorSyncPersistence({
+      initialSnapshot: selectedConnectorSnapshot,
+      payloadOptions: {
+        actorName: "FactoryBid connector",
+        resolveRfqId: (rfqId) => (rfqId === selectedItem.id ? selectedItem.id : undefined),
+      },
+    })
+
+    try {
+      const result = await orchestrator.syncRfqInbox({
+        dueReminderMinutes: 30,
+        gmail: {
+          maxResults: 1,
+          query: `rfq ${selectedItem.quoteInput.partNumber}`,
+        },
+        quoteWorkMinutes: 120,
+        timezone: "Europe/Helsinki",
+      })
+      const snapshot = await persistence.recordSync(result)
+      setConnectorSnapshotsById((current) => ({ ...current, [selectedItem.id]: snapshot }))
+    } catch {
+      setConnectorSyncErrorCount((count) => count + 1)
+    }
+  }
   const syncOfferReplies = async () => {
     const adapter = createGmailOfferReplyAdapter({
       fallbackProvider: createMockGmailRfqProvider({ messages: buildOfferReplyMessages(selectedItem, offer) }),
@@ -923,6 +1004,17 @@ function App() {
           />
           <Button
             onClick={() => {
+              void syncConnectorInbox()
+            }}
+            type="button"
+            variant="outline"
+            size="sm"
+          >
+            <Mail aria-hidden="true" />
+            RFQ sync
+          </Button>
+          <Button
+            onClick={() => {
               setActiveView("offer")
               void syncOfferReplies()
             }}
@@ -930,12 +1022,8 @@ function App() {
             variant="outline"
             size="sm"
           >
-            <Mail aria-hidden="true" />
-            Gmail sync
-          </Button>
-          <Button type="button" variant="outline" size="sm">
-            <CalendarDays aria-hidden="true" />
-            Due holds
+            <RefreshCw aria-hidden="true" />
+            Reply sync
           </Button>
           <Button onClick={() => setActiveView("offer")} type="button" size="sm">
             <FileText aria-hidden="true" />
@@ -1123,6 +1211,11 @@ function App() {
               </div>
             )}
           </div>
+          <IntegrationStatusPanel
+            onSyncConnector={syncConnectorInbox}
+            onSyncReplies={syncOfferReplies}
+            status={integrationStatus}
+          />
           <ProviderRunReviewPanel audits={selectedItem.providerRuns} />
         </aside>
       </section>
@@ -1148,6 +1241,92 @@ function PersistenceStatus({
       {syncErrorCount > 0 ? <strong>{syncErrorCount} sync fallback</strong> : null}
     </div>
   )
+}
+
+function IntegrationStatusPanel({
+  onSyncConnector,
+  onSyncReplies,
+  status,
+}: {
+  onSyncConnector: () => void
+  onSyncReplies: () => void
+  status: WorkspaceIntegrationStatus
+}) {
+  return (
+    <section className="integration-status-panel" aria-label="Integration health">
+      <div className="integration-status-heading">
+        <div>
+          <span className="eyebrow">
+            <Database aria-hidden="true" />
+            Integration health
+          </span>
+          <strong>{integrationHealthStatusLabel(status.status)}</strong>
+        </div>
+        <span className={`integration-overall-status integration-overall-status-${status.status}`}>
+          {humanizeKey(status.status)}
+        </span>
+      </div>
+      <div className="integration-action-row">
+        <Button onClick={() => void onSyncConnector()} type="button" variant="outline" size="sm">
+          <Mail aria-hidden="true" />
+          RFQ sync
+        </Button>
+        <Button onClick={() => void onSyncReplies()} type="button" variant="outline" size="sm">
+          <RefreshCw aria-hidden="true" />
+          Reply sync
+        </Button>
+      </div>
+      <div className="integration-source-list">
+        {status.sources.map((source) => (
+          <IntegrationSourceRow key={source.key} source={source} />
+        ))}
+      </div>
+      {status.warnings.length > 0 ? (
+        <div className="provider-warning-list">
+          {status.warnings.slice(0, 3).map((warning) => (
+            <div className="flag" key={warning}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
+  return (
+    <article className="integration-source-row" data-severity={source.severity}>
+      <span className="integration-source-icon" aria-hidden="true">
+        <IntegrationSourceIcon source={source} />
+      </span>
+      <div>
+        <strong>{source.label}</strong>
+        <span>{source.detail}</span>
+      </div>
+      <span className="integration-source-status">
+        {source.count !== undefined ? `${source.count} ` : ""}
+        {humanizeKey(source.status)}
+      </span>
+    </article>
+  )
+}
+
+function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) {
+  if (source.key === "connector" || source.key === "offer_replies") {
+    return <Mail aria-hidden="true" />
+  }
+  if (source.key === "calendar_follow_up") {
+    return <CalendarDays aria-hidden="true" />
+  }
+  if (source.key === "provider_runs") {
+    return <ShieldCheck aria-hidden="true" />
+  }
+  if (source.status === "local" || source.status === "fallback") {
+    return <CloudOff aria-hidden="true" />
+  }
+  return <Database aria-hidden="true" />
 }
 
 function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
@@ -2403,6 +2582,19 @@ function offerReadinessStatusLabel(status: OfferSendReadinessResult["status"]) {
   }
 }
 
+function integrationHealthStatusLabel(status: WorkspaceIntegrationStatus["status"]) {
+  switch (status) {
+    case "attention":
+      return "Review needed"
+    case "blocked":
+      return "Blocked"
+    case "fallback":
+      return "Fallback active"
+    case "live":
+      return "Live sync"
+  }
+}
+
 function OfferExportPackagePanel({ exportPackage }: { exportPackage: OfferExportPackage }) {
   const pdfReady = exportPackage.pdf.status === "ready"
 
@@ -3111,6 +3303,35 @@ function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailR
       snippet: "Separate quote request",
       subject: "Separate fixture request",
       threadId: `${item.id}-side-thread`,
+    },
+  ]
+}
+
+function buildConnectorRfqMessages(item: QuoteWorkItem): GmailRfqMessage[] {
+  return [
+    {
+      attachments: item.attachments.map((attachment, index) => ({
+        fileName: attachment.fileName,
+        id: `${item.id}-attachment-${index + 1}`,
+        mimeType: attachment.contentType,
+        sizeBytes: attachment.sizeBytes,
+      })),
+      fromHeader: `${item.contact} <${contactEmailFor(item)}>`,
+      id: `${item.id}-gmail-message`,
+      labelIds: ["INBOX", "RFQ"],
+      plainText: [
+        `Please quote part ${item.quoteInput.partNumber}.`,
+        `Process ${formatProcess(item.quoteInput.process)}.`,
+        `Material ${item.quoteInput.material.name}.`,
+        `Quantity ${item.quoteInput.quantity} pieces.`,
+        `Deadline ${item.dueAt.slice(0, 10)}.`,
+      ].join(" "),
+      receivedAt: item.receivedAt,
+      senderEmail: contactEmailFor(item),
+      senderName: item.contact,
+      snippet: `RFQ ${item.quoteInput.partNumber} from ${item.customer}`,
+      subject: `RFQ: ${item.subject}`,
+      threadId: `${item.id}-thread`,
     },
   ]
 }
