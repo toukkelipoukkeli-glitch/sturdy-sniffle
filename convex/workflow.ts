@@ -80,6 +80,55 @@ export const updateRfqStatus = mutation({
   },
 });
 
+export const transitionRfqStatus = mutation({
+  args: {
+    rfqId: v.id("rfqs"),
+    status: rfqStatus,
+    actorName: v.optional(v.string()),
+    message: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const rfq = await requireDocument<RfqDocument>(ctx, args.rfqId, "rfqId");
+    assertRfqStatusTransition(rfq.status, args.status);
+    const now = Date.now();
+    await ctx.db.patch(args.rfqId, {
+      status: args.status,
+      updatedAt: now,
+    });
+    const message =
+      optionalNonBlank(args.message) ?? `Moved RFQ from ${rfq.status} to ${args.status}.`;
+    const activityId = await ctx.db.insert("activities", {
+      rfqId: args.rfqId,
+      actorType: "human",
+      actorName: optionalNonBlank(args.actorName),
+      kind: "status_change",
+      message,
+      createdAt: now,
+    });
+
+    return {
+      activityId,
+      rfqId: args.rfqId,
+      status: args.status,
+    };
+  },
+});
+
+export const listRfqActivities = query({
+  args: {
+    rfqId: v.id("rfqs"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireDocument(ctx, args.rfqId, "rfqId");
+    return await ctx.db
+      .query("activities")
+      .withIndex("by_rfq_time", (q) => q.eq("rfqId", args.rfqId))
+      .order("desc")
+      .take(boundedLimit(args.limit));
+  },
+});
+
 export const listQuoteScenariosByRfq = query({
   args: {
     rfqId: v.id("rfqs"),
@@ -206,10 +255,34 @@ export const createOfferFollowUpActivity = mutation({
   },
 });
 
-async function requireDocument(ctx: { db: { get: (id: GenericId<string>) => Promise<unknown> } }, id: GenericId<string>, key: string) {
+type RfqDocument = {
+  status: "new" | "triage" | "estimating" | "quoted" | "won" | "lost" | "archived";
+};
+
+async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
   const document = await ctx.db.get(id);
   if (!document) {
     throw new Error(`${key} does not exist`);
+  }
+  return document;
+}
+
+const allowedRfqStatusTransitions: Record<RfqDocument["status"], RfqDocument["status"][]> = {
+  new: ["triage", "estimating", "lost", "archived"],
+  triage: ["new", "estimating", "lost", "archived"],
+  estimating: ["triage", "quoted", "lost", "archived"],
+  quoted: ["estimating", "won", "lost", "archived"],
+  won: [],
+  lost: [],
+  archived: [],
+};
+
+function assertRfqStatusTransition(fromStatus: RfqDocument["status"], toStatus: RfqDocument["status"]) {
+  if (fromStatus === toStatus) {
+    throw new Error("status must change");
+  }
+  if (!allowedRfqStatusTransitions[fromStatus].includes(toStatus)) {
+    throw new Error(`cannot transition RFQ from ${fromStatus} to ${toStatus}`);
   }
 }
 
@@ -236,4 +309,9 @@ function nonBlank(value: string, key: string): string {
     throw new Error(`${key} is required`);
   }
   return trimmed;
+}
+
+function optionalNonBlank(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }
