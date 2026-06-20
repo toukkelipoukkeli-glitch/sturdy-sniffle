@@ -100,10 +100,13 @@ describe("evaluateRfqIntakeReadiness", () => {
   it("returns defensive issue arrays", () => {
     const readiness = evaluateRfqIntakeReadiness(parseRfqIntake(cncBracketEmail), { nowDate: "2026-07-01" })
     readiness.issues.push({ detail: "mutated", key: "mutated", severity: "warning" })
+    if (readiness.issues[0]) {
+      readiness.issues[0].detail = "mutated detail"
+    }
 
-    expect(evaluateRfqIntakeReadiness(parseRfqIntake(cncBracketEmail), { nowDate: "2026-07-01" }).issues).not.toContainEqual(
-      expect.objectContaining({ key: "mutated" }),
-    )
+    const nextReadiness = evaluateRfqIntakeReadiness(parseRfqIntake(cncBracketEmail), { nowDate: "2026-07-01" })
+    expect(nextReadiness.issues).not.toContainEqual(expect.objectContaining({ key: "mutated" }))
+    expect(nextReadiness.issues[0]?.detail).not.toBe("mutated detail")
   })
 })
 
