@@ -1,5 +1,9 @@
 import { normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
+import {
+  summarizeOfferReleaseExecutionHistoryRecords,
+  type OfferReleaseExecutionHistorySummary,
+} from "./offerReleaseExecutionHistory"
 import type {
   OfferReleaseCommandExecution,
   OfferReleaseCommandExecutionStatus,
@@ -39,9 +43,26 @@ export interface ConvexOfferReleaseExecutionCommandPayload {
   warnings: string[]
 }
 
+export interface ConvexOfferReleaseExecutionHistoryRecord {
+  offerId: string
+  offerNumber?: string
+  executionKey: string
+  executionFingerprint?: string
+  mode: OfferReleaseExecutionMode
+  status: OfferReleaseExecutionStatus
+  executedAt: string
+  nextActions: string[]
+  warningCount?: number
+  warnings?: string[]
+}
+
 export interface BuildConvexOfferReleaseExecutionPayloadOptions {
   executionKey?: string
   offerId?: string
+}
+
+export interface BuildOfferReleaseExecutionHistoryFromConvexOptions {
+  offerNumber?: string
 }
 
 export function buildConvexOfferReleaseExecutionPayload(
@@ -81,6 +102,28 @@ export function buildConvexOfferReleaseExecutionPayload(
     warnings: normalizeTextList(run.warnings),
     workspaceActionCount: run.workspaceActions.length,
   }
+}
+
+export function buildOfferReleaseExecutionHistoryFromConvex(
+  records: ConvexOfferReleaseExecutionHistoryRecord[],
+  options: BuildOfferReleaseExecutionHistoryFromConvexOptions = {},
+): OfferReleaseExecutionHistorySummary {
+  return summarizeOfferReleaseExecutionHistoryRecords(
+    records.map((record, index) => {
+      const executionFingerprint =
+        optionalTrim(record.executionFingerprint) ?? nonBlank(record.executionKey, `records[${index}].executionKey`)
+      return {
+        executedAt: record.executedAt,
+        executionFingerprint,
+        mode: normalizeMode(record.mode),
+        offerId: nonBlank(record.offerId, `records[${index}].offerId`),
+        offerNumber: nonBlank(record.offerNumber ?? options.offerNumber ?? record.offerId, `records[${index}].offerNumber`),
+        pendingActionCount: normalizeTextList(record.nextActions).length,
+        status: normalizeStatus(record.status),
+        warningCount: record.warningCount ?? normalizeTextList(record.warnings ?? []).length,
+      }
+    }),
+  )
 }
 
 function normalizeCommands(commands: OfferReleaseCommandExecution[]): ConvexOfferReleaseExecutionCommandPayload[] {
