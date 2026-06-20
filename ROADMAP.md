@@ -57,6 +57,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, and process workload summaries.
 - Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, and follow-up task tracking.
 - CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, and metadata-only fallback behavior.
+- Visible workspace UI for quote queue priority, process workload, provider-run review, and CAD metadata review with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
 - Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage.
 - Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals.
 - Provider-adapter AI layer with mock/local/provider boundaries plus provider run audit records.
@@ -64,8 +65,6 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 
 ## Next PR Slices
 
-- Wire the process workload summary and quote queue ranking into the visible workspace UI with required Computer Use QA or documented Browser fallback if macOS permissions block it.
-- Build a provider-run review surface that shows prompts, metadata, mock/local fallbacks, and redacted output summaries without exposing secrets.
 - Implement Convex-backed workspace wiring for RFQ queue state transitions, quote scenario persistence, workload buckets, and follow-up activity creation.
-- Enrich part preview models with parsed STEP/DXF/PDF metadata for measurement overlays and manufacturability review.
 - Sync Gmail customer replies through the deterministic offer reply parser, with mock fallback fixtures for revoked auth and quota failures.
+- Add operator actions for quote state transitions, scenario saves, offer follow-up creation, and human review handoff notes in the workspace UI.

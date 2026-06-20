@@ -520,6 +520,7 @@
 .provider-run-list,
 .provider-warning-list,
 .measurement-list,
+.cad-metadata-list,
 .attachment-list,
 .preview-warning-list {
   display: grid;
@@ -733,7 +734,8 @@
 }
 
 .measurement-row,
-.attachment-row {
+.attachment-row,
+.cad-metadata-row {
   align-items: center;
   background: oklch(0.985 0.004 240);
   border: 1px solid oklch(0.9 0.016 235);
@@ -743,6 +745,37 @@
   grid-template-columns: 18px minmax(0, 1fr) auto;
   min-height: 38px;
   padding: 8px 10px;
+}
+
+.cad-metadata-row {
+  align-items: stretch;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cad-metadata-row[data-metadata-only="true"] {
+  background: oklch(0.98 0.018 85);
+}
+
+.cad-metadata-row div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cad-metadata-row span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cad-metadata-row strong {
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .measurement-row svg,
@@ -1080,6 +1113,10 @@
   }
 
   .workload-bucket {
+    grid-template-columns: 1fr;
+  }
+
+  .cad-metadata-row {
     grid-template-columns: 1fr;
   }
 
