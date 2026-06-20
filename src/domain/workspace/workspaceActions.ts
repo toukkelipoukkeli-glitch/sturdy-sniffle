@@ -116,12 +116,14 @@ function buildScenarioSavedAction(base: ActionBase, input: WorkspaceActionInput)
 function buildFollowUpCreatedAction(base: ActionBase, input: WorkspaceActionInput): WorkspaceActionRecord {
   const offerId = nonBlank(optionalTrim(input.offerId) ?? "", "offerId")
   const followUpDueAt = normalizeIsoTimestamp(input.followUpDueAt ?? "", "followUpDueAt")
+  const quoteId = optionalTrim(input.quoteId)
   return finalizeAction({
     ...base,
     activityKind: "calendar_event",
     activityMessage: `Created offer follow-up for ${offerId}.`,
     offerId,
     followUpDueAt,
+    quoteId,
   })
 }
 

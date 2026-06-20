@@ -10,6 +10,7 @@ type ConvexRfqStatus = "new" | "triage" | "estimating" | "quoted" | "won" | "los
 type ConvexActivityKind = "note" | "status_change" | "calendar_event" | "calculation"
 
 export interface ConvexWorkspaceMutationRefs {
+  createOfferFollowUpActivity?: unknown
   recordWorkspaceActivity: unknown
   transitionRfqStatus: unknown
 }
@@ -83,6 +84,21 @@ async function persistActionToConvex({
         message: action.note,
         rfqId,
         status,
+      }))
+      return
+    }
+  }
+
+  if (action.kind === "follow_up_created" && action.offerId && mutationRefs.createOfferFollowUpActivity) {
+    const offerId = resolveOfferId?.(action.offerId)
+    const quoteId = action.quoteId ? resolveQuoteId?.(action.quoteId) : undefined
+    if (offerId) {
+      await runMutation(mutationRefs.createOfferFollowUpActivity, compactArgs({
+        actorName: action.actor,
+        message: action.activityMessage,
+        offerId,
+        quoteId,
+        rfqId,
       }))
       return
     }
