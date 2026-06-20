@@ -1,7 +1,7 @@
-import { v, type GenericId } from "convex/values";
+import { v, type GenericId, type Infer } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import { documentBelongsToFactoryBidTenant, requireFactoryBidActor, type FactoryBidActor } from "./authz";
 import { buildOfferStatusTransitionPatch } from "./workflowRules";
 
@@ -15,6 +15,9 @@ const processKey = v.union(
 );
 
 const currencyCode = v.union(v.literal("EUR"), v.literal("USD"), v.literal("GBP"));
+type CurrencyCode = Infer<typeof currencyCode>;
+
+const importRfqSource = v.union(v.literal("gmail"), v.literal("manual"), v.literal("import"));
 
 const rfqStatus = v.union(
   v.literal("new"),
@@ -45,6 +48,85 @@ const offerWorkflowStatus = v.union(
 
 const defaultLimit = 50;
 
+const demoWorkspaceImportOperation = v.union(
+  v.object({
+    key: v.string(),
+    kind: v.literal("upsert_customer"),
+    tenantId: v.string(),
+    customerId: v.string(),
+    name: v.string(),
+    defaultCurrency: currencyCode,
+  }),
+  v.object({
+    key: v.string(),
+    kind: v.literal("upsert_rfq"),
+    tenantId: v.string(),
+    rfqId: v.string(),
+    customerId: v.string(),
+    dueAt: v.optional(v.string()),
+    priority: v.union(v.literal("normal"), v.literal("rush")),
+    source: importRfqSource,
+    status: v.union(v.literal("new"), v.literal("triage"), v.literal("estimating"), v.literal("quoted")),
+    subject: v.string(),
+  }),
+  v.object({
+    key: v.string(),
+    kind: v.literal("upsert_quote"),
+    tenantId: v.string(),
+    quoteId: v.string(),
+    rfqId: v.string(),
+    currency: currencyCode,
+    leadTimeDays: v.number(),
+    partNumber: v.string(),
+    totalCents: v.number(),
+  }),
+  v.object({
+    key: v.string(),
+    kind: v.literal("upsert_offer"),
+    tenantId: v.string(),
+    offerId: v.string(),
+    currency: currencyCode,
+    customerId: v.string(),
+    offerNumber: v.string(),
+    quoteId: v.string(),
+    rfqId: v.string(),
+    status: v.union(v.literal("draft"), v.literal("sent")),
+    totalCents: v.number(),
+    validUntil: v.string(),
+  }),
+  v.object({
+    key: v.string(),
+    kind: v.literal("append_activity"),
+    tenantId: v.string(),
+    activityId: v.string(),
+    activityKind: v.union(v.literal("note"), v.literal("status_change"), v.literal("calendar_event"), v.literal("calculation")),
+    message: v.string(),
+    occurredAt: v.string(),
+    offerId: v.optional(v.string()),
+    quoteId: v.optional(v.string()),
+    rfqId: v.optional(v.string()),
+  }),
+);
+
+type DemoWorkspaceImportOperation = Infer<typeof demoWorkspaceImportOperation>;
+type DemoImportStatus = "created" | "updated" | "skipped";
+
+interface DemoImportState {
+  customers: Map<string, GenericId<"customers">>;
+  customerCurrency: Map<string, CurrencyCode>;
+  rfqs: Map<string, GenericId<"rfqs">>;
+  quotes: Map<string, GenericId<"quoteScenarios">>;
+  offers: Map<string, GenericId<"offers">>;
+  activities: Map<string, GenericId<"activities">>;
+}
+
+interface DemoImportOperationResult {
+  key: string;
+  kind: DemoWorkspaceImportOperation["kind"];
+  status: DemoImportStatus;
+  convexId: string;
+}
+
 export const listRfqQueue = query({
   args: {
     status: v.optional(rfqStatus),
@@ -74,6 +156,72 @@ export const listRfqQueue = query({
       customerId: rfq.customerId,
       updatedAt: rfq.updatedAt,
     }));
+  },
+});
+
+export const importDemoWorkspace = mutation({
+  args: {
+    importPlanVersion: v.string(),
+    seedVersion: v.string(),
+    generatedAt: v.string(),
+    tenantId: v.string(),
+    operations: v.array(demoWorkspaceImportOperation),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "admin:write");
+    if (args.tenantId !== actor.tenantId) {
+      throw new Error("import tenant must match authenticated FactoryBid tenant");
+    }
+
+    const importedAt = isoTimestamp(args.generatedAt, "generatedAt");
+    const state: DemoImportState = {
+      activities: new Map(),
+      customers: new Map(),
+      customerCurrency: new Map(),
+      offers: new Map(),
+      quotes: new Map(),
+      rfqs: new Map(),
+    };
+    const results: DemoImportOperationResult[] = [];
+
+    for (const operation of args.operations) {
+      requireImportTenant(operation, actor);
+      switch (operation.kind) {
+        case "upsert_customer":
+          results.push(await upsertImportedCustomer(ctx, operation, importedAt, state));
+          break;
+        case "upsert_rfq":
+          results.push(await upsertImportedRfq(ctx, operation, importedAt, state));
+          break;
+        case "upsert_quote":
+          results.push(await upsertImportedQuote(ctx, operation, importedAt, state));
+          break;
+        case "upsert_offer":
+          results.push(await upsertImportedOffer(ctx, operation, importedAt, state));
+          break;
+        case "append_activity":
+          results.push(await appendImportedActivity(ctx, operation, state));
+          break;
+      }
+    }
+
+    return {
+      importPlanVersion: args.importPlanVersion,
+      seedVersion: args.seedVersion,
+      tenantId: args.tenantId,
+      operationCount: results.length,
+      created: countImportStatus(results, "created"),
+      updated: countImportStatus(results, "updated"),
+      skipped: countImportStatus(results, "skipped"),
+      ids: {
+        activities: mapToRecord(state.activities),
+        customers: mapToRecord(state.customers),
+        offers: mapToRecord(state.offers),
+        quotes: mapToRecord(state.quotes),
+        rfqs: mapToRecord(state.rfqs),
+      },
+      operations: results,
+    };
   },
 });
 
@@ -388,6 +536,207 @@ export const recordWorkspaceActivity = mutation({
   },
 });
 
+async function upsertImportedCustomer(
+  ctx: MutationCtx,
+  operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_customer" }>,
+  importedAt: number,
+  state: DemoImportState,
+): Promise<DemoImportOperationResult> {
+  const name = nonBlank(operation.name, "name");
+  const normalizedName = normalizeName(name);
+  const existing = await ctx.db
+    .query("customers")
+    .withIndex("by_tenant_normalized_name", (q) => q.eq("tenantId", operation.tenantId).eq("normalizedName", normalizedName))
+    .unique();
+  const patch = {
+    defaultCurrency: operation.defaultCurrency,
+    name,
+    normalizedName,
+    updatedAt: importedAt,
+  };
+
+  if (existing) {
+    await ctx.db.patch(existing._id, patch);
+    state.customers.set(operation.customerId, existing._id);
+    state.customerCurrency.set(operation.customerId, operation.defaultCurrency);
+    return importResult(operation, "updated", existing._id);
+  }
+
+  const customerId = await ctx.db.insert("customers", {
+    ...patch,
+    createdAt: importedAt,
+    tenantId: operation.tenantId,
+  });
+  state.customers.set(operation.customerId, customerId);
+  state.customerCurrency.set(operation.customerId, operation.defaultCurrency);
+  return importResult(operation, "created", customerId);
+}
+
+async function upsertImportedRfq(
+  ctx: MutationCtx,
+  operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_rfq" }>,
+  importedAt: number,
+  state: DemoImportState,
+): Promise<DemoImportOperationResult> {
+  const customerId = requireMappedId(state.customers, operation.customerId, "customerId");
+  const existing = (await ctx.db.query("rfqs").withIndex("by_tenant", (q) => q.eq("tenantId", operation.tenantId)).collect()).find(
+    (rfq) => rfq.source.externalId === operation.rfqId,
+  );
+  const patch = {
+    currency: state.customerCurrency.get(operation.customerId) ?? "EUR",
+    customerId,
+    dueAt: optionalIsoTimestamp(operation.dueAt, "dueAt"),
+    extractedFields: [],
+    priority: operation.priority,
+    receivedAt: importedAt,
+    source: {
+      externalId: operation.rfqId,
+      label: "Demo workspace seed",
+      provider: operation.source,
+    },
+    status: operation.status,
+    subject: nonBlank(operation.subject, "subject"),
+    summary: `Imported demo RFQ ${operation.rfqId}.`,
+    updatedAt: importedAt,
+  };
+
+  if (existing) {
+    await ctx.db.patch(existing._id, patch);
+    state.rfqs.set(operation.rfqId, existing._id);
+    return importResult(operation, "updated", existing._id);
+  }
+
+  const rfqId = await ctx.db.insert("rfqs", {
+    ...patch,
+    createdAt: importedAt,
+    tenantId: operation.tenantId,
+  });
+  state.rfqs.set(operation.rfqId, rfqId);
+  return importResult(operation, "created", rfqId);
+}
+
+async function upsertImportedQuote(
+  ctx: MutationCtx,
+  operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_quote" }>,
+  importedAt: number,
+  state: DemoImportState,
+): Promise<DemoImportOperationResult> {
+  const rfqId = requireMappedId(state.rfqs, operation.rfqId, "rfqId");
+  const title = quoteImportTitle(operation);
+  const existing = (
+    await ctx.db
+      .query("quoteScenarios")
+      .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", operation.tenantId).eq("rfqId", rfqId))
+      .collect()
+  ).find((quote) => quote.title === title);
+  const patch = {
+    currency: operation.currency,
+    leadTimeDays: positiveInteger(operation.leadTimeDays, "leadTimeDays"),
+    revision: 1,
+    status: "ready" as const,
+    title,
+    updatedAt: importedAt,
+  };
+
+  if (existing) {
+    await ctx.db.patch(existing._id, patch);
+    state.quotes.set(operation.quoteId, existing._id);
+    return importResult(operation, "updated", existing._id);
+  }
+
+  const quoteId = await ctx.db.insert("quoteScenarios", {
+    ...patch,
+    createdAt: importedAt,
+    rfqId,
+    tenantId: operation.tenantId,
+  });
+  state.quotes.set(operation.quoteId, quoteId);
+  return importResult(operation, "created", quoteId);
+}
+
+async function upsertImportedOffer(
+  ctx: MutationCtx,
+  operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_offer" }>,
+  importedAt: number,
+  state: DemoImportState,
+): Promise<DemoImportOperationResult> {
+  const customerId = requireMappedId(state.customers, operation.customerId, "customerId");
+  const quoteId = requireMappedId(state.quotes, operation.quoteId, "quoteId");
+  const rfqId = requireMappedId(state.rfqs, operation.rfqId, "rfqId");
+  const existing = await ctx.db
+    .query("offers")
+    .withIndex("by_tenant_offer_number", (q) => q.eq("tenantId", operation.tenantId).eq("offerNumber", operation.offerNumber))
+    .unique();
+  const patch = {
+    customerId,
+    quoteId,
+    rfqId,
+    status: operation.status,
+    terms: [
+      { key: "valid_until", value: operation.validUntil },
+      { key: "import_total_cents", value: String(nonNegativeInteger(operation.totalCents, "totalCents")) },
+      { key: "currency", value: operation.currency },
+    ],
+    updatedAt: importedAt,
+    ...(operation.status === "sent" ? { sentAt: existing?.sentAt ?? importedAt } : {}),
+  };
+
+  if (existing) {
+    await ctx.db.patch(existing._id, patch);
+    state.offers.set(operation.offerId, existing._id);
+    return importResult(operation, "updated", existing._id);
+  }
+
+  const offerId = await ctx.db.insert("offers", {
+    ...patch,
+    createdAt: importedAt,
+    offerNumber: nonBlank(operation.offerNumber, "offerNumber"),
+    sentAt: operation.status === "sent" ? importedAt : undefined,
+    tenantId: operation.tenantId,
+  });
+  state.offers.set(operation.offerId, offerId);
+  return importResult(operation, "created", offerId);
+}
+
+async function appendImportedActivity(
+  ctx: MutationCtx,
+  operation: Extract<DemoWorkspaceImportOperation, { kind: "append_activity" }>,
+  state: DemoImportState,
+): Promise<DemoImportOperationResult> {
+  const createdAt = isoTimestamp(operation.occurredAt, "occurredAt");
+  const rfqId = resolveOptionalMappedId(state.rfqs, operation.rfqId, "rfqId");
+  const quoteId = resolveOptionalMappedId(state.quotes, operation.quoteId, "quoteId");
+  const offerId = resolveOptionalMappedId(state.offers, operation.offerId, "offerId");
+  const existing = (await ctx.db.query("activities").withIndex("by_tenant", (q) => q.eq("tenantId", operation.tenantId)).collect()).find(
+    (activity) =>
+      activity.kind === operation.activityKind &&
+      activity.message === operation.message &&
+      activity.createdAt === createdAt &&
+      activity.rfqId === rfqId &&
+      activity.quoteId === quoteId &&
+      activity.offerId === offerId,
+  );
+
+  if (existing) {
+    state.activities.set(operation.activityId, existing._id);
+    return importResult(operation, "skipped", existing._id);
+  }
+
+  const activityId = await ctx.db.insert("activities", {
+    actorName: "FactoryBid demo import",
+    actorType: "system",
+    createdAt,
+    kind: operation.activityKind,
+    message: nonBlank(operation.message, "message"),
+    offerId,
+    quoteId,
+    rfqId,
+    tenantId: operation.tenantId,
+  });
+  state.activities.set(operation.activityId, activityId);
+  return importResult(operation, "created", activityId);
+}
+
 type RfqDocument = Pick<Doc<"rfqs">, "status" | "tenantId">;
 type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status" | "tenantId">;
@@ -468,6 +817,69 @@ function assertRfqStatusTransition(fromStatus: RfqStatus, toStatus: RfqStatus) {
   }
 }
 
+function requireImportTenant(operation: DemoWorkspaceImportOperation, actor: FactoryBidActor) {
+  if (operation.tenantId !== actor.tenantId) {
+    throw new Error(`operation ${operation.key} tenant must match authenticated FactoryBid tenant`);
+  }
+}
+
+function importResult(
+  operation: DemoWorkspaceImportOperation,
+  status: DemoImportStatus,
+  convexId: GenericId<string>,
+): DemoImportOperationResult {
+  return {
+    convexId,
+    key: operation.key,
+    kind: operation.kind,
+    status,
+  };
+}
+
+function countImportStatus(results: DemoImportOperationResult[], status: DemoImportStatus): number {
+  return results.filter((result) => result.status === status).length;
+}
+
+function mapToRecord<T extends string>(map: Map<string, GenericId<T>>): Record<string, string> {
+  return Object.fromEntries([...map.entries()].map(([key, value]) => [key, value]));
+}
+
+function requireMappedId<T extends string>(map: Map<string, GenericId<T>>, localId: string, key: string): GenericId<T> {
+  const mapped = map.get(localId);
+  if (!mapped) {
+    throw new Error(`${key} ${localId} has not been imported`);
+  }
+  return mapped;
+}
+
+function resolveOptionalMappedId<T extends string>(
+  map: Map<string, GenericId<T>>,
+  localId: string | undefined,
+  key: string,
+): GenericId<T> | undefined {
+  return localId ? requireMappedId(map, localId, key) : undefined;
+}
+
+function quoteImportTitle(operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_quote" }>): string {
+  return `${operation.quoteId}: ${nonBlank(operation.partNumber, "partNumber")}`;
+}
+
+function normalizeName(value: string): string {
+  return nonBlank(value, "name").toLowerCase().replace(/\s+/g, " ");
+}
+
+function isoTimestamp(value: string, key: string): number {
+  const parsed = Date.parse(nonBlank(value, key));
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${key} must be a valid ISO timestamp`);
+  }
+  return parsed;
+}
+
+function optionalIsoTimestamp(value: string | undefined, key: string): number | undefined {
+  return value === undefined ? undefined : isoTimestamp(value, key);
+}
+
 function boundedLimit(value: number | undefined, maximum = 100): number {
   if (value === undefined) {
     return Math.min(defaultLimit, maximum);
@@ -481,6 +893,13 @@ function boundedLimit(value: number | undefined, maximum = 100): number {
 function positiveInteger(value: number, key: string): number {
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`${key} must be a positive integer`);
+  }
+  return value;
+}
+
+function nonNegativeInteger(value: number, key: string): number {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${key} must be a non-negative integer`);
   }
   return value;
 }
