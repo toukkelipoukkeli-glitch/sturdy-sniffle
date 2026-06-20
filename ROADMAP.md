@@ -51,7 +51,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 
 ## Implemented Foundation
 
-- Convex schema, local generation workflow, and workflow API queries/mutations for RFQ queue reads, quote scenarios, process workload buckets, and offer follow-up calendar activities. Managed worktrees use `.worktreeinclude` for ignored `.env.local` propagation while keeping secrets uncommitted.
+- Convex schema, local generation workflow, and workflow API queries/mutations for RFQ queue reads, quote scenarios, process workload buckets, provider runs, connector integration links, and offer follow-up calendar activities. Managed worktrees use `.worktreeinclude` for ignored `.env.local` propagation while keeping secrets uncommitted.
 - Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, and provenance fields.
 - Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
 - Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, process workload summaries, capacity commitment planning, and quote approval policy gates.
@@ -61,16 +61,16 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Deterministic offer release command planning, execution audit records, run-level fingerprints, history summaries, and Convex persistence adapters for email drafts, lifecycle sent/status events, calendar follow-up events, workspace status changes, idempotent dry-runs, manager-reviewed warning gates, and offer follow-up activity payloads.
 - CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, metadata-only fallback behavior, deterministic attachment review states, and manufacturability flags.
 - Visible workspace UI for quote queue priority, process workload, capacity commitment, operator actions, provider-run review, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
-- Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage.
-- Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals.
-- Provider-adapter AI layer with mock/local/provider boundaries plus provider run audit records.
+- Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage and persisted connector link lookups.
+- Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals, plus tenant-safe Convex connector sync persistence with local fallback routing.
+- Provider-adapter AI layer with mock/local/provider boundaries plus Convex-backed provider run audit records and query APIs.
 - Feature-scout backlog scoring for small, reviewable product improvement slices.
 
 ## Next PR Slices
 
 - Expand offer generation with deterministic alternates, customer-ready revision summaries, PDF rendering/export verification, and send/follow-up lifecycle controls.
-- Surface connector sync, provider run audit, offer reply state, and calendar follow-up status in the React workspace with local fallback controls.
+- Surface persisted connector sync/link health, provider run audit, offer reply state, and calendar follow-up status in the React workspace with local fallback controls.
 - Add richer part-review workflows for CAD thumbnails, preview status, dimensional checks, manufacturability flags, and operator overrides while keeping heavy geometry parsing behind adapters.
 - Add production hardening for seeded demo import/export, audit-log views, loading/error states, accessibility checks, and responsive QA coverage.
-- Deepen Convex cloud readiness with idempotent import/sync mutations, tenant-safe activity filters, queue/workload views that mirror the local workspace runtime, and UI wiring for persisted offer release history/status/follow-up reads.
+- Deepen Convex cloud readiness with tenant-safe activity/link filters, queue/workload views that mirror the local workspace runtime, and UI wiring for persisted offer release history/status/follow-up reads.
 - Keep the feature-scout backlog running after each milestone so new factory-specific needs are scored into small, reviewable implementation slices.
