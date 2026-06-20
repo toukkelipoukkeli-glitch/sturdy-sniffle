@@ -163,6 +163,14 @@ describe("convex offer release execution persistence payload", () => {
         }),
       ]),
     ).toThrow("run.mode must be commit or dry_run")
+
+    expect(() =>
+      buildOfferReleaseExecutionHistoryFromConvex([
+        releaseExecutionRecord({
+          status: "queued" as never,
+        }),
+      ]),
+    ).toThrow("run.status is not a supported release execution status")
   })
 })
 

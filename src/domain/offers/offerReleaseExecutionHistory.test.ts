@@ -179,6 +179,21 @@ describe("offer release execution history", () => {
         {
           executedAt: "2026-06-20T09:00:00+03:00",
           executionFingerprint: "offer-release-execution-aaaabbbb",
+          mode: "commit",
+          offerId: "offer-204",
+          offerNumber: "OFFER-204",
+          pendingActionCount: 0,
+          status: "pending",
+          warningCount: -1,
+        },
+      ]),
+    ).toThrow("warningCount must be a non-negative integer")
+
+    expect(() =>
+      summarizeOfferReleaseExecutionHistoryRecords([
+        {
+          executedAt: "2026-06-20T09:00:00+03:00",
+          executionFingerprint: "offer-release-execution-aaaabbbb",
           mode: "send_now" as never,
           offerId: "offer-204",
           offerNumber: "OFFER-204",
