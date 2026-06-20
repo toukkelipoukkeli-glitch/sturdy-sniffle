@@ -1203,7 +1203,7 @@ function formatPreviewMode(mode: PartPreviewMode) {
   }
 }
 
-function formatProvider(provider: ProviderRunAudit["provider"]) {
+function formatProvider(provider: ProviderRunAudit["provider"]): string {
   switch (provider) {
     case "local_codex":
       return "Local Codex"
