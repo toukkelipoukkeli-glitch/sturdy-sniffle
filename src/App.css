@@ -604,6 +604,141 @@
   white-space: normal;
 }
 
+.capacity-commitment-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.capacity-commitment-heading,
+.capacity-process-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.capacity-commitment-heading > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.capacity-commitment-heading strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.capacity-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.capacity-status-on_track {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.capacity-status-at_risk {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.capacity-status-overbooked {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.capacity-summary,
+.capacity-process-list,
+.capacity-selected-rfq {
+  display: grid;
+  gap: 8px;
+}
+
+.capacity-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.capacity-summary .metric {
+  padding: 8px;
+}
+
+.capacity-process-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.capacity-process-row {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 70px;
+  padding: 10px;
+}
+
+.capacity-process-row[data-active="true"] {
+  background: oklch(0.965 0.032 190);
+  border-color: oklch(0.72 0.08 190);
+}
+
+.capacity-process-row[data-status="at_risk"] {
+  background: oklch(0.98 0.018 85);
+}
+
+.capacity-process-row[data-status="overbooked"] {
+  background: oklch(0.985 0.02 35);
+}
+
+.capacity-process-row > div,
+.capacity-selected-rfq > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.capacity-process-row span:not(.capacity-status),
+.capacity-selected-rfq span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.capacity-process-row strong,
+.capacity-selected-rfq strong {
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.capacity-selected-rfq {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 10px;
+}
+
+.capacity-selected-rfq[data-status="late"] {
+  border-color: oklch(0.82 0.09 82);
+}
+
+.capacity-selected-rfq[data-status="unplanned"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
 .section-title {
   justify-content: space-between;
   margin-bottom: 14px;
@@ -1804,6 +1939,9 @@
   .workload-buckets,
   .process-capability-summary,
   .process-capability-list,
+  .capacity-summary,
+  .capacity-process-list,
+  .capacity-selected-rfq,
   .operator-action-grid,
   .handoff-editor,
   .rfq-readiness-summary,
@@ -1827,6 +1965,10 @@
   }
 
   .workload-bucket {
+    grid-template-columns: 1fr;
+  }
+
+  .capacity-process-row {
     grid-template-columns: 1fr;
   }
 

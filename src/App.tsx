@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Ruler,
   ShieldCheck,
+  TimerReset,
   TrendingUp,
 } from "lucide-react"
 
@@ -53,6 +54,12 @@ import {
 } from "./domain/rfq/intakeReadiness"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
 import {
+  buildCapacityCommitmentPlan,
+  type CapacityCommitmentPlan,
+  type CapacityItemCommitment,
+  type CapacityProcessCommitment,
+} from "./domain/workspace/capacityCommitment"
+import {
   compareQuoteScenarios,
   type QuoteComparisonResult,
   type QuoteComparisonScenario,
@@ -71,6 +78,15 @@ import "./App.css"
 type WorkspaceView = "triage" | "costing" | "offer"
 
 const demoToday = "2026-06-20"
+const capacityPlanningDays = 5
+const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
+  cnc_milling: 420,
+  cnc_turning: 360,
+  fabrication: 480,
+  plastic: 420,
+  sheet_metal: 450,
+  wire_edm: 300,
+}
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -473,6 +489,31 @@ function App() {
     })
     return rankQuoteQueue(queueInputs, { now: queueNow })
   }, [editsById, queueNow, statusById])
+  const capacityCommitmentPlan = useMemo(
+    () =>
+      buildCapacityCommitmentPlan({
+        dailyCapacityMinutesByProcess: buildDailyCapacityMinutesByProcess(workItems),
+        items: workItems.map((item) => {
+          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          const itemQuote = calculateCncQuote(itemQuoteInput)
+          return {
+            customerName: item.customer,
+            dueAt: item.dueAt,
+            estimatedValueCents: itemQuote.totalCents,
+            estimatedWorkMinutes: estimateCapacityWorkMinutes(itemQuoteInput),
+            id: item.id,
+            priority: itemQuoteInput.priority,
+            process: itemQuoteInput.process,
+            receivedAt: item.receivedAt,
+            status: statusById[item.id] ?? item.status,
+            subject: item.subject,
+          }
+        }),
+        now: queueNow,
+        planningDays: capacityPlanningDays,
+      }),
+    [editsById, queueNow, statusById],
+  )
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
@@ -749,6 +790,7 @@ function App() {
 
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
           <ProcessCapabilityPanel activeProcess={selectedItem.quoteInput.process} matrix={processCapabilityMatrix} />
+          <CapacityCommitmentPanel plan={capacityCommitmentPlan} selectedItem={selectedItem} />
 
           {activeView === "triage" ? (
             <TriageView
@@ -1185,6 +1227,84 @@ function ProcessCapabilityPanel({
         ))}
       </div>
     </section>
+  )
+}
+
+function CapacityCommitmentPanel({ plan, selectedItem }: { plan: CapacityCommitmentPlan; selectedItem: QuoteWorkItem }) {
+  const selectedCommitment = findCommitmentForItem(plan, selectedItem.id)
+  const selectedProcessPlan = plan.processPlans.find((processPlan) => processPlan.process === selectedItem.quoteInput.process)
+
+  return (
+    <section className="capacity-commitment-panel" aria-label="Capacity commitment plan">
+      <div className="capacity-commitment-heading">
+        <div>
+          <span className="eyebrow">
+            <TimerReset aria-hidden="true" />
+            Capacity
+          </span>
+          <strong>
+            {plan.planningDays}-day plan · {capacityStatusLabel(plan.status)}
+          </strong>
+        </div>
+        <span className={`capacity-status capacity-status-${plan.status}`}>{humanizeKey(plan.status)}</span>
+      </div>
+      <div className="capacity-summary">
+        <Metric label="Demand" value={formatMinutes(plan.totalDemandMinutes)} />
+        <Metric label="Available" value={formatMinutes(plan.totalAvailableMinutes)} />
+        <Metric label="Overload" value={formatMinutes(plan.totalOverloadMinutes)} />
+      </div>
+      <div className="capacity-process-list">
+        {plan.processPlans.map((processPlan) => (
+          <CapacityProcessRow
+            active={processPlan.process === selectedItem.quoteInput.process}
+            key={processPlan.process}
+            processPlan={processPlan}
+          />
+        ))}
+      </div>
+      <div className="capacity-selected-rfq" data-status={selectedCommitment?.status ?? "unplanned"}>
+        <div>
+          <span>Selected RFQ</span>
+          <strong>{selectedItem.quoteInput.partNumber}</strong>
+        </div>
+        <div>
+          <span>Schedule</span>
+          <strong>{formatCapacitySchedule(selectedCommitment)}</strong>
+        </div>
+        <div>
+          <span>Required</span>
+          <strong>{formatMinutes(selectedCommitment?.requiredMinutes ?? 0)}</strong>
+        </div>
+        <div>
+          <span>Process load</span>
+          <strong>{selectedProcessPlan ? formatCapacityPressure(selectedProcessPlan) : "No open load"}</strong>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CapacityProcessRow({
+  active,
+  processPlan,
+}: {
+  active: boolean
+  processPlan: CapacityProcessCommitment
+}) {
+  return (
+    <article className="capacity-process-row" data-active={active} data-status={processPlan.status}>
+      <div>
+        <strong>{formatProcess(processPlan.process)}</strong>
+        <span>
+          {processPlan.commitments.length} RFQs · {formatMinutes(processPlan.demandMinutes)} demand
+        </span>
+      </div>
+      <div>
+        <span>{processPlan.overloadMinutes > 0 ? "Overload" : "Remaining"}</span>
+        <strong>{formatMinutes(processPlan.overloadMinutes > 0 ? processPlan.overloadMinutes : processPlan.remainingCapacityMinutes)}</strong>
+      </div>
+      <span className={`capacity-status capacity-status-${processPlan.status}`}>{humanizeKey(processPlan.status)}</span>
+    </article>
   )
 }
 
@@ -1688,6 +1808,17 @@ function shortCapabilityMatrixVersion(version: ProcessCapabilityMatrix["matrixVe
   return version.replace("process-capability-matrix.", "")
 }
 
+function capacityStatusLabel(status: CapacityCommitmentPlan["status"]) {
+  switch (status) {
+    case "at_risk":
+      return "At risk"
+    case "on_track":
+      return "On track"
+    case "overbooked":
+      return "Overbooked"
+  }
+}
+
 function toNumber(value: string) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
@@ -1723,6 +1854,50 @@ function applyQuoteEdit(item: QuoteWorkItem, edit: QuoteEditState): CncQuoteInpu
       cycleMinutesPerPart: edit.cycleMinutes,
     },
   }
+}
+
+function buildDailyCapacityMinutesByProcess(items: QuoteWorkItem[]) {
+  const capacity = { ...defaultDailyCapacityMinutesByProcess }
+  for (const item of items) {
+    capacity[item.quoteInput.process] = Math.max(
+      capacity[item.quoteInput.process],
+      item.quoteInput.machine.capacityMinutesPerDay ?? capacity[item.quoteInput.process],
+    )
+  }
+  return capacity
+}
+
+function estimateCapacityWorkMinutes(input: CncQuoteInput) {
+  const setupMinutes = input.operation.setupMinutes + (input.operation.programmingMinutes ?? 0) + (input.operation.fixtureMinutes ?? 0)
+  const runMinutes = input.operation.cycleMinutesPerPart * (input.operation.complexityMultiplier ?? 1) * input.quantity
+  const inspectionMinutes = (input.operation.inspectionMinutesPerPart ?? 0) * input.quantity
+  return Math.ceil(setupMinutes + runMinutes + inspectionMinutes)
+}
+
+function findCommitmentForItem(plan: CapacityCommitmentPlan, itemId: string): CapacityItemCommitment | undefined {
+  for (const processPlan of plan.processPlans) {
+    const commitment = processPlan.commitments.find((candidate) => candidate.itemId === itemId)
+    if (commitment) {
+      return commitment
+    }
+  }
+}
+
+function formatCapacitySchedule(commitment: CapacityItemCommitment | undefined) {
+  if (!commitment || commitment.allocations.length === 0) {
+    return "Unplanned"
+  }
+  if (commitment.startDate === commitment.completionDate) {
+    return commitment.startDate ?? "Unplanned"
+  }
+  return `${commitment.startDate} -> ${commitment.completionDate}`
+}
+
+function formatCapacityPressure(processPlan: CapacityProcessCommitment) {
+  if (processPlan.overloadMinutes > 0) {
+    return `${formatMinutes(processPlan.overloadMinutes)} over`
+  }
+  return `${formatMinutes(processPlan.remainingCapacityMinutes)} left`
 }
 
 function buildScenarioComparisonInputs(
@@ -2076,6 +2251,17 @@ function formatCurrency(cents: number, currency: string) {
     minimumFractionDigits: 2,
     style: "currency",
   }).format(cents / 100)
+}
+
+function formatMinutes(minutes: number) {
+  if (minutes === 0) {
+    return "0m"
+  }
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
+  const hours = minutes / 60
+  return `${Number.isInteger(hours) ? hours.toFixed(0) : hours.toFixed(1)}h`
 }
 
 function formatSignedCurrencyDelta(cents: number, currency: string) {
