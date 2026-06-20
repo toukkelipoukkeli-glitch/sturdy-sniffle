@@ -38,6 +38,11 @@ import {
   type OfferExportPackage,
 } from "./domain/offers/offerExportPackage"
 import {
+  buildOfferReleaseExecutionRun,
+  type OfferReleaseCommandExecutionStatus,
+  type OfferReleaseExecutionRun,
+} from "./domain/offers/offerReleaseExecution"
+import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
   type OfferReleasePlan,
@@ -803,6 +808,16 @@ function App() {
       selectedStatus,
     ],
   )
+  const offerReleaseExecution = useMemo(
+    () =>
+      buildOfferReleaseExecutionRun({
+        actor: "Sari",
+        executedAt: demoNow,
+        mode: "dry_run",
+        plan: offerReleasePlan,
+      }),
+    [offerReleasePlan],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
     const adapter = createGmailOfferReplyAdapter({
@@ -1053,6 +1068,7 @@ function App() {
               offer={offer}
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
+              releaseExecution={offerReleaseExecution}
               releasePlan={offerReleasePlan}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
@@ -1933,6 +1949,7 @@ function OfferView({
   onSyncReplies,
   readiness,
   releaseGate,
+  releaseExecution,
   releasePlan,
   replySync,
 }: {
@@ -1942,6 +1959,7 @@ function OfferView({
   onSyncReplies: () => void
   readiness: OfferSendReadinessResult
   releaseGate: QuoteReleaseGateDecision
+  releaseExecution: OfferReleaseExecutionRun
   releasePlan: OfferReleasePlan
   replySync?: GmailOfferReplySyncResult
 }) {
@@ -1969,6 +1987,7 @@ function OfferView({
       <OfferSendReadinessPanel readiness={readiness} />
       <QuoteReleaseGatePanel releaseGate={releaseGate} />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
+      <OfferReleaseExecutionPanel execution={releaseExecution} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
@@ -1976,6 +1995,88 @@ function OfferView({
       </label>
     </div>
   )
+}
+
+function OfferReleaseExecutionPanel({ execution }: { execution: OfferReleaseExecutionRun }) {
+  const statusLabel = offerReleaseExecutionStatusLabel(execution.status)
+  const artifactCount = execution.lifecycleEvents.length + execution.workspaceActions.length + execution.calendarEvents.length
+
+  return (
+    <section className="offer-release-execution-panel" aria-label="Offer release execution audit">
+      <div className="offer-release-execution-heading">
+        <div>
+          <span className="eyebrow">
+            <TimerReset aria-hidden="true" />
+            Execution audit
+          </span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <span className={`offer-release-execution-status offer-release-execution-status-${execution.status}`}>
+          {humanizeKey(execution.status)}
+        </span>
+      </div>
+      <div className="offer-release-execution-summary">
+        <Metric label="Mode" value={humanizeKey(execution.mode)} />
+        <Metric label="Commands" value={String(execution.commands.length)} />
+        <Metric label="Artifacts" value={String(artifactCount)} />
+        <Metric label="Warnings" value={String(execution.warnings.length)} />
+      </div>
+      <div className="offer-release-execution-command-list">
+        {execution.commands.map((command) => (
+          <div className="offer-release-execution-command" data-status={command.status} key={command.key}>
+            <OfferReleaseExecutionCommandIcon status={command.status} />
+            <div>
+              <strong>{command.label}</strong>
+              <span>{command.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {execution.nextActions.length > 0 ? (
+        <div className="offer-release-execution-actions">
+          {execution.nextActions.map((action) => (
+            <div className={execution.status === "prepared" || execution.status === "succeeded" ? "flag ok" : "flag"} key={action}>
+              {execution.status === "prepared" || execution.status === "succeeded" ? (
+                <CheckCircle2 aria-hidden="true" />
+              ) : (
+                <AlertTriangle aria-hidden="true" />
+              )}
+              <span>{action}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function OfferReleaseExecutionCommandIcon({ status }: { status: OfferReleaseCommandExecutionStatus }) {
+  const Icon = status === "applied" || status === "prepared" ? CheckCircle2 : status === "pending" ? Clock3 : AlertTriangle
+
+  return (
+    <span className="offer-release-execution-command-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function offerReleaseExecutionStatusLabel(status: OfferReleaseExecutionRun["status"]) {
+  switch (status) {
+    case "blocked":
+      return "Blocked before execution"
+    case "failed":
+      return "Execution failed"
+    case "needs_review":
+      return "Review required"
+    case "partial":
+      return "Partially executed"
+    case "pending":
+      return "Awaiting execution outcomes"
+    case "prepared":
+      return "Dry-run prepared"
+    case "succeeded":
+      return "Execution completed"
+  }
 }
 
 function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
