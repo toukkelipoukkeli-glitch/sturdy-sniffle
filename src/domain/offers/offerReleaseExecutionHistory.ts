@@ -63,7 +63,20 @@ function normalizeHistoryRun(run: OfferReleaseExecutionRun): NormalizedHistoryRu
 }
 
 function sortNewestFirst(left: NormalizedHistoryRun, right: NormalizedHistoryRun) {
-  return compareLex(right.executedAt, left.executedAt) || compareLex(left.executionFingerprint, right.executionFingerprint)
+  return (
+    compareLex(right.executedAt, left.executedAt) ||
+    compareLex(left.executionFingerprint, right.executionFingerprint) ||
+    compareLex(left.status, right.status) ||
+    compareLex(left.mode, right.mode) ||
+    compareLex(left.offerId, right.offerId) ||
+    compareLex(left.offerNumber, right.offerNumber) ||
+    compareNumber(left.pendingActionCount, right.pendingActionCount) ||
+    compareNumber(left.warningCount, right.warningCount)
+  )
+}
+
+function compareNumber(left: number, right: number) {
+  return left < right ? -1 : left > right ? 1 : 0
 }
 
 function countStatuses(runs: NormalizedHistoryRun[]): Partial<Record<OfferReleaseExecutionStatus, number>> {
@@ -76,7 +89,12 @@ function countStatuses(runs: NormalizedHistoryRun[]): Partial<Record<OfferReleas
 function summarizeRepeatedFingerprints(runs: NormalizedHistoryRun[]): OfferReleaseExecutionFingerprintSummary[] {
   const byFingerprint = new Map<string, NormalizedHistoryRun[]>()
   for (const run of runs) {
-    byFingerprint.set(run.executionFingerprint, [...(byFingerprint.get(run.executionFingerprint) ?? []), run])
+    const fingerprintRuns = byFingerprint.get(run.executionFingerprint)
+    if (fingerprintRuns) {
+      fingerprintRuns.push(run)
+    } else {
+      byFingerprint.set(run.executionFingerprint, [run])
+    }
   }
 
   return [...byFingerprint.entries()]

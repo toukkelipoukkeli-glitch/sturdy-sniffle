@@ -48,6 +48,27 @@ describe("offer release execution history", () => {
     })
   })
 
+  it("uses stable tie-breakers when runs share timestamps and fingerprints", () => {
+    const summary = summarizeOfferReleaseExecutionHistory([
+      releaseRun({
+        executionFingerprint: "offer-release-execution-tie",
+        offerNumber: "OFFER-B",
+        status: "succeeded",
+      }),
+      releaseRun({
+        executionFingerprint: "offer-release-execution-tie",
+        offerNumber: "OFFER-A",
+        status: "failed",
+      }),
+    ])
+
+    expect(summary.latestRun).toMatchObject({
+      executionFingerprint: "offer-release-execution-tie",
+      offerNumber: "OFFER-A",
+      status: "failed",
+    })
+  })
+
   it("detects repeated fingerprints for retry/audit review", () => {
     const summary = summarizeOfferReleaseExecutionHistory([
       releaseRun({
