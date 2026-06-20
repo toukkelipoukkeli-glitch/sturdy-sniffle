@@ -58,8 +58,6 @@ export function buildWorkspaceAction(input: WorkspaceActionInput): WorkspaceActi
     kind: input.kind,
     occurredAt,
     rfqId,
-    quoteId: optionalTrim(input.quoteId),
-    offerId: optionalTrim(input.offerId),
     note,
   }
 
@@ -104,22 +102,25 @@ function buildStatusChangeAction(
 }
 
 function buildScenarioSavedAction(base: ActionBase, input: WorkspaceActionInput): WorkspaceActionRecord {
+  const quoteId = nonBlank(optionalTrim(input.quoteId) ?? "", "quoteId")
   const scenarioId = nonBlank(input.scenarioId ?? "", "scenarioId")
   return finalizeAction({
     ...base,
     activityKind: "quote_update",
     activityMessage: `Saved quote scenario ${scenarioId}.`,
+    quoteId,
     scenarioId,
   })
 }
 
 function buildFollowUpCreatedAction(base: ActionBase, input: WorkspaceActionInput): WorkspaceActionRecord {
-  const offerId = nonBlank(base.offerId ?? "", "offerId")
+  const offerId = nonBlank(optionalTrim(input.offerId) ?? "", "offerId")
   const followUpDueAt = normalizeIsoTimestamp(input.followUpDueAt ?? "", "followUpDueAt")
   return finalizeAction({
     ...base,
     activityKind: "calendar_event",
     activityMessage: `Created offer follow-up for ${offerId}.`,
+    offerId,
     followUpDueAt,
   })
 }
@@ -153,7 +154,7 @@ function finalizeAction(action: Omit<WorkspaceActionRecord, "actionVersion" | "k
   }
 }
 
-type ActionBase = Pick<WorkspaceActionRecord, "actor" | "kind" | "occurredAt" | "rfqId" | "quoteId" | "offerId" | "note">
+type ActionBase = Pick<WorkspaceActionRecord, "actor" | "kind" | "occurredAt" | "rfqId" | "note">
 
 function requireStatus(status: QuoteQueueStatus | undefined, key: string): QuoteQueueStatus {
   if (!status) {

@@ -74,6 +74,13 @@ describe("workspace actions", () => {
       },
       {
         actor: "Mikael",
+        kind: "handoff_note",
+        note: "Tie A",
+        occurredAt: "2026-06-20T10:00:00+03:00",
+        rfqId: "rfq-a",
+      },
+      {
+        actor: "Mikael",
         fromStatus: "new",
         kind: "status_change",
         occurredAt: "2026-06-20T09:55:00+03:00",
@@ -82,10 +89,37 @@ describe("workspace actions", () => {
       },
     ])
 
-    expect(actions.map((action) => action.rfqId)).toEqual(["rfq-a", "rfq-b"])
+    expect(actions.map((action) => action.key)).toEqual([
+      "rfq-a:status_change:triage:2026-06-20T06:55:00.000Z",
+      "rfq-a:handoff_note:2026-06-20T07:00:00.000Z",
+      "rfq-b:handoff_note:2026-06-20T07:00:00.000Z",
+    ])
   })
 
-  it("rejects invalid operator actions", () => {
+  it("ignores irrelevant identifiers when building action keys", () => {
+    const base = buildWorkspaceAction({
+      actor: "Sari",
+      fromStatus: "new",
+      kind: "status_change",
+      occurredAt: "2026-06-20T10:00:00+03:00",
+      rfqId: "rfq-019",
+      toStatus: "triage",
+    })
+    const withIrrelevantIds = buildWorkspaceAction({
+      actor: "Sari",
+      fromStatus: "new",
+      kind: "status_change",
+      occurredAt: "2026-06-20T10:00:00+03:00",
+      offerId: "offer-ignored",
+      quoteId: "quote-ignored",
+      rfqId: "rfq-019",
+      toStatus: "triage",
+    })
+
+    expect(withIrrelevantIds.key).toBe(base.key)
+  })
+
+  it("rejects invalid status transitions", () => {
     expect(() =>
       buildWorkspaceAction({
         actor: "Sari",
@@ -96,7 +130,9 @@ describe("workspace actions", () => {
         toStatus: "sent",
       }),
     ).toThrow("cannot transition RFQ from new to sent")
+  })
 
+  it("rejects missing follow-up due dates", () => {
     expect(() =>
       buildWorkspaceAction({
         actor: "Sari",
@@ -106,7 +142,21 @@ describe("workspace actions", () => {
         rfqId: "rfq-019",
       }),
     ).toThrow("followUpDueAt is required")
+  })
 
+  it("rejects missing scenario quote IDs", () => {
+    expect(() =>
+      buildWorkspaceAction({
+        actor: "Sari",
+        kind: "scenario_saved",
+        occurredAt: "2026-06-20T10:00:00+03:00",
+        rfqId: "rfq-019",
+        scenarioId: "scenario-rush",
+      }),
+    ).toThrow("quoteId is required")
+  })
+
+  it("rejects missing actors", () => {
     expect(() =>
       buildWorkspaceAction({
         actor: " ",
