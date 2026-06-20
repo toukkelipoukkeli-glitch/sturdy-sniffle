@@ -113,6 +113,7 @@ export function buildMaterialAvailabilityPlan(input: MaterialAvailabilityInput):
   const lotsByMaterial = groupLotsByMaterial(input.inventoryLots.map(normalizeLot))
   const commitments = input.items
     .filter((item) => openStatuses.has(item.status))
+    .sort(compareMaterialRequirementPriority)
     .map((item) =>
       buildCommitment(item, lotsByMaterial, {
         defaultLeadTimeDays,
@@ -291,14 +292,25 @@ function normalizeLot(lot: MaterialInventoryLot): NormalizedLot {
 
 function normalizeSupplierOptions(options: MaterialSupplierOption[]): MaterialSupplierOption[] {
   return options
-    .map((option) => ({
-      match: materialKey(nonBlank(option.match, "supplierOption.match")),
-      supplierName: nonBlank(option.supplierName, "supplierOption.supplierName"),
-      leadTimeDays: positiveInteger(option.leadTimeDays, "supplierOption.leadTimeDays"),
-      minimumOrderKg:
-        option.minimumOrderKg === undefined ? undefined : positiveNumber(option.minimumOrderKg, "supplierOption.minimumOrderKg"),
-    }))
-    .sort((left, right) => compareLex(left.match, right.match) || compareLex(left.supplierName, right.supplierName))
+    .map((option) => {
+      const match = materialKey(nonBlank(option.match, "supplierOption.match"))
+      if (!match) {
+        throw new Error("supplierOption.match must include at least one alphanumeric character")
+      }
+      return {
+        match,
+        supplierName: nonBlank(option.supplierName, "supplierOption.supplierName"),
+        leadTimeDays: positiveInteger(option.leadTimeDays, "supplierOption.leadTimeDays"),
+        minimumOrderKg:
+          option.minimumOrderKg === undefined ? undefined : positiveNumber(option.minimumOrderKg, "supplierOption.minimumOrderKg"),
+      }
+    })
+    .sort(
+      (left, right) =>
+        right.match.length - left.match.length ||
+        compareLex(left.match, right.match) ||
+        compareLex(left.supplierName, right.supplierName),
+    )
 }
 
 function groupLotsByMaterial(lots: NormalizedLot[]): Map<string, NormalizedLot[]> {
@@ -324,7 +336,24 @@ function groupLotsByMaterial(lots: NormalizedLot[]): Map<string, NormalizedLot[]
 
 function findSupplierOption(materialName: string, options: MaterialSupplierOption[]): MaterialSupplierOption | undefined {
   const key = materialKey(materialName)
-  return options.find((option) => key.includes(option.match))
+  return options
+    .filter((option) => key.includes(option.match))
+    .sort(
+      (left, right) =>
+        right.match.length - left.match.length ||
+        compareLex(left.match, right.match) ||
+        compareLex(left.supplierName, right.supplierName),
+    )[0]
+}
+
+function compareMaterialRequirementPriority(left: MaterialRequirementItem, right: MaterialRequirementItem) {
+  return (
+    priorityWeight(right.priority) - priorityWeight(left.priority) ||
+    compareLex(utcDateOnly(left.dueAt), utcDateOnly(right.dueAt)) ||
+    compareLex(left.receivedAt, right.receivedAt) ||
+    compareLex(left.customerName, right.customerName) ||
+    compareLex(left.id, right.id)
+  )
 }
 
 function statusFromIssues(issues: MaterialAvailabilityIssue[]): MaterialAvailabilityStatus {
@@ -364,6 +393,10 @@ function statusWeight(status: MaterialAvailabilityStatus) {
     case "covered":
       return 0
   }
+}
+
+function priorityWeight(priority: QuoteQueuePriority) {
+  return priority === "rush" ? 1 : 0
 }
 
 function certificateWeight(status: MaterialCertificateStatus) {

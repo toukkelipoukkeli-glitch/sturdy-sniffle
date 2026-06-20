@@ -140,6 +140,72 @@ describe("material availability plan", () => {
     })
   })
 
+  it("allocates ready stock to higher-priority material demand first", () => {
+    const plan = buildMaterialAvailabilityPlan({
+      ...baseInput,
+      inventoryLots: [
+        {
+          availableKg: 4,
+          certificateStatus: "ready",
+          id: "lot-ready",
+          materialName: "Aluminum 6082",
+        },
+        {
+          availableKg: 4,
+          certificateStatus: "missing",
+          id: "lot-missing",
+          materialName: "Aluminum 6082",
+        },
+      ],
+      items: [
+        {
+          ...items[0],
+          dueAt: "2026-07-10T15:00:00+03:00",
+          id: "rfq-low",
+          priority: "normal",
+          requiredKg: 4,
+        },
+        {
+          ...items[2],
+          dueAt: "2026-06-24T12:00:00+03:00",
+          id: "rfq-rush",
+          priority: "rush",
+          requiredKg: 4,
+        },
+      ],
+    })
+
+    expect(plan.commitments.map((commitment) => [commitment.itemId, commitment.status, commitment.allocations[0]?.lotId])).toEqual([
+      ["rfq-low", "at_risk", "lot-missing"],
+      ["rfq-rush", "covered", "lot-ready"],
+    ])
+  })
+
+  it("prefers specific supplier matches over generic material matches", () => {
+    const plan = buildMaterialAvailabilityPlan({
+      ...baseInput,
+      inventoryLots: [],
+      items: [{ ...items[0], requiredKg: 2 }],
+      supplierOptions: [
+        {
+          leadTimeDays: 6,
+          match: "aluminum",
+          supplierName: "Generic Metals",
+        },
+        {
+          leadTimeDays: 2,
+          match: "aluminum_6082",
+          supplierName: "6082 Specialist",
+        },
+      ],
+    })
+
+    expect(plan.commitments[0]).toMatchObject({
+      requestBy: "2026-06-27",
+      supplierName: "6082 Specialist",
+    })
+  })
+
   it("excludes sent and closed RFQs before validating stale material demand", () => {
     const plan = buildMaterialAvailabilityPlan({
       ...baseInput,
@@ -182,5 +248,12 @@ describe("material availability plan", () => {
         supplierOptions: [{ leadTimeDays: 0, match: "aluminum", supplierName: "MetalHub Helsinki" }],
       }),
     ).toThrow("supplierOption.leadTimeDays must be a positive integer")
+
+    expect(() =>
+      buildMaterialAvailabilityPlan({
+        ...baseInput,
+        supplierOptions: [{ leadTimeDays: 2, match: "///", supplierName: "Catch-all Metals" }],
+      }),
+    ).toThrow("supplierOption.match must include at least one alphanumeric character")
   })
 })
