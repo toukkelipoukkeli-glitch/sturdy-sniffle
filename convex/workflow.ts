@@ -572,7 +572,9 @@ export const recordOfferReleaseExecution = mutation({
       commands,
       createdAt: now,
       executedAt,
-      ...(args.executionFingerprint ? { executionFingerprint: nonBlank(args.executionFingerprint, "executionFingerprint") } : {}),
+      ...(args.executionFingerprint !== undefined
+        ? { executionFingerprint: nonBlank(args.executionFingerprint, "executionFingerprint") }
+        : {}),
       executionKey,
       executionVersion: nonBlank(args.executionVersion, "executionVersion"),
       lifecycleEventCount,
