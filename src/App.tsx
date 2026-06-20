@@ -1972,7 +1972,11 @@ function QuoteReleaseGatePanel({ releaseGate }: { releaseGate: QuoteReleaseGateD
             <QuoteReleaseGateCheckIcon status={check.status} />
             <div>
               <strong>{check.label}</strong>
-              <span>{check.key === "checked_at" ? `Checked ${formatShortDateTime(releaseGate.checkedAt)}.` : check.detail}</span>
+              <span>
+                {check.key === "checked_at" && check.status === "passed"
+                  ? `Checked ${formatShortDateTime(releaseGate.checkedAt)}.`
+                  : check.detail}
+              </span>
             </div>
           </div>
         ))}
