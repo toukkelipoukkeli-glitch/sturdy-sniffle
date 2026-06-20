@@ -31,6 +31,9 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Provider review")).toContainText("Local Codex")
 
   await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await expect(page.getByLabel("RFQ intake readiness")).toContainText("Ready for costing")
+  await expect(page.getByLabel("RFQ intake readiness").locator(".metric", { hasText: "Blockers" })).toContainText("0")
+  await expect(page.getByLabel("RFQ intake readiness")).toContainText("CAD or drawing package is attached.")
   await page.getByRole("button", { name: "Move to Estimating" }).click()
   await expect(page.getByLabel("Action timeline")).toContainText("Moved RFQ from triage to estimating.")
   await page.getByRole("button", { name: "Save scenario" }).click()

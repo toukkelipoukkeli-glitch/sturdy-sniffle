@@ -45,7 +45,12 @@ import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
-import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
+import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
+import {
+  evaluateRfqIntakeReadiness,
+  type RfqIntakeReadinessCheckStatus,
+  type RfqIntakeReadinessResult,
+} from "./domain/rfq/intakeReadiness"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
 import {
   compareQuoteScenarios,
@@ -479,6 +484,10 @@ function App() {
   )
   const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
   const processCapabilityMatrix = useMemo(() => buildProcessCapabilityMatrix(), [])
+  const rfqIntakeReadiness = useMemo(
+    () => evaluateRfqIntakeReadiness(parsedRfqForWorkItem(selectedItem), { nowDate: demoToday }),
+    [selectedItem],
+  )
   const scenarioComparison = useMemo(
     () => compareQuoteScenarios(buildScenarioComparisonInputs(selectedItem.quoteInput, quoteInput, quote)),
     [quote, quoteInput, selectedItem],
@@ -751,6 +760,7 @@ function App() {
               onCreateFollowUp={createFollowUp}
               onHandoffDraftChange={(value) => setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: value }))}
               onSaveScenario={saveScenario}
+              readiness={rfqIntakeReadiness}
               status={selectedStatus}
             />
           ) : null}
@@ -911,6 +921,7 @@ function TriageView({
   onCreateFollowUp,
   onHandoffDraftChange,
   onSaveScenario,
+  readiness,
   status,
 }: {
   actions: WorkspaceActionRecord[]
@@ -921,6 +932,7 @@ function TriageView({
   onCreateFollowUp: () => void
   onHandoffDraftChange: (value: string) => void
   onSaveScenario: () => void
+  readiness: RfqIntakeReadinessResult
   status: QuoteQueueStatus
 }) {
   const nextStatus = nextStatusFor(status)
@@ -936,6 +948,7 @@ function TriageView({
         <Metric label="Source" value={item.source.toUpperCase()} />
         <Metric label="Contact" value={item.contact} />
       </div>
+      <RfqIntakeReadinessPanel readiness={readiness} />
       <section className="operator-actions" aria-label="Operator actions">
         <div className="operator-action-grid">
           <Button disabled={!nextStatus} onClick={onAdvanceStatus} type="button" variant="outline" size="sm">
@@ -978,6 +991,69 @@ function TriageView({
       <ActionTimeline actions={actions} />
     </div>
   )
+}
+
+function RfqIntakeReadinessPanel({ readiness }: { readiness: RfqIntakeReadinessResult }) {
+  return (
+    <section className="rfq-readiness-panel" aria-label="RFQ intake readiness">
+      <div className="rfq-readiness-heading">
+        <div>
+          <span className="eyebrow">
+            <ShieldCheck aria-hidden="true" />
+            Intake readiness
+          </span>
+          <strong>{rfqReadinessStatusLabel(readiness.status)}</strong>
+        </div>
+        <span className={`rfq-readiness-status rfq-readiness-status-${readiness.status}`}>{humanizeKey(readiness.status)}</span>
+      </div>
+      <div className="rfq-readiness-summary">
+        <Metric label="Blockers" value={String(readiness.blockerCount)} />
+        <Metric label="Warnings" value={String(readiness.warningCount)} />
+        <Metric label="Parts" value={String(readiness.partCount)} />
+      </div>
+      <div className="rfq-readiness-checks">
+        {readiness.checks.map((check) => (
+          <div className="rfq-readiness-check" data-status={check.status} key={check.key}>
+            <RfqReadinessCheckIcon status={check.status} />
+            <div>
+              <strong>{check.label}</strong>
+              <span>{check.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {readiness.issues.length > 0 ? (
+        <div className="rfq-readiness-issues">
+          {readiness.issues.map((issue, index) => (
+            <div className="flag" key={`${issue.key}-${issue.partNumber ?? "rfq"}-${index}`}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{issue.partNumber ? `${issue.partNumber}: ${issue.detail}` : issue.detail}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function RfqReadinessCheckIcon({ status }: { status: RfqIntakeReadinessCheckStatus }) {
+  const Icon = status === "passed" ? CheckCircle2 : AlertTriangle
+  return (
+    <span className="rfq-readiness-check-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function rfqReadinessStatusLabel(status: RfqIntakeReadinessResult["status"]) {
+  switch (status) {
+    case "blocked":
+      return "Blocked"
+    case "needs_review":
+      return "Needs review"
+    case "ready":
+      return "Ready for costing"
+  }
 }
 
 function ActionTimeline({ actions }: { actions: WorkspaceActionRecord[] }) {
@@ -1711,6 +1787,74 @@ function partDraftForQuoteInput(quoteInput: CncQuoteInput, attachments: RfqAttac
     },
     attachmentNames: attachments.map((attachment) => attachment.fileName),
   }
+}
+
+function parsedRfqForWorkItem(item: QuoteWorkItem): ParsedRfqIntake {
+  const source: RfqIntakeSource = {
+    externalId: item.id,
+    label: item.source.toUpperCase(),
+    provider: item.source,
+  }
+  const part = partDraftForQuoteInput(item.quoteInput, item.attachments)
+  const dimensions = part.dimensions
+  const dueAt = parseWorkspaceTimestamp(item.dueAt, "dueAt")
+  const receivedAt = parseWorkspaceTimestamp(item.receivedAt, "receivedAt")
+  const extractedFields: RfqExtractedField[] = [
+    rfqField("contact_email", contactEmailFor(item), 0.98, source),
+    rfqField("customer_name", item.customer, 0.96, source),
+    rfqField("due_at", new Date(dueAt).toISOString(), 0.9, source),
+    rfqField("currency", item.quoteInput.rateCard.currency, 0.96, source),
+    rfqField("priority", item.priority, 0.95, source),
+    rfqField("part_number", item.quoteInput.partNumber, 0.98, source),
+    rfqField("process", item.quoteInput.process, 0.96, source),
+    rfqField("material", item.quoteInput.material.name, 0.93, source),
+    rfqField("quantity", String(item.quoteInput.quantity), 0.95, source),
+  ]
+
+  if (dimensions?.lengthMm || dimensions?.widthMm || dimensions?.heightMm) {
+    extractedFields.push(rfqField("dimensions_mm", formatRfqDimensions(dimensions), 0.86, source))
+  }
+
+  if (item.quoteInput.toleranceClass) {
+    extractedFields.push(rfqField("tolerance", item.quoteInput.toleranceClass, 0.86, source))
+  }
+
+  return {
+    attachments: item.attachments,
+    contactEmail: contactEmailFor(item),
+    currency: item.quoteInput.rateCard.currency,
+    customerName: item.customer,
+    dueAt,
+    extractedFields,
+    parts: [part],
+    priority: item.priority,
+    receivedAt,
+    subject: item.subject,
+    summary: item.notes.join(" "),
+  }
+}
+
+function rfqField(key: string, value: string, confidence: number, source: RfqIntakeSource): RfqExtractedField {
+  return {
+    confidence,
+    key,
+    reviewed: false,
+    source,
+    value,
+  }
+}
+
+function formatRfqDimensions(dimensions: NonNullable<RfqPartDraft["dimensions"]>) {
+  return `${[dimensions.lengthMm, dimensions.widthMm, dimensions.heightMm].filter((value) => value !== undefined).join(" x ")} mm`
+}
+
+function parseWorkspaceTimestamp(value: string, fieldName: string) {
+  const timestamp = Date.parse(value)
+  if (!Number.isFinite(timestamp)) {
+    throw new Error(`${fieldName} must be a valid date string`)
+  }
+
+  return timestamp
 }
 
 function buildSampleProviderAudit({

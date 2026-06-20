@@ -730,6 +730,141 @@
   padding-top: 14px;
 }
 
+.rfq-readiness-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.rfq-readiness-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.rfq-readiness-heading > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rfq-readiness-heading strong {
+  font-size: 0.92rem;
+}
+
+.rfq-readiness-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.rfq-readiness-status-ready {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.rfq-readiness-status-needs_review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.rfq-readiness-status-blocked {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.rfq-readiness-summary,
+.rfq-readiness-checks,
+.rfq-readiness-issues {
+  display: grid;
+  gap: 8px;
+}
+
+.rfq-readiness-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rfq-readiness-checks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rfq-readiness-check {
+  align-items: start;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  min-height: 62px;
+  padding: 10px;
+}
+
+.rfq-readiness-check[data-status="passed"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.rfq-readiness-check[data-status="warning"] {
+  border-color: oklch(0.82 0.09 82);
+}
+
+.rfq-readiness-check[data-status="blocked"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
+.rfq-readiness-check-icon {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.rfq-readiness-check-icon svg {
+  height: 16px;
+  width: 16px;
+}
+
+.rfq-readiness-check[data-status="passed"] .rfq-readiness-check-icon {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.rfq-readiness-check[data-status="warning"] .rfq-readiness-check-icon {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.rfq-readiness-check[data-status="blocked"] .rfq-readiness-check-icon {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.rfq-readiness-check div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rfq-readiness-check strong {
+  font-size: 0.82rem;
+}
+
+.rfq-readiness-check span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .empty-action-state,
 .action-row {
   background: oklch(0.985 0.004 240);
@@ -1671,6 +1806,8 @@
   .process-capability-list,
   .operator-action-grid,
   .handoff-editor,
+  .rfq-readiness-summary,
+  .rfq-readiness-checks,
   .offer-export-summary,
   .alternate-row,
   .offer-readiness-summary,
