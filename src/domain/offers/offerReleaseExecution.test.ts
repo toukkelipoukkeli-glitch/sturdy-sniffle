@@ -8,6 +8,7 @@ import { buildCncOfferDraft, type OfferDraft } from "./offer"
 import { buildOfferExportPackage, type OfferExportPackage } from "./offerExportPackage"
 import {
   buildOfferReleaseExecutionRun,
+  fingerprintOfferReleaseExecutionRun,
   OFFER_RELEASE_EXECUTION_VERSION,
 } from "./offerReleaseExecution"
 import { buildOfferReleasePlan, type OfferReleasePlan } from "./offerReleasePlan"
@@ -24,6 +25,7 @@ describe("offer release execution audit", () => {
     expect(run).toMatchObject({
       actor: "Sari",
       executedAt: "2026-06-20T06:00:00.000Z",
+      executionFingerprint: "offer-release-execution-7045cd6a",
       executionVersion: OFFER_RELEASE_EXECUTION_VERSION,
       mode: "dry_run",
       offerId: "offer-204",
@@ -50,6 +52,29 @@ describe("offer release execution audit", () => {
     expect(run.calendarEvents.map((event) => event.kind)).toEqual(["offer_follow_up"])
     expect(run.nextActions).toEqual(["Review 6 prepared release commands before committing."])
     expect(run.warnings).toEqual([])
+  })
+
+  it("fingerprints equivalent release execution runs for retry comparison", () => {
+    const firstRun = buildOfferReleaseExecutionRun({
+      actor: "Sari",
+      mode: "dry_run",
+      plan: readyReleasePlan(),
+    })
+    const sameRun = buildOfferReleaseExecutionRun({
+      actor: "Sari",
+      mode: "dry_run",
+      plan: readyReleasePlan(),
+    })
+    const changedRun = buildOfferReleaseExecutionRun({
+      actor: "Sari",
+      commandOutcomes: [{ key: "email-draft", message: "Draft created.", status: "applied" }],
+      mode: "commit",
+      plan: readyReleasePlan(),
+    })
+
+    expect(fingerprintOfferReleaseExecutionRun(firstRun)).toBe(firstRun.executionFingerprint)
+    expect(sameRun.executionFingerprint).toBe(firstRun.executionFingerprint)
+    expect(changedRun.executionFingerprint).not.toBe(firstRun.executionFingerprint)
   })
 
   it("records partial commit failures without losing successful command outcomes", () => {

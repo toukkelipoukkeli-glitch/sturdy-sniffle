@@ -50,6 +50,7 @@ export interface OfferReleaseCommandExecution {
 
 export interface OfferReleaseExecutionRun {
   executionVersion: typeof OFFER_RELEASE_EXECUTION_VERSION
+  executionFingerprint: string
   actor: string
   executedAt: string
   releaseAt: string
@@ -95,7 +96,7 @@ export function buildOfferReleaseExecutionRun(input: BuildOfferReleaseExecutionR
   )
   const status = executionStatus(input.plan, mode, commands)
 
-  return {
+  const run: Omit<OfferReleaseExecutionRun, "executionFingerprint"> = {
     executionVersion: OFFER_RELEASE_EXECUTION_VERSION,
     actor,
     calendarEvents: releasablePlan(input.plan) ? (input.plan.calendarPlan?.events ?? []) : [],
@@ -112,7 +113,36 @@ export function buildOfferReleaseExecutionRun(input: BuildOfferReleaseExecutionR
     status,
     warnings: executionWarnings(input.plan, commands),
     workspaceActions: releasablePlan(input.plan) ? input.plan.workspaceActions : [],
+  } satisfies Omit<OfferReleaseExecutionRun, "executionFingerprint">
+
+  return {
+    ...run,
+    executionFingerprint: fingerprintOfferReleaseExecutionRun(run),
   }
+}
+
+export function fingerprintOfferReleaseExecutionRun(
+  run: Omit<OfferReleaseExecutionRun, "executionFingerprint"> | OfferReleaseExecutionRun,
+): string {
+  const stablePayload = stableJson({
+    actor: run.actor,
+    calendarEvents: run.calendarEvents,
+    commands: run.commands,
+    executedAt: run.executedAt,
+    executionVersion: run.executionVersion,
+    lifecycleEvents: run.lifecycleEvents,
+    mode: run.mode,
+    nextActions: run.nextActions,
+    offerId: run.offerId,
+    offerNumber: run.offerNumber,
+    planVersion: run.planVersion,
+    releaseAt: run.releaseAt,
+    rfqId: run.rfqId,
+    status: run.status,
+    warnings: run.warnings,
+    workspaceActions: run.workspaceActions,
+  })
+  return `offer-release-execution-${fingerprint(stablePayload)}`
 }
 
 function buildCommandExecution(input: {
@@ -292,4 +322,32 @@ function sanitizeKeyPart(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, Object.keys(flattenKeys(value)).sort())
+}
+
+function flattenKeys(value: unknown, keys: Record<string, true> = {}): Record<string, true> {
+  if (Array.isArray(value)) {
+    value.forEach((item) => flattenKeys(item, keys))
+    return keys
+  }
+  if (!value || typeof value !== "object") {
+    return keys
+  }
+  Object.entries(value).forEach(([key, nested]) => {
+    keys[key] = true
+    flattenKeys(nested, keys)
+  })
+  return keys
+}
+
+function fingerprint(value: string): string {
+  let hash = 0x811c9dc5
+  for (const character of value) {
+    hash ^= character.charCodeAt(0)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash.toString(16).padStart(8, "0")
 }

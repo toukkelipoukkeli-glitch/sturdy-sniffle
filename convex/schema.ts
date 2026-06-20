@@ -367,6 +367,7 @@ export default defineSchema({
   offerReleaseExecutions: defineTable({
     tenantId,
     executionKey: v.string(),
+    executionFingerprint: v.optional(v.string()),
     offerId: v.id("offers"),
     quoteId: v.id("quoteScenarios"),
     rfqId: v.id("rfqs"),

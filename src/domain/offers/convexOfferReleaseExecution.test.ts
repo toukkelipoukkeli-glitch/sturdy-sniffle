@@ -6,6 +6,7 @@ import {
   type ConvexOfferReleaseExecutionPayload,
 } from "./convexOfferReleaseExecution"
 import {
+  fingerprintOfferReleaseExecutionRun,
   OFFER_RELEASE_EXECUTION_VERSION,
   type OfferReleaseExecutionRun,
 } from "./offerReleaseExecution"
@@ -42,6 +43,7 @@ describe("convex offer release execution persistence payload", () => {
         },
       ],
       executedAt: "2026-06-20T06:05:00.000Z",
+      executionFingerprint: releaseExecutionRun().executionFingerprint,
       executionKey:
         "offer-release-execution:convex-offer-204:offer-release-execution-v1:offer-release-plan-v1:commit:2026-06-20t06-00-00-000z:2026-06-20t06-05-00-000z",
       executionVersion: OFFER_RELEASE_EXECUTION_VERSION,
@@ -88,7 +90,7 @@ describe("convex offer release execution persistence payload", () => {
 })
 
 function releaseExecutionRun(): OfferReleaseExecutionRun {
-  return {
+  const run: Omit<OfferReleaseExecutionRun, "executionFingerprint"> = {
     actor: " Sari ",
     calendarEvents: [
       {
@@ -151,5 +153,9 @@ function releaseExecutionRun(): OfferReleaseExecutionRun {
         toStatus: "sent",
       }),
     ],
+  }
+  return {
+    ...run,
+    executionFingerprint: fingerprintOfferReleaseExecutionRun(run),
   }
 }
