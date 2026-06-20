@@ -411,7 +411,9 @@ export default defineSchema({
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_provider_external_id", ["tenantId", "provider", "externalId"])
     .index("by_tenant_rfq", ["tenantId", "rfqId"])
-    .index("by_tenant_offer", ["tenantId", "offerId"]),
+    .index("by_tenant_rfq_updated_at", ["tenantId", "rfqId", "updatedAt"])
+    .index("by_tenant_offer", ["tenantId", "offerId"])
+    .index("by_tenant_offer_updated_at", ["tenantId", "offerId", "updatedAt"]),
 
   providerRuns: defineTable({
     tenantId,
