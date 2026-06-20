@@ -54,11 +54,11 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Convex schema, local generation workflow, and workflow API queries/mutations for RFQ queue reads, quote scenarios, process workload buckets, and offer follow-up calendar activities. Managed worktrees use `.worktreeinclude` for ignored `.env.local` propagation while keeping secrets uncommitted.
 - Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, and provenance fields.
 - Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
-- Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, and process workload summaries.
+- Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, process workload summaries, and capacity commitment planning.
 - Convex workspace persistence and authorization guard boundaries for RFQ status transitions, workspace activities, offer workflow reads/writes, and migration-safe single-tenant role defaults.
 - Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, revision history, and follow-up task tracking.
 - CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, metadata-only fallback behavior, deterministic attachment review states, and manufacturability flags.
-- Visible workspace UI for quote queue priority, process workload, operator actions, provider-run review, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
+- Visible workspace UI for quote queue priority, process workload, capacity commitment, operator actions, provider-run review, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
 - Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage.
 - Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals.
 - Provider-adapter AI layer with mock/local/provider boundaries plus provider run audit records.
