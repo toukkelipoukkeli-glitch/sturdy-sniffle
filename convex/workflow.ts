@@ -70,6 +70,12 @@ const providerRunStatus = v.union(
   v.literal("skipped"),
 );
 
+const integrationProvider = v.union(v.literal("gmail"), v.literal("calendar"));
+
+const integrationSyncStatus = v.union(v.literal("linked"), v.literal("stale"), v.literal("blocked"));
+
+const connectorActivityKind = v.union(v.literal("email_received"), v.literal("calendar_event"), v.literal("note"));
+
 const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
 
 const offerReleaseExecutionStatus = v.union(
@@ -177,6 +183,13 @@ const demoWorkspaceImportOperation = v.union(
 
 type DemoWorkspaceImportOperation = Infer<typeof demoWorkspaceImportOperation>;
 type OfferReleaseExecutionCommandInput = Infer<typeof offerReleaseExecutionCommand>;
+type ConnectorSyncLinkInput = {
+  externalId: string;
+  externalUrl?: string;
+  provider: "gmail" | "calendar";
+  rfqId?: GenericId<"rfqs">;
+  syncStatus: "linked" | "stale" | "blocked";
+};
 type DemoImportStatus = "created" | "updated" | "skipped";
 
 interface DemoImportState {
@@ -909,6 +922,63 @@ export const recordProviderRun = mutation({
   },
 });
 
+export const recordConnectorRfqSync = mutation({
+  args: {
+    activities: v.array(v.object({
+      actorName: v.optional(v.string()),
+      kind: connectorActivityKind,
+      message: v.string(),
+      rfqId: v.optional(v.id("rfqs")),
+    })),
+    links: v.array(v.object({
+      externalId: v.string(),
+      externalUrl: v.optional(v.string()),
+      provider: integrationProvider,
+      rfqId: v.optional(v.id("rfqs")),
+      syncStatus: integrationSyncStatus,
+    })),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const links = boundedConnectorBatch(args.links, "links", 200);
+    const activities = boundedConnectorBatch(args.activities, "activities", 300);
+    if (links.length === 0 && activities.length === 0) {
+      throw new Error("connector sync payload must include links or activities");
+    }
+
+    const now = Date.now();
+    const linkResults = [];
+    for (const link of links) {
+      linkResults.push(await upsertConnectorIntegrationLink(ctx, actor, link, now));
+    }
+
+    const activityIds = [];
+    for (const activity of activities) {
+      if (activity.rfqId) {
+        await requireTenantDocument<RfqDocument>(ctx, activity.rfqId, "activity.rfqId", actor);
+      }
+      activityIds.push(await ctx.db.insert("activities", {
+        actorName: optionalNonBlank(activity.actorName) ?? "Connector sync",
+        actorType: "system",
+        createdAt: now,
+        kind: activity.kind,
+        message: nonBlank(activity.message, "activity.message"),
+        rfqId: activity.rfqId,
+        tenantId: actor.tenantId,
+      }));
+    }
+
+    return {
+      activities: activityIds,
+      activityCount: activityIds.length,
+      createdLinks: countConnectorLinkStatus(linkResults, "created"),
+      links: linkResults.map((result) => result.integrationLinkId),
+      skippedLinks: countConnectorLinkStatus(linkResults, "skipped"),
+      updatedLinks: countConnectorLinkStatus(linkResults, "updated"),
+    };
+  },
+});
+
 async function upsertImportedCustomer(
   ctx: MutationCtx,
   operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_customer" }>,
@@ -1211,6 +1281,78 @@ function importResult(
 }
 
 function countImportStatus(results: DemoImportOperationResult[], status: DemoImportStatus): number {
+  return results.filter((result) => result.status === status).length;
+}
+
+async function upsertConnectorIntegrationLink(
+  ctx: MutationCtx,
+  actor: FactoryBidActor,
+  link: ConnectorSyncLinkInput,
+  now: number,
+): Promise<{ integrationLinkId: GenericId<"integrationLinks">; status: DemoImportStatus }> {
+  if (link.rfqId) {
+    await requireTenantDocument<RfqDocument>(ctx, link.rfqId, "link.rfqId", actor);
+  }
+
+  const externalId = nonBlank(link.externalId, "link.externalId");
+  const externalUrl = optionalNonBlank(link.externalUrl);
+  const existing = await ctx.db
+    .query("integrationLinks")
+    .withIndex("by_tenant_provider_external_id", (q) =>
+      q.eq("tenantId", actor.tenantId).eq("provider", link.provider).eq("externalId", externalId),
+    )
+    .unique();
+
+  if (!existing) {
+    return {
+      integrationLinkId: await ctx.db.insert("integrationLinks", {
+        createdAt: now,
+        externalId,
+        externalUrl,
+        provider: link.provider,
+        rfqId: link.rfqId,
+        syncStatus: link.syncStatus,
+        tenantId: actor.tenantId,
+        updatedAt: now,
+      }),
+      status: "created",
+    };
+  }
+
+  if (
+    existing.externalUrl === externalUrl &&
+    existing.rfqId === link.rfqId &&
+    existing.syncStatus === link.syncStatus
+  ) {
+    return {
+      integrationLinkId: existing._id,
+      status: "skipped",
+    };
+  }
+
+  await ctx.db.patch(existing._id, {
+    externalUrl,
+    rfqId: link.rfqId,
+    syncStatus: link.syncStatus,
+    updatedAt: now,
+  });
+  return {
+    integrationLinkId: existing._id,
+    status: "updated",
+  };
+}
+
+function boundedConnectorBatch<T>(values: T[], key: string, maximum: number): T[] {
+  if (values.length > maximum) {
+    throw new Error(`${key} cannot contain more than ${maximum} records`);
+  }
+  return values;
+}
+
+function countConnectorLinkStatus(
+  results: { status: DemoImportStatus }[],
+  status: DemoImportStatus,
+): number {
   return results.filter((result) => result.status === status).length;
 }
 
