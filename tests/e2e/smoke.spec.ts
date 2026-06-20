@@ -16,6 +16,9 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Provider review")).toContainText("gemini")
   await expect(page.getByLabel("Provider review")).toContainText("[redacted-email]")
   await expect(page.getByLabel("Provider review")).toContainText("used mock fallback")
+  await expect(page.getByLabel("Process capability matrix")).toContainText("5/6 ready calculators")
+  await expect(page.getByLabel("Process capability matrix")).toContainText("Wire EDM")
+  await expect(page.getByLabel("Process capability matrix")).toContainText("Minimum order adjustment applied.")
 
   await page.getByRole("button", { name: /Baltic Hydraulics/ }).click()
   await expect(page.getByRole("heading", { name: "Turned spacer FB-TURN-019" })).toBeVisible()
