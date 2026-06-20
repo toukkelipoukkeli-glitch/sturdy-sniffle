@@ -12,6 +12,7 @@ import type { OfferReleaseCommandKind } from "./offerReleasePlan"
 export interface ConvexOfferReleaseExecutionPayload {
   offerId: string
   executionKey: string
+  executionFingerprint: string
   executionVersion: string
   planVersion: string
   mode: OfferReleaseExecutionMode
@@ -58,6 +59,7 @@ export function buildConvexOfferReleaseExecutionPayload(
     calendarEventCount: run.calendarEvents.length,
     commands: normalizeCommands(run.commands),
     executedAt,
+    executionFingerprint: nonBlank(run.executionFingerprint, "run.executionFingerprint"),
     executionKey: options.executionKey
       ? nonBlank(options.executionKey, "executionKey")
       : buildExecutionKey({
