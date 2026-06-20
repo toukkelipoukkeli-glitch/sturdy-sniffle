@@ -1,5 +1,6 @@
 import { v, type GenericId } from "convex/values";
 
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 const processKey = v.union(
@@ -84,10 +85,10 @@ export const transitionRfqStatus = mutation({
   args: {
     rfqId: v.id("rfqs"),
     status: rfqStatus,
-    actorName: v.optional(v.string()),
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const actorName = await requireAuthenticatedActor(ctx);
     const rfq = await requireDocument<RfqDocument>(ctx, args.rfqId, "rfqId");
     assertRfqStatusTransition(rfq.status, args.status);
     const now = Date.now();
@@ -95,12 +96,13 @@ export const transitionRfqStatus = mutation({
       status: args.status,
       updatedAt: now,
     });
-    const message =
-      optionalNonBlank(args.message) ?? `Moved RFQ from ${rfq.status} to ${args.status}.`;
+    const transitionMessage = `Moved RFQ from ${rfq.status} to ${args.status}.`;
+    const note = optionalNonBlank(args.message);
+    const message = note ? `${transitionMessage} ${note}` : transitionMessage;
     const activityId = await ctx.db.insert("activities", {
       rfqId: args.rfqId,
       actorType: "human",
-      actorName: optionalNonBlank(args.actorName),
+      actorName,
       kind: "status_change",
       message,
       createdAt: now,
@@ -120,6 +122,7 @@ export const listRfqActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAuthenticatedActor(ctx);
     await requireDocument(ctx, args.rfqId, "rfqId");
     return await ctx.db
       .query("activities")
@@ -255,9 +258,8 @@ export const createOfferFollowUpActivity = mutation({
   },
 });
 
-type RfqDocument = {
-  status: "new" | "triage" | "estimating" | "quoted" | "won" | "lost" | "archived";
-};
+type RfqDocument = Pick<Doc<"rfqs">, "status">;
+type RfqStatus = RfqDocument["status"];
 
 async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
   const document = await ctx.db.get(id);
@@ -267,7 +269,7 @@ async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<str
   return document;
 }
 
-const allowedRfqStatusTransitions: Record<RfqDocument["status"], RfqDocument["status"][]> = {
+const allowedRfqStatusTransitions: Record<RfqStatus, RfqStatus[]> = {
   new: ["triage", "estimating", "lost", "archived"],
   triage: ["new", "estimating", "lost", "archived"],
   estimating: ["triage", "quoted", "lost", "archived"],
@@ -277,13 +279,25 @@ const allowedRfqStatusTransitions: Record<RfqDocument["status"], RfqDocument["st
   archived: [],
 };
 
-function assertRfqStatusTransition(fromStatus: RfqDocument["status"], toStatus: RfqDocument["status"]) {
+function assertRfqStatusTransition(fromStatus: RfqStatus, toStatus: RfqStatus) {
   if (fromStatus === toStatus) {
     throw new Error("status must change");
   }
   if (!allowedRfqStatusTransitions[fromStatus].includes(toStatus)) {
     throw new Error(`cannot transition RFQ from ${fromStatus} to ${toStatus}`);
   }
+}
+
+async function requireAuthenticatedActor(ctx: {
+  auth: {
+    getUserIdentity: () => Promise<{ email?: string; name?: string; subject?: string; tokenIdentifier?: string } | null>;
+  };
+}): Promise<string> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("authentication required");
+  }
+  return optionalNonBlank(identity.name) ?? optionalNonBlank(identity.email) ?? optionalNonBlank(identity.subject) ?? "Authenticated user";
 }
 
 function boundedLimit(value: number | undefined, maximum = 100): number {
