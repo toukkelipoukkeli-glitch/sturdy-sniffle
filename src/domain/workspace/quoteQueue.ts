@@ -1,4 +1,5 @@
 import type { QuoteProcessKey } from "../quoting/registry"
+import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 
 export const QUOTE_QUEUE_VERSION = "quote-queue.v1"
 
@@ -137,23 +138,6 @@ function badgesForItem(item: QuoteQueueItem, urgency: QuoteQueueUrgency): string
     badges.push("ready_to_send")
   }
   return badges
-}
-
-function compareLex(left: string, right: string): number {
-  return left < right ? -1 : left > right ? 1 : 0
-}
-
-function normalizeIsoTimestamp(value: string, key: string): string {
-  const trimmed = nonBlank(value, key)
-  const isoTimestampPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/
-  if (!isoTimestampPattern.test(trimmed)) {
-    throw new Error(`${key} must be a valid ISO timestamp`)
-  }
-  const parsed = new Date(trimmed)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${key} must be a valid ISO timestamp`)
-  }
-  return parsed.toISOString()
 }
 
 function nonBlank(value: string, key: string): string {

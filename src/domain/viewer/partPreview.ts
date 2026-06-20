@@ -1,4 +1,5 @@
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqAttachmentKind, RfqPartDraft } from "../rfq/intake"
+import { compareLex } from "../shared/deterministic"
 
 export const PART_PREVIEW_MODEL_VERSION = "part-preview.v1"
 
@@ -68,7 +69,7 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
   const matchingAttachments = selectMatchingAttachments(partNumber, attachmentNames, input.attachments)
   const rankedAttachments = matchingAttachments
     .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames))
-    .sort((left, right) => right.score - left.score || left.fileName.localeCompare(right.fileName))
+    .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
   const primaryAttachment = rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
   const measurementOverlays = buildMeasurementOverlays(input.part)

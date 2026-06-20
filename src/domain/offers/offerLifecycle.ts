@@ -1,3 +1,4 @@
+import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import type { OfferDraft, OfferStatus } from "./offer"
 
 export const OFFER_LIFECYCLE_VERSION = "offer-lifecycle.v1"
@@ -76,7 +77,7 @@ export function buildOfferLifecycleTimeline(offer: OfferDraft, eventInputs: Offe
     offerNumber: offer.offerNumber,
     status,
     events,
-    followUpTasks: [...tasks.values()].sort((left, right) => left.dueAt.localeCompare(right.dueAt) || left.id.localeCompare(right.id)),
+    followUpTasks: [...tasks.values()].sort((left, right) => compareLex(left.dueAt, right.dueAt) || compareLex(left.id, right.id)),
   }
 }
 
@@ -194,9 +195,9 @@ function normalizeEventInputs(events: OfferLifecycleEventInput[]): NormalizedEve
     }))
     .sort(
       (left, right) =>
-        left.occurredAt.localeCompare(right.occurredAt) ||
+        compareLex(left.occurredAt, right.occurredAt) ||
         left.inputIndex - right.inputIndex ||
-        left.kind.localeCompare(right.kind),
+        compareLex(left.kind, right.kind),
     )
 }
 
@@ -204,15 +205,6 @@ function assertStatus(status: OfferStatus, allowed: OfferStatus[], eventKind: Of
   if (!allowed.includes(status)) {
     throw new Error(`${eventKind} cannot be applied when offer status is ${status}`)
   }
-}
-
-function normalizeIsoTimestamp(value: string, key: string): string {
-  const trimmed = nonBlank(value, key)
-  const parsed = new Date(trimmed)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${key} must be a valid ISO timestamp`)
-  }
-  return parsed.toISOString()
 }
 
 function optionalTrim(value: string | undefined): string | undefined {

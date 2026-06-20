@@ -1,3 +1,5 @@
+import { compareLex } from "../shared/deterministic"
+
 export const FEATURE_SCOUT_VERSION = "feature-scout.v1"
 
 export type FeatureBacklogSource = "operator" | "reviewer" | "customer" | "research" | "system"
@@ -65,7 +67,7 @@ export function rankFeatureBacklogItems(items: FeatureBacklogInput[]): ScoredFea
       (left, right) =>
         right.score.priorityScore - left.score.priorityScore ||
         left.integrationRisk - right.integrationRisk ||
-        left.title.localeCompare(right.title),
+        compareLex(left.title, right.title),
     )
 }
 
