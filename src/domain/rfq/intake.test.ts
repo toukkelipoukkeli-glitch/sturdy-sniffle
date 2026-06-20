@@ -74,6 +74,18 @@ describe("parseRfqIntake", () => {
     expect(fieldValue(parsed, "due_at")).toBeUndefined()
   })
 
+  it("rejects parseable non-ISO received timestamps", () => {
+    expect(() =>
+      parseRfqIntake({
+        subject: "RFQ: loose received date",
+        senderEmail: "buyer@example.com",
+        receivedAt: "06/18/2026 09:00:00",
+        source: { provider: "gmail" },
+        bodyText: "Please quote part: LOOSE-DATE-1.",
+      }),
+    ).toThrow("receivedAt must be a valid ISO timestamp")
+  })
+
   it("maps per-part quantities only when part and quantity counts match", () => {
     const parsed = parseRfqIntake({
       subject: "RFQ: matched quantities",
