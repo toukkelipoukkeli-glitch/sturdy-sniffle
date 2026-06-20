@@ -478,6 +478,132 @@
   overflow-wrap: anywhere;
 }
 
+.process-capability-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.process-capability-heading,
+.process-capability-card-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.process-capability-heading > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.process-capability-heading strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.capability-version {
+  background: oklch(0.94 0.02 250);
+  border-radius: 999px;
+  color: oklch(0.34 0.035 250);
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.process-capability-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.process-capability-summary .metric {
+  padding: 8px;
+}
+
+.process-capability-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.process-capability-card {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-height: 102px;
+  padding: 10px;
+}
+
+.process-capability-card[data-active="true"] {
+  background: oklch(0.965 0.032 190);
+  border-color: oklch(0.72 0.08 190);
+}
+
+.process-capability-card[data-status="needs_review"] {
+  background: oklch(0.98 0.018 85);
+}
+
+.process-capability-card[data-active="true"][data-status="needs_review"] {
+  background: oklch(0.97 0.035 88);
+  border-color: oklch(0.76 0.09 82);
+}
+
+.process-capability-card-heading strong {
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-capability-card-heading span {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 4px 7px;
+  text-transform: capitalize;
+}
+
+.process-capability-card[data-status="ready"] .process-capability-card-heading span {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.process-capability-card[data-status="needs_review"] .process-capability-card-heading span {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.process-capability-metrics {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.process-capability-metrics span,
+.process-capability-card small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-capability-card small {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .section-title {
   justify-content: space-between;
   margin-bottom: 14px;
@@ -1541,6 +1667,8 @@
   .part-preview,
   .workload-summary,
   .workload-buckets,
+  .process-capability-summary,
+  .process-capability-list,
   .operator-action-grid,
   .handoff-editor,
   .offer-export-summary,

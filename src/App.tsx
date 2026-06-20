@@ -8,6 +8,7 @@ import {
   CloudOff,
   Cuboid,
   Database,
+  Factory,
   FileText,
   GitCompareArrows,
   Inbox,
@@ -42,6 +43,7 @@ import {
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
+import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
@@ -476,6 +478,7 @@ function App() {
     [queueNow, rankedQueue],
   )
   const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
+  const processCapabilityMatrix = useMemo(() => buildProcessCapabilityMatrix(), [])
   const scenarioComparison = useMemo(
     () => compareQuoteScenarios(buildScenarioComparisonInputs(selectedItem.quoteInput, quoteInput, quote)),
     [quote, quoteInput, selectedItem],
@@ -736,6 +739,7 @@ function App() {
           </nav>
 
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
+          <ProcessCapabilityPanel activeProcess={selectedItem.quoteInput.process} matrix={processCapabilityMatrix} />
 
           {activeView === "triage" ? (
             <TriageView
@@ -1048,6 +1052,60 @@ function WorkloadPanel({
               <strong>{formatCurrency(bucket.estimatedValueCents, "EUR")}</strong>
             </div>
           </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ProcessCapabilityPanel({
+  activeProcess,
+  matrix,
+}: {
+  activeProcess: QuoteProcessKey
+  matrix: ProcessCapabilityMatrix
+}) {
+  return (
+    <section className="process-capability-panel" aria-label="Process capability matrix">
+      <div className="process-capability-heading">
+        <div>
+          <span className="eyebrow">
+            <Factory aria-hidden="true" />
+            Capability
+          </span>
+          <strong>
+            {matrix.readyProcessCount}/{matrix.supportedProcessCount} ready calculators
+          </strong>
+        </div>
+        <span className="capability-version" aria-label={matrix.matrixVersion} title={matrix.matrixVersion}>
+          {shortCapabilityMatrixVersion(matrix.matrixVersion)}
+        </span>
+      </div>
+      <div className="process-capability-summary">
+        <Metric label="Processes" value={String(matrix.supportedProcessCount)} />
+        <Metric label="Ready" value={String(matrix.readyProcessCount)} />
+        <Metric label="Rate cards" value={String(matrix.totalRateCardPresetLinks)} />
+      </div>
+      <div className="process-capability-list">
+        {matrix.capabilities.map((capability) => (
+          <article
+            className="process-capability-card"
+            data-active={capability.process === activeProcess}
+            data-status={capability.status}
+            key={capability.process}
+          >
+            <div className="process-capability-card-heading">
+              <strong>{capability.label}</strong>
+              <span>{humanizeKey(capability.status)}</span>
+            </div>
+            <div className="process-capability-metrics">
+              <span>{capability.samplePartNumber}</span>
+              <span>{formatCurrency(capability.sampleTotalCents, capability.sampleCurrency)}</span>
+              <span>{capability.sampleLeadTimeDays}d</span>
+              <span>{capability.rateCardPresetKeys.length} cards</span>
+            </div>
+            <small>{capability.warnings[0] ?? "No calculator flags"}</small>
+          </article>
         ))}
       </div>
     </section>
@@ -1548,6 +1606,10 @@ function QueueUrgencyBadge({ item }: { item: RankedQuoteQueueItem }) {
       {label}
     </span>
   )
+}
+
+function shortCapabilityMatrixVersion(version: ProcessCapabilityMatrix["matrixVersion"]) {
+  return version.replace("process-capability-matrix.", "")
 }
 
 function toNumber(value: string) {
