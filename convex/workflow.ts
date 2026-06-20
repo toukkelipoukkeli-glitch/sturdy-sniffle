@@ -1415,7 +1415,7 @@ async function upsertConnectorIntegrationLink(
       q.eq("tenantId", actor.tenantId).eq("provider", link.provider).eq("externalId", externalId),
     )
     .collect();
-  const existing = mergeIntegrationLinksByUpdatedAt(existingLinks)[0];
+  const [existing, ...duplicateLinks] = mergeIntegrationLinksByUpdatedAt(existingLinks);
 
   if (!existing) {
     return {
@@ -1433,7 +1433,12 @@ async function upsertConnectorIntegrationLink(
     };
   }
 
+  for (const duplicate of duplicateLinks) {
+    await ctx.db.delete(duplicate._id);
+  }
+
   if (
+    duplicateLinks.length === 0 &&
     existing.externalUrl === externalUrl &&
     existing.rfqId === link.rfqId &&
     existing.syncStatus === link.syncStatus
