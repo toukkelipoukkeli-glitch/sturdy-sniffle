@@ -2825,6 +2825,7 @@ function OfferReplyStatePanel({
       <div className="offer-reply-filter-row" role="group" aria-label="Offer reply state filters">
         {offerReplyFilters.map((option) => (
           <button
+            aria-pressed={filter === option.value}
             className="offer-reply-filter"
             data-active={filter === option.value}
             key={option.value}
