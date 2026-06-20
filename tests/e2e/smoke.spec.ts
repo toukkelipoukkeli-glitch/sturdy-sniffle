@@ -110,7 +110,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Artifacts" })).toContainText("0")
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Warnings" })).toContainText("0")
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Fingerprint" })).toContainText(
-    /^[\s\S]*[a-f0-9]{8}[\s\S]*$/,
+    /^\s*Fingerprint\s*[a-f0-9]{8}\s*$/i,
   )
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Resolve release blockers")
   await page.getByRole("button", { name: "Sync replies" }).click()
