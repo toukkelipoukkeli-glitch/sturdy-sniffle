@@ -47,6 +47,7 @@ describe("offer send readiness", () => {
       issues: [],
     })
     expect(readiness.checks.map((check) => [check.key, check.status])).toEqual([
+      ["invalid_date", "passed"],
       ["missing_customer_email", "passed"],
       ["expired_validity", "passed"],
       ["pdf_not_ready", "passed"],
@@ -136,7 +137,7 @@ describe("offer send readiness", () => {
     })
   })
 
-  it("rejects invalid readiness dates", () => {
+  it("blocks invalid readiness dates without throwing", () => {
     const quote = calculateCncQuote(aluminumBracketFixture)
     const offer = buildCncOfferDraft({
       customer: { email: "nora@example.test", name: "North Forge" },
@@ -146,13 +147,23 @@ describe("offer send readiness", () => {
       validUntil: "2026-07-04",
     })
 
-    expect(() =>
-      evaluateOfferSendReadiness({
-        exportPackage: buildOfferExportPackage({ offer }),
-        nowDate: "2026-02-31",
-        offer,
-      }),
-    ).toThrow("nowDate must be a valid ISO date")
+    const readiness = evaluateOfferSendReadiness({
+      exportPackage: buildOfferExportPackage({ offer }),
+      nowDate: "2026-02-31",
+      offer,
+    })
+
+    expect(readiness.status).toBe("blocked")
+    expect(readiness.checkedAt).toBe("2026-02-31")
+    expect(readiness.issues[0]).toEqual({
+      code: "invalid_date",
+      severity: "blocker",
+      message: "Invalid offer date input: nowDate must be a valid ISO date.",
+    })
+    expect(readiness.issues.some((issue) => issue.code === "expired_validity")).toBe(false)
+    expect(readiness.checks.find((check) => check.key === "invalid_date")).toMatchObject({
+      status: "blocked",
+    })
   })
 })
 

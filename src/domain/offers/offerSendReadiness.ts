@@ -8,6 +8,7 @@ export type OfferSendReadinessStatus = "ready" | "needs_review" | "blocked"
 export type OfferSendReadinessCheckStatus = "passed" | "warning" | "blocked"
 export type OfferSendReadinessIssueSeverity = "warning" | "blocker"
 export type OfferSendReadinessIssueCode =
+  | "invalid_date"
   | "missing_customer_email"
   | "expired_validity"
   | "pdf_not_ready"
@@ -47,12 +48,14 @@ export interface OfferSendReadinessResult {
 }
 
 export function evaluateOfferSendReadiness(input: EvaluateOfferSendReadinessInput): OfferSendReadinessResult {
-  const checkedAt = normalizeIsoDate(input.nowDate, "nowDate")
+  const dateValidation = validateReadinessDates(input.nowDate, input.offer.validUntil)
+  const checkedAt = dateValidation.checkedAt
   const requireAlternate = input.requireAlternate ?? true
   const requireCleanCalculator = input.requireCleanCalculator ?? false
   const issues = [
+    ...dateValidation.issues,
     ...customerEmailIssues(input.offer),
-    ...validityIssues(input.offer, checkedAt),
+    ...validityIssues(input.offer, dateValidation),
     ...pdfIssues(input.exportPackage),
     ...calculatorIssues(input.offer, requireCleanCalculator),
     ...alternateIssues(input.exportPackage, requireAlternate),
@@ -83,8 +86,15 @@ function customerEmailIssues(offer: OfferDraft): OfferSendReadinessIssue[] {
       ]
 }
 
-function validityIssues(offer: OfferDraft, checkedAt: string): OfferSendReadinessIssue[] {
-  return dateValue(offer.validUntil) >= dateValue(checkedAt)
+function validityIssues(offer: OfferDraft, dateValidation: ReadinessDateValidation): OfferSendReadinessIssue[] {
+  if (dateValidation.issues.length > 0) {
+    return []
+  }
+  if (!dateValidation.validUntil) {
+    return []
+  }
+
+  return dateValue(dateValidation.validUntil) >= dateValue(dateValidation.checkedAt)
     ? []
     : [
         {
@@ -158,6 +168,7 @@ function buildChecks(input: {
   const issueByCode = new Map(input.issues.map((issue) => [issue.code, issue]))
 
   return [
+    check("invalid_date", "Date validation", "Offer dates are valid.", issueByCode),
     check("missing_customer_email", "Customer email", input.offer.customer.email ?? "Missing", issueByCode),
     check("expired_validity", "Validity", `Valid until ${input.offer.validUntil}; checked ${input.checkedAt}`, issueByCode),
     check("pdf_not_ready", "PDF export", input.exportPackage.pdf.targetFileName, issueByCode),
@@ -193,17 +204,47 @@ function alternateDetail(exportPackage: OfferExportPackage): string {
     : `${exportPackage.alternates.length} alternate${exportPackage.alternates.length === 1 ? "" : "s"} included.`
 }
 
-function normalizeIsoDate(value: string, key: string): string {
-  const trimmed = nonBlank(value, key)
+interface ReadinessDateValidation {
+  checkedAt: string
+  issues: OfferSendReadinessIssue[]
+  validUntil?: string
+}
+
+function validateReadinessDates(nowDate: string, validUntil: string): ReadinessDateValidation {
+  const checkedAt = parseIsoDate(nowDate, "nowDate")
+  const validUntilDate = parseIsoDate(validUntil, "offer.validUntil")
+  const invalidMessages = [checkedAt.issue, validUntilDate.issue].filter(Boolean)
+
+  return {
+    checkedAt: checkedAt.value,
+    issues:
+      invalidMessages.length === 0
+        ? []
+        : [
+            {
+              code: "invalid_date",
+              severity: "blocker",
+              message: `Invalid offer date input: ${invalidMessages.join(" ")}`,
+            },
+          ],
+    validUntil: validUntilDate.issue ? undefined : validUntilDate.value,
+  }
+}
+
+function parseIsoDate(value: string, key: string): { issue?: string; value: string } {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return { issue: `${key} is required.`, value: "" }
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    throw new Error(`${key} must be an ISO date in YYYY-MM-DD format`)
+    return { issue: `${key} must be an ISO date in YYYY-MM-DD format.`, value: trimmed }
   }
 
   const parsed = new Date(`${trimmed}T00:00:00.000Z`)
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== trimmed) {
-    throw new Error(`${key} must be a valid ISO date`)
+    return { issue: `${key} must be a valid ISO date.`, value: trimmed }
   }
-  return trimmed
+  return { value: trimmed }
 }
 
 function dateValue(value: string): number {
