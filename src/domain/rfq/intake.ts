@@ -1,3 +1,5 @@
+import { normalizeIsoTimestamp } from "../shared/deterministic"
+
 export type RfqSourceProvider = "manual" | "gmail" | "calendar" | "import" | "mock"
 
 export type RfqAttachmentKind =
@@ -261,12 +263,7 @@ function classifyAttachmentKind(fileName: string, contentType?: string): RfqAtta
 }
 
 function parseRequiredDate(value: string, fieldName: string): number {
-  const timestamp = Date.parse(value)
-  if (Number.isNaN(timestamp)) {
-    throw new Error(`Invalid ${fieldName}: ${value}`)
-  }
-
-  return timestamp
+  return Date.parse(normalizeIsoTimestamp(value, fieldName))
 }
 
 function extractDueAt(text: string): number | undefined {
