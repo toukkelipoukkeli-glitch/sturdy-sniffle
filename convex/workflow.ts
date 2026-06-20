@@ -46,6 +46,30 @@ const offerWorkflowStatus = v.union(
   v.literal("superseded"),
 );
 
+const aiProvider = v.union(
+  v.literal("local_codex"),
+  v.literal("gemini"),
+  v.literal("tavily"),
+  v.literal("elevenlabs"),
+  v.literal("mock"),
+);
+
+const providerPurpose = v.union(
+  v.literal("extract"),
+  v.literal("summarize"),
+  v.literal("draft"),
+  v.literal("scout"),
+  v.literal("voice"),
+);
+
+const providerRunStatus = v.union(
+  v.literal("queued"),
+  v.literal("running"),
+  v.literal("succeeded"),
+  v.literal("failed"),
+  v.literal("skipped"),
+);
+
 const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
 
 const offerReleaseExecutionStatus = v.union(
@@ -711,6 +735,68 @@ export const recordWorkspaceActivity = mutation({
   },
 });
 
+export const recordProviderRun = mutation({
+  args: {
+    provider: aiProvider,
+    adapterVersion: v.string(),
+    purpose: providerPurpose,
+    status: providerRunStatus,
+    inputHash: v.string(),
+    outputSummary: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    rfqId: v.optional(v.id("rfqs")),
+    quoteId: v.optional(v.id("quoteScenarios")),
+    offerId: v.optional(v.id("offers")),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    await resolveActivityReferences(ctx, args, actor);
+    const startedAt = optionalFiniteTimestamp(args.startedAt, "startedAt");
+    const completedAt = optionalFiniteTimestamp(args.completedAt, "completedAt");
+    if (startedAt !== undefined && completedAt !== undefined && completedAt < startedAt) {
+      throw new Error("completedAt must be on or after startedAt");
+    }
+
+    const now = Date.now();
+    const providerRunId = await ctx.db.insert("providerRuns", {
+      tenantId: actor.tenantId,
+      provider: args.provider,
+      adapterVersion: nonBlank(args.adapterVersion, "adapterVersion"),
+      purpose: args.purpose,
+      status: args.status,
+      inputHash: nonBlank(args.inputHash, "inputHash"),
+      outputSummary: optionalNonBlank(args.outputSummary),
+      errorMessage: optionalNonBlank(args.errorMessage),
+      rfqId: args.rfqId,
+      quoteId: args.quoteId,
+      offerId: args.offerId,
+      startedAt,
+      completedAt,
+      createdAt: now,
+    });
+    const activityId = await ctx.db.insert("activities", {
+      tenantId: actor.tenantId,
+      rfqId: args.rfqId,
+      quoteId: args.quoteId,
+      offerId: args.offerId,
+      providerRunId,
+      actorType: "provider",
+      actorName: args.provider,
+      kind: "provider_run",
+      message: providerRunActivityMessage(args),
+      createdAt: now,
+    });
+
+    return {
+      activityId,
+      providerRunId,
+      status: args.status,
+    };
+  },
+});
+
 async function upsertImportedCustomer(
   ctx: MutationCtx,
   operation: Extract<DemoWorkspaceImportOperation, { kind: "upsert_customer" }>,
@@ -1065,6 +1151,10 @@ function offerReleaseExecutionActivityMessage(input: {
   return `Recorded ${modeLabel} release execution audit for ${input.offerNumber}: ${input.status} (${input.commandCount} commands).`;
 }
 
+function providerRunActivityMessage(input: { provider: string; purpose: string; status: string }): string {
+  return `Recorded ${input.provider} ${input.purpose} provider run: ${input.status}.`;
+}
+
 function mapToRecord<T extends string>(map: Map<string, GenericId<T>>): Record<string, string> {
   return Object.fromEntries([...map.entries()].map(([key, value]) => [key, value]));
 }
@@ -1103,6 +1193,16 @@ function isoTimestamp(value: string, key: string): number {
 
 function optionalIsoTimestamp(value: string | undefined, key: string): number | undefined {
   return value === undefined ? undefined : isoTimestamp(value, key);
+}
+
+function optionalFiniteTimestamp(value: number | undefined, key: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Number.isFinite(value)) {
+    throw new Error(`${key} must be a finite timestamp`);
+  }
+  return value;
 }
 
 function boundedLimit(value: number | undefined, maximum = 100): number {
