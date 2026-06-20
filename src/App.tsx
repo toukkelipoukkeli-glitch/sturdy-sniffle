@@ -28,7 +28,12 @@ import {
   type GmailOfferReplySyncResult,
 } from "./domain/integrations/gmailOfferReply"
 import { createMockGmailRfqProvider, type GmailRfqMessage } from "./domain/integrations/gmailRfq"
-import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
+import { buildCncOfferDraft, type OfferDraft } from "./domain/offers/offer"
+import {
+  buildOfferExportPackage,
+  type OfferAlternateQuoteInput,
+  type OfferExportPackage,
+} from "./domain/offers/offerExportPackage"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
@@ -496,6 +501,14 @@ function App() {
       }),
     [quote, selectedItem],
   )
+  const offerExportPackage = useMemo(
+    () =>
+      buildOfferExportPackage({
+        offer,
+        alternates: buildOfferAlternateInputs(quoteInput),
+      }),
+    [offer, quoteInput],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
     const adapter = createGmailOfferReplyAdapter({
@@ -734,7 +747,14 @@ function App() {
               setupMinutes={setupMinutes}
             />
           ) : null}
-          {activeView === "offer" ? <OfferView offer={offer} replySync={offerReplySync} onSyncReplies={syncOfferReplies} /> : null}
+          {activeView === "offer" ? (
+            <OfferView
+              exportPackage={offerExportPackage}
+              offer={offer}
+              replySync={offerReplySync}
+              onSyncReplies={syncOfferReplies}
+            />
+          ) : null}
         </section>
 
         <aside className="inspector-panel" aria-label="Quote inspector">
@@ -1245,15 +1265,17 @@ function CadMetadataPanel({ preview }: { preview: PartPreviewModel }) {
 }
 
 function OfferView({
+  exportPackage,
   offer,
   onSyncReplies,
   replySync,
 }: {
+  exportPackage: OfferExportPackage
   offer: OfferDraft
   onSyncReplies: () => void
   replySync?: GmailOfferReplySyncResult
 }) {
-  const offerText = renderOfferText(offer)
+  const offerText = exportPackage.plainText
 
   return (
     <div className="workspace-section">
@@ -1272,12 +1294,67 @@ function OfferView({
           <div key={term.key}>{term.value}</div>
         ))}
       </div>
+      <OfferExportPackagePanel exportPackage={exportPackage} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
       </label>
     </div>
+  )
+}
+
+function OfferExportPackagePanel({ exportPackage }: { exportPackage: OfferExportPackage }) {
+  const pdfReady = exportPackage.pdf.status === "ready"
+
+  return (
+    <section className="offer-export-panel" aria-label="Offer export package">
+      <div className="offer-export-heading">
+        <div>
+          <span className="eyebrow">
+            <FileText aria-hidden="true" />
+            Export package
+          </span>
+          <strong>{pdfReady ? "PDF ready" : "Review required"}</strong>
+        </div>
+        <span className={`export-status export-status-${exportPackage.pdf.status}`}>{exportPackage.pdf.status.replace("_", " ")}</span>
+      </div>
+      <div className="offer-export-summary">
+        <Metric label="PDF file" value={exportPackage.pdf.targetFileName} />
+        <Metric label="Revision" value={`Rev ${exportPackage.revisionSummary.latestRevision}`} />
+        <Metric label="Fingerprint" value={exportPackage.pdf.contentFingerprint} />
+      </div>
+      <div className="alternate-list" aria-label="Offer alternates">
+        {exportPackage.alternates.map((alternate) => (
+          <article className="alternate-row" key={alternate.id}>
+            <div>
+              <strong>{alternate.label}</strong>
+              <span>{alternate.recommendation}</span>
+            </div>
+            <div>
+              <span>Total</span>
+              <strong>{alternate.totalLabel}</strong>
+              <small>{alternate.priceDeltaLabel}</small>
+            </div>
+            <div>
+              <span>Lead</span>
+              <strong>{alternate.leadTimeLabel}</strong>
+              <small>{alternate.leadTimeDeltaLabel}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+      {exportPackage.pdf.warnings.length > 0 ? (
+        <div className="provider-warning-list">
+          {exportPackage.pdf.warnings.map((warning) => (
+            <div className="flag" key={warning}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
   )
 }
 
@@ -1453,6 +1530,27 @@ function buildScenarioComparisonInputs(
     { id: "baseline", label: "RFQ baseline", quote: calculateCncQuote(normalizedBaseInput) },
     { id: "standard", label: "Standard lead time", quote: calculateCncQuote(standardInput) },
     { id: "rush", label: "Rush expedite", quote: calculateCncQuote(rushInput) },
+  ]
+}
+
+function buildOfferAlternateInputs(input: CncQuoteInput): OfferAlternateQuoteInput[] {
+  const alternatePriority = input.priority === "rush" ? "normal" : "rush"
+  const label = alternatePriority === "rush" ? "Rush expedite option" : "Standard lead time option"
+  const note =
+    alternatePriority === "rush"
+      ? "Expedite lead time uses the configured rush multiplier."
+      : "Standard lead time removes rush scheduling pressure."
+
+  return [
+    {
+      id: alternatePriority,
+      label,
+      note,
+      quote: calculateCncQuote({
+        ...input,
+        priority: alternatePriority,
+      }),
+    },
   ]
 }
 
