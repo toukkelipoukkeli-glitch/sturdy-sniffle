@@ -3,7 +3,7 @@ import { calculateCncQuote } from "../quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "../quoting/cnc.fixtures"
 import { parseRfqIntake } from "../rfq/intake"
 import { cncBracketEmail, rushSheetMetalEmail } from "../rfq/intake.fixtures"
-import { buildCncOfferDraft } from "../offers/offer"
+import { buildCncOfferDraft, formatOfferMoney } from "../offers/offer"
 import { buildOfferLifecycleTimeline } from "../offers/offerLifecycle"
 
 export const DEMO_WORKSPACE_SEED_VERSION = "demo-workspace-seed.v1"
@@ -17,6 +17,12 @@ export interface DemoWorkspaceSeed {
   quotes: DemoQuoteSeed[]
   offers: DemoOfferSeed[]
   activities: DemoActivitySeed[]
+}
+
+export interface SerializedDemoWorkspaceSeed {
+  seedVersion: typeof DEMO_WORKSPACE_SEED_VERSION
+  manifestText: string
+  seedJson: string
 }
 
 export interface DemoCustomerSeed {
@@ -46,6 +52,7 @@ export interface DemoQuoteSeed {
 
 export interface DemoOfferSeed {
   id: string
+  currency: "EUR" | "USD" | "GBP"
   customerId: string
   offerNumber: string
   quoteId: string
@@ -168,6 +175,7 @@ export function buildDemoWorkspaceSeed(input: { generatedAt?: string; tenantId?:
     offers: [
       {
         id: "offer-019",
+        currency: balticOffer.currency,
         customerId: "customer-baltic",
         offerNumber: balticOffer.offerNumber,
         quoteId: "quote-019",
@@ -196,4 +204,68 @@ export function buildDemoWorkspaceSeed(input: { generatedAt?: string; tenantId?:
       },
     ],
   }
+}
+
+export function serializeDemoWorkspaceSeed(seed: DemoWorkspaceSeed = buildDemoWorkspaceSeed()): SerializedDemoWorkspaceSeed {
+  return {
+    seedVersion: seed.seedVersion,
+    manifestText: renderDemoWorkspaceSeedManifest(seed),
+    seedJson: stableJson(seed),
+  }
+}
+
+export function renderDemoWorkspaceSeedManifest(seed: DemoWorkspaceSeed): string {
+  const lines = [
+    `FactoryBid demo workspace seed ${seed.seedVersion}`,
+    `Tenant: ${seed.tenantId}`,
+    `Generated: ${seed.generatedAt}`,
+    "",
+    `Customers (${seed.customers.length})`,
+    ...seed.customers.map((customer) => `- ${customer.id}: ${customer.name} [${customer.defaultCurrency}]`),
+    "",
+    `RFQs (${seed.rfqs.length})`,
+    ...seed.rfqs.map((rfq) => {
+      const dueAt = rfq.dueAt ? ` due ${rfq.dueAt}` : ""
+      return `- ${rfq.id}: ${rfq.subject} [${rfq.status}, ${rfq.priority}]${dueAt}`
+    }),
+    "",
+    `Quotes (${seed.quotes.length})`,
+    ...seed.quotes.map(
+      (quote) =>
+        `- ${quote.id}: ${quote.partNumber} ${formatOfferMoney(quote.totalCents, quote.currency)} ${quote.leadTimeDays}d`,
+    ),
+    "",
+    `Offers (${seed.offers.length})`,
+    ...seed.offers.map(
+      (offer) =>
+        `- ${offer.id}: ${offer.offerNumber} [${offer.status}] ${formatOfferMoney(offer.totalCents, offer.currency)} valid ${offer.validUntil}`,
+    ),
+    "",
+    `Activities (${seed.activities.length})`,
+    ...seed.activities.map((activity) => {
+      const target = activity.offerId ?? activity.quoteId ?? activity.rfqId ?? "workspace"
+      return `- ${activity.id}: ${activity.kind} for ${target} at ${activity.occurredAt}`
+    }),
+  ]
+
+  return `${lines.join("\n")}\n`
+}
+
+function stableJson(value: unknown): string {
+  return `${JSON.stringify(value, Object.keys(flattenKeys(value)).sort(), 2)}\n`
+}
+
+function flattenKeys(value: unknown, keys: Record<string, true> = {}): Record<string, true> {
+  if (Array.isArray(value)) {
+    value.forEach((item) => flattenKeys(item, keys))
+    return keys
+  }
+  if (!value || typeof value !== "object") {
+    return keys
+  }
+  Object.entries(value).forEach(([key, nested]) => {
+    keys[key] = true
+    flattenKeys(nested, keys)
+  })
+  return keys
 }
