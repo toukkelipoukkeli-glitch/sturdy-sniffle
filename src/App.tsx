@@ -1024,8 +1024,8 @@ function RfqIntakeReadinessPanel({ readiness }: { readiness: RfqIntakeReadinessR
       </div>
       {readiness.issues.length > 0 ? (
         <div className="rfq-readiness-issues">
-          {readiness.issues.map((issue) => (
-            <div className="flag" key={`${issue.key}-${issue.partNumber ?? "rfq"}`}>
+          {readiness.issues.map((issue, index) => (
+            <div className="flag" key={`${issue.key}-${issue.partNumber ?? "rfq"}-${index}`}>
               <AlertTriangle aria-hidden="true" />
               <span>{issue.partNumber ? `${issue.partNumber}: ${issue.detail}` : issue.detail}</span>
             </div>
@@ -1851,7 +1851,7 @@ function formatRfqDimensions(dimensions: NonNullable<RfqPartDraft["dimensions"]>
 function parseWorkspaceTimestamp(value: string, fieldName: string) {
   const timestamp = Date.parse(value)
   if (!Number.isFinite(timestamp)) {
-    throw new Error(`${fieldName} must be a valid timestamp`)
+    throw new Error(`${fieldName} must be a valid date string`)
   }
 
   return timestamp
