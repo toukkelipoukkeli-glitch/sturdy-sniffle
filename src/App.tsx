@@ -287,6 +287,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
   const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
@@ -301,23 +302,12 @@ function App() {
     }))
   }
 
-  const quoteInput = useMemo<CncQuoteInput>(
-    () => ({
-      ...selectedItem.quoteInput,
-      quantity,
-      priority: rush ? "rush" : "normal",
-      operation: {
-        ...selectedItem.quoteInput.operation,
-        setupMinutes,
-        cycleMinutesPerPart: cycleMinutes,
-      },
-    }),
-    [cycleMinutes, quantity, rush, selectedItem, setupMinutes],
-  )
+  const quoteInput = useMemo<CncQuoteInput>(() => applyQuoteEdit(selectedItem, selectedEdit), [selectedEdit, selectedItem])
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
   const rankedQueue = useMemo(() => {
     const queueInputs = workItems.map((item) => {
-      const itemQuote = item.id === selectedId ? quote : calculateCncQuote(item.quoteInput)
+      const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+      const itemQuote = calculateCncQuote(itemQuoteInput)
       return {
         id: item.id,
         customerName: item.customer,
@@ -330,16 +320,16 @@ function App() {
         estimatedValueCents: itemQuote.totalCents,
       }
     })
-    return rankQuoteQueue(queueInputs, { now: "2026-06-20T09:00:00+03:00" })
-  }, [quote, selectedId])
+    return rankQuoteQueue(queueInputs, { now: queueNow })
+  }, [editsById, queueNow])
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
         items: rankedQueue,
-        now: "2026-06-20T09:00:00+03:00",
+        now: queueNow,
         topItemLimit: 2,
       }),
-    [rankedQueue],
+    [queueNow, rankedQueue],
   )
   const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
   const scenarioComparison = useMemo(
@@ -915,6 +905,19 @@ function defaultEditState(item: QuoteWorkItem): QuoteEditState {
     quantity: item.quoteInput.quantity,
     rush: item.quoteInput.priority === "rush",
     setupMinutes: item.quoteInput.operation.setupMinutes,
+  }
+}
+
+function applyQuoteEdit(item: QuoteWorkItem, edit: QuoteEditState): CncQuoteInput {
+  return {
+    ...item.quoteInput,
+    quantity: edit.quantity,
+    priority: edit.rush ? "rush" : "normal",
+    operation: {
+      ...item.quoteInput.operation,
+      setupMinutes: edit.setupMinutes,
+      cycleMinutesPerPart: edit.cycleMinutes,
+    },
   }
 }
 
