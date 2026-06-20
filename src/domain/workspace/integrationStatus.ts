@@ -63,7 +63,7 @@ export function summarizeWorkspaceIntegrationStatus({
 function persistenceSource(mode: WorkspacePersistenceMode, syncErrorCount: number): IntegrationStatusSource {
   if (syncErrorCount > 0) {
     return {
-      detail: `${syncErrorCount} write${syncErrorCount === 1 ? "" : "s"} used local fallback.`,
+      detail: `${syncErrorCount} operation${syncErrorCount === 1 ? "" : "s"} used local fallback.`,
       key: "persistence",
       label: "Persistence",
       severity: "attention",
@@ -152,8 +152,7 @@ function connectorSource(snapshot: ConnectorSyncPersistenceSnapshot, rfqId: stri
 
 function providerRunSource(providerRuns: ProviderRunAudit[]): IntegrationStatusSource {
   const failedCount = providerRuns.filter((run) => run.status === "failed").length
-  const skippedCount = providerRuns.filter((run) => run.status === "skipped").length
-  const warningCount = providerRuns.filter((run) => run.warnings.length > 0).length
+  const reviewCount = providerRuns.filter((run) => run.status === "skipped" || run.warnings.length > 0).length
 
   if (failedCount > 0) {
     return {
@@ -166,10 +165,10 @@ function providerRunSource(providerRuns: ProviderRunAudit[]): IntegrationStatusS
     }
   }
 
-  if (skippedCount > 0 || warningCount > 0) {
+  if (reviewCount > 0) {
     return {
       count: providerRuns.length,
-      detail: `${skippedCount + warningCount} provider run${skippedCount + warningCount === 1 ? "" : "s"} used fallback or warning paths.`,
+      detail: `${reviewCount} provider run${reviewCount === 1 ? "" : "s"} used fallback or warning paths.`,
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
@@ -222,7 +221,7 @@ function offerReplySource(replySync: GmailOfferReplySyncResult | undefined): Int
 
   if (replySync.status === "fallback") {
     return {
-      count: replySync.records.length,
+      count: matchedCount,
       detail: `${matchedCount} matched reply signal${matchedCount === 1 ? "" : "s"} from fallback search.`,
       key: "offer_replies",
       label: "Offer replies",
