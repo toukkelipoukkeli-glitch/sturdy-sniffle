@@ -739,6 +739,149 @@
   border-color: oklch(0.78 0.1 35);
 }
 
+.outside-service-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.outside-service-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.outside-service-heading > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.outside-service-heading strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.outside-service-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.outside-service-status-covered {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.outside-service-status-needs_action {
+  background: oklch(0.94 0.03 205);
+  color: oklch(0.3 0.07 210);
+}
+
+.outside-service-status-at_risk {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.outside-service-status-blocked {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.outside-service-summary,
+.outside-service-list {
+  display: grid;
+  gap: 8px;
+}
+
+.outside-service-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.outside-service-summary .metric {
+  padding: 8px;
+}
+
+.outside-service-list {
+  grid-template-columns: 1fr;
+}
+
+.outside-service-row {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(150px, 1fr) repeat(3, minmax(88px, 0.45fr));
+  min-height: 86px;
+  padding: 10px;
+}
+
+.outside-service-row[data-selected="true"] {
+  background: oklch(0.965 0.032 190);
+  border-color: oklch(0.72 0.08 190);
+}
+
+.outside-service-row[data-risk="at_risk"] {
+  background: oklch(0.98 0.018 85);
+  border-color: oklch(0.82 0.09 82);
+}
+
+.outside-service-row[data-risk="blocked"] {
+  background: oklch(0.985 0.02 35);
+  border-color: oklch(0.78 0.1 35);
+}
+
+.outside-service-row > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.outside-service-row strong {
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outside-service-row span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.outside-service-row small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.outside-service-empty {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  color: oklch(0.43 0.025 250);
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 10px;
+}
+
 .section-title {
   justify-content: space-between;
   margin-bottom: 14px;
@@ -1976,6 +2119,9 @@
   .capacity-summary,
   .capacity-process-list,
   .capacity-selected-rfq,
+  .outside-service-summary,
+  .outside-service-list,
+  .outside-service-row,
   .operator-action-grid,
   .handoff-editor,
   .rfq-readiness-summary,

@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   TimerReset,
   TrendingUp,
+  Truck,
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
@@ -60,6 +61,12 @@ import {
   type CapacityProcessCommitment,
 } from "./domain/workspace/capacityCommitment"
 import {
+  buildOutsideServicePlan,
+  type OutsideServiceCommitment,
+  type OutsideServicePlan,
+  type OutsideServiceSupplierRule,
+} from "./domain/workspace/outsideServicePlanner"
+import {
   evaluateQuoteApproval,
   type QuoteApprovalCheckStatus,
   type QuoteApprovalCustomerPolicy,
@@ -93,6 +100,33 @@ const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
   sheet_metal: 450,
   wire_edm: 300,
 }
+const outsideServiceSupplierRules: OutsideServiceSupplierRule[] = [
+  {
+    bufferDays: 1,
+    leadTimeDays: 3,
+    match: "passivation",
+    supplierName: "Nordic Surface Works",
+  },
+  {
+    bufferDays: 2,
+    leadTimeDays: 5,
+    match: "anodizing",
+    minimumCostCents: 9000,
+    supplierName: "Arctic Anodize",
+  },
+  {
+    bufferDays: 2,
+    leadTimeDays: 6,
+    match: "heat",
+    supplierName: "HeatPro Tampere",
+  },
+  {
+    bufferDays: 2,
+    leadTimeDays: 4,
+    match: "plating",
+    supplierName: "Baltic Plating Co.",
+  },
+]
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -524,6 +558,33 @@ function App() {
     () => findCommitmentForItem(capacityCommitmentPlan, selectedId),
     [capacityCommitmentPlan, selectedId],
   )
+  const outsideServicePlan = useMemo(
+    () =>
+      buildOutsideServicePlan({
+        items: workItems.map((item) => {
+          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          const itemQuote = calculateCncQuote(itemQuoteInput)
+          return {
+            customerName: item.customer,
+            dueAt: item.dueAt,
+            estimatedValueCents: itemQuote.totalCents,
+            id: item.id,
+            outsideServices: (itemQuoteInput.operation.outsideServices ?? []).map((service) => ({
+              ...service,
+              status: outsideServiceStatusFor(item, service.label),
+            })),
+            priority: itemQuoteInput.priority,
+            process: itemQuoteInput.process,
+            receivedAt: item.receivedAt,
+            status: statusById[item.id] ?? item.status,
+            subject: item.subject,
+          }
+        }),
+        now: queueNow,
+        supplierRules: outsideServiceSupplierRules,
+      }),
+    [editsById, queueNow, statusById],
+  )
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
@@ -811,6 +872,7 @@ function App() {
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
           <ProcessCapabilityPanel activeProcess={selectedItem.quoteInput.process} matrix={processCapabilityMatrix} />
           <CapacityCommitmentPanel plan={capacityCommitmentPlan} selectedItem={selectedItem} />
+          <OutsideServicePanel plan={outsideServicePlan} selectedItem={selectedItem} />
 
           {activeView === "triage" ? (
             <TriageView
@@ -1302,6 +1364,74 @@ function CapacityCommitmentPanel({ plan, selectedItem }: { plan: CapacityCommitm
         </div>
       </div>
     </section>
+  )
+}
+
+function OutsideServicePanel({ plan, selectedItem }: { plan: OutsideServicePlan; selectedItem: QuoteWorkItem }) {
+  const selectedCommitments = plan.commitments.filter((commitment) => commitment.itemId === selectedItem.id)
+  const visibleCommitments = selectedCommitments.length > 0 ? selectedCommitments : plan.commitments.slice(0, 2)
+
+  return (
+    <section className="outside-service-panel" aria-label="Outside service plan">
+      <div className="outside-service-heading">
+        <div>
+          <span className="eyebrow">
+            <Truck aria-hidden="true" />
+            Outside services
+          </span>
+          <strong>
+            {plan.serviceCount === 0 ? "No outsourced operations" : `${plan.serviceCount} service${plan.serviceCount === 1 ? "" : "s"} planned`}
+          </strong>
+        </div>
+        <span className={`outside-service-status outside-service-status-${plan.status}`}>{outsideServiceStatusLabel(plan.status)}</span>
+      </div>
+      <div className="outside-service-summary">
+        <Metric label="Total cost" value={formatCurrency(plan.totalCostCents, "EUR")} />
+        <Metric label="At risk" value={String(plan.atRiskCount)} />
+        <Metric label="Blocked" value={String(plan.blockedCount)} />
+      </div>
+      {visibleCommitments.length > 0 ? (
+        <div className="outside-service-list">
+          {visibleCommitments.map((commitment) => (
+            <OutsideServiceRow commitment={commitment} key={commitment.serviceKey} selected={commitment.itemId === selectedItem.id} />
+          ))}
+        </div>
+      ) : (
+        <div className="outside-service-empty">No open RFQs currently need outsourced finishing or subcontracted operations.</div>
+      )}
+    </section>
+  )
+}
+
+function OutsideServiceRow({
+  commitment,
+  selected,
+}: {
+  commitment: OutsideServiceCommitment
+  selected: boolean
+}) {
+  const issue = commitment.issues[0]
+
+  return (
+    <article className="outside-service-row" data-risk={commitment.risk} data-selected={selected}>
+      <div>
+        <strong>{commitment.label}</strong>
+        <span>{commitment.supplierName ?? "Supplier needed"}</span>
+      </div>
+      <div>
+        <span>Request by</span>
+        <strong>{commitment.requestBy}</strong>
+      </div>
+      <div>
+        <span>Required by</span>
+        <strong>{commitment.requiredBy}</strong>
+      </div>
+      <div>
+        <span>Risk</span>
+        <strong>{outsideServiceStatusLabel(commitment.risk)}</strong>
+      </div>
+      <small>{issue?.message ?? `${humanizeKey(commitment.status)} with ${commitment.leadTimeDays}d supplier lead time.`}</small>
+    </article>
   )
 }
 
@@ -1900,6 +2030,19 @@ function capacityStatusLabel(status: CapacityCommitmentPlan["status"]) {
   }
 }
 
+function outsideServiceStatusLabel(status: OutsideServicePlan["status"]) {
+  switch (status) {
+    case "at_risk":
+      return "At risk"
+    case "blocked":
+      return "Blocked"
+    case "covered":
+      return "Covered"
+    case "needs_action":
+      return "Needs action"
+  }
+}
+
 function toNumber(value: string) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
@@ -1962,6 +2105,13 @@ function findCommitmentForItem(plan: CapacityCommitmentPlan, itemId: string): Ca
       return commitment
     }
   }
+}
+
+function outsideServiceStatusFor(item: QuoteWorkItem, serviceLabel: string) {
+  if (item.customer === "Baltic Hydraulics" && serviceLabel.toLowerCase().includes("passivation")) {
+    return "not_requested" as const
+  }
+  return "quoted" as const
 }
 
 function approvalCustomerPolicyFor(item: QuoteWorkItem): QuoteApprovalCustomerPolicy {
