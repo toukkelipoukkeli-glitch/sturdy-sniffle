@@ -1,4 +1,5 @@
 import type { ParsedRfqIntake } from "../rfq/intake"
+import { normalizeIsoTimestamp } from "../shared/deterministic"
 
 export const CALENDAR_RFQ_ADAPTER_VERSION = "calendar-rfq.v1"
 
@@ -185,7 +186,7 @@ export function buildRfqCalendarPlan(request: BuildRfqCalendarPlanRequest): Cale
 
   const quoteWorkMinutes = positiveInteger(request.quoteWorkMinutes ?? defaultQuoteWorkMinutes, "quoteWorkMinutes")
   const dueReminderMinutes = positiveInteger(request.dueReminderMinutes ?? defaultDueReminderMinutes, "dueReminderMinutes")
-  const dueDate = new Date(dueAt)
+  const dueDate = parseRequiredTimestamp(dueAt, "parsedRfq.dueAt")
   const dueReminderStart = addMinutes(dueDate, -dueReminderMinutes)
   const workHoldEnd = addMinutes(dueDate, -60)
   const workHoldStart = addMinutes(workHoldEnd, -quoteWorkMinutes)
@@ -267,11 +268,18 @@ function addMinutes(date: Date, minutes: number): Date {
 }
 
 function parseRequiredDate(value: string, fieldName: string): Date {
-  const timestamp = Date.parse(value)
-  if (Number.isNaN(timestamp)) {
-    throw new Error(`Invalid ${fieldName}: ${value}`)
+  return new Date(normalizeIsoTimestamp(value, fieldName))
+}
+
+function parseRequiredTimestamp(value: number, fieldName: string): Date {
+  if (!Number.isFinite(value)) {
+    throw new Error(`${fieldName} must be a finite timestamp`)
   }
-  return new Date(timestamp)
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${fieldName} must be a valid timestamp`)
+  }
+  return date
 }
 
 function positiveInteger(value: number, key: string): number {
