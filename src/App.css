@@ -1797,7 +1797,8 @@
 .offer-export-panel,
 .quote-approval-panel,
 .offer-readiness-panel,
-.quote-release-panel {
+.quote-release-panel,
+.offer-release-plan-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
   display: grid;
@@ -1810,6 +1811,7 @@
 .quote-approval-heading,
 .offer-readiness-heading,
 .quote-release-heading,
+.offer-release-plan-heading,
 .offer-reply-heading,
 .offer-reply-card {
   align-items: center;
@@ -1822,6 +1824,7 @@
 .quote-approval-heading > div,
 .offer-readiness-heading > div,
 .quote-release-heading > div,
+.offer-release-plan-heading > div,
 .offer-reply-heading > div,
 .offer-reply-card > div {
   display: grid;
@@ -1833,6 +1836,7 @@
 .quote-approval-heading strong,
 .offer-readiness-heading strong,
 .quote-release-heading strong,
+.offer-release-plan-heading strong,
 .offer-reply-heading strong {
   font-size: 0.92rem;
 }
@@ -1928,6 +1932,30 @@
   color: oklch(0.42 0.11 35);
 }
 
+.offer-release-plan-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.offer-release-plan-status-ready {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.offer-release-plan-status-needs_review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.offer-release-plan-status-blocked {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
 .offer-export-summary,
 .quote-approval-summary,
 .quote-approval-checks,
@@ -1936,6 +1964,9 @@
 .quote-release-summary,
 .quote-release-checks,
 .quote-release-actions,
+.offer-release-plan-summary,
+.offer-release-command-list,
+.offer-release-next-actions,
 .offer-reply-summary,
 .offer-reply-list {
   display: grid;
@@ -1958,6 +1989,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.offer-release-plan-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .quote-approval-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -1974,9 +2009,14 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.offer-release-command-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .quote-approval-check,
 .offer-readiness-check,
-.quote-release-check {
+.quote-release-check,
+.offer-release-command {
   align-items: start;
   background: oklch(0.985 0.004 240);
   border: 1px solid oklch(0.9 0.016 235);
@@ -1990,25 +2030,29 @@
 
 .quote-approval-check[data-status="passed"],
 .offer-readiness-check[data-status="passed"],
-.quote-release-check[data-status="passed"] {
+.quote-release-check[data-status="passed"],
+.offer-release-command[data-status="ready"] {
   border-color: oklch(0.84 0.05 155);
 }
 
 .quote-approval-check[data-status="warning"],
 .offer-readiness-check[data-status="warning"],
-.quote-release-check[data-status="warning"] {
+.quote-release-check[data-status="warning"],
+.offer-release-command[data-status="requires_review"] {
   border-color: oklch(0.82 0.09 82);
 }
 
 .quote-approval-check[data-status="blocked"],
 .offer-readiness-check[data-status="blocked"],
-.quote-release-check[data-status="blocked"] {
+.quote-release-check[data-status="blocked"],
+.offer-release-command[data-status="blocked"] {
   border-color: oklch(0.78 0.1 35);
 }
 
 .quote-approval-check-icon,
 .offer-readiness-check-icon,
-.quote-release-check-icon {
+.quote-release-check-icon,
+.offer-release-command-icon {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
@@ -2019,35 +2063,40 @@
 
 .quote-approval-check-icon svg,
 .offer-readiness-check-icon svg,
-.quote-release-check-icon svg {
+.quote-release-check-icon svg,
+.offer-release-command-icon svg {
   height: 16px;
   width: 16px;
 }
 
 .quote-approval-check[data-status="passed"] .quote-approval-check-icon,
 .offer-readiness-check[data-status="passed"] .offer-readiness-check-icon,
-.quote-release-check[data-status="passed"] .quote-release-check-icon {
+.quote-release-check[data-status="passed"] .quote-release-check-icon,
+.offer-release-command[data-status="ready"] .offer-release-command-icon {
   background: oklch(0.94 0.035 155);
   color: oklch(0.31 0.08 155);
 }
 
 .quote-approval-check[data-status="warning"] .quote-approval-check-icon,
 .offer-readiness-check[data-status="warning"] .offer-readiness-check-icon,
-.quote-release-check[data-status="warning"] .quote-release-check-icon {
+.quote-release-check[data-status="warning"] .quote-release-check-icon,
+.offer-release-command[data-status="requires_review"] .offer-release-command-icon {
   background: oklch(0.96 0.05 82);
   color: oklch(0.36 0.09 75);
 }
 
 .quote-approval-check[data-status="blocked"] .quote-approval-check-icon,
 .offer-readiness-check[data-status="blocked"] .offer-readiness-check-icon,
-.quote-release-check[data-status="blocked"] .quote-release-check-icon {
+.quote-release-check[data-status="blocked"] .quote-release-check-icon,
+.offer-release-command[data-status="blocked"] .offer-release-command-icon {
   background: oklch(0.96 0.04 35);
   color: oklch(0.42 0.11 35);
 }
 
 .quote-approval-check div,
 .offer-readiness-check div,
-.quote-release-check div {
+.quote-release-check div,
+.offer-release-command div {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -2055,13 +2104,15 @@
 
 .quote-approval-check strong,
 .offer-readiness-check strong,
-.quote-release-check strong {
+.quote-release-check strong,
+.offer-release-command strong {
   font-size: 0.82rem;
 }
 
 .quote-approval-check span,
 .offer-readiness-check span,
-.quote-release-check span {
+.quote-release-check span,
+.offer-release-command span {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
   font-weight: 700;
@@ -2354,6 +2405,8 @@
   .offer-readiness-checks,
   .quote-release-summary,
   .quote-release-checks,
+  .offer-release-plan-summary,
+  .offer-release-command-list,
   .offer-reply-summary {
     grid-template-columns: 1fr;
   }

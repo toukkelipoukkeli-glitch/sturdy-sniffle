@@ -96,6 +96,14 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Quote release gate")).toContainText("Offer send readiness needs review.")
   await expect(page.getByLabel("Quote release gate")).toContainText("Allocated material is missing certificate paperwork.")
   await expect(page.getByLabel("Quote release gate")).toContainText("1 outside service at risk before offer release.")
+  await expect(page.getByLabel("Offer release command plan")).toContainText("Blocked before release")
+  await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Mode" })).toContainText("blocked")
+  await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Commands" })).toContainText("1")
+  await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Follow-ups" })).toContainText("0")
+  await expect(page.getByLabel("Offer release command plan")).toContainText("Resolve release blockers")
+  await expect(page.getByLabel("Offer release command plan")).toContainText(
+    "RFQ status must be ready before offer release; current status is estimating.",
+  )
   await page.getByRole("button", { name: "Sync replies" }).click()
   await expect(page.getByLabel("Offer reply sync")).toContainText("2 matched reply signals")
   await expect(page.getByLabel("Offer reply sync")).toContainText("fallback")

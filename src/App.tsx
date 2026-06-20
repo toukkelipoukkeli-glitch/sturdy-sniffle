@@ -38,6 +38,11 @@ import {
   type OfferExportPackage,
 } from "./domain/offers/offerExportPackage"
 import {
+  buildOfferReleasePlan,
+  type OfferReleaseCommandStatus,
+  type OfferReleasePlan,
+} from "./domain/offers/offerReleasePlan"
+import {
   evaluateOfferSendReadiness,
   type OfferSendReadinessCheckStatus,
   type OfferSendReadinessResult,
@@ -775,6 +780,29 @@ function App() {
       selectedOutsideServiceCommitments,
     ],
   )
+  const offerReleasePlan = useMemo(
+    () =>
+      buildOfferReleasePlan({
+        actor: "Sari",
+        currentRfqStatus: selectedStatus,
+        exportPackage: offerExportPackage,
+        followUpDueAt: offerFollowUpScheduledAt,
+        followUpTaskId: `follow-up-${selectedItem.id}`,
+        offer,
+        offerId: offer.offerNumber.toLowerCase(),
+        releaseGate: quoteReleaseGate,
+        rfqId: selectedItem.id,
+        timezone: "Europe/Helsinki",
+      }),
+    [
+      offer,
+      offerExportPackage,
+      offerFollowUpScheduledAt,
+      quoteReleaseGate,
+      selectedItem.id,
+      selectedStatus,
+    ],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
     const adapter = createGmailOfferReplyAdapter({
@@ -1025,6 +1053,7 @@ function App() {
               offer={offer}
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
+              releasePlan={offerReleasePlan}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
             />
@@ -1904,6 +1933,7 @@ function OfferView({
   onSyncReplies,
   readiness,
   releaseGate,
+  releasePlan,
   replySync,
 }: {
   approval: QuoteApprovalDecision
@@ -1912,6 +1942,7 @@ function OfferView({
   onSyncReplies: () => void
   readiness: OfferSendReadinessResult
   releaseGate: QuoteReleaseGateDecision
+  releasePlan: OfferReleasePlan
   replySync?: GmailOfferReplySyncResult
 }) {
   const offerText = exportPackage.plainText
@@ -1937,6 +1968,7 @@ function OfferView({
       <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />
       <QuoteReleaseGatePanel releaseGate={releaseGate} />
+      <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
@@ -1944,6 +1976,74 @@ function OfferView({
       </label>
     </div>
   )
+}
+
+function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
+  const statusLabel = offerReleasePlanStatusLabel(releasePlan.status)
+
+  return (
+    <section className="offer-release-plan-panel" aria-label="Offer release command plan">
+      <div className="offer-release-plan-heading">
+        <div>
+          <span className="eyebrow">
+            <Truck aria-hidden="true" />
+            Release plan
+          </span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <span className={`offer-release-plan-status offer-release-plan-status-${releasePlan.status}`}>
+          {humanizeKey(releasePlan.status)}
+        </span>
+      </div>
+      <div className="offer-release-plan-summary">
+        <Metric label="Mode" value={humanizeKey(releasePlan.mode)} />
+        <Metric label="Commands" value={String(releasePlan.commands.length)} />
+        <Metric label="Follow-ups" value={String(releasePlan.calendarPlan?.events.length ?? 0)} />
+      </div>
+      <div className="offer-release-command-list">
+        {releasePlan.commands.map((command) => (
+          <div className="offer-release-command" data-status={command.status} key={command.key}>
+            <OfferReleaseCommandIcon status={command.status} />
+            <div>
+              <strong>{command.label}</strong>
+              <span>{command.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {releasePlan.nextActions.length > 0 ? (
+        <div className="offer-release-next-actions">
+          {releasePlan.nextActions.map((action) => (
+            <div className={releasePlan.status === "ready" ? "flag ok" : "flag"} key={action}>
+              {releasePlan.status === "ready" ? <CheckCircle2 aria-hidden="true" /> : <AlertTriangle aria-hidden="true" />}
+              <span>{action}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function OfferReleaseCommandIcon({ status }: { status: OfferReleaseCommandStatus }) {
+  const Icon = status === "ready" ? CheckCircle2 : AlertTriangle
+
+  return (
+    <span className="offer-release-command-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function offerReleasePlanStatusLabel(status: OfferReleasePlan["status"]) {
+  switch (status) {
+    case "blocked":
+      return "Blocked before release"
+    case "needs_review":
+      return "Manager review required"
+    case "ready":
+      return "Release commands ready"
+  }
 }
 
 function QuoteReleaseGatePanel({ releaseGate }: { releaseGate: QuoteReleaseGateDecision }) {
