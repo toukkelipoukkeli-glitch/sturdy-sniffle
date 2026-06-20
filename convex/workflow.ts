@@ -3,7 +3,11 @@ import { v, type GenericId, type Infer } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { documentBelongsToFactoryBidTenant, requireFactoryBidActor, type FactoryBidActor } from "./authz";
-import { buildOfferStatusTransitionPatch } from "./workflowRules";
+import {
+  assertMatchingActivityReferences,
+  buildOfferReplySyncWritePlan,
+  buildOfferStatusTransitionPatch,
+} from "./workflowRules";
 
 const processKey = v.union(
   v.literal("cnc_milling"),
@@ -75,6 +79,13 @@ const integrationProvider = v.union(v.literal("gmail"), v.literal("calendar"));
 const integrationSyncStatus = v.union(v.literal("linked"), v.literal("stale"), v.literal("blocked"));
 
 const connectorActivityKind = v.union(v.literal("email_received"), v.literal("calendar_event"), v.literal("note"));
+
+const offerReplyActivityKind = v.union(v.literal("email_received"), v.literal("note"));
+
+const offerReplyStatusTransition = v.object({
+  status: v.union(v.literal("accepted"), v.literal("declined")),
+  message: v.optional(v.string()),
+});
 
 const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
 
@@ -926,6 +937,70 @@ export const createOfferFollowUpActivity = mutation({
   },
 });
 
+export const recordOfferReplySync = mutation({
+  args: {
+    offerId: v.id("offers"),
+    quoteId: v.optional(v.id("quoteScenarios")),
+    rfqId: v.optional(v.id("rfqs")),
+    activities: v.array(v.object({
+      actorName: v.optional(v.string()),
+      kind: offerReplyActivityKind,
+      message: v.string(),
+    })),
+    statusTransitions: v.array(offerReplyStatusTransition),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    await resolveActivityReferences(ctx, args, actor);
+
+    const now = Date.now();
+    const quoteId = args.quoteId ?? offer.quoteId;
+    const rfqId = args.rfqId ?? offer.rfqId;
+    const activityIds = [];
+
+    const plan = buildOfferReplySyncWritePlan({
+      activities: args.activities,
+      currentStatus: offer.status,
+      offerId: args.offerId,
+      offerNumber: offer.offerNumber,
+      quoteId,
+      rfqId,
+      sentAt: offer.sentAt,
+      statusTransitions: args.statusTransitions,
+      tenantId: actor.tenantId,
+      now,
+    });
+
+    for (const offerPatch of plan.offerPatches) {
+      await ctx.db.patch(args.offerId, offerPatch.patch);
+    }
+
+    for (const activity of plan.activities) {
+      activityIds.push(await ctx.db.insert("activities", {
+        offerId: args.offerId,
+        tenantId: actor.tenantId,
+        quoteId,
+        rfqId,
+        actorType: activity.actorType,
+        actorName: activity.actorName,
+        kind: activity.kind,
+        message: activity.message,
+        createdAt: activity.createdAt,
+      }));
+    }
+
+    return {
+      activityCount: activityIds.length,
+      activityIds,
+      appliedTransitionCount: plan.appliedTransitionCount,
+      offerId: args.offerId,
+      skippedTransitionCount: plan.skippedTransitionCount,
+      status: plan.status,
+    };
+  },
+});
+
 export const recordWorkspaceActivity = mutation({
   args: {
     rfqId: v.optional(v.id("rfqs")),
@@ -1342,15 +1417,7 @@ async function resolveActivityReferences(
   const quote = args.quoteId ? await requireTenantDocument<QuoteScenarioDocument>(ctx, args.quoteId, "quoteId", actor) : undefined;
   const rfq = args.rfqId ? await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor) : undefined;
 
-  if (offer && quote && offer.quoteId !== args.quoteId) {
-    throw new Error("activity references do not match");
-  }
-  if (offer && rfq && offer.rfqId !== args.rfqId) {
-    throw new Error("activity references do not match");
-  }
-  if (quote && rfq && quote.rfqId !== args.rfqId) {
-    throw new Error("activity references do not match");
-  }
+  assertMatchingActivityReferences({ offer, quote, quoteId: args.quoteId, rfqId: args.rfqId });
 
   return { offer, quote, rfq };
 }
