@@ -162,7 +162,7 @@ describe("connector RFQ sync orchestration", () => {
     expect(result.warnings).toEqual([])
   })
 
-  it("records per-RFQ calendar skips and rejects invalid orchestration inputs", async () => {
+  it("records per-RFQ calendar skips when an RFQ has no due date", async () => {
     const orchestrator = createConnectorRfqSyncOrchestrator({
       gmailAdapter: createGmailRfqIntakeAdapter({
         provider: createMockGmailRfqProvider({ messages: [noDueMessage] }),
@@ -183,7 +183,9 @@ describe("connector RFQ sync orchestration", () => {
     expect(result.warnings).toEqual([
       "rfq-msg-002-001: RFQ has no due date; calendar quote due events were not created.",
     ])
+  })
 
+  it("rejects invalid orchestration inputs", async () => {
     await expect(
       createConnectorRfqSyncOrchestrator().syncRfqInbox({
         gmail: { query: "rfq" },
