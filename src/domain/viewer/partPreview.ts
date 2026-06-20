@@ -54,7 +54,7 @@ export interface PartPreviewCadMetadata {
   status: CadMetadataResult["status"]
   format: CadMetadataResult["format"]
   materialText?: string
-  process?: string
+  process?: CadMetadataResult["process"]
   metadataOnly: boolean
   warnings: string[]
 }
@@ -87,8 +87,9 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
   const primaryAttachment = rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
   const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentNames, input.cadMetadata ?? [])
+  const primaryAttachmentToken = primaryAttachment ? normalizeToken(primaryAttachment.fileName) : undefined
   const primaryCadMetadata =
-    cadMetadata.find((metadata) => metadata.fileName === primaryAttachment?.fileName) ?? cadMetadata[0]
+    cadMetadata.find((metadata) => normalizeToken(metadata.fileName) === primaryAttachmentToken) ?? cadMetadata[0]
   const measurementOverlays = buildMeasurementOverlays({
     ...input.part,
     dimensions: {

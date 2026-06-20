@@ -138,6 +138,64 @@ describe("part preview model", () => {
     expect(model.warnings).toContain("Check bend relief manually.")
   })
 
+  it("matches primary CAD metadata with normalized file names", () => {
+    const model = buildPartPreviewModel({
+      part: {
+        partNumber: "FB-204-A",
+        attachmentNames: ["FB-204-A.step", "FB-204-A.pdf"],
+      },
+      attachments: [
+        {
+          fileName: "FB-204-A.step",
+          kind: "cad",
+        },
+        {
+          fileName: "FB-204-A.pdf",
+          kind: "drawing",
+        },
+      ],
+      cadMetadata: [
+        {
+          adapterVersion: "cad-metadata.v1",
+          dimensions: {
+            lengthMm: 10,
+          },
+          fileName: "FB-204-A.pdf",
+          format: "pdf",
+          metadataOnly: true,
+          previewKind: "drawing",
+          provider: "metadata_fallback",
+          status: "fallback",
+          units: "mm",
+          warnings: [],
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          dimensions: {
+            lengthMm: 120,
+            widthMm: 80,
+            heightMm: 6,
+          },
+          fileName: "fb_204_a.STEP",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "cad",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ],
+    })
+
+    expect(model.primaryAttachmentName).toBe("FB-204-A.step")
+    expect(model.measurementOverlays).toEqual([
+      { key: "length", label: "Length", valueMm: 120 },
+      { key: "width", label: "Width", valueMm: 80 },
+      { key: "height", label: "Height", valueMm: 6 },
+    ])
+  })
+
   it("uses metadata-only mode when no previewable attachments match", () => {
     const model = buildPartPreviewModel({
       part: {
