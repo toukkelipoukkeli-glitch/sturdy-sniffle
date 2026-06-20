@@ -536,6 +536,98 @@ export const listOfferReleaseExecutions = query({
   },
 });
 
+export const listProviderRuns = query({
+  args: {
+    status: v.optional(providerRunStatus),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const limit = boundedLimit(args.limit);
+    const status = args.status;
+    const runs = status
+      ? await ctx.db.query("providerRuns").withIndex("by_status", (q) => q.eq("status", status)).order("desc").take(limit)
+      : await ctx.db.query("providerRuns").order("desc").take(limit);
+
+    return runs.filter((run) => belongsToActorTenant(run, actor)).map(compactProviderRun);
+  },
+});
+
+export const listProviderRunsByRfq = query({
+  args: {
+    rfqId: v.id("rfqs"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const rfq = await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor);
+    const limit = boundedLimit(args.limit);
+    const runs = rfq.tenantId
+      ? await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_rfq_created_at", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("providerRuns")
+          .withIndex("by_rfq_created_at", (q) => q.eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit);
+
+    return runs.filter((run) => childBelongsToActorTenant(run, rfq, actor)).map(compactProviderRun);
+  },
+});
+
+export const listProviderRunsByQuote = query({
+  args: {
+    quoteId: v.id("quoteScenarios"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const quote = await requireTenantDocument<QuoteScenarioDocument>(ctx, args.quoteId, "quoteId", actor);
+    const limit = boundedLimit(args.limit);
+    const runs = quote.tenantId
+      ? await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_quote_created_at", (q) => q.eq("tenantId", actor.tenantId).eq("quoteId", args.quoteId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("providerRuns")
+          .withIndex("by_quote_created_at", (q) => q.eq("quoteId", args.quoteId))
+          .order("desc")
+          .take(limit);
+
+    return runs.filter((run) => childBelongsToActorTenant(run, quote, actor)).map(compactProviderRun);
+  },
+});
+
+export const listProviderRunsByOffer = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const runs = offer.tenantId
+      ? await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_offer_created_at", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("providerRuns")
+          .withIndex("by_offer_created_at", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+
+    return runs.filter((run) => childBelongsToActorTenant(run, offer, actor)).map(compactProviderRun);
+  },
+});
+
 export const recordOfferReleaseExecution = mutation({
   args: {
     offerId: v.id("offers"),
@@ -1002,6 +1094,7 @@ type RfqDocument = Pick<Doc<"rfqs">, "status" | "tenantId">;
 type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status" | "tenantId">;
 type QuoteScenarioDocument = Pick<Doc<"quoteScenarios">, "rfqId" | "tenantId">;
+type ProviderRunDocument = Doc<"providerRuns">;
 type DbReaderLike = { db: { get: <T = unknown>(id: GenericId<string>) => Promise<T | null> } };
 
 async function requireDocument<T = unknown>(ctx: DbReaderLike, id: GenericId<string>, key: string) {
@@ -1153,6 +1246,25 @@ function offerReleaseExecutionActivityMessage(input: {
 
 function providerRunActivityMessage(input: { provider: string; purpose: string; status: string }): string {
   return `Recorded ${input.provider} ${input.purpose} provider run: ${input.status}.`;
+}
+
+function compactProviderRun(run: ProviderRunDocument) {
+  return {
+    _id: run._id,
+    provider: run.provider,
+    adapterVersion: run.adapterVersion,
+    purpose: run.purpose,
+    status: run.status,
+    inputHash: run.inputHash,
+    outputSummary: run.outputSummary,
+    errorMessage: run.errorMessage,
+    rfqId: run.rfqId,
+    quoteId: run.quoteId,
+    offerId: run.offerId,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+    createdAt: run.createdAt,
+  };
 }
 
 function mapToRecord<T extends string>(map: Map<string, GenericId<T>>): Record<string, string> {
