@@ -43,6 +43,10 @@ import {
   type OfferReleaseExecutionRun,
 } from "./domain/offers/offerReleaseExecution"
 import {
+  summarizeOfferReleaseExecutionHistory,
+  type OfferReleaseExecutionHistorySummary,
+} from "./domain/offers/offerReleaseExecutionHistory"
+import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
   type OfferReleasePlan,
@@ -818,6 +822,10 @@ function App() {
       }),
     [offerReleasePlan],
   )
+  const offerReleaseHistory = useMemo(
+    () => summarizeOfferReleaseExecutionHistory([offerReleaseExecution]),
+    [offerReleaseExecution],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
     const adapter = createGmailOfferReplyAdapter({
@@ -1069,6 +1077,7 @@ function App() {
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
+              releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
@@ -1950,6 +1959,7 @@ function OfferView({
   readiness,
   releaseGate,
   releaseExecution,
+  releaseHistory,
   releasePlan,
   replySync,
 }: {
@@ -1960,6 +1970,7 @@ function OfferView({
   readiness: OfferSendReadinessResult
   releaseGate: QuoteReleaseGateDecision
   releaseExecution: OfferReleaseExecutionRun
+  releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
   replySync?: GmailOfferReplySyncResult
 }) {
@@ -1988,12 +1999,64 @@ function OfferView({
       <QuoteReleaseGatePanel releaseGate={releaseGate} />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferReleaseExecutionPanel execution={releaseExecution} />
+      <OfferReleaseHistoryPanel history={releaseHistory} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
       </label>
     </div>
+  )
+}
+
+function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionHistorySummary }) {
+  const repeatedCount = history.repeatedFingerprints.length
+  const latestStatus = history.latestRun ? humanizeKey(history.latestRun.status) : "None"
+
+  return (
+    <section className="offer-release-history-panel" aria-label="Offer release execution history">
+      <div className="offer-release-history-heading">
+        <div>
+          <span className="eyebrow">
+            <TimerReset aria-hidden="true" />
+            Execution history
+          </span>
+          <strong>{history.totalRuns === 1 ? "1 recorded run" : `${history.totalRuns} recorded runs`}</strong>
+        </div>
+        <span
+          className={
+            repeatedCount === 0
+              ? "offer-release-history-status offer-release-history-status-ready"
+              : "offer-release-history-status offer-release-history-status-review"
+          }
+        >
+          {repeatedCount === 0 ? "Stable" : "Review retries"}
+        </span>
+      </div>
+      <div className="offer-release-history-summary">
+        <Metric label="Runs" value={String(history.totalRuns)} />
+        <Metric label="Latest" value={latestStatus} />
+        <Metric label="Retries" value={String(repeatedCount)} />
+        <Metric label="Actions" value={String(history.pendingActionCount)} />
+      </div>
+      {repeatedCount === 0 ? (
+        <div className="flag ok">
+          <CheckCircle2 aria-hidden="true" />
+          <span>No repeated release fingerprints.</span>
+        </div>
+      ) : (
+        <div className="offer-release-history-retries">
+          {history.repeatedFingerprints.map((fingerprint) => (
+            <div className="flag" key={fingerprint.executionFingerprint}>
+              <AlertTriangle aria-hidden="true" />
+              <span>
+                {shortAuditFingerprint(fingerprint.executionFingerprint)} repeated {fingerprint.count} times.
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
