@@ -132,6 +132,13 @@ describe("Convex offer status persistence", () => {
         offerId: "convex-offer-019",
       }),
     ).toThrow("currentStatus is not a supported offer status")
+
+    expect(() =>
+      buildConvexOfferStatusTransitionPayloads(timeline, {
+        currentStatus: "accepted",
+        offerId: " ",
+      }),
+    ).toThrow("offerId is required")
   })
 
   it("rejects lifecycle events whose resulting status does not match their status-changing kind", () => {

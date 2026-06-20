@@ -46,6 +46,7 @@ export function buildConvexOfferStatusTransitionPayloads(
   timeline: OfferLifecycleTimeline,
   options: BuildConvexOfferStatusTransitionOptions,
 ): ConvexOfferStatusTransitionPayload[] {
+  const offerId = nonBlank(options.offerId, "offerId")
   const transitionEvents = timeline.events.filter((event) => Boolean(statusChangingLifecycleEvents[event.kind]))
   const statusPath: OfferStatus[] = ["draft", ...transitionEvents.map(targetStatusForLifecycleEvent)]
   const currentStatus = normalizeOfferStatus(options.currentStatus ?? "draft", "currentStatus")
@@ -56,7 +57,7 @@ export function buildConvexOfferStatusTransitionPayloads(
   }
 
   return transitionEvents.slice(currentPathIndex).map((event) => {
-    const payload = buildConvexOfferStatusTransitionPayload(event, options)
+    const payload = buildConvexOfferStatusTransitionPayload(event, { ...options, offerId })
     if (!payload) {
       throw new Error(`lifecycle event ${event.key} does not change offer status`)
     }
