@@ -40,6 +40,49 @@ const keyValue = v.object({
   value: v.string(),
 });
 
+const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
+
+const offerReleaseExecutionStatus = v.union(
+  v.literal("blocked"),
+  v.literal("failed"),
+  v.literal("needs_review"),
+  v.literal("partial"),
+  v.literal("pending"),
+  v.literal("prepared"),
+  v.literal("succeeded"),
+);
+
+const offerReleaseCommandKind = v.union(
+  v.literal("calendar_follow_up"),
+  v.literal("email_draft"),
+  v.literal("lifecycle_follow_up"),
+  v.literal("lifecycle_sent"),
+  v.literal("manager_review"),
+  v.literal("workspace_follow_up"),
+  v.literal("workspace_status"),
+);
+
+const offerReleaseCommandExecutionStatus = v.union(
+  v.literal("applied"),
+  v.literal("blocked"),
+  v.literal("failed"),
+  v.literal("pending"),
+  v.literal("prepared"),
+  v.literal("requires_review"),
+);
+
+const offerReleaseExecutionCommand = v.object({
+  key: v.string(),
+  kind: offerReleaseCommandKind,
+  label: v.string(),
+  detail: v.string(),
+  status: offerReleaseCommandExecutionStatus,
+  idempotencyKey: v.string(),
+  externalId: v.optional(v.string()),
+  message: v.optional(v.string()),
+  warnings: v.array(v.string()),
+});
+
 const moneyBreakdown = v.object({
   label: v.string(),
   amountCents: v.int64(),
@@ -320,6 +363,34 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_offer_number", ["offerNumber"])
     .index("by_tenant_offer_number", ["tenantId", "offerNumber"]),
+
+  offerReleaseExecutions: defineTable({
+    tenantId,
+    offerId: v.id("offers"),
+    quoteId: v.id("quoteScenarios"),
+    rfqId: v.id("rfqs"),
+    executionVersion: v.string(),
+    planVersion: v.string(),
+    mode: offerReleaseExecutionMode,
+    status: offerReleaseExecutionStatus,
+    actorName: v.string(),
+    releaseAt: timestamp,
+    executedAt: timestamp,
+    commandCount: v.number(),
+    lifecycleEventCount: v.number(),
+    workspaceActionCount: v.number(),
+    calendarEventCount: v.number(),
+    artifactCount: v.number(),
+    warningCount: v.number(),
+    commands: v.array(offerReleaseExecutionCommand),
+    nextActions: v.array(v.string()),
+    warnings: v.array(v.string()),
+    createdAt: timestamp,
+  })
+    .index("by_offer_time", ["offerId", "createdAt"])
+    .index("by_tenant_offer_time", ["tenantId", "offerId", "createdAt"])
+    .index("by_status_time", ["status", "createdAt"])
+    .index("by_tenant_status_time", ["tenantId", "status", "createdAt"]),
 
   integrationLinks: defineTable({
     provider: v.union(v.literal("gmail"), v.literal("calendar")),
