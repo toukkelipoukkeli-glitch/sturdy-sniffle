@@ -2020,6 +2020,7 @@ function OfferReleaseExecutionPanel({ execution }: { execution: OfferReleaseExec
         <Metric label="Commands" value={String(execution.commands.length)} />
         <Metric label="Artifacts" value={String(artifactCount)} />
         <Metric label="Warnings" value={String(execution.warnings.length)} />
+        <Metric label="Fingerprint" value={shortAuditFingerprint(execution.executionFingerprint)} />
       </div>
       <div className="offer-release-execution-command-list">
         {execution.commands.map((command) => (
@@ -2077,6 +2078,10 @@ function offerReleaseExecutionStatusLabel(status: OfferReleaseExecutionRun["stat
     case "succeeded":
       return "Execution completed"
   }
+}
+
+function shortAuditFingerprint(fingerprint: string) {
+  return fingerprint.replace(/^offer-release-execution-/, "")
 }
 
 function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
