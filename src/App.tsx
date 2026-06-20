@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
+import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
 import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
@@ -59,6 +60,7 @@ interface QuoteWorkItem {
   tags: string[]
   quoteInput: CncQuoteInput
   attachments: RfqAttachmentDraft[]
+  cadMetadata: CadMetadataResult[]
   notes: string[]
   providerRuns: ProviderRunAudit[]
 }
@@ -90,6 +92,16 @@ const workItems: QuoteWorkItem[] = [
         contentType: "application/pdf",
         sizeBytes: 98304,
       },
+    ],
+    cadMetadata: [
+      buildCadMetadataResult({
+        dimensions: { heightMm: 6, lengthMm: 120, widthMm: 80 },
+        fileName: "FB-204-A.step",
+        format: "step",
+        materialText: "Aluminum 6082",
+        previewKind: "cad",
+        process: "cnc_milling",
+      }),
     ],
     notes: ["STEP and drawing attached", "Customer asked for 25 pcs", "Deburr included"],
     providerRuns: [
@@ -194,6 +206,20 @@ const workItems: QuoteWorkItem[] = [
         sizeBytes: 4096,
       },
     ],
+    cadMetadata: [
+      buildCadMetadataResult({
+        dimensions: { lengthMm: 70 },
+        fileName: "FB-TURN-019.pdf",
+        format: "pdf",
+        materialText: "Stainless steel 316L",
+        metadataOnly: true,
+        previewKind: "drawing",
+        process: "cnc_turning",
+        provider: "metadata_fallback",
+        status: "fallback",
+        warnings: ["CAD parser unavailable; using attachment and RFQ metadata only."],
+      }),
+    ],
     notes: ["Rush lead time requested", "Passivation needed", "Small quantity triggers minimum"],
     providerRuns: [
       buildSampleProviderAudit({
@@ -277,6 +303,20 @@ const workItems: QuoteWorkItem[] = [
         contentType: "application/pdf",
         sizeBytes: 178240,
       },
+    ],
+    cadMetadata: [
+      buildCadMetadataResult({
+        dimensions: { heightMm: 22, lengthMm: 135, widthMm: 78 },
+        fileName: "AI-331-B-revB.pdf",
+        format: "pdf",
+        materialText: "Aluminum 7075",
+        metadataOnly: true,
+        previewKind: "drawing",
+        process: "cnc_milling",
+        provider: "metadata_fallback",
+        status: "fallback",
+        warnings: ["CAD parser unavailable; using attachment and RFQ metadata only."],
+      }),
     ],
     notes: ["Imported from shared folder", "Material substitution allowed", "Revision B drawing"],
     providerRuns: [
@@ -401,6 +441,7 @@ function App() {
     () =>
       buildPartPreviewModel({
         attachments: selectedItem.attachments,
+        cadMetadata: selectedItem.cadMetadata,
         part: partDraftForQuoteInput(quoteInput, selectedItem.attachments),
         subject: selectedItem.subject,
       }),
@@ -899,6 +940,7 @@ function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
             </div>
           ))}
         </div>
+        <CadMetadataPanel preview={preview} />
         <div className="attachment-list" aria-label="Attachments">
           {preview.attachments.map((attachment) => (
             <div className="attachment-row" data-primary={attachment.primary} key={attachment.fileName}>
@@ -920,6 +962,37 @@ function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
         ) : null}
       </div>
     </section>
+  )
+}
+
+function CadMetadataPanel({ preview }: { preview: PartPreviewModel }) {
+  if (preview.cadMetadata.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="cad-metadata-list" aria-label="CAD metadata">
+      {preview.cadMetadata.map((metadata) => (
+        <div className="cad-metadata-row" data-metadata-only={metadata.metadataOnly} key={metadata.fileName}>
+          <div>
+            <span>{metadata.format.toUpperCase()}</span>
+            <strong>{metadata.fileName}</strong>
+          </div>
+          <div>
+            <span>{humanizeKey(metadata.provider)}</span>
+            <strong>{metadata.status}</strong>
+          </div>
+          <div>
+            <span>Material</span>
+            <strong>{metadata.materialText ?? preview.metadata.materialText ?? "Unknown"}</strong>
+          </div>
+          <div>
+            <span>Process</span>
+            <strong>{metadata.process ? humanizeKey(metadata.process) : preview.metadata.process ? humanizeKey(preview.metadata.process) : "Unknown"}</strong>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -1137,6 +1210,45 @@ function buildSampleProviderAudit({
     result,
     startedAt,
   })
+}
+
+function buildCadMetadataResult({
+  dimensions,
+  fileName,
+  format,
+  materialText,
+  metadataOnly = false,
+  previewKind,
+  process,
+  provider = "heuristic",
+  status = "succeeded",
+  warnings = [],
+}: {
+  dimensions: CadMetadataResult["dimensions"]
+  fileName: string
+  format: CadMetadataResult["format"]
+  materialText?: string
+  metadataOnly?: boolean
+  previewKind: CadMetadataResult["previewKind"]
+  process?: CadMetadataResult["process"]
+  provider?: CadMetadataResult["provider"]
+  status?: CadMetadataResult["status"]
+  warnings?: string[]
+}): CadMetadataResult {
+  return {
+    adapterVersion: "cad-metadata.v1",
+    dimensions,
+    fileName,
+    format,
+    materialText,
+    metadataOnly,
+    previewKind,
+    process,
+    provider,
+    status,
+    units: dimensions ? "mm" : "unknown",
+    warnings,
+  }
 }
 
 function offerNumberFor(item: QuoteWorkItem) {
