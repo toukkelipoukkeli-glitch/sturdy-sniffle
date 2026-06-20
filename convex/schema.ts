@@ -440,6 +440,7 @@ export default defineSchema({
     errorMessage: v.optional(v.string()),
     rfqId: v.optional(v.id("rfqs")),
     quoteId: v.optional(v.id("quoteScenarios")),
+    offerId: v.optional(v.id("offers")),
     startedAt: v.optional(timestamp),
     completedAt: v.optional(timestamp),
     createdAt: timestamp,
@@ -450,7 +451,9 @@ export default defineSchema({
     .index("by_input_hash", ["inputHash"])
     .index("by_provider_input_hash", ["provider", "inputHash"])
     .index("by_rfq", ["rfqId"])
-    .index("by_tenant_rfq", ["tenantId", "rfqId"]),
+    .index("by_tenant_rfq", ["tenantId", "rfqId"])
+    .index("by_offer", ["offerId"])
+    .index("by_tenant_offer", ["tenantId", "offerId"]),
 
   activities: defineTable({
     tenantId,
