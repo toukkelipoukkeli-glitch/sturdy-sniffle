@@ -14,11 +14,14 @@ import {
   PackageCheck,
   PanelRight,
   Ruler,
+  ShieldCheck,
   TrendingUp,
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
+import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
+import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
@@ -57,6 +60,7 @@ interface QuoteWorkItem {
   quoteInput: CncQuoteInput
   attachments: RfqAttachmentDraft[]
   notes: string[]
+  providerRuns: ProviderRunAudit[]
 }
 
 const workItems: QuoteWorkItem[] = [
@@ -88,6 +92,33 @@ const workItems: QuoteWorkItem[] = [
       },
     ],
     notes: ["STEP and drawing attached", "Customer asked for 25 pcs", "Deburr included"],
+    providerRuns: [
+      buildSampleProviderAudit({
+        completedAt: "2026-06-20T08:30:04+03:00",
+        metadata: { deterministic: true, fallbackReason: "Provider gemini is not configured; used mock fallback." },
+        outputSummary: "Detected CNC milling RFQ, 25 pcs, aluminum 6082, STEP and drawing attached.",
+        preferredProvider: "gemini",
+        prompt:
+          "Extract RFQ fields from buyer@example.test. API key sk-localfixture12345 appears in a test fixture and must be redacted.",
+        purpose: "extract",
+        resultProvider: "mock",
+        startedAt: "2026-06-20T08:30:01+03:00",
+        status: "succeeded",
+        trace: { quoteId: "quote-204", rfqId: "rfq-204" },
+        warnings: ["Provider gemini is not configured; used mock fallback.", "Mock provider output; no external AI service was called."],
+      }),
+      buildSampleProviderAudit({
+        completedAt: "2026-06-20T08:31:02+03:00",
+        metadata: { deterministic: true },
+        outputSummary: "Summarized customer constraints and highlighted deburr requirement for estimator review.",
+        prompt: "Summarize RFQ notes for North Forge using only local workspace context.",
+        purpose: "summarize",
+        startedAt: "2026-06-20T08:31:00+03:00",
+        status: "succeeded",
+        trace: { quoteId: "quote-204", rfqId: "rfq-204" },
+        warnings: ["Mock provider output; no external AI service was called."],
+      }),
+    ],
     quoteInput: {
       partNumber: "FB-204-A",
       process: "cnc_milling",
@@ -164,6 +195,22 @@ const workItems: QuoteWorkItem[] = [
       },
     ],
     notes: ["Rush lead time requested", "Passivation needed", "Small quantity triggers minimum"],
+    providerRuns: [
+      buildSampleProviderAudit({
+        completedAt: "2026-06-19T15:44:03+03:00",
+        errorMessage: "Local Codex invoker is not configured.",
+        metadata: { deterministic: true, fallbackReason: "Provider local_codex returned skipped; used mock fallback." },
+        outputSummary: "Rush turned spacer RFQ with passivation outside service and minimum-order risk.",
+        preferredProvider: "local_codex",
+        prompt: "Summarize urgent RFQ from mikael@example.test for estimator queue.",
+        purpose: "summarize",
+        resultProvider: "mock",
+        startedAt: "2026-06-19T15:44:00+03:00",
+        status: "succeeded",
+        trace: { quoteId: "quote-019", rfqId: "rfq-019" },
+        warnings: ["Provider local_codex returned skipped; used mock fallback.", "Mock provider output; no external AI service was called."],
+      }),
+    ],
     quoteInput: {
       partNumber: "FB-TURN-019",
       process: "cnc_turning",
@@ -232,6 +279,20 @@ const workItems: QuoteWorkItem[] = [
       },
     ],
     notes: ["Imported from shared folder", "Material substitution allowed", "Revision B drawing"],
+    providerRuns: [
+      buildSampleProviderAudit({
+        completedAt: "2026-06-17T10:12:02+03:00",
+        errorMessage: "Tavily scout quota exhausted for fixture run.",
+        metadata: { retryable: false },
+        preferredProvider: "tavily",
+        prompt: "Scout comparable prototype housing risks for leena@example.test.",
+        purpose: "scout",
+        startedAt: "2026-06-17T10:12:00+03:00",
+        status: "failed",
+        trace: { quoteId: "quote-331", rfqId: "rfq-331" },
+        warnings: ["External scout provider unavailable; keep deterministic quote workflow unblocked."],
+      }),
+    ],
     quoteInput: {
       partNumber: "AI-331-B",
       process: "cnc_milling",
@@ -541,9 +602,66 @@ function App() {
               </div>
             )}
           </div>
+          <ProviderRunReviewPanel audits={selectedItem.providerRuns} />
         </aside>
       </section>
     </main>
+  )
+}
+
+function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
+  const latestAudit = audits[0]
+  if (!latestAudit) {
+    return null
+  }
+
+  return (
+    <section className="provider-review" aria-label="Provider review">
+      <div className="provider-review-heading">
+        <span className="eyebrow">
+          <ShieldCheck aria-hidden="true" />
+          Provider review
+        </span>
+        <span className={`provider-status provider-status-${latestAudit.status}`}>{latestAudit.status}</span>
+      </div>
+      <div className="provider-run-list">
+        {audits.map((audit) => (
+          <article className="provider-run-card" key={audit.runKey}>
+            <div className="provider-run-topline">
+              <strong>{humanizeKey(audit.purpose)}</strong>
+              <span>{formatProvider(audit.provider)}</span>
+            </div>
+            <p className="provider-excerpt">{audit.promptExcerpt}</p>
+            {audit.outputSummary ? <p className="provider-output">{audit.outputSummary}</p> : null}
+            {audit.errorMessage ? <p className="provider-error">{audit.errorMessage}</p> : null}
+            <div className="provider-meta-grid">
+              <Metric label="Adapter" value={audit.adapterVersion} />
+              <Metric label="Duration" value={`${audit.durationMs} ms`} />
+              <Metric label="Hash" value={audit.inputHash} />
+            </div>
+            {Object.keys(audit.metadata).length > 0 ? (
+              <div className="provider-metadata" aria-label="Provider metadata">
+                {Object.entries(audit.metadata).map(([key, value]) => (
+                  <span key={key}>
+                    {humanizeKey(key)}: {String(value)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {audit.warnings.length > 0 ? (
+              <div className="provider-warning-list">
+                {audit.warnings.map((warning) => (
+                  <div className="flag" key={warning}>
+                    <AlertTriangle aria-hidden="true" />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -964,6 +1082,63 @@ function partDraftForQuoteInput(quoteInput: CncQuoteInput, attachments: RfqAttac
   }
 }
 
+function buildSampleProviderAudit({
+  completedAt,
+  errorMessage,
+  metadata,
+  outputSummary,
+  preferredProvider = "mock",
+  prompt,
+  purpose,
+  resultProvider = preferredProvider,
+  startedAt,
+  status,
+  trace,
+  warnings,
+}: {
+  completedAt: string
+  errorMessage?: string
+  metadata: ProviderRunResult["metadata"]
+  outputSummary?: string
+  preferredProvider?: ProviderRunRequest["preferredProvider"]
+  prompt: string
+  purpose: ProviderRunRequest["purpose"]
+  resultProvider?: ProviderRunResult["provider"]
+  startedAt: string
+  status: ProviderRunResult["status"]
+  trace: ProviderRunRequest["trace"]
+  warnings: string[]
+}) {
+  const request: ProviderRunRequest = {
+    input: {
+      fixture: "workspace-provider-review",
+      rfqId: trace?.rfqId ?? "",
+    },
+    preferredProvider,
+    prompt,
+    purpose,
+    trace,
+  }
+  const result: ProviderRunResult = {
+    adapterVersion: resultProvider === "mock" ? "provider-adapter.v1.mock" : `provider-adapter.v1.${resultProvider}`,
+    errorMessage,
+    inputHash: hashProviderInput(request),
+    metadata,
+    outputSummary,
+    provider: resultProvider,
+    purpose,
+    status,
+    warnings,
+  }
+
+  return buildProviderRunAudit({
+    completedAt,
+    request,
+    result,
+    startedAt,
+  })
+}
+
 function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
 }
@@ -1025,6 +1200,21 @@ function formatPreviewMode(mode: PartPreviewMode) {
       return "Sheet"
     case "metadata":
       return "Metadata"
+  }
+}
+
+function formatProvider(provider: ProviderRunAudit["provider"]) {
+  switch (provider) {
+    case "local_codex":
+      return "Local Codex"
+    case "gemini":
+      return "Gemini"
+    case "tavily":
+      return "Tavily"
+    case "elevenlabs":
+      return "ElevenLabs"
+    case "mock":
+      return "Mock"
   }
 }
 

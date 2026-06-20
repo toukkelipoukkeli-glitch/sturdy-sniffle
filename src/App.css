@@ -30,6 +30,8 @@
 .view-tabs,
 .section-title,
 .scenario-comparison-heading,
+.provider-review-heading,
+.provider-run-topline,
 .note-row,
 .flag,
 .priority-badge,
@@ -515,6 +517,8 @@
 .assumption-list,
 .breakdown-list,
 .review-flags,
+.provider-run-list,
+.provider-warning-list,
 .measurement-list,
 .attachment-list,
 .preview-warning-list {
@@ -903,6 +907,120 @@
 .flag.ok {
   background: oklch(0.96 0.035 155);
   color: oklch(0.31 0.08 155);
+}
+
+.provider-review {
+  border-top: 1px solid oklch(0.9 0.016 235);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.provider-review-heading,
+.provider-run-topline {
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.provider-status {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.provider-status-succeeded {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.provider-status-failed {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.provider-status-skipped {
+  background: oklch(0.95 0.035 80);
+  color: oklch(0.42 0.08 75);
+}
+
+.provider-run-card {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+}
+
+.provider-run-topline strong {
+  font-size: 0.88rem;
+  text-transform: capitalize;
+}
+
+.provider-run-topline span {
+  color: oklch(0.39 0.04 210);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.provider-excerpt,
+.provider-output,
+.provider-error {
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 9px;
+}
+
+.provider-excerpt {
+  background: white;
+  border: 1px solid oklch(0.9 0.016 235);
+  color: oklch(0.34 0.025 250);
+}
+
+.provider-output {
+  background: oklch(0.96 0.026 155);
+  color: oklch(0.31 0.075 155);
+}
+
+.provider-error {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.provider-meta-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+.provider-meta-grid .metric {
+  background: white;
+  padding: 8px;
+}
+
+.provider-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.provider-metadata span {
+  background: oklch(0.94 0.02 250);
+  border-radius: 999px;
+  color: oklch(0.34 0.035 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 5px 8px;
+}
+
+.provider-warning-list {
+  margin-top: 0;
 }
 
 @media (max-width: 1180px) {
