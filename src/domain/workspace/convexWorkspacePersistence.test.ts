@@ -100,6 +100,47 @@ describe("convex workspace persistence", () => {
     ])
   })
 
+  it("routes offer follow-up actions through the dedicated Convex mutation when configured", async () => {
+    const calls: Array<{ mutationRef: unknown; args: Record<string, unknown> }> = []
+    const adapter = createConvexWorkspacePersistence({
+      mutationRefs: {
+        createOfferFollowUpActivity: "createOfferFollowUpActivity",
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      resolveOfferId: (offerId) => `convex-${offerId}`,
+      resolveQuoteId: (quoteId) => `convex-${quoteId}`,
+      resolveRfqId: (rfqId) => `convex-${rfqId}`,
+      runMutation: async (mutationRef, args) => {
+        calls.push({ args, mutationRef })
+      },
+    })
+
+    await adapter.recordAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        followUpDueAt: "2026-06-27T09:00:00+03:00",
+        kind: "follow_up_created",
+        occurredAt: "2026-06-20T10:10:00+03:00",
+        offerId: "offer-019",
+        quoteId: "quote-019",
+        rfqId: "rfq-019",
+      }),
+    )
+
+    expect(calls).toEqual([
+      {
+        args: {
+          actorName: "Sari",
+          message: "Created offer follow-up for offer-019.",
+          offerId: "convex-offer-019",
+          rfqId: "convex-rfq-019",
+        },
+        mutationRef: "createOfferFollowUpActivity",
+      },
+    ])
+  })
+
   it("keeps the local fallback usable when Convex persistence fails", async () => {
     const errors: unknown[] = []
     const adapter = createConvexWorkspacePersistence({
