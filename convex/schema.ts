@@ -396,6 +396,7 @@ export default defineSchema({
     .index("by_tenant_status_time", ["tenantId", "status", "createdAt"]),
 
   integrationLinks: defineTable({
+    tenantId,
     provider: v.union(v.literal("gmail"), v.literal("calendar")),
     externalId: v.string(),
     externalUrl: v.optional(v.string()),
@@ -407,9 +408,10 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
-    .index("by_provider_external_id", ["provider", "externalId"])
-    .index("by_rfq", ["rfqId"])
-    .index("by_offer", ["offerId"]),
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_provider_external_id", ["tenantId", "provider", "externalId"])
+    .index("by_tenant_rfq", ["tenantId", "rfqId"])
+    .index("by_tenant_offer", ["tenantId", "offerId"]),
 
   providerRuns: defineTable({
     tenantId,
