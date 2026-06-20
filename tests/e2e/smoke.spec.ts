@@ -4,6 +4,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.goto("/")
 
   await expect(page.getByRole("heading", { name: "FactoryBid OS" })).toBeVisible()
+  await expect(page.getByLabel("Persistence status")).toContainText("Local fallback")
   await expect(page.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeVisible()
   await expect(page.getByLabel("Part preview")).toContainText("FB-204-A.step")
   await expect(page.getByLabel("Attachments", { exact: true })).toContainText("ready")
