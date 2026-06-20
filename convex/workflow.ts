@@ -76,6 +76,13 @@ const integrationSyncStatus = v.union(v.literal("linked"), v.literal("stale"), v
 
 const connectorActivityKind = v.union(v.literal("email_received"), v.literal("calendar_event"), v.literal("note"));
 
+const offerReplyActivityKind = v.union(v.literal("email_received"), v.literal("note"));
+
+const offerReplyStatusTransition = v.object({
+  status: v.union(v.literal("accepted"), v.literal("declined")),
+  message: v.optional(v.string()),
+});
+
 const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
 
 const offerReleaseExecutionStatus = v.union(
@@ -923,6 +930,88 @@ export const createOfferFollowUpActivity = mutation({
       message: nonBlank(args.message, "message"),
       createdAt: Date.now(),
     });
+  },
+});
+
+export const recordOfferReplySync = mutation({
+  args: {
+    offerId: v.id("offers"),
+    quoteId: v.optional(v.id("quoteScenarios")),
+    rfqId: v.optional(v.id("rfqs")),
+    activities: v.array(v.object({
+      actorName: v.optional(v.string()),
+      kind: offerReplyActivityKind,
+      message: v.string(),
+    })),
+    statusTransitions: v.array(offerReplyStatusTransition),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    await resolveActivityReferences(ctx, args, actor);
+
+    const now = Date.now();
+    const quoteId = args.quoteId ?? offer.quoteId;
+    const rfqId = args.rfqId ?? offer.rfqId;
+    let currentStatus = offer.status;
+    let sentAt = offer.sentAt;
+    const activityIds = [];
+    let appliedTransitionCount = 0;
+    let skippedTransitionCount = 0;
+
+    for (const transition of args.statusTransitions) {
+      if (currentStatus === transition.status) {
+        skippedTransitionCount += 1;
+        continue;
+      }
+
+      const patch = buildOfferStatusTransitionPatch({
+        currentStatus,
+        nextStatus: transition.status,
+        now,
+        sentAt,
+      });
+      await ctx.db.patch(args.offerId, patch);
+      const transitionMessage = `Moved offer ${offer.offerNumber} from ${currentStatus} to ${transition.status}.`;
+      const note = optionalNonBlank(transition.message);
+      activityIds.push(await ctx.db.insert("activities", {
+        offerId: args.offerId,
+        tenantId: actor.tenantId,
+        quoteId,
+        rfqId,
+        actorType: "system",
+        actorName: "Offer reply sync",
+        kind: "status_change",
+        message: note ? `${transitionMessage} ${note}` : transitionMessage,
+        createdAt: now,
+      }));
+      currentStatus = transition.status;
+      sentAt = patch.sentAt ?? sentAt;
+      appliedTransitionCount += 1;
+    }
+
+    for (const activity of args.activities) {
+      activityIds.push(await ctx.db.insert("activities", {
+        offerId: args.offerId,
+        tenantId: actor.tenantId,
+        quoteId,
+        rfqId,
+        actorType: "system",
+        actorName: optionalNonBlank(activity.actorName) ?? "Offer reply sync",
+        kind: activity.kind,
+        message: nonBlank(activity.message, "activity.message"),
+        createdAt: now,
+      }));
+    }
+
+    return {
+      activityCount: activityIds.length,
+      activityIds,
+      appliedTransitionCount,
+      offerId: args.offerId,
+      skippedTransitionCount,
+      status: currentStatus,
+    };
   },
 });
 
