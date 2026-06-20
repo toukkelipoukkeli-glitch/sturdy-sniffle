@@ -3,7 +3,11 @@ import { v, type GenericId, type Infer } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { documentBelongsToFactoryBidTenant, requireFactoryBidActor, type FactoryBidActor } from "./authz";
-import { buildOfferStatusTransitionPatch } from "./workflowRules";
+import {
+  assertMatchingActivityReferences,
+  buildOfferReplySyncWritePlan,
+  buildOfferStatusTransitionPatch,
+} from "./workflowRules";
 
 const processKey = v.union(
   v.literal("cnc_milling"),
@@ -953,64 +957,46 @@ export const recordOfferReplySync = mutation({
     const now = Date.now();
     const quoteId = args.quoteId ?? offer.quoteId;
     const rfqId = args.rfqId ?? offer.rfqId;
-    let currentStatus = offer.status;
-    let sentAt = offer.sentAt;
     const activityIds = [];
-    let appliedTransitionCount = 0;
-    let skippedTransitionCount = 0;
 
-    for (const transition of args.statusTransitions) {
-      if (currentStatus === transition.status) {
-        skippedTransitionCount += 1;
-        continue;
-      }
+    const plan = buildOfferReplySyncWritePlan({
+      activities: args.activities,
+      currentStatus: offer.status,
+      offerId: args.offerId,
+      offerNumber: offer.offerNumber,
+      quoteId,
+      rfqId,
+      sentAt: offer.sentAt,
+      statusTransitions: args.statusTransitions,
+      tenantId: actor.tenantId,
+      now,
+    });
 
-      const patch = buildOfferStatusTransitionPatch({
-        currentStatus,
-        nextStatus: transition.status,
-        now,
-        sentAt,
-      });
-      await ctx.db.patch(args.offerId, patch);
-      const transitionMessage = `Moved offer ${offer.offerNumber} from ${currentStatus} to ${transition.status}.`;
-      const note = optionalNonBlank(transition.message);
-      activityIds.push(await ctx.db.insert("activities", {
-        offerId: args.offerId,
-        tenantId: actor.tenantId,
-        quoteId,
-        rfqId,
-        actorType: "system",
-        actorName: "Offer reply sync",
-        kind: "status_change",
-        message: note ? `${transitionMessage} ${note}` : transitionMessage,
-        createdAt: now,
-      }));
-      currentStatus = transition.status;
-      sentAt = patch.sentAt ?? sentAt;
-      appliedTransitionCount += 1;
+    for (const offerPatch of plan.offerPatches) {
+      await ctx.db.patch(args.offerId, offerPatch.patch);
     }
 
-    for (const activity of args.activities) {
+    for (const activity of plan.activities) {
       activityIds.push(await ctx.db.insert("activities", {
         offerId: args.offerId,
         tenantId: actor.tenantId,
         quoteId,
         rfqId,
-        actorType: "system",
-        actorName: optionalNonBlank(activity.actorName) ?? "Offer reply sync",
+        actorType: activity.actorType,
+        actorName: activity.actorName,
         kind: activity.kind,
-        message: nonBlank(activity.message, "activity.message"),
-        createdAt: now,
+        message: activity.message,
+        createdAt: activity.createdAt,
       }));
     }
 
     return {
       activityCount: activityIds.length,
       activityIds,
-      appliedTransitionCount,
+      appliedTransitionCount: plan.appliedTransitionCount,
       offerId: args.offerId,
-      skippedTransitionCount,
-      status: currentStatus,
+      skippedTransitionCount: plan.skippedTransitionCount,
+      status: plan.status,
     };
   },
 });
@@ -1431,15 +1417,7 @@ async function resolveActivityReferences(
   const quote = args.quoteId ? await requireTenantDocument<QuoteScenarioDocument>(ctx, args.quoteId, "quoteId", actor) : undefined;
   const rfq = args.rfqId ? await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor) : undefined;
 
-  if (offer && quote && offer.quoteId !== args.quoteId) {
-    throw new Error("activity references do not match");
-  }
-  if (offer && rfq && offer.rfqId !== args.rfqId) {
-    throw new Error("activity references do not match");
-  }
-  if (quote && rfq && quote.rfqId !== args.rfqId) {
-    throw new Error("activity references do not match");
-  }
+  assertMatchingActivityReferences({ offer, quote, quoteId: args.quoteId, rfqId: args.rfqId });
 
   return { offer, quote, rfq };
 }
