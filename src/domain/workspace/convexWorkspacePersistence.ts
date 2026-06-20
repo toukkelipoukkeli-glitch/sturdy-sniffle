@@ -96,7 +96,6 @@ async function persistActionToConvex({
         actorName: action.actor,
         message: action.activityMessage,
         offerId,
-        quoteId: action.quoteId ? resolveQuoteId?.(action.quoteId) : undefined,
         rfqId,
       }))
       return
