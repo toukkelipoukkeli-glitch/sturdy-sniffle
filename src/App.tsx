@@ -933,48 +933,52 @@ function App() {
     }
   }
   const syncOfferReplies = async () => {
-    const adapter = createGmailOfferReplyAdapter({
-      fallbackProvider: createMockGmailRfqProvider({ messages: buildOfferReplyMessages(selectedItem, offer) }),
-      provider: createMockGmailRfqProvider({ shouldFail: true }),
-    })
-    const localOfferId = offer.offerNumber.toLowerCase()
-    const localQuoteId = `quote-${selectedItem.id.slice(-3)}`
-    const previousSnapshot = offerReplyPersistenceSnapshotsById[selectedId]
-    const localPersistence = createLocalOfferReplySyncPersistence({
-      initialSnapshot: previousSnapshot,
-      payloadOptions: {
-        actorName: "FactoryBid replies",
-        offerId: localOfferId,
-        quoteId: localQuoteId,
-        rfqId: selectedItem.id,
-      },
-    })
-    const convexBridge = createBrowserConvexOfferReplyBridge()
-    const convexOfferId = convexBridge?.resolveOfferId(localOfferId)
-    const persistence =
-      convexBridge && convexOfferId
-        ? createConvexOfferReplySyncPersistence({
-            fallback: localPersistence,
-            mutationRef: convexBridge.mutationRef,
-            onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
-            payloadOptions: {
-              actorName: "FactoryBid replies",
-              offerId: convexOfferId,
-              quoteId: convexBridge.resolveQuoteId(localQuoteId),
-              rfqId: convexBridge.resolveRfqId(selectedItem.id),
-            },
-            runMutation: convexBridge.runMutation,
-          })
-        : localPersistence
-    const result = await adapter.sync({
-      followUpTaskIds: [`follow-up-${selectedItem.id}`],
-      maxResults: 5,
-      offerNumber: offer.offerNumber,
-      query: `offer ${offer.offerNumber}`,
-    })
-    const snapshot = await persistence.recordSync(result)
-    setOfferReplyPersistenceSnapshotsById((current) => ({ ...current, [selectedId]: snapshot }))
-    setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
+    try {
+      const adapter = createGmailOfferReplyAdapter({
+        fallbackProvider: createMockGmailRfqProvider({ messages: buildOfferReplyMessages(selectedItem, offer) }),
+        provider: createMockGmailRfqProvider({ shouldFail: true }),
+      })
+      const localOfferId = offer.offerNumber.toLowerCase()
+      const localQuoteId = `quote-${selectedItem.id.slice(-3)}`
+      const previousSnapshot = offerReplyPersistenceSnapshotsById[selectedId]
+      const localPersistence = createLocalOfferReplySyncPersistence({
+        initialSnapshot: previousSnapshot,
+        payloadOptions: {
+          actorName: "FactoryBid replies",
+          offerId: localOfferId,
+          quoteId: localQuoteId,
+          rfqId: selectedItem.id,
+        },
+      })
+      const convexBridge = createBrowserConvexOfferReplyBridge()
+      const convexOfferId = convexBridge?.resolveOfferId(localOfferId)
+      const persistence =
+        convexBridge && convexOfferId
+          ? createConvexOfferReplySyncPersistence({
+              fallback: localPersistence,
+              mutationRef: convexBridge.mutationRef,
+              onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
+              payloadOptions: {
+                actorName: "FactoryBid replies",
+                offerId: convexOfferId,
+                quoteId: convexBridge.resolveQuoteId(localQuoteId),
+                rfqId: convexBridge.resolveRfqId(selectedItem.id),
+              },
+              runMutation: convexBridge.runMutation,
+            })
+          : localPersistence
+      const result = await adapter.sync({
+        followUpTaskIds: [`follow-up-${selectedItem.id}`],
+        maxResults: 5,
+        offerNumber: offer.offerNumber,
+        query: `offer ${offer.offerNumber}`,
+      })
+      const snapshot = await persistence.recordSync(result)
+      setOfferReplyPersistenceSnapshotsById((current) => ({ ...current, [selectedId]: snapshot }))
+      setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
+    } catch {
+      setPersistenceSyncErrorCount((count) => count + 1)
+    }
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
     setActionsById(snapshot.actionsById)
