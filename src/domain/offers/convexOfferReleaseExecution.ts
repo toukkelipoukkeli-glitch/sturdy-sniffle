@@ -11,11 +11,11 @@ import type { OfferReleaseCommandKind } from "./offerReleasePlan"
 
 export interface ConvexOfferReleaseExecutionPayload {
   offerId: string
+  executionKey: string
   executionVersion: string
   planVersion: string
   mode: OfferReleaseExecutionMode
   status: OfferReleaseExecutionStatus
-  actorName: string
   releaseAt: string
   executedAt: string
   commands: ConvexOfferReleaseExecutionCommandPayload[]
@@ -39,6 +39,7 @@ export interface ConvexOfferReleaseExecutionCommandPayload {
 }
 
 export interface BuildConvexOfferReleaseExecutionPayloadOptions {
+  executionKey?: string
   offerId?: string
 }
 
@@ -46,18 +47,34 @@ export function buildConvexOfferReleaseExecutionPayload(
   run: OfferReleaseExecutionRun,
   options: BuildConvexOfferReleaseExecutionPayloadOptions = {},
 ): ConvexOfferReleaseExecutionPayload {
+  const executedAt = normalizeIsoTimestamp(run.executedAt, "run.executedAt")
+  const executionVersion = nonBlank(run.executionVersion, "run.executionVersion")
+  const mode = normalizeMode(run.mode)
+  const offerId = nonBlank(options.offerId ?? run.offerId, "offerId")
+  const planVersion = nonBlank(run.planVersion, "run.planVersion")
+  const releaseAt = normalizeIsoTimestamp(run.releaseAt, "run.releaseAt")
+
   return {
-    actorName: nonBlank(run.actor, "run.actor"),
     calendarEventCount: run.calendarEvents.length,
     commands: normalizeCommands(run.commands),
-    executedAt: normalizeIsoTimestamp(run.executedAt, "run.executedAt"),
-    executionVersion: nonBlank(run.executionVersion, "run.executionVersion"),
+    executedAt,
+    executionKey: options.executionKey
+      ? nonBlank(options.executionKey, "executionKey")
+      : buildExecutionKey({
+          executedAt,
+          executionVersion,
+          mode,
+          offerId,
+          planVersion,
+          releaseAt,
+        }),
+    executionVersion,
     lifecycleEventCount: run.lifecycleEvents.length,
-    mode: normalizeMode(run.mode),
+    mode,
     nextActions: normalizeTextList(run.nextActions),
-    offerId: nonBlank(options.offerId ?? run.offerId, "offerId"),
-    planVersion: nonBlank(run.planVersion, "run.planVersion"),
-    releaseAt: normalizeIsoTimestamp(run.releaseAt, "run.releaseAt"),
+    offerId,
+    planVersion,
+    releaseAt,
     status: normalizeStatus(run.status),
     warnings: normalizeTextList(run.warnings),
     workspaceActionCount: run.workspaceActions.length,
@@ -146,4 +163,33 @@ function normalizeCommandStatus(status: OfferReleaseCommandExecutionStatus): Off
 
 function normalizeTextList(values: string[]): string[] {
   return values.map((value) => optionalTrim(value)).filter((value): value is string => Boolean(value))
+}
+
+function buildExecutionKey(input: {
+  executedAt: string
+  executionVersion: string
+  mode: OfferReleaseExecutionMode
+  offerId: string
+  planVersion: string
+  releaseAt: string
+}): string {
+  return [
+    "offer-release-execution",
+    input.offerId,
+    input.executionVersion,
+    input.planVersion,
+    input.mode,
+    input.releaseAt,
+    input.executedAt,
+  ]
+    .map(sanitizeKeyPart)
+    .join(":")
+}
+
+function sanitizeKeyPart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
 }

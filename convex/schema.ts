@@ -366,6 +366,7 @@ export default defineSchema({
 
   offerReleaseExecutions: defineTable({
     tenantId,
+    executionKey: v.string(),
     offerId: v.id("offers"),
     quoteId: v.id("quoteScenarios"),
     rfqId: v.id("rfqs"),
@@ -387,6 +388,7 @@ export default defineSchema({
     warnings: v.array(v.string()),
     createdAt: timestamp,
   })
+    .index("by_tenant_offer_execution_key", ["tenantId", "offerId", "executionKey"])
     .index("by_offer_time", ["offerId", "createdAt"])
     .index("by_tenant_offer_time", ["tenantId", "offerId", "createdAt"])
     .index("by_status_time", ["status", "createdAt"])

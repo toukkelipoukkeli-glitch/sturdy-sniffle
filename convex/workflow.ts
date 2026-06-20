@@ -515,11 +515,11 @@ export const listOfferReleaseExecutions = query({
 export const recordOfferReleaseExecution = mutation({
   args: {
     offerId: v.id("offers"),
+    executionKey: v.string(),
     executionVersion: v.string(),
     planVersion: v.string(),
     mode: offerReleaseExecutionMode,
     status: offerReleaseExecutionStatus,
-    actorName: v.optional(v.string()),
     releaseAt: v.string(),
     executedAt: v.string(),
     commands: v.array(offerReleaseExecutionCommand),
@@ -534,15 +534,34 @@ export const recordOfferReleaseExecution = mutation({
     const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
     const now = Date.now();
     const commands = normalizeOfferReleaseExecutionCommands(args.commands);
+    const executionKey = nonBlank(args.executionKey, "executionKey");
+    const existingExecution = await ctx.db
+      .query("offerReleaseExecutions")
+      .withIndex("by_tenant_offer_execution_key", (q) =>
+        q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId).eq("executionKey", executionKey),
+      )
+      .unique();
+    if (existingExecution) {
+      return {
+        executionId: existingExecution._id,
+        offerId: args.offerId,
+        reused: true,
+        status: existingExecution.status,
+      };
+    }
+
     const lifecycleEventCount = nonNegativeInteger(args.lifecycleEventCount, "lifecycleEventCount");
     const workspaceActionCount = nonNegativeInteger(args.workspaceActionCount, "workspaceActionCount");
     const calendarEventCount = nonNegativeInteger(args.calendarEventCount, "calendarEventCount");
     const warnings = normalizeTextList(args.warnings);
     const nextActions = normalizeTextList(args.nextActions);
-    const actorName = optionalNonBlank(args.actorName) ?? actor.displayName;
+    const actorName = nonBlank(actor.displayName, "actor.displayName");
     const releaseAt = isoTimestamp(args.releaseAt, "releaseAt");
     const executedAt = isoTimestamp(args.executedAt, "executedAt");
-    const artifactCount = lifecycleEventCount + workspaceActionCount + calendarEventCount;
+    const emailDraftArtifactCount = commands.filter(
+      (command) => command.kind === "email_draft" && command.status === "applied",
+    ).length;
+    const artifactCount = lifecycleEventCount + workspaceActionCount + calendarEventCount + emailDraftArtifactCount;
     const warningCount = warnings.length + commands.reduce((total, command) => total + command.warnings.length, 0);
     const executionId = await ctx.db.insert("offerReleaseExecutions", {
       actorName,
@@ -552,6 +571,7 @@ export const recordOfferReleaseExecution = mutation({
       commands,
       createdAt: now,
       executedAt,
+      executionKey,
       executionVersion: nonBlank(args.executionVersion, "executionVersion"),
       lifecycleEventCount,
       mode: args.mode,
@@ -588,6 +608,7 @@ export const recordOfferReleaseExecution = mutation({
       activityId,
       executionId,
       offerId: args.offerId,
+      reused: false,
       status: args.status,
     };
   },

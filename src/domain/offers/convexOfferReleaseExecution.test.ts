@@ -18,7 +18,6 @@ describe("convex offer release execution persistence payload", () => {
     })
 
     expect(payload).toEqual<ConvexOfferReleaseExecutionPayload>({
-      actorName: "Sari",
       calendarEventCount: 1,
       commands: [
         {
@@ -43,6 +42,8 @@ describe("convex offer release execution persistence payload", () => {
         },
       ],
       executedAt: "2026-06-20T06:05:00.000Z",
+      executionKey:
+        "offer-release-execution:convex-offer-204:offer-release-execution-v1:offer-release-plan-v1:commit:2026-06-20t06-00-00-000z:2026-06-20t06-05-00-000z",
       executionVersion: OFFER_RELEASE_EXECUTION_VERSION,
       lifecycleEventCount: 1,
       mode: "commit",
