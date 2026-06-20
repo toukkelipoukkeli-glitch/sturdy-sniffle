@@ -66,6 +66,6 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 
 - Wire the process workload summary and quote queue ranking into the visible workspace UI with required Computer Use QA or documented Browser fallback if macOS permissions block it.
 - Build a provider-run review surface that shows prompts, metadata, mock/local fallbacks, and redacted output summaries without exposing secrets.
-- Add Convex-backed workspace wiring for RFQ queue state transitions, quote scenario persistence, workload buckets, and follow-up activity creation.
-- Add CAD metadata ingestion into part preview models so parsed STEP/DXF/PDF metadata enriches measurement overlays and manufacturability review.
-- Add Gmail connector-backed reply sync around the deterministic offer reply parser, with mock fallback fixtures for revoked auth and quota failures.
+- Implement Convex-backed workspace wiring for RFQ queue state transitions, quote scenario persistence, workload buckets, and follow-up activity creation.
+- Enrich part preview models with parsed STEP/DXF/PDF metadata for measurement overlays and manufacturability review.
+- Sync Gmail customer replies through the deterministic offer reply parser, with mock fallback fixtures for revoked auth and quota failures.
