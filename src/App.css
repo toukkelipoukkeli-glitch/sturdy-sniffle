@@ -99,6 +99,39 @@
   justify-content: flex-end;
 }
 
+.persistence-chip {
+  align-items: center;
+  background: oklch(0.97 0.012 210);
+  border: 1px solid oklch(0.86 0.026 220);
+  border-radius: 999px;
+  color: oklch(0.29 0.035 220);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 750;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.persistence-chip svg {
+  height: 15px;
+  width: 15px;
+}
+
+.persistence-chip[data-mode="convex"] {
+  background: oklch(0.955 0.04 150);
+  border-color: oklch(0.74 0.08 150);
+  color: oklch(0.28 0.055 150);
+}
+
+.persistence-chip strong {
+  background: oklch(1 0 0 / 70%);
+  border-radius: 999px;
+  color: oklch(0.36 0.06 35);
+  padding: 2px 6px;
+}
+
 .workspace-grid {
   display: grid;
   gap: 16px;

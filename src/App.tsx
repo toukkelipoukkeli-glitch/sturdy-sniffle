@@ -5,7 +5,9 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  CloudOff,
   Cuboid,
+  Database,
   FileText,
   GitCompareArrows,
   Inbox,
@@ -41,7 +43,12 @@ import {
 import { rankQuoteQueue, type QuoteQueueStatus, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
 import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
 import { buildWorkspaceAction, type WorkspaceActionRecord } from "./domain/workspace/workspaceActions"
-import { createLocalWorkspacePersistence, type WorkspacePersistenceSnapshot } from "./domain/workspace/workspacePersistence"
+import type { WorkspacePersistenceSnapshot } from "./domain/workspace/workspacePersistence"
+import {
+  createWorkspacePersistenceRuntime,
+  type WorkspacePersistenceBridge,
+  type WorkspacePersistenceMode,
+} from "./domain/workspace/workspacePersistenceRuntime"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -399,8 +406,15 @@ function App() {
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
+  const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
-  const [workspacePersistence] = useState(() => createLocalWorkspacePersistence())
+  const [workspacePersistenceRuntime] = useState(() =>
+    createWorkspacePersistenceRuntime({
+      convex: createBrowserConvexWorkspaceBridge(),
+      onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
+    }),
+  )
+  const workspacePersistence = workspacePersistenceRuntime.adapter
   const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = actionsById[selectedId] ?? []
@@ -572,6 +586,11 @@ function App() {
           </div>
         </div>
         <div className="topbar-actions">
+          <PersistenceStatus
+            label={workspacePersistenceRuntime.label}
+            mode={workspacePersistenceRuntime.mode}
+            syncErrorCount={persistenceSyncErrorCount}
+          />
           <Button
             onClick={() => {
               setActiveView("offer")
@@ -760,6 +779,26 @@ function App() {
         </aside>
       </section>
     </main>
+  )
+}
+
+function PersistenceStatus({
+  label,
+  mode,
+  syncErrorCount,
+}: {
+  label: string
+  mode: WorkspacePersistenceMode
+  syncErrorCount: number
+}) {
+  const Icon = mode === "convex" ? Database : CloudOff
+
+  return (
+    <div className="persistence-chip" data-mode={mode} aria-label="Persistence status">
+      <Icon aria-hidden="true" />
+      <span>{label}</span>
+      {syncErrorCount > 0 ? <strong>{syncErrorCount} sync fallback</strong> : null}
+    </div>
   )
 }
 
@@ -1550,6 +1589,35 @@ function followUpDueAtFor(item: QuoteWorkItem) {
   due.setUTCDate(due.getUTCDate() + 3)
   due.setUTCHours(7, 0, 0, 0)
   return due.toISOString()
+}
+
+interface BrowserConvexWorkspaceBridge {
+  mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
+  offerIdsByLocalId?: Record<string, string>
+  quoteIdsByLocalId?: Record<string, string>
+  rfqIdsByLocalId: Record<string, string>
+  runMutation: WorkspacePersistenceBridge["runMutation"]
+}
+
+declare global {
+  interface Window {
+    __FACTORYBID_WORKSPACE_CONVEX__?: BrowserConvexWorkspaceBridge
+  }
+}
+
+function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge) {
+    return undefined
+  }
+
+  return {
+    mutationRefs: bridge.mutationRefs,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId[rfqId],
+    runMutation: bridge.runMutation,
+  }
 }
 
 function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {
