@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import { parseGmailOfferReplies, parseGmailOfferReply } from "./gmailOfferReply"
-import type { GmailRfqMessage } from "./gmailRfq"
+import { createGmailOfferReplyAdapter, parseGmailOfferReplies, parseGmailOfferReply } from "./gmailOfferReply"
+import { createMockGmailRfqProvider, type GmailRfqMessage, type GmailRfqMessageProvider } from "./gmailRfq"
 
 const acceptedReply: GmailRfqMessage = {
   id: "reply-001",
@@ -172,5 +172,93 @@ describe("Gmail offer reply ingestion", () => {
         },
       }),
     ).toThrow("message.receivedAt must be a valid ISO timestamp")
+  })
+
+  it("syncs offer replies through the configured provider", async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      provider: createMockGmailRfqProvider({ messages: [acceptedReply] }),
+    })
+
+    const result = await adapter.sync({
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+    })
+
+    expect(result).toMatchObject({
+      adapterVersion: "gmail-offer-reply.v1",
+      provider: "mock",
+      status: "succeeded",
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+      warnings: [],
+    })
+    expect(result.records).toHaveLength(1)
+    expect(result.records[0]?.parsed.signal).toBe("accepted")
+    expect(result.records[0]?.message).not.toBe(acceptedReply)
+  })
+
+  it("falls back to mock offer reply fixtures when the primary provider fails", async () => {
+    const failingProvider: GmailRfqMessageProvider = {
+      adapterVersion: "gmail-rfq.v1.gmail",
+      provider: "gmail",
+      async search() {
+        throw new Error("Gmail auth revoked")
+      },
+    }
+    const adapter = createGmailOfferReplyAdapter({
+      provider: failingProvider,
+      fallbackProvider: createMockGmailRfqProvider({ messages: [acceptedReply] }),
+    })
+
+    const result = await adapter.sync({
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+    })
+
+    expect(result.status).toBe("fallback")
+    expect(result.provider).toBe("mock")
+    expect(result.records[0]?.parsed.signal).toBe("accepted")
+    expect(result.warnings).toEqual([
+      "Gmail offer reply provider gmail failed: Gmail auth revoked.",
+      "Used mock offer reply fallback.",
+    ])
+  })
+
+  it("reports failed syncs when primary and fallback providers fail", async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      provider: createMockGmailRfqProvider({ shouldFail: true }),
+      fallbackProvider: createMockGmailRfqProvider({ shouldFail: true }),
+    })
+
+    const result = await adapter.sync({
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+    })
+
+    expect(result).toEqual({
+      adapterVersion: "gmail-offer-reply.v1",
+      provider: "mock",
+      status: "failed",
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+      records: [],
+      warnings: [
+        "Gmail offer reply provider mock failed: Mock Gmail RFQ provider failure.",
+        "Fallback offer reply provider mock failed: Mock Gmail RFQ provider failure.",
+      ],
+    })
+  })
+
+  it("rejects invalid sync requests", async () => {
+    const adapter = createGmailOfferReplyAdapter()
+
+    await expect(adapter.sync({ offerNumber: "OFFER-019", query: " " })).rejects.toThrow("query is required")
+    await expect(adapter.sync({ offerNumber: " ", query: "offer" })).rejects.toThrow("offerNumber is required")
+    await expect(adapter.sync({ offerNumber: "OFFER-019", query: "offer", maxResults: 0 })).rejects.toThrow(
+      "maxResults must be a positive integer",
+    )
+    await expect(adapter.sync({ offerNumber: "OFFER-019", query: "offer", maxResults: 1.5 })).rejects.toThrow(
+      "maxResults must be a positive integer",
+    )
   })
 })
