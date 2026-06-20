@@ -7,6 +7,7 @@ import {
   Clock3,
   Cuboid,
   FileText,
+  GitCompareArrows,
   Inbox,
   Mail,
   PackageCheck,
@@ -19,6 +20,11 @@ import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/o
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
+import {
+  compareQuoteScenarios,
+  type QuoteComparisonResult,
+  type QuoteComparisonScenario,
+} from "./domain/workspace/quoteComparison"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -296,6 +302,10 @@ function App() {
     [cycleMinutes, quantity, rush, selectedItem, setupMinutes],
   )
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
+  const scenarioComparison = useMemo(
+    () => compareQuoteScenarios(buildScenarioComparisonInputs(selectedItem.quoteInput, quoteInput, quote)),
+    [quote, quoteInput, selectedItem],
+  )
   const partPreview = useMemo(
     () =>
       buildPartPreviewModel({
@@ -445,6 +455,7 @@ function App() {
               quantity={quantity}
               quote={quote}
               rush={rush}
+              scenarioComparison={scenarioComparison}
               selectedItem={selectedItem}
               setCycleMinutes={(value) => updateSelectedEdit({ cycleMinutes: value })}
               setQuantity={(value) => updateSelectedEdit({ quantity: value })}
@@ -530,6 +541,7 @@ function CostingView({
   quantity,
   quote,
   rush,
+  scenarioComparison,
   selectedItem,
   setCycleMinutes,
   setQuantity,
@@ -542,6 +554,7 @@ function CostingView({
   quantity: number
   quote: CncQuoteResult
   rush: boolean
+  scenarioComparison: QuoteComparisonResult
   selectedItem: QuoteWorkItem
   setCycleMinutes: (value: number) => void
   setQuantity: (value: number) => void
@@ -597,6 +610,7 @@ function CostingView({
           value={cycleMinutes}
         />
       </label>
+      <ScenarioComparisonPanel comparison={scenarioComparison} />
       <div className="assumption-list">
         {quote.assumptions.map((assumption) => (
           <div className="assumption-row" key={assumption.key}>
@@ -606,6 +620,50 @@ function CostingView({
         ))}
       </div>
     </div>
+  )
+}
+
+function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonResult }) {
+  return (
+    <section className="scenario-comparison" aria-label="Quote scenario comparison">
+      <div className="scenario-comparison-heading">
+        <div>
+          <span className="eyebrow">
+            <GitCompareArrows aria-hidden="true" />
+            Scenario comparison
+          </span>
+          <strong>
+            {comparison.partNumber} · {comparison.quantity} pcs
+          </strong>
+        </div>
+        <span className="recommended-pill">Recommended</span>
+      </div>
+      <div className="scenario-list">
+        {comparison.rows.map((row) => (
+          <div className="scenario-row" data-recommended={row.id === comparison.recommendedScenarioId} key={row.id}>
+            <div className="scenario-rank">#{row.rank}</div>
+            <div className="scenario-name">
+              <strong>{row.label}</strong>
+              <span>{row.recommendationReasons.join(" ")}</span>
+            </div>
+            <div className="scenario-metric">
+              <span>Total</span>
+              <strong>{formatCurrency(row.totalCents, comparison.currency)}</strong>
+              <small>{formatSignedCurrencyDelta(row.priceDeltaCents, comparison.currency)}</small>
+            </div>
+            <div className="scenario-metric">
+              <span>Lead</span>
+              <strong>{row.leadTimeDays} days</strong>
+              <small>{formatSignedDays(row.leadTimeDeltaDays)}</small>
+            </div>
+            <div className="scenario-score">
+              <span>Score</span>
+              <strong>{row.score}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -755,6 +813,32 @@ function defaultEditState(item: QuoteWorkItem): QuoteEditState {
   }
 }
 
+function buildScenarioComparisonInputs(
+  baseInput: CncQuoteInput,
+  currentInput: CncQuoteInput,
+  currentQuote: CncQuoteResult,
+): QuoteComparisonScenario[] {
+  const normalizedBaseInput: CncQuoteInput = {
+    ...baseInput,
+    quantity: currentInput.quantity,
+  }
+  const standardInput: CncQuoteInput = {
+    ...currentInput,
+    priority: "normal",
+  }
+  const rushInput: CncQuoteInput = {
+    ...currentInput,
+    priority: "rush",
+  }
+
+  return [
+    { id: "current", label: "Current edits", quote: currentQuote },
+    { id: "baseline", label: "RFQ baseline", quote: calculateCncQuote(normalizedBaseInput) },
+    { id: "standard", label: "Standard lead time", quote: calculateCncQuote(standardInput) },
+    { id: "rush", label: "Rush expedite", quote: calculateCncQuote(rushInput) },
+  ]
+}
+
 function partDraftForQuoteInput(quoteInput: CncQuoteInput, attachments: RfqAttachmentDraft[]): RfqPartDraft {
   const dimensions = quoteInput.finishedDimensions ?? quoteInput.stockDimensions
 
@@ -787,6 +871,21 @@ function formatCurrency(cents: number, currency: string) {
     minimumFractionDigits: 2,
     style: "currency",
   }).format(cents / 100)
+}
+
+function formatSignedCurrencyDelta(cents: number, currency: string) {
+  if (cents === 0) {
+    return formatCurrency(0, currency)
+  }
+  const sign = cents > 0 ? "+" : "-"
+  return `${sign} ${formatCurrency(Math.abs(cents), currency)}`
+}
+
+function formatSignedDays(days: number) {
+  if (days === 0) {
+    return "0 days"
+  }
+  return `${days > 0 ? "+" : ""}${days} days`
 }
 
 function formatProcess(process: CncQuoteInput["process"]) {
