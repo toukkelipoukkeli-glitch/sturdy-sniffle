@@ -2,7 +2,7 @@ import { v, type GenericId } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { requireFactoryBidActor } from "./authz";
+import { documentBelongsToFactoryBidTenant, requireFactoryBidActor, type FactoryBidActor } from "./authz";
 import { buildOfferStatusTransitionPatch } from "./workflowRules";
 
 const processKey = v.union(
@@ -51,7 +51,7 @@ export const listRfqQueue = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit);
     const status = args.status;
     const rows = status
@@ -62,7 +62,7 @@ export const listRfqQueue = query({
           .take(limit)
       : await ctx.db.query("rfqs").withIndex("by_due_at").order("asc").take(limit);
 
-    return rows.map((rfq) => ({
+    return rows.filter((rfq) => belongsToActorTenant(rfq, actor)).map((rfq) => ({
       _id: rfq._id,
       status: rfq.status,
       priority: rfq.priority,
@@ -83,8 +83,8 @@ export const updateRfqStatus = mutation({
     status: rfqStatus,
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:write");
-    await requireDocument(ctx, args.rfqId, "rfqId");
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     await ctx.db.patch(args.rfqId, {
       status: args.status,
       updatedAt: Date.now(),
@@ -101,7 +101,7 @@ export const transitionRfqStatus = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:write");
-    const rfq = await requireDocument<RfqDocument>(ctx, args.rfqId, "rfqId");
+    const rfq = await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor);
     assertRfqStatusTransition(rfq.status, args.status);
     const now = Date.now();
     await ctx.db.patch(args.rfqId, {
@@ -113,6 +113,7 @@ export const transitionRfqStatus = mutation({
     const message = note ? `${transitionMessage} ${note}` : transitionMessage;
     const activityId = await ctx.db.insert("activities", {
       rfqId: args.rfqId,
+      tenantId: actor.tenantId,
       actorType: "human",
       actorName: actor.displayName,
       kind: "status_change",
@@ -134,8 +135,8 @@ export const listRfqActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
-    await requireDocument(ctx, args.rfqId, "rfqId");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     return await ctx.db
       .query("activities")
       .withIndex("by_rfq_time", (q) => q.eq("rfqId", args.rfqId))
@@ -149,7 +150,8 @@ export const listQuoteScenariosByRfq = query({
     rfqId: v.id("rfqs"),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     return await ctx.db
       .query("quoteScenarios")
       .withIndex("by_rfq", (q) => q.eq("rfqId", args.rfqId))
@@ -169,12 +171,13 @@ export const createQuoteScenario = mutation({
     validUntil: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:write");
-    await requireDocument(ctx, args.rfqId, "rfqId");
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     const title = nonBlank(args.title, "title");
     const now = Date.now();
     return await ctx.db.insert("quoteScenarios", {
       rfqId: args.rfqId,
+      tenantId: actor.tenantId,
       title,
       status: args.status,
       revision: positiveInteger(args.revision, "revision"),
@@ -193,7 +196,7 @@ export const processWorkloadBuckets = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit, 500);
     const process = args.process;
     const parts = process
@@ -204,7 +207,7 @@ export const processWorkloadBuckets = query({
       : await ctx.db.query("parts").take(limit);
     const buckets = new Map<string, { partCount: number; totalQuantity: number; rfqIds: Set<string> }>();
 
-    for (const part of parts) {
+    for (const part of parts.filter((part) => belongsToActorTenant(part, actor))) {
       const bucket = buckets.get(part.process) ?? {
         partCount: 0,
         totalQuantity: 0,
@@ -233,7 +236,8 @@ export const listOfferFollowUpActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
     const limit = boundedLimit(args.limit);
     return await ctx.db
       .query("activities")
@@ -250,8 +254,8 @@ export const listOfferActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:read");
-    await requireDocument(ctx, args.offerId, "offerId");
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
     return await ctx.db
       .query("activities")
       .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
@@ -268,7 +272,7 @@ export const transitionOfferStatus = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:write");
-    const offer = await requireDocument<OfferDocument>(ctx, args.offerId, "offerId");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
     const now = Date.now();
     const patch = buildOfferStatusTransitionPatch({
       currentStatus: offer.status,
@@ -282,6 +286,7 @@ export const transitionOfferStatus = mutation({
     const message = note ? `${transitionMessage} ${note}` : transitionMessage;
     const activityId = await ctx.db.insert("activities", {
       offerId: args.offerId,
+      tenantId: actor.tenantId,
       quoteId: offer.quoteId,
       rfqId: offer.rfqId,
       actorType: "human",
@@ -308,17 +313,18 @@ export const createOfferFollowUpActivity = mutation({
     message: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireFactoryBidActor(ctx, "workspace:write");
-    await requireDocument(ctx, args.offerId, "offerId");
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
     if (args.quoteId) {
-      await requireDocument(ctx, args.quoteId, "quoteId");
+      await requireTenantDocument(ctx, args.quoteId, "quoteId", actor);
     }
     if (args.rfqId) {
-      await requireDocument(ctx, args.rfqId, "rfqId");
+      await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     }
 
     return await ctx.db.insert("activities", {
       offerId: args.offerId,
+      tenantId: actor.tenantId,
       quoteId: args.quoteId,
       rfqId: args.rfqId,
       actorType: "system",
@@ -342,17 +348,18 @@ export const recordWorkspaceActivity = mutation({
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:write");
     if (args.rfqId) {
-      await requireDocument(ctx, args.rfqId, "rfqId");
+      await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
     }
     if (args.quoteId) {
-      await requireDocument(ctx, args.quoteId, "quoteId");
+      await requireTenantDocument(ctx, args.quoteId, "quoteId", actor);
     }
     if (args.offerId) {
-      await requireDocument(ctx, args.offerId, "offerId");
+      await requireTenantDocument(ctx, args.offerId, "offerId", actor);
     }
 
     return await ctx.db.insert("activities", {
       rfqId: args.rfqId,
+      tenantId: actor.tenantId,
       quoteId: args.quoteId,
       offerId: args.offerId,
       actorType: "human",
@@ -364,9 +371,9 @@ export const recordWorkspaceActivity = mutation({
   },
 });
 
-type RfqDocument = Pick<Doc<"rfqs">, "status">;
+type RfqDocument = Pick<Doc<"rfqs">, "status" | "tenantId">;
 type RfqStatus = RfqDocument["status"];
-type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status">;
+type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status" | "tenantId">;
 
 async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
   const document = await ctx.db.get(id);
@@ -374,6 +381,23 @@ async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<str
     throw new Error(`${key} does not exist`);
   }
   return document;
+}
+
+async function requireTenantDocument<T extends { tenantId?: string } = { tenantId?: string }>(
+  ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } },
+  id: GenericId<string>,
+  key: string,
+  actor: FactoryBidActor,
+) {
+  const document = await requireDocument<T>(ctx, id, key);
+  if (!belongsToActorTenant(document, actor)) {
+    throw new Error(`${key} belongs to a different tenant`);
+  }
+  return document;
+}
+
+function belongsToActorTenant(document: { tenantId?: string }, actor: FactoryBidActor): boolean {
+  return documentBelongsToFactoryBidTenant(document, actor);
 }
 
 const allowedRfqStatusTransitions: Record<RfqStatus, RfqStatus[]> = {

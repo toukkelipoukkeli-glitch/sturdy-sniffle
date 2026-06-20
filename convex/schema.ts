@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 const timestamp = v.number();
+const tenantId = v.optional(v.string());
 
 const processKey = v.union(
   v.literal("cnc_milling"),
@@ -57,6 +58,7 @@ const dimensions = v.object({
 
 export default defineSchema({
   customers: defineTable({
+    tenantId,
     name: v.string(),
     normalizedName: v.string(),
     businessId: v.optional(v.string()),
@@ -64,9 +66,13 @@ export default defineSchema({
     defaultCurrency: currencyCode,
     createdAt: timestamp,
     updatedAt: timestamp,
-  }).index("by_normalized_name", ["normalizedName"]),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_normalized_name", ["normalizedName"])
+    .index("by_tenant_normalized_name", ["tenantId", "normalizedName"]),
 
   contacts: defineTable({
+    tenantId,
     customerId: v.id("customers"),
     name: v.string(),
     email: v.optional(v.string()),
@@ -75,10 +81,12 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_customer", ["customerId"])
     .index("by_email", ["email"]),
 
   rfqs: defineTable({
+    tenantId,
     customerId: v.optional(v.id("customers")),
     primaryContactId: v.optional(v.id("contacts")),
     status: v.union(
@@ -101,12 +109,16 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_status", ["status"])
     .index("by_due_at", ["dueAt"])
     .index("by_customer", ["customerId"])
-    .index("by_status_due_at", ["status", "dueAt"]),
+    .index("by_status_due_at", ["status", "dueAt"])
+    .index("by_tenant_status_due_at", ["tenantId", "status", "dueAt"])
+    .index("by_tenant_due_at", ["tenantId", "dueAt"]),
 
   rfqAttachments: defineTable({
+    tenantId,
     rfqId: v.id("rfqs"),
     storageId: v.optional(v.id("_storage")),
     fileName: v.string(),
@@ -123,7 +135,9 @@ export default defineSchema({
     checksum: v.optional(v.string()),
     extractedText: v.optional(v.string()),
     createdAt: timestamp,
-  }).index("by_rfq", ["rfqId"]),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_rfq", ["rfqId"]),
 
   processDefinitions: defineTable({
     process: processKey,
@@ -198,6 +212,7 @@ export default defineSchema({
     .index("by_process_active", ["process", "active"]),
 
   parts: defineTable({
+    tenantId,
     rfqId: v.id("rfqs"),
     partNumber: v.string(),
     revision: v.optional(v.string()),
@@ -214,11 +229,13 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_rfq", ["rfqId"])
     .index("by_process", ["process"])
     .index("by_material", ["materialId"]),
 
   partViews: defineTable({
+    tenantId,
     partId: v.id("parts"),
     sourceAttachmentId: v.optional(v.id("rfqAttachments")),
     thumbnailStorageId: v.optional(v.id("_storage")),
@@ -228,9 +245,12 @@ export default defineSchema({
     annotations: v.array(keyValue),
     createdAt: timestamp,
     updatedAt: timestamp,
-  }).index("by_part", ["partId"]),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_part", ["partId"]),
 
   quoteScenarios: defineTable({
+    tenantId,
     rfqId: v.id("rfqs"),
     title: v.string(),
     status: v.union(
@@ -248,11 +268,14 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_rfq", ["rfqId"])
     .index("by_status", ["status"])
-    .index("by_rfq_status", ["rfqId", "status"]),
+    .index("by_rfq_status", ["rfqId", "status"])
+    .index("by_tenant_rfq", ["tenantId", "rfqId"]),
 
   quoteLineItems: defineTable({
+    tenantId,
     quoteId: v.id("quoteScenarios"),
     partId: v.optional(v.id("parts")),
     process: processKey,
@@ -266,11 +289,13 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_quote", ["quoteId"])
     .index("by_part", ["partId"])
     .index("by_quote_sort_order", ["quoteId", "sortOrder"]),
 
   offers: defineTable({
+    tenantId,
     quoteId: v.id("quoteScenarios"),
     rfqId: v.id("rfqs"),
     customerId: v.optional(v.id("customers")),
@@ -289,10 +314,12 @@ export default defineSchema({
     createdAt: timestamp,
     updatedAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_quote", ["quoteId"])
     .index("by_rfq", ["rfqId"])
     .index("by_status", ["status"])
-    .index("by_offer_number", ["offerNumber"]),
+    .index("by_offer_number", ["offerNumber"])
+    .index("by_tenant_offer_number", ["tenantId", "offerNumber"]),
 
   integrationLinks: defineTable({
     provider: v.union(v.literal("gmail"), v.literal("calendar")),
@@ -311,6 +338,7 @@ export default defineSchema({
     .index("by_offer", ["offerId"]),
 
   providerRuns: defineTable({
+    tenantId,
     provider: v.union(
       v.literal("local_codex"),
       v.literal("gemini"),
@@ -342,13 +370,16 @@ export default defineSchema({
     completedAt: v.optional(timestamp),
     createdAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_status", ["status"])
     .index("by_provider", ["provider"])
     .index("by_input_hash", ["inputHash"])
     .index("by_provider_input_hash", ["provider", "inputHash"])
-    .index("by_rfq", ["rfqId"]),
+    .index("by_rfq", ["rfqId"])
+    .index("by_tenant_rfq", ["tenantId", "rfqId"]),
 
   activities: defineTable({
+    tenantId,
     rfqId: v.optional(v.id("rfqs")),
     quoteId: v.optional(v.id("quoteScenarios")),
     offerId: v.optional(v.id("offers")),
@@ -367,9 +398,12 @@ export default defineSchema({
     message: v.string(),
     createdAt: timestamp,
   })
+    .index("by_tenant", ["tenantId"])
     .index("by_rfq_time", ["rfqId", "createdAt"])
     .index("by_quote_time", ["quoteId", "createdAt"])
-    .index("by_offer_time", ["offerId", "createdAt"]),
+    .index("by_offer_time", ["offerId", "createdAt"])
+    .index("by_tenant_rfq_time", ["tenantId", "rfqId", "createdAt"])
+    .index("by_tenant_offer_time", ["tenantId", "offerId", "createdAt"]),
 
   featureBacklogItems: defineTable({
     title: v.string(),

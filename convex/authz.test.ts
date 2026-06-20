@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { requireFactoryBidActor, resolveFactoryBidActor } from "./authz";
+import { documentBelongsToFactoryBidTenant, requireFactoryBidActor, resolveFactoryBidActor } from "./authz";
 
 describe("FactoryBid Convex authz", () => {
   it("uses migration-safe operator and tenant defaults for authenticated users", () => {
@@ -31,6 +31,17 @@ describe("FactoryBid Convex authz", () => {
       role: "admin",
       tenantId: "tenant-north",
     });
+  });
+
+  it("treats missing document tenant IDs as legacy readable and rejects mismatches", () => {
+    const actor = resolveFactoryBidActor({
+      factorybidTenantId: "tenant-north",
+      subject: "user-456",
+    });
+
+    expect(documentBelongsToFactoryBidTenant({}, actor)).toBe(true);
+    expect(documentBelongsToFactoryBidTenant({ tenantId: "tenant-north" }, actor)).toBe(true);
+    expect(documentBelongsToFactoryBidTenant({ tenantId: "tenant-south" }, actor)).toBe(false);
   });
 
   it("requires authentication and role permissions", async () => {

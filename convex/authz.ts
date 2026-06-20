@@ -25,7 +25,7 @@ export interface FactoryBidAuthzOptions {
   defaultTenantId?: string;
 }
 
-const defaultTenantId = "factorybid-single-tenant";
+export const DEFAULT_FACTORYBID_TENANT_ID = "factorybid-single-tenant";
 const permissionByRole: Record<FactoryBidRole, Set<FactoryBidPermission>> = {
   admin: new Set(["admin:write", "workspace:read", "workspace:write"]),
   operator: new Set(["workspace:read", "workspace:write"]),
@@ -63,7 +63,7 @@ export function resolveFactoryBidActor(
     stringClaim(metadata.factorybidTenantId) ??
     nonBlank(identity.orgId) ??
     options.defaultTenantId ??
-    defaultTenantId;
+    DEFAULT_FACTORYBID_TENANT_ID;
   const subject = nonBlank(identity.subject) ?? nonBlank(identity.tokenIdentifier) ?? nonBlank(identity.email);
   if (!subject) {
     throw new Error("authenticated identity must include a stable subject");
@@ -75,6 +75,13 @@ export function resolveFactoryBidActor(
     subject,
     tenantId,
   };
+}
+
+export function documentBelongsToFactoryBidTenant(
+  document: { tenantId?: string },
+  actor: FactoryBidActor,
+): boolean {
+  return document.tenantId === undefined || document.tenantId === actor.tenantId;
 }
 
 function normalizeRole(value: string | undefined, fallback: FactoryBidRole): FactoryBidRole {
