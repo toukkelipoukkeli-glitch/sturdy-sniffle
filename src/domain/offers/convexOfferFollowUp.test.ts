@@ -103,6 +103,24 @@ describe("Convex offer follow-up persistence", () => {
     ).toThrow("duplicate calendar event for follow-up task follow-first")
 
     expect(() =>
+      buildConvexOfferFollowUpActivityPayloads(timeline, {
+        calendarPlan: {
+          ...calendarPlan,
+          events: [
+            {
+              ...calendarPlan.events[0]!,
+              metadata: {
+                ...calendarPlan.events[0]!.metadata,
+                followUpTaskId: " ",
+              },
+            },
+          ],
+        },
+        offerId: "convex-offer-204",
+      }),
+    ).toThrow("calendarPlan.events[0].metadata.followUpTaskId is required")
+
+    expect(() =>
       buildConvexOfferFollowUpActivityPayloads(
         {
           ...timeline,

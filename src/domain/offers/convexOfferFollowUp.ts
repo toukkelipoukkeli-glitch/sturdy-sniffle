@@ -86,7 +86,7 @@ function calendarFollowUpEventsByTaskId(calendarPlan: CalendarRfqPlan | undefine
 
     const followUpTaskId = optionalTrim(event.metadata.followUpTaskId)
     if (!followUpTaskId) {
-      continue
+      throw new Error(`calendarPlan.events[${index}].metadata.followUpTaskId is required`)
     }
     if (eventsByTaskId.has(followUpTaskId)) {
       throw new Error(`duplicate calendar event for follow-up task ${followUpTaskId}`)

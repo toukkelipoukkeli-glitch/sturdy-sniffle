@@ -91,11 +91,13 @@ async function persistActionToConvex({
 
   if (action.kind === "follow_up_created" && action.offerId && mutationRefs.createOfferFollowUpActivity) {
     const offerId = resolveOfferId?.(action.offerId)
+    const quoteId = action.quoteId ? resolveQuoteId?.(action.quoteId) : undefined
     if (offerId) {
       await runMutation(mutationRefs.createOfferFollowUpActivity, compactArgs({
         actorName: action.actor,
         message: action.activityMessage,
         offerId,
+        quoteId,
         rfqId,
       }))
       return

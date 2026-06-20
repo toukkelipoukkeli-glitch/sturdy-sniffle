@@ -72,6 +72,7 @@ describe("convex workspace persistence", () => {
         kind: "follow_up_created",
         occurredAt: "2026-06-20T10:10:00+03:00",
         offerId: "offer-019",
+        quoteId: "quote-019",
         rfqId: "rfq-019",
       }),
     )
@@ -93,6 +94,7 @@ describe("convex workspace persistence", () => {
           kind: "calendar_event",
           message: "Created offer follow-up for offer-019.",
           offerId: "convex-offer-019",
+          quoteId: "convex-quote-019",
           rfqId: "convex-rfq-019",
         },
         mutationRef: "recordWorkspaceActivity",
@@ -123,6 +125,7 @@ describe("convex workspace persistence", () => {
         kind: "follow_up_created",
         occurredAt: "2026-06-20T10:10:00+03:00",
         offerId: "offer-019",
+        quoteId: "quote-019",
         rfqId: "rfq-019",
       }),
     )
@@ -133,6 +136,7 @@ describe("convex workspace persistence", () => {
           actorName: "Sari",
           message: "Created offer follow-up for offer-019.",
           offerId: "convex-offer-019",
+          quoteId: "convex-quote-019",
           rfqId: "convex-rfq-019",
         },
         mutationRef: "createOfferFollowUpActivity",
