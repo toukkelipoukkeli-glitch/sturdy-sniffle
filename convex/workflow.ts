@@ -136,12 +136,20 @@ export const listRfqActivities = query({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
-    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
-    return await ctx.db
-      .query("activities")
-      .withIndex("by_rfq_time", (q) => q.eq("rfqId", args.rfqId))
-      .order("desc")
-      .take(boundedLimit(args.limit));
+    const rfq = await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor);
+    const limit = boundedLimit(args.limit);
+    const activities = rfq.tenantId
+      ? await ctx.db
+          .query("activities")
+          .withIndex("by_tenant_rfq_time", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("activities")
+          .withIndex("by_rfq_time", (q) => q.eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit);
+    return activities.filter((activity) => childBelongsToActorTenant(activity, rfq, actor));
   },
 });
 
@@ -151,12 +159,19 @@ export const listQuoteScenariosByRfq = query({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
-    await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
-    return await ctx.db
-      .query("quoteScenarios")
-      .withIndex("by_rfq", (q) => q.eq("rfqId", args.rfqId))
-      .order("desc")
-      .collect();
+    const rfq = await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor);
+    const scenarios = rfq.tenantId
+      ? await ctx.db
+          .query("quoteScenarios")
+          .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
+          .order("desc")
+          .collect()
+      : await ctx.db
+          .query("quoteScenarios")
+          .withIndex("by_rfq", (q) => q.eq("rfqId", args.rfqId))
+          .order("desc")
+          .collect();
+    return scenarios.filter((scenario) => childBelongsToActorTenant(scenario, rfq, actor));
   },
 });
 
@@ -237,14 +252,22 @@ export const listOfferFollowUpActivities = query({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
-    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
     const limit = boundedLimit(args.limit);
-    return await ctx.db
-      .query("activities")
-      .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
-      .order("desc")
-      .filter((q) => q.eq(q.field("kind"), "calendar_event"))
-      .take(limit);
+    const activities = offer.tenantId
+      ? await ctx.db
+          .query("activities")
+          .withIndex("by_tenant_offer_time", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .filter((q) => q.eq(q.field("kind"), "calendar_event"))
+          .take(limit)
+      : await ctx.db
+          .query("activities")
+          .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .filter((q) => q.eq(q.field("kind"), "calendar_event"))
+          .take(limit);
+    return activities.filter((activity) => childBelongsToActorTenant(activity, offer, actor));
   },
 });
 
@@ -255,12 +278,20 @@ export const listOfferActivities = query({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
-    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
-    return await ctx.db
-      .query("activities")
-      .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
-      .order("desc")
-      .take(boundedLimit(args.limit));
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const activities = offer.tenantId
+      ? await ctx.db
+          .query("activities")
+          .withIndex("by_tenant_offer_time", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("activities")
+          .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+    return activities.filter((activity) => childBelongsToActorTenant(activity, offer, actor));
   },
 });
 
@@ -314,13 +345,7 @@ export const createOfferFollowUpActivity = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:write");
-    await requireTenantDocument(ctx, args.offerId, "offerId", actor);
-    if (args.quoteId) {
-      await requireTenantDocument(ctx, args.quoteId, "quoteId", actor);
-    }
-    if (args.rfqId) {
-      await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
-    }
+    await resolveActivityReferences(ctx, args, actor);
 
     return await ctx.db.insert("activities", {
       offerId: args.offerId,
@@ -347,15 +372,7 @@ export const recordWorkspaceActivity = mutation({
   },
   handler: async (ctx, args) => {
     const actor = await requireFactoryBidActor(ctx, "workspace:write");
-    if (args.rfqId) {
-      await requireTenantDocument(ctx, args.rfqId, "rfqId", actor);
-    }
-    if (args.quoteId) {
-      await requireTenantDocument(ctx, args.quoteId, "quoteId", actor);
-    }
-    if (args.offerId) {
-      await requireTenantDocument(ctx, args.offerId, "offerId", actor);
-    }
+    await resolveActivityReferences(ctx, args, actor);
 
     return await ctx.db.insert("activities", {
       rfqId: args.rfqId,
@@ -374,9 +391,11 @@ export const recordWorkspaceActivity = mutation({
 type RfqDocument = Pick<Doc<"rfqs">, "status" | "tenantId">;
 type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status" | "tenantId">;
+type QuoteScenarioDocument = Pick<Doc<"quoteScenarios">, "rfqId" | "tenantId">;
+type DbReaderLike = { db: { get: <T = unknown>(id: GenericId<string>) => Promise<T | null> } };
 
-async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
-  const document = await ctx.db.get(id);
+async function requireDocument<T = unknown>(ctx: DbReaderLike, id: GenericId<string>, key: string) {
+  const document = await ctx.db.get<T>(id);
   if (!document) {
     throw new Error(`${key} does not exist`);
   }
@@ -384,20 +403,50 @@ async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<str
 }
 
 async function requireTenantDocument<T extends { tenantId?: string } = { tenantId?: string }>(
-  ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } },
+  ctx: DbReaderLike,
   id: GenericId<string>,
   key: string,
   actor: FactoryBidActor,
 ) {
   const document = await requireDocument<T>(ctx, id, key);
   if (!belongsToActorTenant(document, actor)) {
-    throw new Error(`${key} belongs to a different tenant`);
+    throw new Error(`${key} does not exist`);
   }
   return document;
 }
 
 function belongsToActorTenant(document: { tenantId?: string }, actor: FactoryBidActor): boolean {
   return documentBelongsToFactoryBidTenant(document, actor);
+}
+
+function childBelongsToActorTenant(
+  child: { tenantId?: string },
+  parent: { tenantId?: string },
+  actor: FactoryBidActor,
+): boolean {
+  return parent.tenantId === undefined ? belongsToActorTenant(child, actor) : child.tenantId === actor.tenantId;
+}
+
+async function resolveActivityReferences(
+  ctx: DbReaderLike,
+  args: { offerId?: GenericId<"offers">; quoteId?: GenericId<"quoteScenarios">; rfqId?: GenericId<"rfqs"> },
+  actor: FactoryBidActor,
+) {
+  const offer = args.offerId ? await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor) : undefined;
+  const quote = args.quoteId ? await requireTenantDocument<QuoteScenarioDocument>(ctx, args.quoteId, "quoteId", actor) : undefined;
+  const rfq = args.rfqId ? await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor) : undefined;
+
+  if (offer && quote && offer.quoteId !== args.quoteId) {
+    throw new Error("activity references do not match");
+  }
+  if (offer && rfq && offer.rfqId !== args.rfqId) {
+    throw new Error("activity references do not match");
+  }
+  if (quote && rfq && quote.rfqId !== args.rfqId) {
+    throw new Error("activity references do not match");
+  }
+
+  return { offer, quote, rfq };
 }
 
 const allowedRfqStatusTransitions: Record<RfqStatus, RfqStatus[]> = {
