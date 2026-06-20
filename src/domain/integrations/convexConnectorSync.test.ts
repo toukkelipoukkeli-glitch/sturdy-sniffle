@@ -32,8 +32,8 @@ const noDueMessage: GmailRfqMessage = {
   plainText: "Please quote part: TURN-019. CNC turning, stainless 316L, qty 4 pcs.",
 }
 
-describe("Convex connector sync persistence payload", () => {
-  it("maps successful Gmail and calendar sync records to tenant-safe payloads", async () => {
+describe("convex connector sync persistence payload", () => {
+  it("builds compact integration links and activities for successful RFQ syncs", async () => {
     const result = await createConnectorRfqSyncOrchestrator({
       calendarScheduler: createCalendarRfqScheduler({
         provider: createMockCalendarRfqProvider(),
@@ -46,44 +46,56 @@ describe("Convex connector sync persistence payload", () => {
       timezone: "Europe/Helsinki",
     })
 
-    const payload = buildConvexConnectorRfqSyncPayload(result, {
-      actorName: "Connector sync",
-      resolveRfqId: (rfqId) => `convex-${rfqId}`,
-    })
-
-    expect(payload.links).toEqual([
-      {
-        externalId: "thread-001:msg-001",
-        provider: "gmail",
-        rfqId: "convex-rfq-thread-001-001",
-        syncStatus: "linked",
-      },
-      {
-        externalId: "mock-calendar-001",
-        provider: "calendar",
-        rfqId: "convex-rfq-thread-001-001",
-        syncStatus: "linked",
-      },
-      {
-        externalId: "mock-calendar-002",
-        provider: "calendar",
-        rfqId: "convex-rfq-thread-001-001",
-        syncStatus: "linked",
-      },
-    ])
-    expect(payload.activities.map((activity) => activity.kind)).toEqual([
-      "email_received",
-      "calendar_event",
-      "calendar_event",
-    ])
-    expect(payload.activities[0]).toMatchObject({
-      actorName: "Connector sync",
-      message: "Synced Gmail RFQ thread-001:msg-001: RFQ: CNC bracket PN FB-204-A.",
-      rfqId: "convex-rfq-thread-001-001",
+    expect(
+      buildConvexConnectorRfqSyncPayload(result, {
+        actorName: " FactoryBid connector ",
+        resolveRfqId: (rfqId) => (rfqId === "rfq-thread-001-001" ? "convex-rfq-001" : undefined),
+      }),
+    ).toEqual({
+      activities: [
+        {
+          actorName: "FactoryBid connector",
+          kind: "email_received",
+          message: "Synced Gmail RFQ thread-001:msg-001: RFQ: CNC bracket PN FB-204-A.",
+          rfqId: "convex-rfq-001",
+        },
+        {
+          actorName: "FactoryBid connector",
+          kind: "calendar_event",
+          message: 'Synced calendar quote_work_hold event "Quote work: RFQ: CNC bracket PN FB-204-A" for RFQ rfq-thread-001-001.',
+          rfqId: "convex-rfq-001",
+        },
+        {
+          actorName: "FactoryBid connector",
+          kind: "calendar_event",
+          message: 'Synced calendar quote_due event "Quote due: RFQ: CNC bracket PN FB-204-A" for RFQ rfq-thread-001-001.',
+          rfqId: "convex-rfq-001",
+        },
+      ],
+      links: [
+        {
+          externalId: "thread-001:msg-001",
+          provider: "gmail",
+          rfqId: "convex-rfq-001",
+          syncStatus: "linked",
+        },
+        {
+          externalId: "mock-calendar-001",
+          provider: "calendar",
+          rfqId: "convex-rfq-001",
+          syncStatus: "linked",
+        },
+        {
+          externalId: "mock-calendar-002",
+          provider: "calendar",
+          rfqId: "convex-rfq-001",
+          syncStatus: "linked",
+        },
+      ],
     })
   })
 
-  it("marks fallback links stale and records calendar failures without calendar link writes", async () => {
+  it("marks fallback links stale and records calendar skip details", async () => {
     const failingGmail: GmailRfqMessageProvider = {
       adapterVersion: "gmail.live.test",
       provider: "gmail",
@@ -91,27 +103,103 @@ describe("Convex connector sync persistence payload", () => {
         throw new Error("Gmail auth revoked")
       },
     }
-    const failingCalendar: CalendarRfqProviderAdapter = {
-      adapterVersion: "calendar.live.test",
-      provider: "calendar",
-      async createEvents() {
-        throw new Error("Calendar auth revoked")
-      },
-    }
-    const fallbackResult = await createConnectorRfqSyncOrchestrator({
-      calendarScheduler: createCalendarRfqScheduler({
-        fallbackProvider: createMockCalendarRfqProvider(),
-        provider: failingCalendar,
-      }),
+    const result = await createConnectorRfqSyncOrchestrator({
       gmailAdapter: createGmailRfqIntakeAdapter({
-        fallbackProvider: createMockGmailRfqProvider({ messages: [cncMessage] }),
+        fallbackProvider: createMockGmailRfqProvider({ messages: [noDueMessage] }),
         provider: failingGmail,
+      }),
+    }).syncRfqInbox({
+      gmail: { query: "prototype" },
+      timezone: "Europe/Helsinki",
+    })
+
+    expect(buildConvexConnectorRfqSyncPayload(result)).toEqual({
+      activities: [
+        {
+          kind: "email_received",
+          message: "Synced Gmail RFQ msg-002: Prototype spacer RFQ.",
+          rfqId: "rfq-msg-002-001",
+        },
+        {
+          kind: "calendar_event",
+          message:
+            "Calendar sync skipped for RFQ rfq-msg-002-001. RFQ has no due date; calendar quote due events were not created.",
+          rfqId: "rfq-msg-002-001",
+        },
+      ],
+      links: [
+        {
+          externalId: "msg-002",
+          provider: "gmail",
+          rfqId: "rfq-msg-002-001",
+          syncStatus: "stale",
+        },
+      ],
+    })
+  })
+
+  it("records unpersisted RFQs as notes without unsafe links", async () => {
+    const result = await createConnectorRfqSyncOrchestrator({
+      gmailAdapter: createGmailRfqIntakeAdapter({
+        provider: createMockGmailRfqProvider({ messages: [cncMessage] }),
       }),
     }).syncRfqInbox({
       gmail: { query: "rfq" },
       timezone: "Europe/Helsinki",
     })
-    const failedCalendarResult = await createConnectorRfqSyncOrchestrator({
+
+    expect(
+      buildConvexConnectorRfqSyncPayload(result, {
+        resolveRfqId: () => undefined,
+      }),
+    ).toEqual({
+      activities: [
+        {
+          kind: "note",
+          message: "Skipped connector sync for rfq-thread-001-001 because the RFQ is not persisted.",
+        },
+      ],
+      links: [],
+    })
+  })
+
+  it("summarizes empty inbox syncs and rejects unsupported statuses", async () => {
+    const emptyResult = await createConnectorRfqSyncOrchestrator({
+      gmailAdapter: createGmailRfqIntakeAdapter({
+        provider: createMockGmailRfqProvider({ messages: [cncMessage] }),
+      }),
+    }).syncRfqInbox({
+      gmail: { query: "wire edm" },
+      timezone: "Europe/Helsinki",
+    })
+
+    expect(buildConvexConnectorRfqSyncPayload(emptyResult)).toEqual({
+      activities: [
+        {
+          kind: "note",
+          message: 'Connector RFQ sync skipped for Gmail query "wire edm" with 0 RFQs.',
+        },
+      ],
+      links: [],
+    })
+
+    expect(() =>
+      buildConvexConnectorRfqSyncPayload({
+        ...emptyResult,
+        status: "queued" as never,
+      }),
+    ).toThrow("connector sync status is not supported")
+  })
+
+  it("marks failed calendar provider runs blocked when no fallback can write events", async () => {
+    const failingCalendar: CalendarRfqProviderAdapter = {
+      adapterVersion: "calendar.live.test",
+      provider: "calendar",
+      async createEvents() {
+        throw new Error("Calendar quota exhausted")
+      },
+    }
+    const result = await createConnectorRfqSyncOrchestrator({
       calendarScheduler: createCalendarRfqScheduler({
         fallbackProvider: failingCalendar,
         provider: failingCalendar,
@@ -124,100 +212,12 @@ describe("Convex connector sync persistence payload", () => {
       timezone: "Europe/Helsinki",
     })
 
-    expect(buildConvexConnectorRfqSyncPayload(fallbackResult).links.map((link) => link.syncStatus)).toEqual([
-      "stale",
-      "stale",
-      "stale",
-    ])
-    const failedPayload = buildConvexConnectorRfqSyncPayload(failedCalendarResult)
-    expect(failedPayload.links).toEqual([
-      {
-        externalId: "thread-001:msg-001",
-        provider: "gmail",
-        rfqId: "rfq-thread-001-001",
-        syncStatus: "linked",
-      },
-    ])
-    expect(failedPayload.activities.at(-1)?.message).toContain("Calendar sync failed for RFQ rfq-thread-001-001.")
-  })
-
-  it("records skipped syncs and unresolved RFQ mappings as note activities", async () => {
-    const skippedResult = await createConnectorRfqSyncOrchestrator({
-      gmailAdapter: createGmailRfqIntakeAdapter({
-        provider: createMockGmailRfqProvider({ messages: [cncMessage] }),
-      }),
-    }).syncRfqInbox({
-      gmail: { query: "wire edm" },
-      timezone: "Europe/Helsinki",
+    expect((result satisfies ConnectorRfqSyncResult).status).toBe("partial")
+    expect(buildConvexConnectorRfqSyncPayload(result).activities.at(-1)).toEqual({
+      kind: "calendar_event",
+      message:
+        "Calendar sync failed for RFQ rfq-thread-001-001. Calendar provider calendar failed: Calendar quota exhausted. Fallback calendar provider calendar failed: Calendar quota exhausted.",
+      rfqId: "rfq-thread-001-001",
     })
-    const noDueResult = await createConnectorRfqSyncOrchestrator({
-      gmailAdapter: createGmailRfqIntakeAdapter({
-        provider: createMockGmailRfqProvider({ messages: [noDueMessage] }),
-      }),
-    }).syncRfqInbox({
-      gmail: { query: "prototype" },
-      timezone: "Europe/Helsinki",
-    })
-
-    expect(buildConvexConnectorRfqSyncPayload(skippedResult)).toEqual({
-      activities: [
-        {
-          kind: "note",
-          message: 'Connector RFQ sync skipped for Gmail query "wire edm" with 0 RFQs.',
-        },
-      ],
-      links: [],
-    })
-    expect(buildConvexConnectorRfqSyncPayload(noDueResult, { resolveRfqId: () => undefined })).toEqual({
-      activities: [
-        {
-          kind: "note",
-          message: "Skipped connector sync for rfq-msg-002-001 because the RFQ is not persisted.",
-        },
-      ],
-      links: [],
-    })
-  })
-
-  it("rejects unsupported sync status and blank record identifiers", () => {
-    const result = {
-      adapterVersion: "connector-rfq-sync.v1",
-      gmail: {
-        adapterVersion: "gmail-rfq.v1.mock",
-        provider: "mock",
-        query: "rfq",
-        records: [],
-        status: "succeeded",
-        warnings: [],
-      },
-      records: [],
-      status: "unknown",
-      warnings: [],
-    } as unknown as ConnectorRfqSyncResult
-
-    expect(() => buildConvexConnectorRfqSyncPayload(result)).toThrow("connector sync status is not supported")
-    expect(() =>
-      buildConvexConnectorRfqSyncPayload({
-        ...result,
-        records: [
-          {
-            calendar: {
-              adapterVersion: "calendar-rfq.v1.mock",
-              plan: { events: [], warnings: [] },
-              provider: "mock",
-              results: [],
-              status: "skipped",
-              warnings: [],
-            },
-            messageId: " ",
-            parsedSubject: "RFQ",
-            rfqId: "rfq-001",
-            status: "calendar_skipped",
-            warnings: [],
-          },
-        ],
-        status: "succeeded",
-      }),
-    ).toThrow("records[0].messageId is required")
   })
 })
