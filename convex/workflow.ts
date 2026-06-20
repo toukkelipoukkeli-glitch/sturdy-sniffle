@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, type GenericId } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 
@@ -69,12 +69,12 @@ export const updateRfqStatus = mutation({
   args: {
     rfqId: v.id("rfqs"),
     status: rfqStatus,
-    updatedAt: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireDocument(ctx, args.rfqId, "rfqId");
     await ctx.db.patch(args.rfqId, {
       status: args.status,
-      updatedAt: args.updatedAt,
+      updatedAt: Date.now(),
     });
     return args.rfqId;
   },
@@ -102,10 +102,11 @@ export const createQuoteScenario = mutation({
     currency: currencyCode,
     leadTimeDays: v.number(),
     validUntil: v.optional(v.number()),
-    now: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireDocument(ctx, args.rfqId, "rfqId");
     const title = nonBlank(args.title, "title");
+    const now = Date.now();
     return await ctx.db.insert("quoteScenarios", {
       rfqId: args.rfqId,
       title,
@@ -114,8 +115,8 @@ export const createQuoteScenario = mutation({
       currency: args.currency,
       leadTimeDays: positiveInteger(args.leadTimeDays, "leadTimeDays"),
       validUntil: args.validUntil,
-      createdAt: args.now,
-      updatedAt: args.now,
+      createdAt: now,
+      updatedAt: now,
     });
   },
 });
@@ -165,13 +166,13 @@ export const listOfferFollowUpActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const activities = await ctx.db
+    const limit = boundedLimit(args.limit);
+    return await ctx.db
       .query("activities")
       .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
       .order("desc")
-      .take(boundedLimit(args.limit));
-
-    return activities.filter((activity) => activity.kind === "calendar_event");
+      .filter((q) => q.eq(q.field("kind"), "calendar_event"))
+      .take(limit);
   },
 });
 
@@ -182,9 +183,16 @@ export const createOfferFollowUpActivity = mutation({
     rfqId: v.optional(v.id("rfqs")),
     actorName: v.optional(v.string()),
     message: v.string(),
-    createdAt: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireDocument(ctx, args.offerId, "offerId");
+    if (args.quoteId) {
+      await requireDocument(ctx, args.quoteId, "quoteId");
+    }
+    if (args.rfqId) {
+      await requireDocument(ctx, args.rfqId, "rfqId");
+    }
+
     return await ctx.db.insert("activities", {
       offerId: args.offerId,
       quoteId: args.quoteId,
@@ -193,10 +201,17 @@ export const createOfferFollowUpActivity = mutation({
       actorName: args.actorName,
       kind: "calendar_event",
       message: nonBlank(args.message, "message"),
-      createdAt: args.createdAt,
+      createdAt: Date.now(),
     });
   },
 });
+
+async function requireDocument(ctx: { db: { get: (id: GenericId<string>) => Promise<unknown> } }, id: GenericId<string>, key: string) {
+  const document = await ctx.db.get(id);
+  if (!document) {
+    throw new Error(`${key} does not exist`);
+  }
+}
 
 function boundedLimit(value: number | undefined, maximum = 100): number {
   if (value === undefined) {
