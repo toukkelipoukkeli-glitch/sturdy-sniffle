@@ -450,10 +450,20 @@ export default defineSchema({
     .index("by_provider", ["provider"])
     .index("by_input_hash", ["inputHash"])
     .index("by_provider_input_hash", ["provider", "inputHash"])
+    .index("by_tenant_created_at", ["tenantId", "createdAt"])
+    .index("by_tenant_status_created_at", ["tenantId", "status", "createdAt"])
     .index("by_rfq", ["rfqId"])
     .index("by_tenant_rfq", ["tenantId", "rfqId"])
+    .index("by_rfq_created_at", ["rfqId", "createdAt"])
+    .index("by_tenant_rfq_created_at", ["tenantId", "rfqId", "createdAt"])
+    .index("by_quote", ["quoteId"])
+    .index("by_tenant_quote", ["tenantId", "quoteId"])
+    .index("by_quote_created_at", ["quoteId", "createdAt"])
+    .index("by_tenant_quote_created_at", ["tenantId", "quoteId", "createdAt"])
     .index("by_offer", ["offerId"])
-    .index("by_tenant_offer", ["tenantId", "offerId"]),
+    .index("by_tenant_offer", ["tenantId", "offerId"])
+    .index("by_offer_created_at", ["offerId", "createdAt"])
+    .index("by_tenant_offer_created_at", ["tenantId", "offerId", "createdAt"]),
 
   activities: defineTable({
     tenantId,
