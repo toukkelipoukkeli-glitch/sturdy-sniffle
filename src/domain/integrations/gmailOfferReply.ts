@@ -139,11 +139,24 @@ function normalizeSearchableText(message: GmailRfqMessage): string {
 }
 
 function containsOfferNumber(text: string, offerNumber: string): boolean {
-  return text.includes(offerNumber.toLowerCase())
+  return containsIdentifier(text, offerNumber)
 }
 
 function findFollowUpTaskId(text: string, followUpTaskIds: string[]): string | undefined {
-  return followUpTaskIds.map((id) => id.trim()).find((id) => id && text.includes(id.toLowerCase()))
+  return followUpTaskIds.map((id) => id.trim()).find((id) => id && containsIdentifier(text, id))
+}
+
+function containsIdentifier(text: string, identifier: string): boolean {
+  const normalizedIdentifier = identifier.trim().toLowerCase()
+  if (!normalizedIdentifier) {
+    return false
+  }
+  const pattern = new RegExp(`(^|[^a-z0-9_-])${escapeRegExp(normalizedIdentifier)}(?=$|[^a-z0-9_-])`)
+  return pattern.test(text)
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 function senderActor(message: GmailRfqMessage): string {

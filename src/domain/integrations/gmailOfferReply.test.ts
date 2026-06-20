@@ -117,6 +117,42 @@ describe("Gmail offer reply ingestion", () => {
     })
   })
 
+  it("does not match offer numbers by prefix", () => {
+    const result = parseGmailOfferReply({
+      offerNumber: "OFFER-019",
+      message: {
+        ...acceptedReply,
+        subject: "Re: Offer OFFER-01",
+        plainText: "We accept OFFER-01.",
+      },
+    })
+
+    expect(result.matched).toBe(false)
+    expect(result.event).toBeUndefined()
+  })
+
+  it("does not match follow-up task ids by prefix", () => {
+    const result = parseGmailOfferReply({
+      offerNumber: "OFFER-019",
+      followUpTaskIds: ["fu-01"],
+      message: {
+        ...acceptedReply,
+        id: "reply-005",
+        plainText: "Received OFFER-019, thanks. This is about follow-up fu-019.",
+      },
+    })
+
+    expect(result).toMatchObject({
+      matched: true,
+      signal: "follow_up_completed",
+      event: {
+        kind: "note_added",
+      },
+      warnings: ["Follow-up completion signal found, but no matching follow-up task id was present."],
+    })
+    expect(result.event?.followUpTaskId).toBeUndefined()
+  })
+
   it("parses batches deterministically and rejects non-ISO received timestamps", () => {
     expect(
       parseGmailOfferReplies([
