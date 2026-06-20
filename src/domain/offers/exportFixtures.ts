@@ -2,7 +2,7 @@ import { buildOfferFollowUpCalendarPlan, type CalendarRfqPlan } from "../integra
 import { calculateCncQuote } from "../quoting/cnc"
 import { rushTurnedSpacerFixture } from "../quoting/cnc.fixtures"
 import { buildCncOfferDraft, type OfferDraft } from "./offer"
-import { buildOfferDocument, type OfferDocument } from "./offerDocument"
+import { buildOfferDocument, renderOfferDocumentText, type OfferDocument } from "./offerDocument"
 import { buildOfferLifecycleTimeline } from "./offerLifecycle"
 
 export const OFFER_EXPORT_FIXTURE_VERSION = "offer-export-fixtures.v1"
@@ -75,31 +75,6 @@ export function serializeOfferExportFixture(fixture: OfferExportFixture = buildO
     offerDocumentText: renderOfferDocumentText(fixture.document),
     followUpPlanJson: stableJson(fixture.followUpPlan),
   }
-}
-
-export function renderOfferDocumentText(document: OfferDocument): string {
-  const lines = [
-    document.title,
-    `Customer: ${document.customerName}`,
-    `Issued: ${document.issuedAt}`,
-    `Valid until: ${document.validUntil}`,
-    `Total: ${document.totalLabel}`,
-  ]
-
-  for (const section of document.sections) {
-    lines.push("", section.title)
-    for (const field of section.fields ?? []) {
-      lines.push(`${field.label}: ${field.value}`)
-    }
-    if (section.table) {
-      lines.push(section.table.columns.join(" | "))
-      lines.push(...section.table.rows.map((row) => row.join(" | ")))
-    }
-    lines.push(...(section.body ?? []))
-  }
-
-  lines.push("", ...document.footerLines)
-  return lines.join("\n")
 }
 
 function stableJson(value: unknown): string {

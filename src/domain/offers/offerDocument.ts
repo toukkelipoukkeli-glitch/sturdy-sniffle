@@ -2,7 +2,15 @@ import { formatOfferMoney, type OfferDraft, type OfferLineItem } from "./offer"
 
 export const OFFER_DOCUMENT_VERSION = "offer-document.v1"
 
-export type OfferDocumentSectionKind = "summary" | "pricing" | "assumptions" | "review_flags" | "revision_history" | "notes" | "terms"
+export type OfferDocumentSectionKind =
+  | "summary"
+  | "pricing"
+  | "alternates"
+  | "assumptions"
+  | "review_flags"
+  | "revision_history"
+  | "notes"
+  | "terms"
 
 export interface OfferDocumentField {
   label: string
@@ -23,6 +31,16 @@ export interface OfferDocumentSection {
   table?: OfferDocumentTable
 }
 
+export interface OfferDocumentAlternate {
+  label: string
+  totalLabel: string
+  priceDeltaLabel: string
+  leadTimeLabel: string
+  leadTimeDeltaLabel: string
+  recommendation: string
+  note?: string
+}
+
 export interface OfferDocument {
   documentVersion: typeof OFFER_DOCUMENT_VERSION
   offerNumber: string
@@ -36,10 +54,15 @@ export interface OfferDocument {
   footerLines: string[]
 }
 
-export function buildOfferDocument(offer: OfferDraft): OfferDocument {
+export interface BuildOfferDocumentOptions {
+  alternates?: OfferDocumentAlternate[]
+}
+
+export function buildOfferDocument(offer: OfferDraft, options: BuildOfferDocumentOptions = {}): OfferDocument {
   const sections: OfferDocumentSection[] = [
     buildSummarySection(offer),
     buildPricingSection(offer),
+    ...buildAlternatesSection(options.alternates ?? []),
     buildAssumptionsSection(offer.items),
     ...buildReviewFlagSection(offer.items),
     buildRevisionHistorySection(offer),
@@ -62,6 +85,31 @@ export function buildOfferDocument(offer: OfferDraft): OfferDocument {
       "Lead times start after written approval and final drawing release.",
     ],
   }
+}
+
+export function renderOfferDocumentText(document: OfferDocument): string {
+  const lines = [
+    document.title,
+    `Customer: ${document.customerName}`,
+    `Issued: ${document.issuedAt}`,
+    `Valid until: ${document.validUntil}`,
+    `Total: ${document.totalLabel}`,
+  ]
+
+  for (const section of document.sections) {
+    lines.push("", section.title)
+    for (const field of section.fields ?? []) {
+      lines.push(`${field.label}: ${field.value}`)
+    }
+    if (section.table) {
+      lines.push(section.table.columns.join(" | "))
+      lines.push(...section.table.rows.map((row) => row.join(" | ")))
+    }
+    lines.push(...(section.body ?? []))
+  }
+
+  lines.push("", ...document.footerLines)
+  return lines.join("\n")
 }
 
 function buildSummarySection(offer: OfferDraft): OfferDocumentSection {
@@ -100,6 +148,36 @@ function buildPricingSection(offer: OfferDraft): OfferDocumentSection {
       ]),
     },
   }
+}
+
+function buildAlternatesSection(alternates: OfferDocumentAlternate[]): OfferDocumentSection[] {
+  const rows = alternates
+    .map(normalizeAlternate)
+    .map((alternate) => [
+      alternate.label,
+      alternate.totalLabel,
+      alternate.priceDeltaLabel,
+      alternate.leadTimeLabel,
+      alternate.leadTimeDeltaLabel,
+      alternate.recommendation,
+      alternate.note ?? "",
+    ])
+
+  if (rows.length === 0) {
+    return []
+  }
+
+  return [
+    {
+      key: "alternates",
+      title: "Alternates",
+      kind: "alternates",
+      table: {
+        columns: ["Option", "Total", "Price delta", "Lead time", "Lead delta", "Positioning", "Notes"],
+        rows,
+      },
+    },
+  ]
 }
 
 function buildAssumptionsSection(items: OfferLineItem[]): OfferDocumentSection {
@@ -189,6 +267,31 @@ function compactFields(fields: Array<[string, string | undefined]>): OfferDocume
     const trimmed = value?.trim()
     return trimmed ? [{ label, value: trimmed }] : []
   })
+}
+
+function normalizeAlternate(alternate: OfferDocumentAlternate): OfferDocumentAlternate {
+  return {
+    label: nonBlank(alternate.label, "alternate.label"),
+    totalLabel: nonBlank(alternate.totalLabel, "alternate.totalLabel"),
+    priceDeltaLabel: nonBlank(alternate.priceDeltaLabel, "alternate.priceDeltaLabel"),
+    leadTimeLabel: nonBlank(alternate.leadTimeLabel, "alternate.leadTimeLabel"),
+    leadTimeDeltaLabel: nonBlank(alternate.leadTimeDeltaLabel, "alternate.leadTimeDeltaLabel"),
+    recommendation: nonBlank(alternate.recommendation, "alternate.recommendation"),
+    note: optionalTrim(alternate.note),
+  }
+}
+
+function nonBlank(value: string, key: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    throw new Error(`${key} is required`)
+  }
+  return trimmed
+}
+
+function optionalTrim(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
 }
 
 function humanizeKey(key: string): string {
