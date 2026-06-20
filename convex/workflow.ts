@@ -661,6 +661,95 @@ export const listProviderRunsByOffer = query({
   },
 });
 
+export const listIntegrationLinksByRfq = query({
+  args: {
+    rfqId: v.id("rfqs"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const rfq = await requireTenantDocument<RfqDocument>(ctx, args.rfqId, "rfqId", actor);
+    const limit = boundedLimit(args.limit);
+    const tenantLinks = actor.tenantId === undefined
+      ? []
+      : await ctx.db
+          .query("integrationLinks")
+          .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", actor.tenantId).eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit);
+    const legacyLinks = rfq.tenantId
+      ? []
+      : await ctx.db
+          .query("integrationLinks")
+          .withIndex("by_tenant_rfq", (q) => q.eq("tenantId", undefined).eq("rfqId", args.rfqId))
+          .order("desc")
+          .take(limit);
+    const links = mergeIntegrationLinksByUpdatedAt(tenantLinks, legacyLinks).slice(0, limit);
+
+    return links.filter((link) => childBelongsToActorTenant(link, rfq, actor)).map(compactIntegrationLink);
+  },
+});
+
+export const listIntegrationLinksByOffer = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const tenantLinks = actor.tenantId === undefined
+      ? []
+      : await ctx.db
+          .query("integrationLinks")
+          .withIndex("by_tenant_offer", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+    const legacyLinks = offer.tenantId
+      ? []
+      : await ctx.db
+          .query("integrationLinks")
+          .withIndex("by_tenant_offer", (q) => q.eq("tenantId", undefined).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+    const links = mergeIntegrationLinksByUpdatedAt(tenantLinks, legacyLinks).slice(0, limit);
+
+    return links.filter((link) => childBelongsToActorTenant(link, offer, actor)).map(compactIntegrationLink);
+  },
+});
+
+export const getIntegrationLinkByExternalId = query({
+  args: {
+    provider: integrationProvider,
+    externalId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const externalId = nonBlank(args.externalId, "externalId");
+    const tenantLink = actor.tenantId === undefined
+      ? null
+      : await ctx.db
+          .query("integrationLinks")
+          .withIndex("by_tenant_provider_external_id", (q) =>
+            q.eq("tenantId", actor.tenantId).eq("provider", args.provider).eq("externalId", externalId),
+          )
+          .unique();
+    if (tenantLink && belongsToActorTenant(tenantLink, actor)) {
+      return compactIntegrationLink(tenantLink);
+    }
+
+    const legacyLink = await ctx.db
+      .query("integrationLinks")
+      .withIndex("by_tenant_provider_external_id", (q) =>
+        q.eq("tenantId", undefined).eq("provider", args.provider).eq("externalId", externalId),
+      )
+      .unique();
+
+    return legacyLink && belongsToActorTenant(legacyLink, actor) ? compactIntegrationLink(legacyLink) : null;
+  },
+});
+
 export const recordOfferReleaseExecution = mutation({
   args: {
     offerId: v.id("offers"),
@@ -1185,6 +1274,7 @@ type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status" | "tenantId">;
 type QuoteScenarioDocument = Pick<Doc<"quoteScenarios">, "rfqId" | "tenantId">;
 type ProviderRunDocument = Doc<"providerRuns">;
+type IntegrationLinkDocument = Doc<"integrationLinks">;
 type DbReaderLike = { db: { get: <T = unknown>(id: GenericId<string>) => Promise<T | null> } };
 
 async function requireDocument<T = unknown>(ctx: DbReaderLike, id: GenericId<string>, key: string) {
@@ -1436,6 +1526,32 @@ function mergeProviderRunsByCreatedAt(...groups: ProviderRunDocument[][]): Provi
   }
   return [...byId.values()].sort(
     (left, right) => right.createdAt - left.createdAt || String(right._id).localeCompare(String(left._id)),
+  );
+}
+
+function compactIntegrationLink(link: IntegrationLinkDocument) {
+  return {
+    _id: link._id,
+    provider: link.provider,
+    externalId: link.externalId,
+    externalUrl: link.externalUrl,
+    rfqId: link.rfqId,
+    offerId: link.offerId,
+    customerId: link.customerId,
+    contactId: link.contactId,
+    syncStatus: link.syncStatus,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+  };
+}
+
+function mergeIntegrationLinksByUpdatedAt(...groups: IntegrationLinkDocument[][]): IntegrationLinkDocument[] {
+  const byId = new Map<string, IntegrationLinkDocument>();
+  for (const link of groups.flat()) {
+    byId.set(String(link._id), link);
+  }
+  return [...byId.values()].sort(
+    (left, right) => right.updatedAt - left.updatedAt || String(right._id).localeCompare(String(left._id)),
   );
 }
 
