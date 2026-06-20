@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { parseRfqIntake } from "../rfq/intake"
 import { cncBracketEmail } from "../rfq/intake.fixtures"
 import {
+  buildOfferFollowUpCalendarPlan,
   buildOfferFollowUpEvent,
   buildRfqCalendarPlan,
   createCalendarRfqScheduler,
@@ -76,6 +77,95 @@ describe("calendar RFQ planning", () => {
         source: "offer_follow_up",
       },
     })
+  })
+
+  it("builds offer follow-up calendar plans from open lifecycle tasks", () => {
+    const plan = buildOfferFollowUpCalendarPlan({
+      offerId: "offer-001",
+      customerName: "North Forge",
+      timezone: "Europe/Helsinki",
+      timeline: {
+        lifecycleVersion: "offer-lifecycle.v1",
+        offerNumber: "OFFER-204",
+        status: "sent",
+        events: [],
+        followUpTasks: [
+          {
+            createdAt: "2026-06-25T09:00:00.000Z",
+            dueAt: "2026-07-03T07:00:00.000Z",
+            id: "follow-later",
+            offerNumber: "OFFER-204",
+            status: "open",
+            title: "Follow up OFFER-204",
+          },
+          {
+            createdAt: "2026-06-25T09:00:00.000Z",
+            dueAt: "2026-07-02T07:00:00.000Z",
+            id: "follow-first",
+            offerNumber: "OFFER-204",
+            status: "open",
+            title: "Follow up OFFER-204",
+          },
+          {
+            completedAt: "2026-06-27T08:00:00.000Z",
+            createdAt: "2026-06-25T09:00:00.000Z",
+            dueAt: "2026-06-27T07:00:00.000Z",
+            id: "follow-done",
+            offerNumber: "OFFER-204",
+            status: "completed",
+            title: "Follow up OFFER-204",
+          },
+        ],
+      },
+    })
+
+    expect(plan.warnings).toEqual(["Skipped 1 non-open follow-up task."])
+    expect(plan.events.map((event) => [event.startAt, event.metadata.followUpTaskId])).toEqual([
+      ["2026-07-02T07:00:00.000Z", "follow-first"],
+      ["2026-07-03T07:00:00.000Z", "follow-later"],
+    ])
+    expect(plan.events[0]).toMatchObject({
+      kind: "offer_follow_up",
+      title: "Follow up: OFFER-204",
+      metadata: {
+        customerName: "North Forge",
+        followUpTaskId: "follow-first",
+        offerId: "offer-001",
+        offerNumber: "OFFER-204",
+        source: "offer_follow_up",
+      },
+    })
+  })
+
+  it("warns when an offer has no open follow-up tasks to schedule", () => {
+    const plan = buildOfferFollowUpCalendarPlan({
+      offerId: "offer-001",
+      customerName: "North Forge",
+      timezone: "Europe/Helsinki",
+      timeline: {
+        lifecycleVersion: "offer-lifecycle.v1",
+        offerNumber: "OFFER-204",
+        status: "accepted",
+        events: [],
+        followUpTasks: [
+          {
+            cancelledAt: "2026-06-27T08:00:00.000Z",
+            createdAt: "2026-06-25T09:00:00.000Z",
+            dueAt: "2026-06-28T07:00:00.000Z",
+            id: "follow-cancelled",
+            offerNumber: "OFFER-204",
+            status: "cancelled",
+            title: "Follow up OFFER-204",
+          },
+        ],
+      },
+    })
+
+    expect(plan.events).toEqual([])
+    expect(plan.warnings).toEqual([
+      "Skipped 1 non-open follow-up task.",
+      "Offer OFFER-204 has no open follow-up tasks.",
+    ])
   })
 
   it("rejects invalid calendar timestamps", () => {
