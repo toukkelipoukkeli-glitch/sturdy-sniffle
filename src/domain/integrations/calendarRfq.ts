@@ -1,5 +1,6 @@
+import type { OfferLifecycleTimeline } from "../offers/offerLifecycle"
 import type { ParsedRfqIntake } from "../rfq/intake"
-import { normalizeIsoTimestamp } from "../shared/deterministic"
+import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 
 export const CALENDAR_RFQ_ADAPTER_VERSION = "calendar-rfq.v1"
 
@@ -35,6 +36,15 @@ export interface BuildOfferFollowUpEventRequest {
   offerNumber: string
   customerName: string
   followUpAt: string
+  followUpTaskId?: string
+  timezone: string
+  durationMinutes?: number
+}
+
+export interface BuildOfferFollowUpCalendarPlanRequest {
+  offerId: string
+  customerName: string
+  timeline: OfferLifecycleTimeline
   timezone: string
   durationMinutes?: number
 }
@@ -229,6 +239,7 @@ export function buildOfferFollowUpEvent(request: BuildOfferFollowUpEventRequest)
   const offerId = nonBlank(request.offerId, "offerId")
   const offerNumber = nonBlank(request.offerNumber, "offerNumber")
   const customerName = nonBlank(request.customerName, "customerName")
+  const followUpTaskId = optionalTrim(request.followUpTaskId)
   const timezone = nonBlank(request.timezone, "timezone")
   const followUpAt = parseRequiredDate(request.followUpAt, "followUpAt")
   const durationMinutes = positiveInteger(request.durationMinutes ?? defaultFollowUpDurationMinutes, "durationMinutes")
@@ -244,8 +255,43 @@ export function buildOfferFollowUpEvent(request: BuildOfferFollowUpEventRequest)
       offerId,
       offerNumber,
       customerName,
+      ...(followUpTaskId ? { followUpTaskId } : {}),
       source: "offer_follow_up",
     },
+  }
+}
+
+export function buildOfferFollowUpCalendarPlan(request: BuildOfferFollowUpCalendarPlanRequest): CalendarRfqPlan {
+  const offerId = nonBlank(request.offerId, "offerId")
+  const customerName = nonBlank(request.customerName, "customerName")
+  const timezone = nonBlank(request.timezone, "timezone")
+  const offerNumber = nonBlank(request.timeline.offerNumber, "timeline.offerNumber")
+  const openTasks = request.timeline.followUpTasks
+    .filter((task) => task.status === "open")
+    .sort((left, right) => compareLex(left.dueAt, right.dueAt) || compareLex(left.id, right.id))
+  const skippedCount = request.timeline.followUpTasks.length - openTasks.length
+  const warnings: string[] = []
+
+  if (skippedCount > 0) {
+    warnings.push(`Skipped ${skippedCount} non-open follow-up task${skippedCount === 1 ? "" : "s"}.`)
+  }
+  if (openTasks.length === 0) {
+    warnings.push(`Offer ${offerNumber} has no open follow-up tasks.`)
+  }
+
+  return {
+    events: openTasks.map((task) =>
+      buildOfferFollowUpEvent({
+        customerName,
+        durationMinutes: request.durationMinutes,
+        followUpAt: task.dueAt,
+        followUpTaskId: task.id,
+        offerId,
+        offerNumber,
+        timezone,
+      }),
+    ),
+    warnings,
   }
 }
 
@@ -295,6 +341,11 @@ function nonBlank(value: string, key: string): string {
     throw new Error(`${key} is required`)
   }
   return trimmed
+}
+
+function optionalTrim(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
 }
 
 function errorToMessage(error: unknown): string {
