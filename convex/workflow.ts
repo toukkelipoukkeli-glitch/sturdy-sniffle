@@ -46,6 +46,49 @@ const offerWorkflowStatus = v.union(
   v.literal("superseded"),
 );
 
+const offerReleaseExecutionMode = v.union(v.literal("commit"), v.literal("dry_run"));
+
+const offerReleaseExecutionStatus = v.union(
+  v.literal("blocked"),
+  v.literal("failed"),
+  v.literal("needs_review"),
+  v.literal("partial"),
+  v.literal("pending"),
+  v.literal("prepared"),
+  v.literal("succeeded"),
+);
+
+const offerReleaseCommandKind = v.union(
+  v.literal("calendar_follow_up"),
+  v.literal("email_draft"),
+  v.literal("lifecycle_follow_up"),
+  v.literal("lifecycle_sent"),
+  v.literal("manager_review"),
+  v.literal("workspace_follow_up"),
+  v.literal("workspace_status"),
+);
+
+const offerReleaseCommandExecutionStatus = v.union(
+  v.literal("applied"),
+  v.literal("blocked"),
+  v.literal("failed"),
+  v.literal("pending"),
+  v.literal("prepared"),
+  v.literal("requires_review"),
+);
+
+const offerReleaseExecutionCommand = v.object({
+  key: v.string(),
+  kind: offerReleaseCommandKind,
+  label: v.string(),
+  detail: v.string(),
+  status: offerReleaseCommandExecutionStatus,
+  idempotencyKey: v.string(),
+  externalId: v.optional(v.string()),
+  message: v.optional(v.string()),
+  warnings: v.array(v.string()),
+});
+
 const defaultLimit = 50;
 
 const demoWorkspaceImportOperation = v.union(
@@ -109,6 +152,7 @@ const demoWorkspaceImportOperation = v.union(
 );
 
 type DemoWorkspaceImportOperation = Infer<typeof demoWorkspaceImportOperation>;
+type OfferReleaseExecutionCommandInput = Infer<typeof offerReleaseExecutionCommand>;
 type DemoImportStatus = "created" | "updated" | "skipped";
 
 interface DemoImportState {
@@ -440,6 +484,133 @@ export const listOfferActivities = query({
           .order("desc")
           .take(limit);
     return activities.filter((activity) => childBelongsToActorTenant(activity, offer, actor));
+  },
+});
+
+export const listOfferReleaseExecutions = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const executions = offer.tenantId
+      ? await ctx.db
+          .query("offerReleaseExecutions")
+          .withIndex("by_tenant_offer_time", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("offerReleaseExecutions")
+          .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+
+    return executions.filter((execution) => childBelongsToActorTenant(execution, offer, actor));
+  },
+});
+
+export const recordOfferReleaseExecution = mutation({
+  args: {
+    offerId: v.id("offers"),
+    executionKey: v.string(),
+    executionVersion: v.string(),
+    planVersion: v.string(),
+    mode: offerReleaseExecutionMode,
+    status: offerReleaseExecutionStatus,
+    releaseAt: v.string(),
+    executedAt: v.string(),
+    commands: v.array(offerReleaseExecutionCommand),
+    lifecycleEventCount: v.number(),
+    workspaceActionCount: v.number(),
+    calendarEventCount: v.number(),
+    nextActions: v.array(v.string()),
+    warnings: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const now = Date.now();
+    const commands = normalizeOfferReleaseExecutionCommands(args.commands);
+    const executionKey = nonBlank(args.executionKey, "executionKey");
+    const existingExecution = await ctx.db
+      .query("offerReleaseExecutions")
+      .withIndex("by_tenant_offer_execution_key", (q) =>
+        q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId).eq("executionKey", executionKey),
+      )
+      .unique();
+    if (existingExecution) {
+      return {
+        executionId: existingExecution._id,
+        offerId: args.offerId,
+        reused: true,
+        status: existingExecution.status,
+      };
+    }
+
+    const lifecycleEventCount = nonNegativeInteger(args.lifecycleEventCount, "lifecycleEventCount");
+    const workspaceActionCount = nonNegativeInteger(args.workspaceActionCount, "workspaceActionCount");
+    const calendarEventCount = nonNegativeInteger(args.calendarEventCount, "calendarEventCount");
+    const warnings = normalizeTextList(args.warnings);
+    const nextActions = normalizeTextList(args.nextActions);
+    const actorName = nonBlank(actor.displayName, "actor.displayName");
+    const releaseAt = isoTimestamp(args.releaseAt, "releaseAt");
+    const executedAt = isoTimestamp(args.executedAt, "executedAt");
+    const emailDraftArtifactCount = commands.filter(
+      (command) => command.kind === "email_draft" && command.status === "applied",
+    ).length;
+    const artifactCount = lifecycleEventCount + workspaceActionCount + calendarEventCount + emailDraftArtifactCount;
+    const warningCount = warnings.length + commands.reduce((total, command) => total + command.warnings.length, 0);
+    const executionId = await ctx.db.insert("offerReleaseExecutions", {
+      actorName,
+      artifactCount,
+      calendarEventCount,
+      commandCount: commands.length,
+      commands,
+      createdAt: now,
+      executedAt,
+      executionKey,
+      executionVersion: nonBlank(args.executionVersion, "executionVersion"),
+      lifecycleEventCount,
+      mode: args.mode,
+      nextActions,
+      offerId: args.offerId,
+      planVersion: nonBlank(args.planVersion, "planVersion"),
+      quoteId: offer.quoteId,
+      releaseAt,
+      rfqId: offer.rfqId,
+      status: args.status,
+      tenantId: actor.tenantId,
+      warningCount,
+      warnings,
+      workspaceActionCount,
+    });
+    const activityId = await ctx.db.insert("activities", {
+      actorName,
+      actorType: "system",
+      createdAt: now,
+      kind: "calculation",
+      message: offerReleaseExecutionActivityMessage({
+        commandCount: commands.length,
+        mode: args.mode,
+        offerNumber: offer.offerNumber,
+        status: args.status,
+      }),
+      offerId: args.offerId,
+      quoteId: offer.quoteId,
+      rfqId: offer.rfqId,
+      tenantId: actor.tenantId,
+    });
+
+    return {
+      activityId,
+      executionId,
+      offerId: args.offerId,
+      reused: false,
+      status: args.status,
+    };
   },
 });
 
@@ -838,6 +1009,56 @@ function importResult(
 
 function countImportStatus(results: DemoImportOperationResult[], status: DemoImportStatus): number {
   return results.filter((result) => result.status === status).length;
+}
+
+function normalizeOfferReleaseExecutionCommands(
+  commands: OfferReleaseExecutionCommandInput[],
+): OfferReleaseExecutionCommandInput[] {
+  if (commands.length === 0) {
+    throw new Error("commands must include at least one release command");
+  }
+
+  const seenKeys = new Set<string>();
+  return commands.map((command, index) => {
+    const key = nonBlank(command.key, `commands[${index}].key`);
+    if (seenKeys.has(key)) {
+      throw new Error(`duplicate release command ${key}`);
+    }
+    seenKeys.add(key);
+
+    const externalId = optionalNonBlank(command.externalId);
+    const message = optionalNonBlank(command.message);
+    const normalized: OfferReleaseExecutionCommandInput = {
+      detail: nonBlank(command.detail, `commands[${index}].detail`),
+      idempotencyKey: nonBlank(command.idempotencyKey, `commands[${index}].idempotencyKey`),
+      key,
+      kind: command.kind,
+      label: nonBlank(command.label, `commands[${index}].label`),
+      status: command.status,
+      warnings: normalizeTextList(command.warnings),
+    };
+    if (externalId) {
+      normalized.externalId = externalId;
+    }
+    if (message) {
+      normalized.message = message;
+    }
+    return normalized;
+  });
+}
+
+function normalizeTextList(values: string[]): string[] {
+  return values.map((value) => optionalNonBlank(value)).filter((value): value is string => Boolean(value));
+}
+
+function offerReleaseExecutionActivityMessage(input: {
+  commandCount: number;
+  mode: "commit" | "dry_run";
+  offerNumber: string;
+  status: string;
+}): string {
+  const modeLabel = input.mode === "dry_run" ? "dry-run" : "commit";
+  return `Recorded ${modeLabel} release execution audit for ${input.offerNumber}: ${input.status} (${input.commandCount} commands).`;
 }
 
 function mapToRecord<T extends string>(map: Map<string, GenericId<T>>): Record<string, string> {
