@@ -71,6 +71,11 @@ import {
   createLocalOfferReplySyncPersistence,
   type OfferReplySyncPersistenceSnapshot,
 } from "./domain/offers/offerReplySyncPersistence"
+import {
+  buildOfferReplyStateSummary,
+  type OfferReplyStateFilter,
+  type OfferReplyStateSummary,
+} from "./domain/offers/offerReplyState"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
@@ -859,6 +864,7 @@ function App() {
     [offerReleaseExecution],
   )
   const offerReplySync = offerRepliesById[selectedId]
+  const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
@@ -1227,6 +1233,7 @@ function App() {
               releaseExecution={offerReleaseExecution}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
+              replySnapshot={offerReplySnapshot}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
             />
@@ -2203,6 +2210,7 @@ function OfferView({
   releaseExecution,
   releaseHistory,
   releasePlan,
+  replySnapshot,
   replySync,
 }: {
   approval: QuoteApprovalDecision
@@ -2214,6 +2222,7 @@ function OfferView({
   releaseExecution: OfferReleaseExecutionRun
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
+  replySnapshot?: OfferReplySyncPersistenceSnapshot
   replySync?: GmailOfferReplySyncResult
 }) {
   const offerText = exportPackage.plainText
@@ -2242,7 +2251,7 @@ function OfferView({
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferReleaseExecutionPanel execution={releaseExecution} />
       <OfferReleaseHistoryPanel history={releaseHistory} />
-      <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
+      <OfferReplyPanel replySnapshot={replySnapshot} replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
@@ -2714,12 +2723,19 @@ function OfferExportPackagePanel({ exportPackage }: { exportPackage: OfferExport
 
 function OfferReplyPanel({
   onSyncReplies,
+  replySnapshot,
   replySync,
 }: {
   onSyncReplies: () => void
+  replySnapshot?: OfferReplySyncPersistenceSnapshot
   replySync?: GmailOfferReplySyncResult
 }) {
+  const [stateFilter, setStateFilter] = useState<OfferReplyStateFilter>("all")
   const matchedRecords = replySync?.records.filter((record) => record.parsed.matched) ?? []
+  const replyStateSummary = useMemo(
+    () => (replySnapshot ? buildOfferReplyStateSummary(replySnapshot, { filter: stateFilter }) : undefined),
+    [replySnapshot, stateFilter],
+  )
 
   return (
     <section className="offer-reply-panel" aria-label="Offer reply sync">
@@ -2743,6 +2759,13 @@ function OfferReplyPanel({
             <Metric label="Status" value={replySync.status} />
             <Metric label="Query" value={replySync.query} />
           </div>
+          {replyStateSummary ? (
+            <OfferReplyStatePanel
+              filter={stateFilter}
+              onFilterChange={setStateFilter}
+              summary={replyStateSummary}
+            />
+          ) : null}
           <div className="offer-reply-list">
             {replySync.records.map((record) => (
               <article className="offer-reply-card" data-matched={record.parsed.matched} key={record.message.id}>
@@ -2770,6 +2793,62 @@ function OfferReplyPanel({
         </>
       ) : null}
     </section>
+  )
+}
+
+const offerReplyFilters: Array<{ label: string; value: OfferReplyStateFilter }> = [
+  { label: "All", value: "all" },
+  { label: "Applied", value: "applied" },
+  { label: "Ignored", value: "ignored" },
+  { label: "Transitions", value: "transitions" },
+  { label: "Warnings", value: "warnings" },
+  { label: "Duplicates", value: "duplicates" },
+]
+
+function OfferReplyStatePanel({
+  filter,
+  onFilterChange,
+  summary,
+}: {
+  filter: OfferReplyStateFilter
+  onFilterChange: (filter: OfferReplyStateFilter) => void
+  summary: OfferReplyStateSummary
+}) {
+  return (
+    <div className="offer-reply-state-panel" aria-label="Offer reply state">
+      <div className="offer-reply-state-summary">
+        <Metric label="Recorded" value={String(summary.recordedMessageCount)} />
+        <Metric label="Applied" value={String(summary.appliedMessageCount)} />
+        <Metric label="Warnings" value={String(summary.warningCount)} />
+        <Metric label="Duplicates" value={String(summary.duplicateSyncCount)} />
+      </div>
+      <div className="offer-reply-filter-row" role="group" aria-label="Offer reply state filters">
+        {offerReplyFilters.map((option) => (
+          <button
+            aria-pressed={filter === option.value}
+            className="offer-reply-filter"
+            data-active={filter === option.value}
+            key={option.value}
+            onClick={() => onFilterChange(option.value)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {summary.events.length > 0 ? (
+        <div className="offer-reply-state-list">
+          {summary.events.map((event) => (
+            <article className="offer-reply-state-event" data-kind={event.kind} key={event.key}>
+              <span>{event.label}</span>
+              <strong>{event.message}</strong>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="offer-reply-state-empty">No reply state events for this filter.</div>
+      )}
+    </div>
   )
 }
 
