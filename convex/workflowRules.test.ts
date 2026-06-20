@@ -56,6 +56,18 @@ describe("offer workflow rules", () => {
 
     expect(
       buildOfferStatusTransitionPatch({
+        currentStatus: "draft",
+        nextStatus: "sent",
+        now: 1_775_000_060_000,
+        sentAt: 0,
+      }),
+    ).toEqual({
+      status: "sent",
+      updatedAt: 1_775_000_060_000,
+    });
+
+    expect(
+      buildOfferStatusTransitionPatch({
         currentStatus: "sent",
         nextStatus: "accepted",
         now: 1_775_000_120_000,

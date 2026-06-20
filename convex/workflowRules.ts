@@ -27,7 +27,7 @@ export function buildOfferStatusTransitionPatch(input: OfferStatusTransitionPatc
     status: input.nextStatus,
     updatedAt: input.now,
   };
-  if (input.nextStatus === "sent" && !input.sentAt) {
+  if (input.nextStatus === "sent" && input.sentAt === undefined) {
     patch.sentAt = input.now;
   }
   return patch;
