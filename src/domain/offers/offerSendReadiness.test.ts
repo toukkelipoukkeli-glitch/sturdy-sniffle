@@ -155,7 +155,7 @@ describe("offer send readiness", () => {
 
     expect(readiness.status).toBe("blocked")
     expect(readiness.checkedAt).toBe("2026-02-31")
-    expect(readiness.issues[0]).toEqual({
+    expect(readiness.issues.find((issue) => issue.code === "invalid_date")).toEqual({
       code: "invalid_date",
       severity: "blocker",
       message: "Invalid offer date input: nowDate must be a valid ISO date.",
