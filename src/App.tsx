@@ -80,6 +80,11 @@ import {
   type QuoteApprovalDecision,
 } from "./domain/workspace/quoteApproval"
 import {
+  evaluateQuoteReleaseGate,
+  type QuoteReleaseGateCheckStatus,
+  type QuoteReleaseGateDecision,
+} from "./domain/workspace/quoteReleaseGate"
+import {
   compareQuoteScenarios,
   type QuoteComparisonResult,
   type QuoteComparisonScenario,
@@ -661,6 +666,14 @@ function App() {
       }),
     [editsById, queueNow, statusById],
   )
+  const selectedMaterialCommitment = useMemo(
+    () => materialAvailabilityPlan.commitments.find((commitment) => commitment.itemId === selectedId),
+    [materialAvailabilityPlan, selectedId],
+  )
+  const selectedOutsideServiceCommitments = useMemo(
+    () => outsideServicePlan.commitments.filter((commitment) => commitment.itemId === selectedId),
+    [outsideServicePlan, selectedId],
+  )
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
@@ -737,6 +750,30 @@ function App() {
         reviewedAt: demoToday,
       }),
     [quote, selectedCapacityCommitment, selectedItem],
+  )
+  const quoteReleaseGate = useMemo(
+    () =>
+      evaluateQuoteReleaseGate({
+        approval: quoteApproval,
+        capacityCommitment: selectedCapacityCommitment,
+        checkedAt: demoNow,
+        intakeReadiness: rfqIntakeReadiness,
+        materialCommitment: selectedMaterialCommitment,
+        offerNumber: offer.offerNumber,
+        offerSendReadiness,
+        outsideServiceCommitments: selectedOutsideServiceCommitments,
+        rfqId: selectedItem.id,
+      }),
+    [
+      offer.offerNumber,
+      offerSendReadiness,
+      quoteApproval,
+      rfqIntakeReadiness,
+      selectedCapacityCommitment,
+      selectedItem.id,
+      selectedMaterialCommitment,
+      selectedOutsideServiceCommitments,
+    ],
   )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
@@ -987,6 +1024,7 @@ function App() {
               exportPackage={offerExportPackage}
               offer={offer}
               readiness={offerSendReadiness}
+              releaseGate={quoteReleaseGate}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
             />
@@ -1865,6 +1903,7 @@ function OfferView({
   offer,
   onSyncReplies,
   readiness,
+  releaseGate,
   replySync,
 }: {
   approval: QuoteApprovalDecision
@@ -1872,6 +1911,7 @@ function OfferView({
   offer: OfferDraft
   onSyncReplies: () => void
   readiness: OfferSendReadinessResult
+  releaseGate: QuoteReleaseGateDecision
   replySync?: GmailOfferReplySyncResult
 }) {
   const offerText = exportPackage.plainText
@@ -1896,6 +1936,7 @@ function OfferView({
       <OfferExportPackagePanel exportPackage={exportPackage} />
       <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />
+      <QuoteReleaseGatePanel releaseGate={releaseGate} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
@@ -1903,6 +1944,76 @@ function OfferView({
       </label>
     </div>
   )
+}
+
+function QuoteReleaseGatePanel({ releaseGate }: { releaseGate: QuoteReleaseGateDecision }) {
+  const statusLabel = quoteReleaseGateStatusLabel(releaseGate.status)
+
+  return (
+    <section className="quote-release-panel" aria-label="Quote release gate">
+      <div className="quote-release-heading">
+        <div>
+          <span className="eyebrow">
+            <ShieldCheck aria-hidden="true" />
+            Release gate
+          </span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <span className={`quote-release-status quote-release-status-${releaseGate.status}`}>{humanizeKey(releaseGate.status)}</span>
+      </div>
+      <div className="quote-release-summary">
+        <Metric label="Blockers" value={String(releaseGate.blockerCount)} />
+        <Metric label="Warnings" value={String(releaseGate.warningCount)} />
+        <Metric label="Checked" value={formatShortDateTime(releaseGate.checkedAt)} />
+      </div>
+      <div className="quote-release-checks">
+        {releaseGate.checks.map((check) => (
+          <div className="quote-release-check" data-status={check.status} key={check.key}>
+            <QuoteReleaseGateCheckIcon status={check.status} />
+            <div>
+              <strong>{check.label}</strong>
+              <span>{check.key === "checked_at" ? `Checked ${formatShortDateTime(releaseGate.checkedAt)}.` : check.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {releaseGate.nextActions.length > 0 ? (
+        <div className="quote-release-actions">
+          {releaseGate.nextActions.map((action) => (
+            <div className="flag" key={action}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{action}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flag ok">
+          <CheckCircle2 aria-hidden="true" />
+          <span>Ready to release to customer.</span>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function QuoteReleaseGateCheckIcon({ status }: { status: QuoteReleaseGateCheckStatus }) {
+  const Icon = status === "passed" ? CheckCircle2 : AlertTriangle
+  return (
+    <span className="quote-release-check-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function quoteReleaseGateStatusLabel(status: QuoteReleaseGateDecision["status"]) {
+  switch (status) {
+    case "blocked":
+      return "Blocked before send"
+    case "needs_review":
+      return "Needs release review"
+    case "ready":
+      return "Ready to release"
+  }
 }
 
 function QuoteApprovalPanel({ approval }: { approval: QuoteApprovalDecision }) {
