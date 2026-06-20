@@ -1,4 +1,5 @@
 import type { QuoteEngineResult } from "../quoting/registry"
+import { normalizeIsoTimestamp } from "../shared/deterministic"
 import type { QuoteComparisonResult, QuoteComparisonRow, QuoteComparisonScenario } from "./quoteComparison"
 
 export const QUOTE_REVISION_AUDIT_VERSION = "quote-revision-audit.v1"
@@ -281,15 +282,6 @@ function formatSignedDays(days: number) {
     return "0 days"
   }
   return `${days > 0 ? "+" : ""}${days} days`
-}
-
-function normalizeIsoTimestamp(value: string, key: string): string {
-  const trimmed = nonBlank(value, key)
-  const parsed = new Date(trimmed)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${key} must be a valid ISO timestamp`)
-  }
-  return parsed.toISOString()
 }
 
 function positiveInteger(value: number, key: string): number {

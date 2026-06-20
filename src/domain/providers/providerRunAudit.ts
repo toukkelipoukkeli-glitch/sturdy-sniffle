@@ -4,6 +4,7 @@ import {
   type ProviderRunRequest,
   type ProviderRunResult,
 } from "./ai"
+import { normalizeIsoTimestamp } from "../shared/deterministic"
 
 export const PROVIDER_RUN_AUDIT_VERSION = "provider-run-audit.v1"
 
@@ -125,24 +126,7 @@ function redactSensitiveText(value: string): string {
     .replace(/\b(?:sk|AIza)[A-Za-z0-9_-]{12,}\b/g, "[redacted-token]")
 }
 
-function normalizeIsoTimestamp(value: string, key: string): string {
-  const trimmed = nonBlank(value, key)
-  const parsed = new Date(trimmed)
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${key} must be a valid ISO timestamp`)
-  }
-  return parsed.toISOString()
-}
-
 function optionalTrim(value: string | undefined): string | undefined {
   const trimmed = value?.trim()
   return trimmed ? trimmed : undefined
-}
-
-function nonBlank(value: string, key: string): string {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    throw new Error(`${key} is required`)
-  }
-  return trimmed
 }

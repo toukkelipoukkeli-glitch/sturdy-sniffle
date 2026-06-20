@@ -1,3 +1,5 @@
+import { compareLex } from "../shared/deterministic"
+
 export const PROVIDER_ADAPTER_VERSION = "provider-adapter.v1"
 
 export type AiProviderKey = "local_codex" | "gemini" | "tavily" | "elevenlabs" | "mock"
@@ -379,7 +381,7 @@ function stableStringify(value: ProviderJsonValue | undefined): string {
 
   return `{${Object.entries(value)
     .filter(([, item]) => item !== undefined)
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([left], [right]) => compareLex(left, right))
     .map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`)
     .join(",")}}`
 }

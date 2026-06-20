@@ -1,4 +1,5 @@
 import type { QuoteEngineResult } from "../quoting/registry"
+import { compareLex } from "../shared/deterministic"
 
 export const QUOTE_COMPARISON_VERSION = "quote-comparison.v1"
 
@@ -52,7 +53,7 @@ export function compareQuoteScenarios(scenarios: QuoteComparisonScenario[]): Quo
         right.score - left.score ||
         left.totalCents - right.totalCents ||
         left.leadTimeDays - right.leadTimeDays ||
-        left.label.localeCompare(right.label),
+        compareLex(left.label, right.label),
     )
     .map((row, index) => ({
       ...row,
