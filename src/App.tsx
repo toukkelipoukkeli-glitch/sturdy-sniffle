@@ -1137,12 +1137,25 @@ function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
           ))}
         </div>
         <CadMetadataPanel preview={preview} />
+        {preview.manufacturabilityFlags.length > 0 ? (
+          <div className="manufacturability-list" aria-label="Manufacturability flags">
+            {preview.manufacturabilityFlags.map((flag) => (
+              <span className="manufacturability-chip" key={flag}>
+                <AlertTriangle aria-hidden="true" />
+                {humanizeKey(flag)}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="attachment-list" aria-label="Attachments">
           {preview.attachments.map((attachment) => (
-            <div className="attachment-row" data-primary={attachment.primary} key={attachment.fileName}>
+            <div className="attachment-row" data-primary={attachment.primary} data-review-state={attachment.reviewState} key={attachment.fileName}>
               <FileText aria-hidden="true" />
-              <span>{attachment.fileName}</span>
-              <strong>{attachment.kind}</strong>
+              <span>
+                <strong>{attachment.fileName}</strong>
+                {attachment.reviewReasons.length > 0 ? <small>{attachment.reviewReasons.join(" ")}</small> : null}
+              </span>
+              <strong>{humanizeKey(attachment.reviewState)}</strong>
             </div>
           ))}
         </div>
