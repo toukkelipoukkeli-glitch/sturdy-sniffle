@@ -522,10 +522,103 @@
 .measurement-list,
 .cad-metadata-list,
 .attachment-list,
-.preview-warning-list {
+.preview-warning-list,
+.action-list {
   display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+
+.operator-actions {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.operator-action-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.operator-action-grid .inline-flex,
+.handoff-editor .inline-flex {
+  min-width: 0;
+}
+
+.handoff-editor {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.handoff-editor .offer-text-field {
+  margin-top: 0;
+}
+
+.handoff-editor textarea {
+  min-height: 76px;
+}
+
+.action-timeline {
+  border-top: 1px solid oklch(0.9 0.016 235);
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.empty-action-state,
+.action-row {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.empty-action-state {
+  color: oklch(0.42 0.03 250);
+  font-size: 0.85rem;
+}
+
+.action-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 58px;
+}
+
+.action-row[data-kind="status_change"] {
+  border-color: oklch(0.74 0.08 155);
+}
+
+.action-row[data-kind="calendar_event"] {
+  border-color: oklch(0.75 0.08 210);
+}
+
+.action-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.action-row div:last-child {
+  justify-items: end;
+}
+
+.action-row strong {
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
+.action-row span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 .scenario-comparison {
@@ -1170,8 +1263,17 @@
   .breakdown-list,
   .part-preview,
   .workload-summary,
-  .workload-buckets {
+  .workload-buckets,
+  .operator-action-grid,
+  .handoff-editor,
+  .offer-reply-summary {
     grid-template-columns: 1fr;
+  }
+
+  .operator-action-grid .inline-flex,
+  .handoff-editor .inline-flex {
+    justify-self: stretch;
+    width: 100%;
   }
 
   .workload-bucket {

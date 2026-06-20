@@ -22,6 +22,17 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("CAD metadata")).toContainText("metadata fallback")
   await expect(page.getByLabel("Provider review")).toContainText("Local Codex")
 
+  await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await page.getByRole("button", { name: "Move to Estimating" }).click()
+  await expect(page.getByLabel("Action timeline")).toContainText("Moved RFQ from triage to estimating.")
+  await page.getByRole("button", { name: "Save scenario" }).click()
+  await expect(page.getByLabel("Action timeline")).toContainText("Saved quote scenario rfq-019-current-edits.")
+  await page.getByRole("button", { name: "Create follow-up" }).click()
+  await expect(page.getByLabel("Action timeline")).toContainText("Created offer follow-up for offer-019.")
+  await page.getByLabel("Handoff note").fill("Confirm passivation certs before sending.")
+  await page.getByRole("button", { name: "Add note" }).click()
+  await expect(page.getByLabel("Action timeline")).toContainText("Confirm passivation certs before sending.")
+
   await page.getByRole("button", { exact: true, name: "Costing" }).click()
   await page.getByLabel("Setup minutes").fill("42")
   await page.getByLabel("Cycle minutes").fill("24")
