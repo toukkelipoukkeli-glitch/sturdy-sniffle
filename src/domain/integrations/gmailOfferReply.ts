@@ -160,18 +160,10 @@ export function createGmailOfferReplyAdapter(options: GmailOfferReplyAdapterOpti
             `Used ${fallbackProvider.provider} offer reply fallback.`,
           ])
         } catch (fallbackError) {
-          return {
-            adapterVersion: GMAIL_OFFER_REPLY_ADAPTER_VERSION,
-            provider: fallbackProvider.provider,
-            status: "failed",
-            offerNumber: request.offerNumber.trim(),
-            query: request.query.trim(),
-            records: [],
-            warnings: [
-              primaryWarning,
-              `Fallback offer reply provider ${fallbackProvider.provider} failed: ${errorToMessage(fallbackError)}.`,
-            ],
-          }
+          return buildSyncResult("failed", fallbackProvider, request, [], [
+            primaryWarning,
+            `Fallback offer reply provider ${fallbackProvider.provider} failed: ${errorToMessage(fallbackError)}.`,
+          ])
         }
       }
     },

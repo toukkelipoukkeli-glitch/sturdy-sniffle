@@ -253,7 +253,11 @@ describe("Gmail offer reply ingestion", () => {
     const adapter = createGmailOfferReplyAdapter()
 
     await expect(adapter.sync({ offerNumber: "OFFER-019", query: " " })).rejects.toThrow("query is required")
+    await expect(adapter.sync({ offerNumber: " ", query: "offer" })).rejects.toThrow("offerNumber is required")
     await expect(adapter.sync({ offerNumber: "OFFER-019", query: "offer", maxResults: 0 })).rejects.toThrow(
+      "maxResults must be a positive integer",
+    )
+    await expect(adapter.sync({ offerNumber: "OFFER-019", query: "offer", maxResults: 1.5 })).rejects.toThrow(
       "maxResults must be a positive integer",
     )
   })
