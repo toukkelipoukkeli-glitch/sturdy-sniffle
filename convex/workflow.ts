@@ -33,6 +33,14 @@ const quoteStatus = v.union(
   v.literal("expired"),
 );
 
+const offerWorkflowStatus = v.union(
+  v.literal("draft"),
+  v.literal("sent"),
+  v.literal("accepted"),
+  v.literal("declined"),
+  v.literal("superseded"),
+);
+
 const defaultLimit = 50;
 
 export const listRfqQueue = query({
@@ -228,6 +236,63 @@ export const listOfferFollowUpActivities = query({
   },
 });
 
+export const listOfferActivities = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireAuthenticatedActor(ctx);
+    await requireDocument(ctx, args.offerId, "offerId");
+    return await ctx.db
+      .query("activities")
+      .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+      .order("desc")
+      .take(boundedLimit(args.limit));
+  },
+});
+
+export const transitionOfferStatus = mutation({
+  args: {
+    offerId: v.id("offers"),
+    status: offerWorkflowStatus,
+    message: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actorName = await requireAuthenticatedActor(ctx);
+    const offer = await requireDocument<OfferDocument>(ctx, args.offerId, "offerId");
+    assertOfferStatusTransition(offer.status, args.status);
+    const now = Date.now();
+    const patch: { status: OfferStatus; updatedAt: number; sentAt?: number } = {
+      status: args.status,
+      updatedAt: now,
+    };
+    if (args.status === "sent" && !offer.sentAt) {
+      patch.sentAt = now;
+    }
+    await ctx.db.patch(args.offerId, patch);
+    const transitionMessage = `Moved offer ${offer.offerNumber} from ${offer.status} to ${args.status}.`;
+    const note = optionalNonBlank(args.message);
+    const message = note ? `${transitionMessage} ${note}` : transitionMessage;
+    const activityId = await ctx.db.insert("activities", {
+      offerId: args.offerId,
+      quoteId: offer.quoteId,
+      rfqId: offer.rfqId,
+      actorType: "human",
+      actorName,
+      kind: "status_change",
+      message,
+      createdAt: now,
+    });
+
+    return {
+      activityId,
+      offerId: args.offerId,
+      status: args.status,
+    };
+  },
+});
+
 export const createOfferFollowUpActivity = mutation({
   args: {
     offerId: v.id("offers"),
@@ -260,6 +325,8 @@ export const createOfferFollowUpActivity = mutation({
 
 type RfqDocument = Pick<Doc<"rfqs">, "status">;
 type RfqStatus = RfqDocument["status"];
+type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status">;
+type OfferStatus = OfferDocument["status"];
 
 async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
   const document = await ctx.db.get(id);
@@ -285,6 +352,23 @@ function assertRfqStatusTransition(fromStatus: RfqStatus, toStatus: RfqStatus) {
   }
   if (!allowedRfqStatusTransitions[fromStatus].includes(toStatus)) {
     throw new Error(`cannot transition RFQ from ${fromStatus} to ${toStatus}`);
+  }
+}
+
+const allowedOfferStatusTransitions: Record<OfferStatus, OfferStatus[]> = {
+  draft: ["sent", "superseded"],
+  sent: ["accepted", "declined", "superseded"],
+  accepted: [],
+  declined: [],
+  superseded: [],
+};
+
+function assertOfferStatusTransition(fromStatus: OfferStatus, toStatus: OfferStatus) {
+  if (fromStatus === toStatus) {
+    throw new Error("status must change");
+  }
+  if (!allowedOfferStatusTransitions[fromStatus].includes(toStatus)) {
+    throw new Error(`cannot transition offer from ${fromStatus} to ${toStatus}`);
   }
 }
 
