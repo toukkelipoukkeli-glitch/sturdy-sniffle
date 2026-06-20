@@ -2,7 +2,7 @@
 
 Local-first manufacturing quote automation workspace.
 
-This repository is currently in bootstrap mode. The first pull request is only intended to verify the development stack, CI, and automated review bots before product features are added.
+This repository is in active product buildout. The stack, CI, automated review bots, deterministic quote engines, Convex workflow boundaries, connector adapter boundaries, and the first operator workspace flows are already in place.
 
 See [ROADMAP.md](./ROADMAP.md) for the planned FactoryBid OS product slices.
 

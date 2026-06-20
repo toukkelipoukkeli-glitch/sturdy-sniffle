@@ -66,9 +66,9 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 
 ## Next PR Slices
 
-- Wire the React workspace to the Convex persistence adapter for RFQ queue transitions, quote scenario saves, activity reads, and offer follow-up activity creation while preserving local fallback mode.
-- Add tenant-aware Convex schema fields and migration-safe defaults for customers, RFQs, quotes, offers, activities, and provider runs.
-- Add real connector-backed Gmail and calendar sync orchestration behind provider boundaries, with deterministic fixtures for revoked auth, quota, and offline fallback.
-- Expand offer generation with alternates, customer-ready revision summaries, PDF rendering/export verification, and send/follow-up lifecycle controls.
-- Surface CAD thumbnails/preview status and manufacturability flags in richer part-review workflows, keeping heavy geometry parsing behind adapters.
-- Add seeded demo data, audit-log views, loading/error states, accessibility checks, and responsive QA coverage for production hardening.
+- Expand offer generation with deterministic alternates, customer-ready revision summaries, PDF rendering/export verification, and send/follow-up lifecycle controls.
+- Surface connector sync, provider run audit, offer reply state, and calendar follow-up status in the React workspace with local fallback controls.
+- Add richer part-review workflows for CAD thumbnails, preview status, dimensional checks, manufacturability flags, and operator overrides while keeping heavy geometry parsing behind adapters.
+- Add production hardening for seeded demo import/export, audit-log views, loading/error states, accessibility checks, and responsive QA coverage.
+- Deepen Convex cloud readiness with idempotent import/sync mutations, tenant-safe activity filters, and queue/workload views that mirror the local workspace runtime.
+- Keep the feature-scout backlog running after each milestone so new factory-specific needs are scored into small, reviewable implementation slices.
