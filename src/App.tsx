@@ -66,6 +66,11 @@ import {
   type OfferSendReadinessCheckStatus,
   type OfferSendReadinessResult,
 } from "./domain/offers/offerSendReadiness"
+import {
+  createConvexOfferReplySyncPersistence,
+  createLocalOfferReplySyncPersistence,
+  type OfferReplySyncPersistenceSnapshot,
+} from "./domain/offers/offerReplySyncPersistence"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
@@ -572,6 +577,7 @@ function App() {
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
+  const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
@@ -931,12 +937,43 @@ function App() {
       fallbackProvider: createMockGmailRfqProvider({ messages: buildOfferReplyMessages(selectedItem, offer) }),
       provider: createMockGmailRfqProvider({ shouldFail: true }),
     })
+    const localOfferId = offer.offerNumber.toLowerCase()
+    const localQuoteId = `quote-${selectedItem.id.slice(-3)}`
+    const previousSnapshot = offerReplyPersistenceSnapshotsById[selectedId]
+    const localPersistence = createLocalOfferReplySyncPersistence({
+      initialSnapshot: previousSnapshot,
+      payloadOptions: {
+        actorName: "FactoryBid replies",
+        offerId: localOfferId,
+        quoteId: localQuoteId,
+        rfqId: selectedItem.id,
+      },
+    })
+    const convexBridge = createBrowserConvexOfferReplyBridge()
+    const convexOfferId = convexBridge?.resolveOfferId(localOfferId)
+    const persistence =
+      convexBridge && convexOfferId
+        ? createConvexOfferReplySyncPersistence({
+            fallback: localPersistence,
+            mutationRef: convexBridge.mutationRef,
+            onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            payloadOptions: {
+              actorName: "FactoryBid replies",
+              offerId: convexOfferId,
+              quoteId: convexBridge.resolveQuoteId(localQuoteId),
+              rfqId: convexBridge.resolveRfqId(selectedItem.id),
+            },
+            runMutation: convexBridge.runMutation,
+          })
+        : localPersistence
     const result = await adapter.sync({
       followUpTaskIds: [`follow-up-${selectedItem.id}`],
       maxResults: 5,
       offerNumber: offer.offerNumber,
       query: `offer ${offer.offerNumber}`,
     })
+    const snapshot = await persistence.recordSync(result)
+    setOfferReplyPersistenceSnapshotsById((current) => ({ ...current, [selectedId]: snapshot }))
     setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
@@ -3258,9 +3295,18 @@ function followUpDueAtFor(item: QuoteWorkItem) {
 
 interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
+  offerReplyMutationRef?: unknown
   offerIdsByLocalId?: Record<string, string>
   quoteIdsByLocalId?: Record<string, string>
   rfqIdsByLocalId?: Record<string, string>
+  runMutation: WorkspacePersistenceBridge["runMutation"]
+}
+
+interface BrowserConvexOfferReplyBridge {
+  mutationRef: unknown
+  resolveOfferId: (offerId: string) => string | undefined
+  resolveQuoteId: (quoteId: string) => string | undefined
+  resolveRfqId: (rfqId: string) => string | undefined
   runMutation: WorkspacePersistenceBridge["runMutation"]
 }
 
@@ -3278,6 +3324,21 @@ function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | unde
 
   return {
     mutationRefs: bridge.mutationRefs,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    runMutation: bridge.runMutation,
+  }
+}
+
+function createBrowserConvexOfferReplyBridge(): BrowserConvexOfferReplyBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.offerReplyMutationRef) {
+    return undefined
+  }
+
+  return {
+    mutationRef: bridge.offerReplyMutationRef,
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
     resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
