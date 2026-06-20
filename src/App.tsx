@@ -1346,8 +1346,8 @@ function OfferExportPackagePanel({ exportPackage }: { exportPackage: OfferExport
       </div>
       {exportPackage.pdf.warnings.length > 0 ? (
         <div className="provider-warning-list">
-          {exportPackage.pdf.warnings.map((warning) => (
-            <div className="flag" key={warning}>
+          {exportPackage.pdf.warnings.map((warning, index) => (
+            <div className="flag" key={index}>
               <AlertTriangle aria-hidden="true" />
               <span>{warning}</span>
             </div>
