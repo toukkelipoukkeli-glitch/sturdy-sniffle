@@ -81,11 +81,11 @@ function normalizeHistoryRecord(record: OfferReleaseExecutionHistoryRecord): Nor
   return {
     executionFingerprint,
     executedAt: normalizeIsoTimestamp(record.executedAt, "executedAt"),
-    mode: record.mode,
+    mode: normalizeMode(record.mode),
     offerId: nonBlank(record.offerId, "offerId"),
     offerNumber: nonBlank(record.offerNumber, "offerNumber"),
     pendingActionCount: nonNegativeInteger(record.pendingActionCount, "pendingActionCount"),
-    status: record.status,
+    status: normalizeStatus(record.status),
     warningCount: nonNegativeInteger(record.warningCount, "warningCount"),
   }
 }
@@ -112,6 +112,28 @@ function nonNegativeInteger(value: number, fieldName: string) {
     throw new Error(`${fieldName} must be a non-negative integer`)
   }
   return value
+}
+
+function normalizeMode(mode: OfferReleaseExecutionRun["mode"]): OfferReleaseExecutionRun["mode"] {
+  if (mode !== "commit" && mode !== "dry_run") {
+    throw new Error("mode must be commit or dry_run")
+  }
+  return mode
+}
+
+function normalizeStatus(status: OfferReleaseExecutionStatus): OfferReleaseExecutionStatus {
+  if (
+    status !== "blocked" &&
+    status !== "failed" &&
+    status !== "needs_review" &&
+    status !== "partial" &&
+    status !== "pending" &&
+    status !== "prepared" &&
+    status !== "succeeded"
+  ) {
+    throw new Error("status is not a supported release execution status")
+  }
+  return status
 }
 
 function countStatuses(runs: NormalizedHistoryRun[]): Partial<Record<OfferReleaseExecutionStatus, number>> {
