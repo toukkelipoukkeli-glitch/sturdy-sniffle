@@ -113,25 +113,29 @@ describe("convex connector sync persistence payload", () => {
       timezone: "Europe/Helsinki",
     })
 
-    expect(buildConvexConnectorRfqSyncPayload(result)).toEqual({
+    expect(
+      buildConvexConnectorRfqSyncPayload(result, {
+        resolveRfqId: (rfqId) => (rfqId === "rfq-msg-002-001" ? "convex-rfq-002" : undefined),
+      }),
+    ).toEqual({
       activities: [
         {
           kind: "email_received",
           message: "Synced Gmail RFQ msg-002: Prototype spacer RFQ.",
-          rfqId: "rfq-msg-002-001",
+          rfqId: "convex-rfq-002",
         },
         {
           kind: "calendar_event",
           message:
             "Calendar sync skipped for RFQ rfq-msg-002-001. RFQ has no due date; calendar quote due events were not created.",
-          rfqId: "rfq-msg-002-001",
+          rfqId: "convex-rfq-002",
         },
       ],
       links: [
         {
           externalId: "msg-002",
           provider: "gmail",
-          rfqId: "rfq-msg-002-001",
+          rfqId: "convex-rfq-002",
           syncStatus: "stale",
         },
       ],
@@ -213,11 +217,15 @@ describe("convex connector sync persistence payload", () => {
     })
 
     expect((result satisfies ConnectorRfqSyncResult).status).toBe("partial")
-    expect(buildConvexConnectorRfqSyncPayload(result).activities.at(-1)).toEqual({
+    expect(
+      buildConvexConnectorRfqSyncPayload(result, {
+        resolveRfqId: (rfqId) => (rfqId === "rfq-thread-001-001" ? "convex-rfq-001" : undefined),
+      }).activities.at(-1),
+    ).toEqual({
       kind: "calendar_event",
       message:
         "Calendar sync failed for RFQ rfq-thread-001-001. Calendar provider calendar failed: Calendar quota exhausted. Fallback calendar provider calendar failed: Calendar quota exhausted.",
-      rfqId: "rfq-thread-001-001",
+      rfqId: "convex-rfq-001",
     })
   })
 })

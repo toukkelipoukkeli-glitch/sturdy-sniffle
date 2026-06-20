@@ -128,7 +128,7 @@ function resolveRecordRfqId(
   options: BuildConvexConnectorRfqSyncPayloadOptions,
 ): string | undefined {
   const rfqId = nonBlank(record.rfqId, `records[${index}].rfqId`)
-  const resolved = options.resolveRfqId ? options.resolveRfqId(rfqId) : rfqId
+  const resolved = options.resolveRfqId?.(rfqId)
   return optionalTrim(resolved)
 }
 
