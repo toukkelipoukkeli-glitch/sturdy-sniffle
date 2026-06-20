@@ -678,6 +678,7 @@ async function upsertImportedOffer(
       { key: "currency", value: operation.currency },
     ],
     updatedAt: importedAt,
+    ...(operation.status === "sent" ? { sentAt: existing?.sentAt ?? importedAt } : {}),
   };
 
   if (existing) {
