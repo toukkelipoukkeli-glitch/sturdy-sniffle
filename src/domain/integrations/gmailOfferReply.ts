@@ -1,4 +1,10 @@
-import type { OfferLifecycleEventInput, OfferLifecycleEventKind } from "../offers/offerLifecycle"
+import type { OfferDraft } from "../offers/offer"
+import {
+  buildOfferLifecycleTimeline,
+  type OfferLifecycleEventInput,
+  type OfferLifecycleEventKind,
+  type OfferLifecycleTimeline,
+} from "../offers/offerLifecycle"
 import { normalizeIsoTimestamp } from "../shared/deterministic"
 import { createMockGmailRfqProvider, type GmailRfqMessage, type GmailRfqMessageProvider, type GmailRfqProviderKey } from "./gmailRfq"
 
@@ -54,6 +60,19 @@ export interface GmailOfferReplyAdapter {
 export interface GmailOfferReplyAdapterOptions {
   provider?: GmailRfqMessageProvider
   fallbackProvider?: GmailRfqMessageProvider
+}
+
+export interface GmailOfferReplyLifecycleSyncRequest {
+  offer: OfferDraft
+  syncResult: GmailOfferReplySyncResult
+  existingEvents?: OfferLifecycleEventInput[]
+}
+
+export interface GmailOfferReplyLifecycleSyncResult {
+  timeline: OfferLifecycleTimeline
+  appliedMessageIds: string[]
+  ignoredMessageIds: string[]
+  warnings: string[]
 }
 
 const acceptedPatterns = [
@@ -167,6 +186,38 @@ export function createGmailOfferReplyAdapter(options: GmailOfferReplyAdapterOpti
         }
       }
     },
+  }
+}
+
+export function buildOfferLifecycleFromGmailReplySync({
+  existingEvents = [],
+  offer,
+  syncResult,
+}: GmailOfferReplyLifecycleSyncRequest): GmailOfferReplyLifecycleSyncResult {
+  if (syncResult.offerNumber !== offer.offerNumber) {
+    throw new Error(`sync result offerNumber ${syncResult.offerNumber} does not match offer ${offer.offerNumber}`)
+  }
+
+  const replyEvents: OfferLifecycleEventInput[] = []
+  const appliedMessageIds: string[] = []
+  const ignoredMessageIds: string[] = []
+  const warnings = [...syncResult.warnings]
+
+  syncResult.records.forEach((record) => {
+    warnings.push(...record.parsed.warnings)
+    if (record.parsed.matched && record.parsed.event) {
+      replyEvents.push(record.parsed.event)
+      appliedMessageIds.push(record.parsed.messageId)
+    } else {
+      ignoredMessageIds.push(record.parsed.messageId)
+    }
+  })
+
+  return {
+    timeline: buildOfferLifecycleTimeline(offer, [...existingEvents, ...replyEvents]),
+    appliedMessageIds,
+    ignoredMessageIds,
+    warnings,
   }
 }
 

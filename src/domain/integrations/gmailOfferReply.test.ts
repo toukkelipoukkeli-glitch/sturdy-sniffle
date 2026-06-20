@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest"
 
-import { createGmailOfferReplyAdapter, parseGmailOfferReplies, parseGmailOfferReply } from "./gmailOfferReply"
+import { calculateCncQuote } from "../quoting/cnc"
+import { rushTurnedSpacerFixture } from "../quoting/cnc.fixtures"
+import { buildCncOfferDraft } from "../offers/offer"
+import {
+  buildOfferLifecycleFromGmailReplySync,
+  createGmailOfferReplyAdapter,
+  parseGmailOfferReplies,
+  parseGmailOfferReply,
+} from "./gmailOfferReply"
 import { createMockGmailRfqProvider, type GmailRfqMessage, type GmailRfqMessageProvider } from "./gmailRfq"
 
 const acceptedReply: GmailRfqMessage = {
@@ -11,6 +19,17 @@ const acceptedReply: GmailRfqMessage = {
   receivedAt: "2026-06-25T12:00:00+03:00",
   plainText: "Hello, we accept OFFER-019. Please proceed with production.",
 }
+
+const offer = buildCncOfferDraft({
+  customer: {
+    contactName: "Mikael Laine",
+    name: "Baltic Hydraulics",
+  },
+  issuedAt: "2026-06-19",
+  offerNumber: "OFFER-019",
+  quote: calculateCncQuote(rushTurnedSpacerFixture),
+  validUntil: "2026-07-03",
+})
 
 describe("Gmail offer reply ingestion", () => {
   it("turns accepted customer replies into lifecycle events", () => {
@@ -260,5 +279,121 @@ describe("Gmail offer reply ingestion", () => {
     await expect(adapter.sync({ offerNumber: "OFFER-019", query: "offer", maxResults: 1.5 })).rejects.toThrow(
       "maxResults must be a positive integer",
     )
+  })
+
+  it("applies synced reply events to an offer lifecycle timeline", async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      provider: createMockGmailRfqProvider({
+        messages: [
+          {
+            ...acceptedReply,
+            id: "reply-accepted",
+            receivedAt: "2026-06-25T12:00:00+03:00",
+            plainText: "We accept OFFER-019. Please proceed.",
+          },
+          {
+            ...acceptedReply,
+            id: "reply-follow-up",
+            receivedAt: "2026-06-24T09:30:00+03:00",
+            plainText: "Received OFFER-019, thanks for the offer. This closes follow-up fu-001.",
+          },
+          {
+            ...acceptedReply,
+            id: "reply-ignored",
+            plainText: "We accept OFFER-020.",
+            subject: "Re: Offer OFFER-020",
+          },
+        ],
+      }),
+    })
+    const syncResult = await adapter.sync({
+      followUpTaskIds: ["fu-001"],
+      offerNumber: "OFFER-019",
+      query: "offer",
+    })
+
+    const result = buildOfferLifecycleFromGmailReplySync({
+      existingEvents: [
+        {
+          actor: "sales",
+          kind: "sent",
+          occurredAt: "2026-06-20T09:00:00+03:00",
+        },
+        {
+          actor: "sales",
+          followUpDueAt: "2026-06-24T09:00:00+03:00",
+          followUpTaskId: "fu-001",
+          kind: "follow_up_scheduled",
+          occurredAt: "2026-06-20T09:05:00+03:00",
+        },
+      ],
+      offer,
+      syncResult,
+    })
+
+    expect(result.appliedMessageIds).toEqual(["reply-accepted", "reply-follow-up"])
+    expect(result.ignoredMessageIds).toEqual(["reply-ignored"])
+    expect(result.warnings).toEqual(["Message reply-ignored does not mention offer OFFER-019."])
+    expect(result.timeline.status).toBe("accepted")
+    expect(result.timeline.events.map((event) => [event.kind, event.statusAfter])).toEqual([
+      ["sent", "sent"],
+      ["follow_up_scheduled", "sent"],
+      ["follow_up_completed", "sent"],
+      ["accepted", "accepted"],
+    ])
+    expect(result.timeline.followUpTasks[0]).toMatchObject({
+      completedAt: "2026-06-24T06:30:00.000Z",
+      id: "fu-001",
+      status: "completed",
+    })
+  })
+
+  it("preserves provider warnings when lifecycle sync used a fallback", async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      provider: createMockGmailRfqProvider({ shouldFail: true }),
+      fallbackProvider: createMockGmailRfqProvider({ messages: [acceptedReply] }),
+    })
+    const syncResult = await adapter.sync({
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+    })
+
+    const result = buildOfferLifecycleFromGmailReplySync({
+      existingEvents: [{ actor: "sales", kind: "sent", occurredAt: "2026-06-20T09:00:00+03:00" }],
+      offer,
+      syncResult,
+    })
+
+    expect(result.timeline.status).toBe("accepted")
+    expect(result.warnings).toEqual([
+      "Gmail offer reply provider mock failed: Mock Gmail RFQ provider failure.",
+      "Used mock offer reply fallback.",
+    ])
+  })
+
+  it("rejects lifecycle sync results for a different offer", async () => {
+    const adapter = createGmailOfferReplyAdapter({
+      provider: createMockGmailRfqProvider({ messages: [acceptedReply] }),
+    })
+    const syncResult = await adapter.sync({
+      offerNumber: "OFFER-019",
+      query: "offer OFFER-019",
+    })
+    const otherOffer = buildCncOfferDraft({
+      customer: {
+        name: "North Forge",
+      },
+      issuedAt: "2026-06-19",
+      offerNumber: "OFFER-204",
+      quote: calculateCncQuote(rushTurnedSpacerFixture),
+      validUntil: "2026-07-03",
+    })
+
+    expect(() =>
+      buildOfferLifecycleFromGmailReplySync({
+        offer: otherOffer,
+        syncResult,
+      }),
+    ).toThrow("sync result offerNumber OFFER-019 does not match offer OFFER-204")
   })
 })
