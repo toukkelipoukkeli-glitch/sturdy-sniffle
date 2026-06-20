@@ -521,6 +521,7 @@
 .provider-warning-list,
 .measurement-list,
 .cad-metadata-list,
+.manufacturability-list,
 .attachment-list,
 .preview-warning-list,
 .action-list {
@@ -826,6 +827,32 @@
   color: oklch(0.28 0.075 188);
 }
 
+.manufacturability-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.manufacturability-chip {
+  align-items: center;
+  background: oklch(0.96 0.04 35);
+  border: 1px solid oklch(0.88 0.07 35);
+  border-radius: 999px;
+  color: oklch(0.42 0.11 35);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 5px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 6px 8px;
+}
+
+.manufacturability-chip svg {
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
 .measurement-row,
 .attachment-row,
 .cad-metadata-row {
@@ -880,11 +907,26 @@
 
 .measurement-row span,
 .attachment-row span {
+  display: grid;
   font-size: 0.82rem;
+  gap: 2px;
   min-width: 0;
+}
+
+.attachment-row span strong,
+.attachment-row span small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.attachment-row span strong {
+  font-size: 0.82rem;
+}
+
+.attachment-row span small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
 }
 
 .measurement-row strong,
@@ -894,6 +936,16 @@
 
 .attachment-row[data-primary="true"] {
   border-color: oklch(0.72 0.08 190);
+}
+
+.attachment-row[data-review-state="metadata_only"],
+.attachment-row[data-review-state="needs_review"] {
+  background: oklch(0.98 0.018 85);
+}
+
+.attachment-row[data-review-state="unsupported"] {
+  background: oklch(0.985 0.006 250);
+  color: oklch(0.42 0.03 250);
 }
 
 .offer-text-field {
