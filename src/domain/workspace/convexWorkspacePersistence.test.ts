@@ -134,6 +134,7 @@ describe("convex workspace persistence", () => {
           actorName: "Sari",
           message: "Created offer follow-up for offer-019.",
           offerId: "convex-offer-019",
+          quoteId: "convex-quote-019",
           rfqId: "convex-rfq-019",
         },
         mutationRef: "createOfferFollowUpActivity",
