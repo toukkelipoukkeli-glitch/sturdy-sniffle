@@ -142,9 +142,9 @@ describe("workspace audit feed", () => {
       options,
     )
 
-    expect(new Set(original.events.map((event) => event.key))).toEqual(
-      new Set(reversed.events.map((event) => event.key)),
-    )
+    const originalKeys = original.events.map((event) => event.key).toSorted()
+    const reversedKeys = reversed.events.map((event) => event.key).toSorted()
+    expect(originalKeys).toEqual(reversedKeys)
   })
 
   it("rejects invalid generated timestamps and limits", () => {
