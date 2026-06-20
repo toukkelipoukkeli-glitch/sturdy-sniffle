@@ -60,6 +60,12 @@ import {
   type CapacityProcessCommitment,
 } from "./domain/workspace/capacityCommitment"
 import {
+  evaluateQuoteApproval,
+  type QuoteApprovalCheckStatus,
+  type QuoteApprovalCustomerPolicy,
+  type QuoteApprovalDecision,
+} from "./domain/workspace/quoteApproval"
+import {
   compareQuoteScenarios,
   type QuoteComparisonResult,
   type QuoteComparisonScenario,
@@ -514,6 +520,10 @@ function App() {
       }),
     [editsById, queueNow, statusById],
   )
+  const selectedCapacityCommitment = useMemo(
+    () => findCommitmentForItem(capacityCommitmentPlan, selectedId),
+    [capacityCommitmentPlan, selectedId],
+  )
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
@@ -580,6 +590,16 @@ function App() {
         offer,
       }),
     [offer, offerExportPackage, offerFollowUpScheduledAt],
+  )
+  const quoteApproval = useMemo(
+    () =>
+      evaluateQuoteApproval({
+        capacityCommitment: selectedCapacityCommitment,
+        customer: approvalCustomerPolicyFor(selectedItem),
+        quote,
+        reviewedAt: demoToday,
+      }),
+    [quote, selectedCapacityCommitment, selectedItem],
   )
   const offerReplySync = offerRepliesById[selectedId]
   const syncOfferReplies = async () => {
@@ -824,6 +844,7 @@ function App() {
           ) : null}
           {activeView === "offer" ? (
             <OfferView
+              approval={quoteApproval}
               exportPackage={offerExportPackage}
               offer={offer}
               readiness={offerSendReadiness}
@@ -1539,12 +1560,14 @@ function CadMetadataPanel({ preview }: { preview: PartPreviewModel }) {
 }
 
 function OfferView({
+  approval,
   exportPackage,
   offer,
   onSyncReplies,
   readiness,
   replySync,
 }: {
+  approval: QuoteApprovalDecision
   exportPackage: OfferExportPackage
   offer: OfferDraft
   onSyncReplies: () => void
@@ -1571,6 +1594,7 @@ function OfferView({
         ))}
       </div>
       <OfferExportPackagePanel exportPackage={exportPackage} />
+      <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />
       <OfferReplyPanel replySync={replySync} onSyncReplies={onSyncReplies} />
       <label className="offer-text-field">
@@ -1579,6 +1603,63 @@ function OfferView({
       </label>
     </div>
   )
+}
+
+function QuoteApprovalPanel({ approval }: { approval: QuoteApprovalDecision }) {
+  const blockerCount = approval.issues.filter((issue) => issue.severity === "blocker").length
+  const warningCount = approval.issues.filter((issue) => issue.severity === "warning").length
+  const statusLabel = quoteApprovalStatusLabel(approval.status)
+
+  return (
+    <section className="quote-approval-panel" aria-label="Quote approval policy">
+      <div className="quote-approval-heading">
+        <div>
+          <span className="eyebrow">
+            <ShieldCheck aria-hidden="true" />
+            Approval policy
+          </span>
+          <strong>{statusLabel}</strong>
+        </div>
+        <span className={`quote-approval-status quote-approval-status-${approval.status}`}>{humanizeKey(approval.status)}</span>
+      </div>
+      <div className="quote-approval-summary">
+        <Metric label="Margin" value={`${approval.marginPercent.toFixed(1)}%`} />
+        <Metric label="Blockers" value={String(blockerCount)} />
+        <Metric label="Warnings" value={String(warningCount)} />
+      </div>
+      <div className="quote-approval-checks">
+        {approval.checks.map((check) => (
+          <div className="quote-approval-check" data-status={check.status} key={check.key}>
+            <QuoteApprovalCheckIcon status={check.status} />
+            <div>
+              <strong>{check.label}</strong>
+              <span>{check.detail}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function QuoteApprovalCheckIcon({ status }: { status: QuoteApprovalCheckStatus }) {
+  const Icon = status === "passed" ? CheckCircle2 : AlertTriangle
+  return (
+    <span className="quote-approval-check-icon" aria-hidden="true">
+      <Icon />
+    </span>
+  )
+}
+
+function quoteApprovalStatusLabel(status: QuoteApprovalDecision["status"]) {
+  switch (status) {
+    case "approved":
+      return "Approved"
+    case "blocked":
+      return "Blocked"
+    case "needs_review":
+      return "Needs manager review"
+  }
 }
 
 function OfferSendReadinessPanel({ readiness }: { readiness: OfferSendReadinessResult }) {
@@ -1880,6 +1961,32 @@ function findCommitmentForItem(plan: CapacityCommitmentPlan, itemId: string): Ca
     if (commitment) {
       return commitment
     }
+  }
+}
+
+function approvalCustomerPolicyFor(item: QuoteWorkItem): QuoteApprovalCustomerPolicy {
+  switch (item.customer) {
+    case "Arctic Instruments":
+      return {
+        creditLimitCents: 220_000,
+        customerName: item.customer,
+        openBalanceCents: 35_000,
+        paymentTerm: "standard",
+      }
+    case "Baltic Hydraulics":
+      return {
+        creditLimitCents: 60_000,
+        customerName: item.customer,
+        openBalanceCents: 20_000,
+        paymentTerm: "prepay_required",
+      }
+    default:
+      return {
+        creditLimitCents: 500_000,
+        customerName: item.customer,
+        openBalanceCents: 100_000,
+        paymentTerm: "standard",
+      }
   }
 }
 
