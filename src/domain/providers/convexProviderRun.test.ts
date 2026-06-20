@@ -121,5 +121,13 @@ describe("Convex provider run persistence payload", () => {
         startedAt: "not-a-date",
       }),
     ).toThrow("audit.startedAt must be a valid ISO timestamp")
+
+    expect(() =>
+      buildConvexProviderRunPayload({
+        ...audit,
+        completedAt: "2026-06-20T10:00:02+03:00",
+        startedAt: "2026-06-20T10:00:03+03:00",
+      }),
+    ).toThrow("audit.completedAt must be on or after audit.startedAt")
   })
 })
