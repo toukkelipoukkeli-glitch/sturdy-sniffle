@@ -17,6 +17,13 @@ export interface OfferTerm {
   value: string
 }
 
+export interface OfferRevision {
+  revision: number
+  createdAt: string
+  createdBy: string
+  reason: string
+}
+
 export interface OfferLineItem {
   key: string
   partNumber: string
@@ -44,6 +51,7 @@ export interface OfferDraft {
   currency: QuoteEngineCurrencyCode
   items: OfferLineItem[]
   terms: OfferTerm[]
+  revisionHistory: OfferRevision[]
   notes: string[]
   subtotalCents: number
   totalCents: number
@@ -57,6 +65,7 @@ export interface BuildCncOfferDraftInput {
   quote: CncQuoteResult
   lineDescription?: string
   notes?: string[]
+  revision?: Omit<OfferRevision, "revision">
   rfqReference?: string
   subject?: string
   terms?: OfferTerm[]
@@ -70,6 +79,7 @@ export interface BuildOfferDraftInput {
   quote: QuoteEngineResult
   lineDescription?: string
   notes?: string[]
+  revision?: Omit<OfferRevision, "revision">
   rfqReference?: string
   subject?: string
   terms?: OfferTerm[]
@@ -124,6 +134,16 @@ export function buildOfferDraft(input: BuildOfferDraftInput): OfferDraft {
 
   const terms = normalizeTerms(input.terms ?? DEFAULT_OFFER_TERMS)
   const notes = (input.notes ?? []).map((note) => note.trim()).filter(Boolean)
+  const revisionHistory = [
+    normalizeRevision(
+      input.revision ?? {
+        createdAt: issuedAt,
+        createdBy: "FactoryBid OS",
+        reason: "Initial draft",
+      },
+      1,
+    ),
+  ]
 
   return {
     builderVersion: OFFER_BUILDER_VERSION,
@@ -137,9 +157,22 @@ export function buildOfferDraft(input: BuildOfferDraftInput): OfferDraft {
     currency: input.quote.currency,
     items: [item],
     terms,
+    revisionHistory,
     notes,
     subtotalCents: item.totalCents,
     totalCents: item.totalCents,
+  }
+}
+
+export function appendOfferRevision(
+  offer: OfferDraft,
+  revision: Omit<OfferRevision, "revision">,
+): OfferDraft {
+  validateOfferDraft(offer)
+  const nextRevision = Math.max(...offer.revisionHistory.map((entry) => entry.revision), 0) + 1
+  return {
+    ...offer,
+    revisionHistory: [...offer.revisionHistory, normalizeRevision(revision, nextRevision)],
   }
 }
 
@@ -157,6 +190,7 @@ export function renderOfferText(offer: OfferDraft): string {
     ]),
     `Issued: ${offer.issuedAt}`,
     `Valid until: ${offer.validUntil}`,
+    `Revision: ${latestRevision(offer).revision}`,
     `Currency: ${offer.currency}`,
     "",
     "Pricing",
@@ -230,6 +264,7 @@ function validateOfferDraft(offer: OfferDraft) {
 
   offer.items.forEach(validateOfferLineItem)
   normalizeTerms(offer.terms)
+  normalizeRevisionHistory(offer.revisionHistory)
 }
 
 function validateQuote(quote: QuoteEngineResult) {
@@ -278,6 +313,31 @@ function normalizeTerms(terms: OfferTerm[]): OfferTerm[] {
     label: nonBlank(term.label, `terms[${index}].label`),
     value: nonBlank(term.value, `terms[${index}].value`),
   }))
+}
+
+function normalizeRevision(input: Omit<OfferRevision, "revision"> | undefined, revision: number): OfferRevision {
+  return {
+    revision,
+    createdAt: normalizeIsoDate(input?.createdAt ?? "1970-01-01", "revision.createdAt"),
+    createdBy: nonBlank(input?.createdBy ?? "FactoryBid OS", "revision.createdBy"),
+    reason: nonBlank(input?.reason ?? "Initial draft", "revision.reason"),
+  }
+}
+
+function normalizeRevisionHistory(history: OfferRevision[]): OfferRevision[] {
+  if (history.length === 0) {
+    throw new Error("offer must include at least one revision")
+  }
+  return history.map((entry, index) => {
+    if (entry.revision !== index + 1) {
+      throw new Error("offer revisions must be contiguous")
+    }
+    return normalizeRevision(entry, entry.revision)
+  })
+}
+
+function latestRevision(offer: OfferDraft): OfferRevision {
+  return normalizeRevisionHistory(offer.revisionHistory).at(-1) ?? normalizeRevision(undefined, 1)
 }
 
 function normalizeIsoDate(value: string, key: string): string {

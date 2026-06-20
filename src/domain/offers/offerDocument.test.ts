@@ -38,6 +38,7 @@ describe("offer document", () => {
       "pricing",
       "assumptions",
       "review_flags",
+      "revision_history",
       "notes",
       "terms",
     ])
@@ -49,6 +50,7 @@ describe("offer document", () => {
       { label: "Subject", value: "Turned spacer RFQ" },
       { label: "Issued", value: "2026-06-19" },
       { label: "Valid until", value: "2026-07-03" },
+      { label: "Revision", value: "1" },
       { label: "Total excluding VAT", value: "EUR 500.00" },
     ])
     expect(document.sections.find((section) => section.key === "pricing")?.table).toEqual({
@@ -62,6 +64,10 @@ describe("offer document", () => {
       "Rush lead time included.",
       "Passivation included as outside service.",
     ])
+    expect(document.sections.find((section) => section.key === "revision_history")?.table).toEqual({
+      columns: ["Rev", "Date", "By", "Reason"],
+      rows: [["1", "2026-06-19", "FactoryBid OS", "Initial draft"]],
+    })
     expect(document.footerLines).toEqual([
       "Prices exclude VAT unless otherwise stated.",
       "Lead times start after written approval and final drawing release.",
@@ -80,11 +86,12 @@ describe("offer document", () => {
 
     const document = buildOfferDocument(offer)
 
-    expect(document.sections.map((section) => section.key)).toEqual(["summary", "pricing", "assumptions", "terms"])
+    expect(document.sections.map((section) => section.key)).toEqual(["summary", "pricing", "assumptions", "revision_history", "terms"])
     expect(document.sections.find((section) => section.key === "summary")?.fields).toEqual([
       { label: "Customer", value: "North Forge" },
       { label: "Issued", value: "2026-06-19" },
       { label: "Valid until", value: "2026-07-03" },
+      { label: "Revision", value: "1" },
       { label: "Total excluding VAT", value: "EUR 1154.18" },
     ])
     expect(document.sections.find((section) => section.key === "assumptions")?.table?.rows[0]).toEqual([

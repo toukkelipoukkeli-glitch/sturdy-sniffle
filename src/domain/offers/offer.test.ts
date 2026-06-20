@@ -7,7 +7,7 @@ import { pomGuideFixture } from "../quoting/plastics.fixtures"
 import { calculateQuote, type QuoteEngineResult } from "../quoting/registry"
 import { laserBentBracketFixture } from "../quoting/sheetMetal.fixtures"
 import { toolSteelKeywayFixture } from "../quoting/wireEdm.fixtures"
-import { buildCncOfferDraft, buildOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
+import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
 
 const quoteEngineOfferCases: Array<{ quote: QuoteEngineResult; processLabel: string }> = [
   {
@@ -54,6 +54,14 @@ describe("offer builder", () => {
       currency: "EUR",
       subtotalCents: 50000,
       totalCents: 50000,
+      revisionHistory: [
+        {
+          revision: 1,
+          createdAt: "2026-06-19",
+          createdBy: "FactoryBid OS",
+          reason: "Initial draft",
+        },
+      ],
       items: [
         {
           partNumber: "FB-TURN-019",
@@ -70,10 +78,43 @@ describe("offer builder", () => {
 
     expect(text).toContain("Offer OFFER-019")
     expect(text).toContain("Customer: Baltic Hydraulics")
+    expect(text).toContain("Revision: 1")
     expect(text).toContain("Line total: EUR 500.00")
     expect(text).toContain("Total excluding VAT: EUR 500.00")
     expect(text).toContain("Review flags: Minimum order adjustment applied.")
     expect(text).toContain("- VAT: Prices exclude VAT.")
+  })
+
+  it("appends deterministic offer revision history", () => {
+    const offer = buildCncOfferDraft({
+      offerNumber: "OFFER-204",
+      customer: { name: "North Forge" },
+      issuedAt: "2026-06-19",
+      validUntil: "2026-07-03",
+      quote: calculateCncQuote(aluminumBracketFixture),
+    })
+
+    const revised = appendOfferRevision(offer, {
+      createdAt: "2026-06-20",
+      createdBy: "Sari",
+      reason: "Added expedite alternate requested by buyer.",
+    })
+
+    expect(revised.revisionHistory).toEqual([
+      {
+        revision: 1,
+        createdAt: "2026-06-19",
+        createdBy: "FactoryBid OS",
+        reason: "Initial draft",
+      },
+      {
+        revision: 2,
+        createdAt: "2026-06-20",
+        createdBy: "Sari",
+        reason: "Added expedite alternate requested by buyer.",
+      },
+    ])
+    expect(renderOfferText(revised)).toContain("Revision: 2")
   })
 
   it("preserves unit price remainder in the plain-text export", () => {
