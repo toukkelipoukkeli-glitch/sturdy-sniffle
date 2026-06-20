@@ -35,7 +35,7 @@ describe("quote approval policy", () => {
   })
 
   it("requires manager review for thin margin, high value, terms, lead time, calculator, credit, and late capacity warnings", () => {
-    const quote = calculateCncQuote(rushTurnedSpacerFixture)
+    const quote = quoteWithReorderedBreakdown(calculateCncQuote(rushTurnedSpacerFixture))
     const decision = evaluateQuoteApproval({
       capacityCommitment: capacityCommitment({ itemId: "rfq-019", latenessDays: 2, status: "late" }),
       customer: {
@@ -54,6 +54,7 @@ describe("quote approval policy", () => {
     })
 
     expect(decision.status).toBe("needs_review")
+    expect(decision.marginPercent).toBe(25)
     expect(decision.issues.map((issue) => [issue.code, issue.severity])).toEqual([
       ["thin_margin", "warning"],
       ["high_value", "warning"],
@@ -169,5 +170,12 @@ function quoteWithMargin(quote: QuoteEngineResult, marginCents: number, warnings
     unitPriceCents: Math.floor(totalCents / quote.quantity),
     unitRemainderCents: totalCents % quote.quantity,
     warnings,
+  }
+}
+
+function quoteWithReorderedBreakdown(quote: QuoteEngineResult): QuoteEngineResult {
+  return {
+    ...quote,
+    breakdown: [...quote.breakdown].reverse(),
   }
 }

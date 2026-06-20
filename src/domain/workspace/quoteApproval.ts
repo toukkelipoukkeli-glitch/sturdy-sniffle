@@ -312,16 +312,27 @@ function normalizeThresholds(thresholds: QuoteApprovalThresholds | undefined): A
 }
 
 function calculateMarginPercent(quote: QuoteEngineResult): number {
-  const marginIndex = quote.breakdown.findIndex((line) => line.key === "margin")
-  if (marginIndex < 0) {
+  const marginLine = quote.breakdown.find((line) => line.key === "margin")
+  if (!marginLine) {
     return 0
   }
-  const marginCents = quote.breakdown[marginIndex].amountCents
-  const baseCents = quote.breakdown.slice(0, marginIndex).reduce((total, line) => total + line.amountCents, 0)
+  const marginCents = marginLine.amountCents
+  const fallbackBaseCents = quote.breakdown
+    .filter((line) => line.key !== "margin" && line.key !== "rush_surcharge" && line.key !== "minimum_order_adjustment")
+    .reduce((total, line) => total + line.amountCents, 0)
+  const baseCents = marginSubtotalFromFormula(marginLine.formula) ?? fallbackBaseCents
   if (baseCents <= 0) {
     return 0
   }
   return roundPercent((marginCents / baseCents) * 100)
+}
+
+function marginSubtotalFromFormula(formula: string): number | undefined {
+  const match = /^(\d+) cents subtotal x /.exec(formula)
+  if (!match) {
+    return undefined
+  }
+  return Number(match[1])
 }
 
 function calculatorDetail(quote: QuoteEngineResult): string {
