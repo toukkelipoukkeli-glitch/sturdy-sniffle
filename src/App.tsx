@@ -1595,7 +1595,7 @@ interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
   offerIdsByLocalId?: Record<string, string>
   quoteIdsByLocalId?: Record<string, string>
-  rfqIdsByLocalId: Record<string, string>
+  rfqIdsByLocalId?: Record<string, string>
   runMutation: WorkspacePersistenceBridge["runMutation"]
 }
 
@@ -1615,7 +1615,7 @@ function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | unde
     mutationRefs: bridge.mutationRefs,
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId[rfqId],
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
     runMutation: bridge.runMutation,
   }
 }
