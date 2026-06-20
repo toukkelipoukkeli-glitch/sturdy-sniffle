@@ -27,7 +27,7 @@ describe("CAD metadata adapter", () => {
 
     expect(result).toEqual({
       adapterVersion: "cad-metadata.v1",
-      provider: "mock",
+      provider: "heuristic",
       status: "succeeded",
       fileName: "FB-204-A.step",
       format: "step",

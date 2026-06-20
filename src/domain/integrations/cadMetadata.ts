@@ -2,7 +2,7 @@ import type { RfqAttachmentDraft, RfqAttachmentKind, RfqPartDraft, RfqProcessKey
 
 export const CAD_METADATA_ADAPTER_VERSION = "cad-metadata.v1"
 
-export type CadMetadataProviderKey = "step" | "dxf" | "pdf" | "mock" | "metadata_fallback"
+export type CadMetadataProviderKey = "heuristic" | "step" | "dxf" | "pdf" | "mock" | "metadata_fallback"
 export type CadMetadataFormat = "step" | "dxf" | "pdf" | "unknown"
 export type CadMetadataStatus = "succeeded" | "fallback"
 
@@ -73,7 +73,7 @@ export function createCadMetadataAdapter(options: CadMetadataAdapterOptions = {}
 
 export function createHeuristicCadMetadataProvider(): CadMetadataProvider {
   return {
-    provider: "mock",
+    provider: "heuristic",
     async inspect(input) {
       const attachment = normalizeAttachment(input.attachment)
       const format = detectFormat(attachment)
