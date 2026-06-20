@@ -101,6 +101,24 @@ describe("quote queue ranking", () => {
         [
           {
             customerName: "Bad Buyer",
+            dueAt: "06/20/2026 09:00:00",
+            id: "bad-iso",
+            priority: "normal",
+            process: "plastic",
+            receivedAt: "2026-06-20T09:00:00Z",
+            status: "new",
+            subject: "Bad RFQ",
+          },
+        ],
+        { now: "2026-06-20T12:00:00Z" },
+      ),
+    ).toThrow("dueAt must be a valid ISO timestamp")
+
+    expect(() =>
+      rankQuoteQueue(
+        [
+          {
+            customerName: "Bad Buyer",
             dueAt: "not-a-date",
             id: "bad",
             priority: "normal",

@@ -51,10 +51,10 @@ export function rankQuoteQueue(items: QuoteQueueItem[], options: RankQuoteQueueO
     .sort(
       (left, right) =>
         right.score - left.score ||
-        left.dueAt.localeCompare(right.dueAt) ||
-        left.receivedAt.localeCompare(right.receivedAt) ||
-        left.customerName.localeCompare(right.customerName) ||
-        left.id.localeCompare(right.id),
+        compareLex(left.dueAt, right.dueAt) ||
+        compareLex(left.receivedAt, right.receivedAt) ||
+        compareLex(left.customerName, right.customerName) ||
+        compareLex(left.id, right.id),
     )
     .map((item, index) => ({
       ...item,
@@ -139,8 +139,16 @@ function badgesForItem(item: QuoteQueueItem, urgency: QuoteQueueUrgency): string
   return badges
 }
 
+function compareLex(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0
+}
+
 function normalizeIsoTimestamp(value: string, key: string): string {
   const trimmed = nonBlank(value, key)
+  const isoTimestampPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/
+  if (!isoTimestampPattern.test(trimmed)) {
+    throw new Error(`${key} must be a valid ISO timestamp`)
+  }
   const parsed = new Date(trimmed)
   if (Number.isNaN(parsed.getTime())) {
     throw new Error(`${key} must be a valid ISO timestamp`)
