@@ -5,9 +5,13 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "FactoryBid OS" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeVisible()
+  await expect(page.getByLabel("Part preview")).toContainText("FB-204-A.step")
+  await expect(page.getByLabel("Measurements")).toContainText("Length")
 
   await page.getByRole("button", { name: /Baltic Hydraulics/ }).click()
   await expect(page.getByRole("heading", { name: "Turned spacer FB-TURN-019" })).toBeVisible()
+  await expect(page.getByLabel("Part preview")).toContainText("FB-TURN-019.pdf")
+  await expect(page.getByText("CAD geometry is unavailable; using drawing preview.")).toBeVisible()
 
   await page.getByRole("button", { exact: true, name: "Costing" }).click()
   await page.getByLabel("Setup minutes").fill("42")
