@@ -30,10 +30,38 @@ export interface OfferReleaseExecutionFingerprintSummary {
   statuses: OfferReleaseExecutionStatus[]
 }
 
+export interface OfferReleaseExecutionHistoryRecord {
+  executionFingerprint: string
+  executedAt: string
+  mode: OfferReleaseExecutionRun["mode"]
+  offerId: string
+  offerNumber: string
+  pendingActionCount: number
+  status: OfferReleaseExecutionStatus
+  warningCount: number
+}
+
 export function summarizeOfferReleaseExecutionHistory(
   runs: OfferReleaseExecutionRun[],
 ): OfferReleaseExecutionHistorySummary {
-  const normalizedRuns = runs.map(normalizeHistoryRun).sort(sortNewestFirst)
+  return summarizeOfferReleaseExecutionHistoryRecords(
+    runs.map((run) => ({
+      executedAt: run.executedAt,
+      executionFingerprint: run.executionFingerprint,
+      mode: run.mode,
+      offerId: run.offerId,
+      offerNumber: run.offerNumber,
+      pendingActionCount: run.nextActions.length,
+      status: run.status,
+      warningCount: run.warnings.length,
+    })),
+  )
+}
+
+export function summarizeOfferReleaseExecutionHistoryRecords(
+  records: OfferReleaseExecutionHistoryRecord[],
+): OfferReleaseExecutionHistorySummary {
+  const normalizedRuns = records.map(normalizeHistoryRecord).sort(sortNewestFirst)
   const statusCounts = countStatuses(normalizedRuns)
   const repeatedFingerprints = summarizeRepeatedFingerprints(normalizedRuns)
 
@@ -48,17 +76,17 @@ export function summarizeOfferReleaseExecutionHistory(
   }
 }
 
-function normalizeHistoryRun(run: OfferReleaseExecutionRun): NormalizedHistoryRun {
-  const executionFingerprint = nonBlank(run.executionFingerprint, "executionFingerprint")
+function normalizeHistoryRecord(record: OfferReleaseExecutionHistoryRecord): NormalizedHistoryRun {
+  const executionFingerprint = nonBlank(record.executionFingerprint, "executionFingerprint")
   return {
     executionFingerprint,
-    executedAt: normalizeIsoTimestamp(run.executedAt, "executedAt"),
-    mode: run.mode,
-    offerId: nonBlank(run.offerId, "offerId"),
-    offerNumber: nonBlank(run.offerNumber, "offerNumber"),
-    pendingActionCount: run.nextActions.length,
-    status: run.status,
-    warningCount: run.warnings.length,
+    executedAt: normalizeIsoTimestamp(record.executedAt, "executedAt"),
+    mode: record.mode,
+    offerId: nonBlank(record.offerId, "offerId"),
+    offerNumber: nonBlank(record.offerNumber, "offerNumber"),
+    pendingActionCount: nonNegativeInteger(record.pendingActionCount, "pendingActionCount"),
+    status: record.status,
+    warningCount: nonNegativeInteger(record.warningCount, "warningCount"),
   }
 }
 
@@ -77,6 +105,13 @@ function sortNewestFirst(left: NormalizedHistoryRun, right: NormalizedHistoryRun
 
 function compareNumber(left: number, right: number) {
   return left < right ? -1 : left > right ? 1 : 0
+}
+
+function nonNegativeInteger(value: number, fieldName: string) {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${fieldName} must be a non-negative integer`)
+  }
+  return value
 }
 
 function countStatuses(runs: NormalizedHistoryRun[]): Partial<Record<OfferReleaseExecutionStatus, number>> {

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest"
 
 import { buildWorkspaceAction } from "../workspace/workspaceActions"
 import {
+  buildOfferReleaseExecutionHistoryFromConvex,
   buildConvexOfferReleaseExecutionPayload,
+  type ConvexOfferReleaseExecutionHistoryRecord,
   type ConvexOfferReleaseExecutionPayload,
 } from "./convexOfferReleaseExecution"
 import {
@@ -87,6 +89,81 @@ describe("convex offer release execution persistence payload", () => {
       }),
     ).toThrow("run.mode must be commit or dry_run")
   })
+
+  it("summarizes persisted Convex release execution records for workspace history", () => {
+    const summary = buildOfferReleaseExecutionHistoryFromConvex(
+      [
+        releaseExecutionRecord({
+          executedAt: "2026-06-20T09:00:00+03:00",
+          executionFingerprint: "offer-release-execution-repeat",
+          nextActions: ["Resolve release blockers.", " "],
+          status: "blocked",
+          warningCount: 2,
+        }),
+        releaseExecutionRecord({
+          executedAt: "2026-06-20T09:05:00+03:00",
+          executionFingerprint: "offer-release-execution-repeat",
+          mode: "commit",
+          status: "succeeded",
+          warningCount: 0,
+        }),
+        releaseExecutionRecord({
+          executedAt: "2026-06-20T09:03:00+03:00",
+          executionFingerprint: undefined,
+          executionKey: "offer-release-execution:legacy-key",
+          status: "failed",
+          warningCount: undefined,
+          warnings: ["Calendar provider warning."],
+        }),
+      ],
+      { offerNumber: "OFFER-204" },
+    )
+
+    expect(summary).toMatchObject({
+      latestRun: {
+        executedAt: "2026-06-20T06:05:00.000Z",
+        executionFingerprint: "offer-release-execution-repeat",
+        mode: "commit",
+        offerNumber: "OFFER-204",
+        status: "succeeded",
+      },
+      pendingActionCount: 1,
+      statusCounts: {
+        blocked: 1,
+        failed: 1,
+        succeeded: 1,
+      },
+      totalRuns: 3,
+      warningCount: 3,
+    })
+    expect(summary.repeatedFingerprints).toEqual([
+      {
+        count: 2,
+        executionFingerprint: "offer-release-execution-repeat",
+        latestExecutedAt: "2026-06-20T06:05:00.000Z",
+        statuses: ["blocked", "succeeded"],
+      },
+    ])
+  })
+
+  it("rejects persisted release execution records with unsafe fields", () => {
+    expect(() =>
+      buildOfferReleaseExecutionHistoryFromConvex([
+        releaseExecutionRecord({
+          executionFingerprint: " ",
+          executionKey: " ",
+        }),
+      ]),
+    ).toThrow("records[0].executionKey is required")
+
+    expect(() =>
+      buildOfferReleaseExecutionHistoryFromConvex([
+        releaseExecutionRecord({
+          mode: "send_now" as never,
+        }),
+      ]),
+    ).toThrow("run.mode must be commit or dry_run")
+  })
 })
 
 function releaseExecutionRun(): OfferReleaseExecutionRun {
@@ -157,5 +234,22 @@ function releaseExecutionRun(): OfferReleaseExecutionRun {
   return {
     ...run,
     executionFingerprint: fingerprintOfferReleaseExecutionRun(run),
+  }
+}
+
+function releaseExecutionRecord(
+  overrides: Partial<ConvexOfferReleaseExecutionHistoryRecord> = {},
+): ConvexOfferReleaseExecutionHistoryRecord {
+  return {
+    executedAt: "2026-06-20T09:00:00+03:00",
+    executionFingerprint: "offer-release-execution-aaaabbbb",
+    executionKey: "offer-release-execution:offer-204:aaaabbbb",
+    mode: "dry_run",
+    nextActions: [],
+    offerId: "convex-offer-204",
+    status: "blocked",
+    warningCount: 0,
+    warnings: [],
+    ...overrides,
   }
 }

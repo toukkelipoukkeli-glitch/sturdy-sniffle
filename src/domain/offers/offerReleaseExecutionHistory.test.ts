@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import type { OfferReleaseExecutionRun } from "./offerReleaseExecution"
-import { summarizeOfferReleaseExecutionHistory } from "./offerReleaseExecutionHistory"
+import {
+  summarizeOfferReleaseExecutionHistory,
+  summarizeOfferReleaseExecutionHistoryRecords,
+} from "./offerReleaseExecutionHistory"
 
 describe("offer release execution history", () => {
   it("summarizes an empty release execution history", () => {
@@ -98,6 +101,47 @@ describe("offer release execution history", () => {
     ])
   })
 
+  it("summarizes compact persisted history records without full release run artifacts", () => {
+    const summary = summarizeOfferReleaseExecutionHistoryRecords([
+      {
+        executedAt: "2026-06-20T09:00:00+03:00",
+        executionFingerprint: "offer-release-execution-aaaabbbb",
+        mode: "dry_run",
+        offerId: "offer-204",
+        offerNumber: "OFFER-204",
+        pendingActionCount: 2,
+        status: "blocked",
+        warningCount: 3,
+      },
+      {
+        executedAt: "2026-06-20T09:05:00+03:00",
+        executionFingerprint: "offer-release-execution-ccccdddd",
+        mode: "commit",
+        offerId: "offer-204",
+        offerNumber: "OFFER-204",
+        pendingActionCount: 0,
+        status: "succeeded",
+        warningCount: 1,
+      },
+    ])
+
+    expect(summary).toMatchObject({
+      latestRun: {
+        executedAt: "2026-06-20T06:05:00.000Z",
+        executionFingerprint: "offer-release-execution-ccccdddd",
+        mode: "commit",
+        status: "succeeded",
+      },
+      pendingActionCount: 2,
+      statusCounts: {
+        blocked: 1,
+        succeeded: 1,
+      },
+      totalRuns: 2,
+      warningCount: 4,
+    })
+  })
+
   it("rejects runs with invalid audit identifiers", () => {
     expect(() =>
       summarizeOfferReleaseExecutionHistory([
@@ -114,6 +158,21 @@ describe("offer release execution history", () => {
         }),
       ]),
     ).toThrow("executedAt must be a valid ISO timestamp")
+
+    expect(() =>
+      summarizeOfferReleaseExecutionHistoryRecords([
+        {
+          executedAt: "2026-06-20T09:00:00+03:00",
+          executionFingerprint: "offer-release-execution-aaaabbbb",
+          mode: "commit",
+          offerId: "offer-204",
+          offerNumber: "OFFER-204",
+          pendingActionCount: -1,
+          status: "pending",
+          warningCount: 0,
+        },
+      ]),
+    ).toThrow("pendingActionCount must be a non-negative integer")
   })
 })
 
