@@ -1758,7 +1758,14 @@ function contactEmailFor(item: QuoteWorkItem) {
 
 function latestOfferFollowUpScheduledAt(actions: WorkspaceActionRecord[], offer: OfferDraft) {
   const offerId = offer.offerNumber.toLowerCase()
-  return actions.find((action) => action.kind === "follow_up_created" && action.offerId === offerId)?.followUpDueAt
+  const latest = actions
+    .filter((action) => action.kind === "follow_up_created" && action.offerId === offerId)
+    .reduce<WorkspaceActionRecord | undefined>(
+      (currentLatest, action) => (!currentLatest || action.occurredAt > currentLatest.occurredAt ? action : currentLatest),
+      undefined,
+    )
+
+  return latest?.followUpDueAt
 }
 
 function nextStatusFor(status: QuoteQueueStatus): QuoteQueueStatus | undefined {
