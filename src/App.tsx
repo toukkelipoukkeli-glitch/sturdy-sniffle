@@ -38,8 +38,9 @@ import {
   type QuoteComparisonResult,
   type QuoteComparisonScenario,
 } from "./domain/workspace/quoteComparison"
-import { rankQuoteQueue, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
+import { rankQuoteQueue, type QuoteQueueStatus, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
 import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
+import { buildWorkspaceAction, type WorkspaceActionRecord } from "./domain/workspace/workspaceActions"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -61,7 +62,7 @@ interface QuoteWorkItem {
   due: string
   dueAt: string
   priority: "normal" | "rush"
-  status: "new" | "triage" | "estimating" | "ready"
+  status: Extract<QuoteQueueStatus, "new" | "triage" | "estimating" | "ready">
   source: "gmail" | "manual" | "import"
   tags: string[]
   quoteInput: CncQuoteInput
@@ -393,11 +394,17 @@ const workItems: QuoteWorkItem[] = [
 function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
+  const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
+  const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
   const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
+  const selectedActions = actionsById[selectedId] ?? []
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
+  const selectedStatus = statusById[selectedId] ?? selectedItem.status
+  const handoffDraft = handoffDraftById[selectedId] ?? ""
   const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
   const updateSelectedEdit = (patch: Partial<QuoteEditState>) => {
     setEditsById((current) => ({
@@ -416,6 +423,7 @@ function App() {
     const queueInputs = workItems.map((item) => {
       const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
       const itemQuote = calculateCncQuote(itemQuoteInput)
+      const itemStatus = statusById[item.id] ?? item.status
       return {
         id: item.id,
         customerName: item.customer,
@@ -424,12 +432,12 @@ function App() {
         priority: item.priority,
         process: item.quoteInput.process,
         receivedAt: item.receivedAt,
-        status: item.status,
+        status: itemStatus,
         estimatedValueCents: itemQuote.totalCents,
       }
     })
     return rankQuoteQueue(queueInputs, { now: queueNow })
-  }, [editsById, queueNow])
+  }, [editsById, queueNow, statusById])
   const workloadSummary = useMemo(
     () =>
       summarizeProcessWorkload({
@@ -485,6 +493,68 @@ function App() {
       query: `offer ${offer.offerNumber}`,
     })
     setOfferRepliesById((current) => ({ ...current, [selectedId]: result }))
+  }
+  const recordWorkspaceAction = (action: WorkspaceActionRecord) => {
+    setActionsById((current) => ({
+      ...current,
+      [action.rfqId]: [...(current[action.rfqId] ?? []), action].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
+    }))
+  }
+  const advanceStatus = () => {
+    const toStatus = nextStatusFor(selectedStatus)
+    if (!toStatus) {
+      return
+    }
+    const action = buildWorkspaceAction({
+      actor: "Sari",
+      fromStatus: selectedStatus,
+      kind: "status_change",
+      occurredAt: new Date().toISOString(),
+      rfqId: selectedItem.id,
+      toStatus,
+    })
+    setStatusById((current) => ({ ...current, [selectedItem.id]: toStatus }))
+    recordWorkspaceAction(action)
+  }
+  const saveScenario = () => {
+    recordWorkspaceAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        kind: "scenario_saved",
+        occurredAt: new Date().toISOString(),
+        quoteId: `quote-${selectedItem.id.slice(-3)}`,
+        rfqId: selectedItem.id,
+        scenarioId: `${selectedItem.id}-current-edits`,
+      }),
+    )
+  }
+  const createFollowUp = () => {
+    recordWorkspaceAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        followUpDueAt: followUpDueAtFor(selectedItem),
+        kind: "follow_up_created",
+        occurredAt: new Date().toISOString(),
+        offerId: offerNumberFor(selectedItem).toLowerCase(),
+        rfqId: selectedItem.id,
+      }),
+    )
+  }
+  const addHandoffNote = () => {
+    const note = handoffDraft.trim()
+    if (!note) {
+      return
+    }
+    recordWorkspaceAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        kind: "handoff_note",
+        note,
+        occurredAt: new Date().toISOString(),
+        rfqId: selectedItem.id,
+      }),
+    )
+    setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: "" }))
   }
 
   return (
@@ -560,7 +630,7 @@ function App() {
                   <span className="subject">{item.subject}</span>
                 </span>
                 <span className="queue-item-meta">
-                  <StatusBadge status={item.status} />
+                  <StatusBadge status={statusById[item.id] ?? item.status} />
                   <QueueUrgencyBadge item={queueItem} />
                 </span>
               </button>
@@ -614,7 +684,19 @@ function App() {
 
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
 
-          {activeView === "triage" ? <TriageView item={selectedItem} /> : null}
+          {activeView === "triage" ? (
+            <TriageView
+              actions={selectedActions}
+              handoffDraft={handoffDraft}
+              item={selectedItem}
+              onAddHandoffNote={addHandoffNote}
+              onAdvanceStatus={advanceStatus}
+              onCreateFollowUp={createFollowUp}
+              onHandoffDraftChange={(value) => setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: value }))}
+              onSaveScenario={saveScenario}
+              status={selectedStatus}
+            />
+          ) : null}
           {activeView === "costing" ? (
             <CostingView
               cycleMinutes={cycleMinutes}
@@ -735,18 +817,71 @@ function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
   )
 }
 
-function TriageView({ item }: { item: QuoteWorkItem }) {
+function TriageView({
+  actions,
+  handoffDraft,
+  item,
+  onAddHandoffNote,
+  onAdvanceStatus,
+  onCreateFollowUp,
+  onHandoffDraftChange,
+  onSaveScenario,
+  status,
+}: {
+  actions: WorkspaceActionRecord[]
+  handoffDraft: string
+  item: QuoteWorkItem
+  onAddHandoffNote: () => void
+  onAdvanceStatus: () => void
+  onCreateFollowUp: () => void
+  onHandoffDraftChange: (value: string) => void
+  onSaveScenario: () => void
+  status: QuoteQueueStatus
+}) {
+  const nextStatus = nextStatusFor(status)
+
   return (
     <div className="workspace-section">
       <div className="section-title">
         <h3>RFQ intake</h3>
-        <StatusBadge status={item.status} />
+        <StatusBadge status={status} />
       </div>
       <div className="intake-grid">
         <Metric label="Due" value={item.due} />
         <Metric label="Source" value={item.source.toUpperCase()} />
         <Metric label="Contact" value={item.contact} />
       </div>
+      <section className="operator-actions" aria-label="Operator actions">
+        <div className="operator-action-grid">
+          <Button disabled={!nextStatus} onClick={onAdvanceStatus} type="button" variant="outline" size="sm">
+            <CheckCircle2 aria-hidden="true" />
+            {nextStatus ? `Move to ${humanizeKey(nextStatus)}` : "Terminal status"}
+          </Button>
+          <Button onClick={onSaveScenario} type="button" variant="outline" size="sm">
+            <GitCompareArrows aria-hidden="true" />
+            Save scenario
+          </Button>
+          <Button onClick={onCreateFollowUp} type="button" variant="outline" size="sm">
+            <CalendarDays aria-hidden="true" />
+            Create follow-up
+          </Button>
+        </div>
+        <div className="handoff-editor">
+          <label className="offer-text-field">
+            <span>Handoff note</span>
+            <textarea
+              aria-label="Handoff note"
+              onChange={(event) => onHandoffDraftChange(event.target.value)}
+              placeholder="Confirm material certs before sending."
+              value={handoffDraft}
+            />
+          </label>
+          <Button disabled={!handoffDraft.trim()} onClick={onAddHandoffNote} type="button" size="sm">
+            <FileText aria-hidden="true" />
+            Add note
+          </Button>
+        </div>
+      </section>
       <div className="note-list">
         {item.notes.map((note) => (
           <div className="note-row" key={note}>
@@ -755,7 +890,37 @@ function TriageView({ item }: { item: QuoteWorkItem }) {
           </div>
         ))}
       </div>
+      <ActionTimeline actions={actions} />
     </div>
+  )
+}
+
+function ActionTimeline({ actions }: { actions: WorkspaceActionRecord[] }) {
+  return (
+    <section className="action-timeline" aria-label="Action timeline">
+      <div className="section-title">
+        <h3>Action timeline</h3>
+        <span className="queue-count">{actions.length}</span>
+      </div>
+      {actions.length === 0 ? (
+        <div className="empty-action-state">No operator actions recorded for this RFQ.</div>
+      ) : (
+        <div className="action-list">
+          {actions.map((action) => (
+            <article className="action-row" data-kind={action.activityKind} key={action.key}>
+              <div>
+                <strong>{humanizeKey(action.kind)}</strong>
+                <span>{action.activityMessage}</span>
+              </div>
+              <div>
+                <span>{action.actor}</span>
+                <strong>{formatShortDateTime(action.occurredAt)}</strong>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -1151,7 +1316,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-function StatusBadge({ status }: { status: QuoteWorkItem["status"] }) {
+function StatusBadge({ status }: { status: QuoteQueueStatus }) {
   return <span className={`status-badge status-${status}`}>{status}</span>
 }
 
@@ -1354,6 +1519,24 @@ function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
 }
 
+function nextStatusFor(status: QuoteQueueStatus): QuoteQueueStatus | undefined {
+  const transitions: Partial<Record<QuoteQueueStatus, QuoteQueueStatus>> = {
+    new: "triage",
+    triage: "estimating",
+    estimating: "ready",
+    ready: "sent",
+    sent: "won",
+  }
+  return transitions[status]
+}
+
+function followUpDueAtFor(item: QuoteWorkItem) {
+  const due = new Date(item.dueAt)
+  due.setUTCDate(due.getUTCDate() + 3)
+  due.setUTCHours(7, 0, 0, 0)
+  return due.toISOString()
+}
+
 function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {
   const followUpTaskId = `follow-up-${item.id}`
   const accepted = item.priority === "rush"
@@ -1424,6 +1607,15 @@ function formatSignedDays(days: number) {
     return "0 days"
   }
   return `${days > 0 ? "+" : ""}${days} days`
+}
+
+function formatShortDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-FI", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  }).format(new Date(value))
 }
 
 function formatProcess(process: QuoteProcessKey) {
