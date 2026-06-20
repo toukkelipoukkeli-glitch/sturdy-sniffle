@@ -230,6 +230,53 @@ describe("calendar RFQ planning", () => {
     })
   })
 
+  it("schedules offer follow-up plans through the configured provider", async () => {
+    const scheduler = createCalendarRfqScheduler({
+      provider: createMockCalendarRfqProvider(),
+    })
+
+    const result = await scheduler.scheduleOfferFollowUpPlan({
+      offerId: "offer-001",
+      customerName: "North Forge",
+      timezone: "Europe/Helsinki",
+      timeline: {
+        lifecycleVersion: "offer-lifecycle.v1",
+        offerNumber: "OFFER-204",
+        status: "sent",
+        events: [],
+        followUpTasks: [
+          {
+            createdAt: "2026-06-25T09:00:00.000Z",
+            dueAt: "2026-07-02T07:00:00.000Z",
+            id: "follow-first",
+            offerNumber: "OFFER-204",
+            status: "open",
+            title: "Follow up OFFER-204",
+          },
+        ],
+      },
+    })
+
+    expect(result).toMatchObject({
+      provider: "mock",
+      status: "succeeded",
+      warnings: [],
+      results: [
+        {
+          externalId: "mock-calendar-001",
+          event: {
+            kind: "offer_follow_up",
+            metadata: {
+              followUpTaskId: "follow-first",
+              offerId: "offer-001",
+            },
+          },
+          status: "created",
+        },
+      ],
+    })
+  })
+
   it("falls back to the mock provider when the primary calendar provider fails", async () => {
     const failingProvider: CalendarRfqProviderAdapter = {
       provider: "calendar",
