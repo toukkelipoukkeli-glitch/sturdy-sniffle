@@ -9,15 +9,18 @@ import {
   FileText,
   GitCompareArrows,
   Inbox,
+  Layers3,
   Mail,
   PackageCheck,
   PanelRight,
   Ruler,
+  TrendingUp,
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
+import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
 import {
@@ -25,6 +28,8 @@ import {
   type QuoteComparisonResult,
   type QuoteComparisonScenario,
 } from "./domain/workspace/quoteComparison"
+import { rankQuoteQueue, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
+import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -42,7 +47,9 @@ interface QuoteWorkItem {
   contact: string
   subject: string
   received: string
+  receivedAt: string
   due: string
+  dueAt: string
   priority: "normal" | "rush"
   status: "new" | "triage" | "estimating" | "ready"
   source: "gmail" | "manual" | "import"
@@ -59,7 +66,9 @@ const workItems: QuoteWorkItem[] = [
     contact: "Sari Virtanen",
     subject: "CNC bracket FB-204-A",
     received: "Today 08:30",
+    receivedAt: "2026-06-20T08:30:00+03:00",
     due: "Jun 30",
+    dueAt: "2026-06-30T15:00:00+03:00",
     priority: "normal",
     status: "estimating",
     source: "gmail",
@@ -133,7 +142,9 @@ const workItems: QuoteWorkItem[] = [
     contact: "Mikael Laine",
     subject: "Turned spacer FB-TURN-019",
     received: "Yesterday 15:44",
+    receivedAt: "2026-06-19T15:44:00+03:00",
     due: "Jun 24",
+    dueAt: "2026-06-24T09:00:00+03:00",
     priority: "rush",
     status: "triage",
     source: "gmail",
@@ -205,7 +216,9 @@ const workItems: QuoteWorkItem[] = [
     contact: "Leena Korhonen",
     subject: "Prototype sensor housing",
     received: "Jun 17 10:12",
+    receivedAt: "2026-06-17T10:12:00+03:00",
     due: "Jul 02",
+    dueAt: "2026-07-02T12:00:00+03:00",
     priority: "normal",
     status: "new",
     source: "import",
@@ -274,6 +287,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [queueNow] = useState(() => new Date().toISOString())
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
   const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
@@ -288,20 +302,36 @@ function App() {
     }))
   }
 
-  const quoteInput = useMemo<CncQuoteInput>(
-    () => ({
-      ...selectedItem.quoteInput,
-      quantity,
-      priority: rush ? "rush" : "normal",
-      operation: {
-        ...selectedItem.quoteInput.operation,
-        setupMinutes,
-        cycleMinutesPerPart: cycleMinutes,
-      },
-    }),
-    [cycleMinutes, quantity, rush, selectedItem, setupMinutes],
-  )
+  const quoteInput = useMemo<CncQuoteInput>(() => applyQuoteEdit(selectedItem, selectedEdit), [selectedEdit, selectedItem])
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
+  const rankedQueue = useMemo(() => {
+    const queueInputs = workItems.map((item) => {
+      const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+      const itemQuote = calculateCncQuote(itemQuoteInput)
+      return {
+        id: item.id,
+        customerName: item.customer,
+        subject: item.subject,
+        dueAt: item.dueAt,
+        priority: item.priority,
+        process: item.quoteInput.process,
+        receivedAt: item.receivedAt,
+        status: item.status,
+        estimatedValueCents: itemQuote.totalCents,
+      }
+    })
+    return rankQuoteQueue(queueInputs, { now: queueNow })
+  }, [editsById, queueNow])
+  const workloadSummary = useMemo(
+    () =>
+      summarizeProcessWorkload({
+        items: rankedQueue,
+        now: queueNow,
+        topItemLimit: 2,
+      }),
+    [queueNow, rankedQueue],
+  )
+  const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
   const scenarioComparison = useMemo(
     () => compareQuoteScenarios(buildScenarioComparisonInputs(selectedItem.quoteInput, quoteInput, quote)),
     [quote, quoteInput, selectedItem],
@@ -383,7 +413,9 @@ function App() {
             </Button>
           </div>
           <div className="queue-list">
-            {workItems.map((item) => (
+            {rankedQueue.map((queueItem) => {
+              const item = workItems.find((candidate) => candidate.id === queueItem.id) ?? workItems[0]
+              return (
               <button
                 className="queue-item"
                 data-active={item.id === selectedId}
@@ -392,15 +424,17 @@ function App() {
                 type="button"
               >
                 <span className="queue-item-main">
+                  <span className="queue-rank">#{queueItem.rank}</span>
                   <span className="customer">{item.customer}</span>
                   <span className="subject">{item.subject}</span>
                 </span>
                 <span className="queue-item-meta">
                   <StatusBadge status={item.status} />
-                  <span>{item.due}</span>
+                  <QueueUrgencyBadge item={queueItem} />
                 </span>
               </button>
-            ))}
+              )
+            })}
           </div>
         </aside>
 
@@ -446,6 +480,8 @@ function App() {
               Offer
             </SegmentButton>
           </nav>
+
+          <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
 
           {activeView === "triage" ? <TriageView item={selectedItem} /> : null}
           {activeView === "costing" ? (
@@ -532,6 +568,55 @@ function TriageView({ item }: { item: QuoteWorkItem }) {
         ))}
       </div>
     </div>
+  )
+}
+
+function WorkloadPanel({
+  selectedQueueItem,
+  summary,
+}: {
+  selectedQueueItem: RankedQuoteQueueItem
+  summary: ProcessWorkloadSummary
+}) {
+  return (
+    <section className="workload-panel" aria-label="Process workload">
+      <div className="workload-summary">
+        <div>
+          <span className="eyebrow">
+            <Layers3 aria-hidden="true" />
+            Workload
+          </span>
+          <strong>{summary.totalOpenItems} open RFQs</strong>
+        </div>
+        <div>
+          <span className="eyebrow">
+            <TrendingUp aria-hidden="true" />
+            Queue risk
+          </span>
+          <strong>
+            #{selectedQueueItem.rank} · {humanizeKey(selectedQueueItem.urgency)}
+          </strong>
+        </div>
+      </div>
+      <div className="workload-buckets">
+        {summary.buckets.map((bucket) => (
+          <div className="workload-bucket" key={bucket.process}>
+            <div>
+              <span>{formatProcess(bucket.process)}</span>
+              <strong>{bucket.openItemCount} open</strong>
+            </div>
+            <div>
+              <span>Risk</span>
+              <strong>{bucket.riskScore}</strong>
+            </div>
+            <div>
+              <span>Value</span>
+              <strong>{formatCurrency(bucket.estimatedValueCents, "EUR")}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -789,6 +874,16 @@ function PriorityBadge({ priority }: { priority: QuoteWorkItem["priority"] }) {
   )
 }
 
+function QueueUrgencyBadge({ item }: { item: RankedQuoteQueueItem }) {
+  const label = item.urgency === "normal" ? `${item.daysUntilDue}d` : humanizeKey(item.urgency)
+  return (
+    <span className={`urgency-badge urgency-${item.urgency}`}>
+      <Clock3 aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
 function toNumber(value: string) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
@@ -810,6 +905,19 @@ function defaultEditState(item: QuoteWorkItem): QuoteEditState {
     quantity: item.quoteInput.quantity,
     rush: item.quoteInput.priority === "rush",
     setupMinutes: item.quoteInput.operation.setupMinutes,
+  }
+}
+
+function applyQuoteEdit(item: QuoteWorkItem, edit: QuoteEditState): CncQuoteInput {
+  return {
+    ...item.quoteInput,
+    quantity: edit.quantity,
+    priority: edit.rush ? "rush" : "normal",
+    operation: {
+      ...item.quoteInput.operation,
+      setupMinutes: edit.setupMinutes,
+      cycleMinutesPerPart: edit.cycleMinutes,
+    },
   }
 }
 
@@ -888,8 +996,21 @@ function formatSignedDays(days: number) {
   return `${days > 0 ? "+" : ""}${days} days`
 }
 
-function formatProcess(process: CncQuoteInput["process"]) {
-  return process === "cnc_milling" ? "CNC milling" : "CNC turning"
+function formatProcess(process: QuoteProcessKey) {
+  switch (process) {
+    case "cnc_milling":
+      return "CNC milling"
+    case "cnc_turning":
+      return "CNC turning"
+    case "fabrication":
+      return "Fabrication"
+    case "plastic":
+      return "Plastic"
+    case "sheet_metal":
+      return "Sheet metal"
+    case "wire_edm":
+      return "Wire EDM"
+  }
 }
 
 function formatPreviewMode(mode: PartPreviewMode) {

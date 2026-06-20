@@ -32,7 +32,8 @@
 .scenario-comparison-heading,
 .note-row,
 .flag,
-.priority-badge {
+.priority-badge,
+.urgency-badge {
   align-items: center;
   display: flex;
 }
@@ -148,7 +149,9 @@
 .queue-count,
 .lead-time,
 .calculator-version,
-.offer-number {
+.offer-number,
+.queue-rank,
+.urgency-badge {
   background: oklch(0.94 0.025 188);
   border-radius: 999px;
   font-size: 0.75rem;
@@ -200,7 +203,11 @@
 
 .queue-item-main {
   display: grid;
-  gap: 3px;
+  gap: 5px;
+}
+
+.queue-rank {
+  justify-self: start;
 }
 
 .customer {
@@ -293,6 +300,32 @@
   text-transform: capitalize;
 }
 
+.urgency-badge {
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.urgency-badge svg {
+  height: 14px;
+  width: 14px;
+}
+
+.urgency-overdue,
+.urgency-due_today {
+  background: oklch(0.95 0.04 35);
+  color: oklch(0.43 0.12 35);
+}
+
+.urgency-due_soon {
+  background: oklch(0.95 0.035 80);
+  color: oklch(0.42 0.08 75);
+}
+
+.urgency-normal {
+  background: oklch(0.94 0.02 170);
+  color: oklch(0.32 0.055 170);
+}
+
 .priority-normal {
   background: oklch(0.94 0.02 170);
   color: oklch(0.32 0.055 170);
@@ -346,6 +379,68 @@
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
   padding: 16px;
+}
+
+.workload-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.workload-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workload-summary > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.workload-summary strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.workload-buckets {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workload-bucket {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 58px;
+  padding: 10px;
+}
+
+.workload-bucket div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.workload-bucket span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workload-bucket strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
 }
 
 .section-title {
@@ -860,7 +955,13 @@
   .assumption-grid,
   .offer-layout,
   .breakdown-list,
-  .part-preview {
+  .part-preview,
+  .workload-summary,
+  .workload-buckets {
+    grid-template-columns: 1fr;
+  }
+
+  .workload-bucket {
     grid-template-columns: 1fr;
   }
 
