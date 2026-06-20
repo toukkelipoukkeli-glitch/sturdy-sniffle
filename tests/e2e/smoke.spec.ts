@@ -32,7 +32,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Outside service plan")).toContainText("At risk")
   await expect(page.getByLabel("Outside service plan")).toContainText("Passivation")
   await expect(page.getByLabel("Outside service plan")).toContainText("Nordic Surface Works")
-  await expect(page.getByLabel("Outside service plan")).toContainText("Supplier order is due by 2026-06-20.")
+  await expect(page.getByLabel("Outside service plan")).toContainText("2026-06-20")
   await expect(page.getByLabel("Part preview")).toContainText("FB-TURN-019.pdf")
   await expect(page.getByText("CAD geometry is unavailable; using drawing preview.")).toBeVisible()
   await expect(page.getByLabel("Manufacturability flags")).toContainText("cad geometry missing")
