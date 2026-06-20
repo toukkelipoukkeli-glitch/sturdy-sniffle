@@ -36,7 +36,7 @@ describe("offer reply state summary", () => {
           syncIndex: 0,
         },
         {
-          key: "sync-0:transition:accepted",
+          key: "sync-0:transition:accepted:0",
           kind: "transition",
           label: "Status transition",
           message: "accepted: Customer accepted.",
@@ -93,6 +93,52 @@ describe("offer reply state summary", () => {
         syncIndex: 1,
       },
     ])
+  })
+
+  it("keeps transition event keys unique when statuses repeat within one sync", () => {
+    const summary = buildOfferReplyStateSummary({
+      payloads: [
+        {
+          activities: [],
+          appliedMessageIds: [],
+          ignoredMessageIds: [],
+          offerId: "offer-019",
+          statusTransitions: [
+            {
+              message: "First accepted reply.",
+              status: "accepted",
+            },
+            {
+              message: "Second accepted reply.",
+              status: "accepted",
+            },
+          ],
+          warnings: [],
+        },
+      ],
+      recordedMessageIds: [],
+      syncCount: 1,
+    })
+
+    expect(summary.events).toEqual([
+      {
+        key: "sync-0:transition:accepted:0",
+        kind: "transition",
+        label: "Status transition",
+        message: "accepted: First accepted reply.",
+        offerId: "offer-019",
+        syncIndex: 0,
+      },
+      {
+        key: "sync-0:transition:accepted:1",
+        kind: "transition",
+        label: "Status transition",
+        message: "accepted: Second accepted reply.",
+        offerId: "offer-019",
+        syncIndex: 0,
+      },
+    ])
+    expect(new Set(summary.events.map((event) => event.key)).size).toBe(summary.events.length)
   })
 })
 

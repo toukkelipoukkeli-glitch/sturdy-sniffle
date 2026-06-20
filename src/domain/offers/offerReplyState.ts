@@ -75,9 +75,9 @@ function payloadEvents(payload: ConvexOfferReplySyncPayload, syncIndex: number):
     })
   }
 
-  for (const transition of payload.statusTransitions) {
+  for (const [transitionIndex, transition] of payload.statusTransitions.entries()) {
     events.push({
-      key: `sync-${syncIndex}:transition:${transition.status}`,
+      key: `sync-${syncIndex}:transition:${transition.status}:${transitionIndex}`,
       kind: "transition",
       label: "Status transition",
       message: transition.message ? `${transition.status}: ${transition.message}` : transition.status,
