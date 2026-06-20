@@ -5,16 +5,20 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Cuboid,
   FileText,
   Inbox,
   Mail,
   PackageCheck,
   PanelRight,
+  Ruler,
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 import { buildCncOfferDraft, renderOfferText, type OfferDraft } from "./domain/offers/offer"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
+import type { RfqAttachmentDraft, RfqPartDraft } from "./domain/rfq/intake"
+import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -38,6 +42,7 @@ interface QuoteWorkItem {
   source: "gmail" | "manual" | "import"
   tags: string[]
   quoteInput: CncQuoteInput
+  attachments: RfqAttachmentDraft[]
   notes: string[]
 }
 
@@ -53,6 +58,20 @@ const workItems: QuoteWorkItem[] = [
     status: "estimating",
     source: "gmail",
     tags: ["CNC milling", "Al 6082", "ISO 2768-M"],
+    attachments: [
+      {
+        fileName: "FB-204-A.step",
+        kind: "cad",
+        contentType: "model/step",
+        sizeBytes: 245760,
+      },
+      {
+        fileName: "FB-204-A.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+        sizeBytes: 98304,
+      },
+    ],
     notes: ["STEP and drawing attached", "Customer asked for 25 pcs", "Deburr included"],
     quoteInput: {
       partNumber: "FB-204-A",
@@ -113,6 +132,20 @@ const workItems: QuoteWorkItem[] = [
     status: "triage",
     source: "gmail",
     tags: ["CNC turning", "316L", "+/- 0.05 mm"],
+    attachments: [
+      {
+        fileName: "FB-TURN-019.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+        sizeBytes: 112640,
+      },
+      {
+        fileName: "passivation-note.txt",
+        kind: "other",
+        contentType: "text/plain",
+        sizeBytes: 4096,
+      },
+    ],
     notes: ["Rush lead time requested", "Passivation needed", "Small quantity triggers minimum"],
     quoteInput: {
       partNumber: "FB-TURN-019",
@@ -171,6 +204,14 @@ const workItems: QuoteWorkItem[] = [
     status: "new",
     source: "import",
     tags: ["CNC milling", "Al 7075", "Prototype"],
+    attachments: [
+      {
+        fileName: "AI-331-B-revB.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+        sizeBytes: 178240,
+      },
+    ],
     notes: ["Imported from shared folder", "Material substitution allowed", "Revision B drawing"],
     quoteInput: {
       partNumber: "AI-331-B",
@@ -255,6 +296,15 @@ function App() {
     [cycleMinutes, quantity, rush, selectedItem, setupMinutes],
   )
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
+  const partPreview = useMemo(
+    () =>
+      buildPartPreviewModel({
+        attachments: selectedItem.attachments,
+        part: partDraftForQuoteInput(quoteInput, selectedItem.attachments),
+        subject: selectedItem.subject,
+      }),
+    [quoteInput, selectedItem],
+  )
   const offer = useMemo(
     () =>
       buildCncOfferDraft({
@@ -391,6 +441,7 @@ function App() {
           {activeView === "costing" ? (
             <CostingView
               cycleMinutes={cycleMinutes}
+              partPreview={partPreview}
               quantity={quantity}
               quote={quote}
               rush={rush}
@@ -475,6 +526,7 @@ function TriageView({ item }: { item: QuoteWorkItem }) {
 
 function CostingView({
   cycleMinutes,
+  partPreview,
   quantity,
   quote,
   rush,
@@ -486,6 +538,7 @@ function CostingView({
   setupMinutes,
 }: {
   cycleMinutes: number
+  partPreview: PartPreviewModel
   quantity: number
   quote: CncQuoteResult
   rush: boolean
@@ -508,6 +561,7 @@ function CostingView({
         <Metric label="Material" value={selectedItem.quoteInput.material.name} />
         <Metric label="Machine" value={selectedItem.quoteInput.machine.name} />
       </div>
+      <PartPreviewPanel preview={partPreview} />
       <div className="assumption-grid">
         <label className="field">
           <span>Quantity</span>
@@ -552,6 +606,59 @@ function CostingView({
         ))}
       </div>
     </div>
+  )
+}
+
+function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
+  return (
+    <section className="part-preview" aria-label="Part preview">
+      <div className="preview-viewport" data-mode={preview.primaryMode}>
+        <div className="preview-icon" aria-hidden="true">
+          <Cuboid />
+        </div>
+        <div>
+          <span>{formatPreviewMode(preview.primaryMode)}</span>
+          <strong>{preview.primaryAttachmentName ?? preview.partNumber}</strong>
+        </div>
+      </div>
+      <div className="preview-side">
+        <div className="preview-mode-row" aria-label="Preview modes">
+          {preview.availableModes.map((mode) => (
+            <span className="preview-mode-chip" data-active={mode === preview.primaryMode} key={mode}>
+              {formatPreviewMode(mode)}
+            </span>
+          ))}
+        </div>
+        <div className="measurement-list" aria-label="Measurements">
+          {preview.measurementOverlays.map((measurement) => (
+            <div className="measurement-row" key={measurement.key}>
+              <Ruler aria-hidden="true" />
+              <span>{measurement.label}</span>
+              <strong>{measurement.valueMm} mm</strong>
+            </div>
+          ))}
+        </div>
+        <div className="attachment-list" aria-label="Attachments">
+          {preview.attachments.map((attachment) => (
+            <div className="attachment-row" data-primary={attachment.primary} key={attachment.fileName}>
+              <FileText aria-hidden="true" />
+              <span>{attachment.fileName}</span>
+              <strong>{attachment.kind}</strong>
+            </div>
+          ))}
+        </div>
+        {preview.warnings.length > 0 ? (
+          <div className="preview-warning-list">
+            {preview.warnings.map((warning) => (
+              <div className="flag" key={warning}>
+                <AlertTriangle aria-hidden="true" />
+                <span>{warning}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
   )
 }
 
@@ -648,6 +755,23 @@ function defaultEditState(item: QuoteWorkItem): QuoteEditState {
   }
 }
 
+function partDraftForQuoteInput(quoteInput: CncQuoteInput, attachments: RfqAttachmentDraft[]): RfqPartDraft {
+  const dimensions = quoteInput.finishedDimensions ?? quoteInput.stockDimensions
+
+  return {
+    partNumber: quoteInput.partNumber,
+    process: quoteInput.process,
+    materialText: quoteInput.material.name,
+    quantity: quoteInput.quantity,
+    dimensions: {
+      lengthMm: dimensions.lengthMm,
+      widthMm: dimensions.widthMm,
+      heightMm: dimensions.heightMm,
+    },
+    attachmentNames: attachments.map((attachment) => attachment.fileName),
+  }
+}
+
 function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
 }
@@ -667,6 +791,21 @@ function formatCurrency(cents: number, currency: string) {
 
 function formatProcess(process: CncQuoteInput["process"]) {
   return process === "cnc_milling" ? "CNC milling" : "CNC turning"
+}
+
+function formatPreviewMode(mode: PartPreviewMode) {
+  switch (mode) {
+    case "cad":
+      return "CAD"
+    case "drawing":
+      return "Drawing"
+    case "photo":
+      return "Photo"
+    case "spreadsheet":
+      return "Sheet"
+    case "metadata":
+      return "Metadata"
+  }
 }
 
 function humanizeKey(key: string) {
