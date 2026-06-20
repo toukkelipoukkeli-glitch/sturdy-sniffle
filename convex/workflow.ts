@@ -326,6 +326,40 @@ export const createOfferFollowUpActivity = mutation({
   },
 });
 
+export const recordWorkspaceActivity = mutation({
+  args: {
+    rfqId: v.optional(v.id("rfqs")),
+    quoteId: v.optional(v.id("quoteScenarios")),
+    offerId: v.optional(v.id("offers")),
+    actorName: v.optional(v.string()),
+    kind: v.union(v.literal("note"), v.literal("status_change"), v.literal("calendar_event"), v.literal("calculation")),
+    message: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAuthenticatedActor(ctx);
+    if (args.rfqId) {
+      await requireDocument(ctx, args.rfqId, "rfqId");
+    }
+    if (args.quoteId) {
+      await requireDocument(ctx, args.quoteId, "quoteId");
+    }
+    if (args.offerId) {
+      await requireDocument(ctx, args.offerId, "offerId");
+    }
+
+    return await ctx.db.insert("activities", {
+      rfqId: args.rfqId,
+      quoteId: args.quoteId,
+      offerId: args.offerId,
+      actorType: "human",
+      actorName: optionalNonBlank(args.actorName),
+      kind: args.kind,
+      message: nonBlank(args.message, "message"),
+      createdAt: Date.now(),
+    });
+  },
+});
+
 type RfqDocument = Pick<Doc<"rfqs">, "status">;
 type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status">;
