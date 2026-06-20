@@ -2,6 +2,7 @@ import { v, type GenericId } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { requireFactoryBidActor } from "./authz";
 import { buildOfferStatusTransitionPatch } from "./workflowRules";
 
 const processKey = v.union(
@@ -50,6 +51,7 @@ export const listRfqQueue = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit);
     const status = args.status;
     const rows = status
@@ -81,6 +83,7 @@ export const updateRfqStatus = mutation({
     status: rfqStatus,
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:write");
     await requireDocument(ctx, args.rfqId, "rfqId");
     await ctx.db.patch(args.rfqId, {
       status: args.status,
@@ -97,7 +100,7 @@ export const transitionRfqStatus = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const actorName = await requireAuthenticatedActor(ctx);
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
     const rfq = await requireDocument<RfqDocument>(ctx, args.rfqId, "rfqId");
     assertRfqStatusTransition(rfq.status, args.status);
     const now = Date.now();
@@ -111,7 +114,7 @@ export const transitionRfqStatus = mutation({
     const activityId = await ctx.db.insert("activities", {
       rfqId: args.rfqId,
       actorType: "human",
-      actorName,
+      actorName: actor.displayName,
       kind: "status_change",
       message,
       createdAt: now,
@@ -131,7 +134,7 @@ export const listRfqActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAuthenticatedActor(ctx);
+    await requireFactoryBidActor(ctx, "workspace:read");
     await requireDocument(ctx, args.rfqId, "rfqId");
     return await ctx.db
       .query("activities")
@@ -146,6 +149,7 @@ export const listQuoteScenariosByRfq = query({
     rfqId: v.id("rfqs"),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:read");
     return await ctx.db
       .query("quoteScenarios")
       .withIndex("by_rfq", (q) => q.eq("rfqId", args.rfqId))
@@ -165,6 +169,7 @@ export const createQuoteScenario = mutation({
     validUntil: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:write");
     await requireDocument(ctx, args.rfqId, "rfqId");
     const title = nonBlank(args.title, "title");
     const now = Date.now();
@@ -188,6 +193,7 @@ export const processWorkloadBuckets = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit, 500);
     const process = args.process;
     const parts = process
@@ -227,6 +233,7 @@ export const listOfferFollowUpActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit);
     return await ctx.db
       .query("activities")
@@ -243,9 +250,7 @@ export const listOfferActivities = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAuthenticatedActor(ctx);
-    // FactoryBid OS currently runs as a single-tenant factory workspace:
-    // any authenticated operator can access offer workflow records.
+    await requireFactoryBidActor(ctx, "workspace:read");
     await requireDocument(ctx, args.offerId, "offerId");
     return await ctx.db
       .query("activities")
@@ -262,9 +267,7 @@ export const transitionOfferStatus = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const actorName = await requireAuthenticatedActor(ctx);
-    // FactoryBid OS currently runs as a single-tenant factory workspace:
-    // any authenticated operator can transition offer workflow records.
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
     const offer = await requireDocument<OfferDocument>(ctx, args.offerId, "offerId");
     const now = Date.now();
     const patch = buildOfferStatusTransitionPatch({
@@ -282,7 +285,7 @@ export const transitionOfferStatus = mutation({
       quoteId: offer.quoteId,
       rfqId: offer.rfqId,
       actorType: "human",
-      actorName,
+      actorName: actor.displayName,
       kind: "status_change",
       message,
       createdAt: now,
@@ -305,6 +308,7 @@ export const createOfferFollowUpActivity = mutation({
     message: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireFactoryBidActor(ctx, "workspace:write");
     await requireDocument(ctx, args.offerId, "offerId");
     if (args.quoteId) {
       await requireDocument(ctx, args.quoteId, "quoteId");
@@ -336,7 +340,7 @@ export const recordWorkspaceActivity = mutation({
     message: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireAuthenticatedActor(ctx);
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
     if (args.rfqId) {
       await requireDocument(ctx, args.rfqId, "rfqId");
     }
@@ -352,7 +356,7 @@ export const recordWorkspaceActivity = mutation({
       quoteId: args.quoteId,
       offerId: args.offerId,
       actorType: "human",
-      actorName: optionalNonBlank(args.actorName),
+      actorName: optionalNonBlank(args.actorName) ?? actor.displayName,
       kind: args.kind,
       message: nonBlank(args.message, "message"),
       createdAt: Date.now(),
@@ -389,18 +393,6 @@ function assertRfqStatusTransition(fromStatus: RfqStatus, toStatus: RfqStatus) {
   if (!allowedRfqStatusTransitions[fromStatus].includes(toStatus)) {
     throw new Error(`cannot transition RFQ from ${fromStatus} to ${toStatus}`);
   }
-}
-
-async function requireAuthenticatedActor(ctx: {
-  auth: {
-    getUserIdentity: () => Promise<{ email?: string; name?: string; subject?: string; tokenIdentifier?: string } | null>;
-  };
-}): Promise<string> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("authentication required");
-  }
-  return optionalNonBlank(identity.name) ?? optionalNonBlank(identity.email) ?? optionalNonBlank(identity.subject) ?? "Authenticated user";
 }
 
 function boundedLimit(value: number | undefined, maximum = 100): number {
