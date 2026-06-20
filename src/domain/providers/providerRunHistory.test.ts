@@ -8,7 +8,6 @@ describe("provider run history summary", () => {
     expect(buildProviderRunHistorySummary(audits())).toEqual({
       events: [
         {
-          key: "draft:gemini:hash-2:2026-06-20T08:00:00.000Z",
           provider: "gemini",
           purpose: "draft",
           runKey: "draft:gemini:hash-2:2026-06-20T08:00:00.000Z",
@@ -18,7 +17,6 @@ describe("provider run history summary", () => {
           warningCount: 1,
         },
         {
-          key: "summarize:mock:hash-1:2026-06-20T07:00:00.000Z",
           provider: "mock",
           purpose: "summarize",
           runKey: "summarize:mock:hash-1:2026-06-20T07:00:00.000Z",
@@ -28,7 +26,6 @@ describe("provider run history summary", () => {
           warningCount: 1,
         },
         {
-          key: "extract:local_codex:hash-0:2026-06-20T06:00:00.000Z",
           provider: "local_codex",
           purpose: "extract",
           runKey: "extract:local_codex:hash-0:2026-06-20T06:00:00.000Z",

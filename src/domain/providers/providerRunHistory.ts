@@ -4,7 +4,6 @@ import type { ProviderRunAudit } from "./providerRunAudit"
 export type ProviderRunHistoryFilter = "all" | "failed" | "fallbacks" | "skipped" | "succeeded" | "warnings"
 
 export interface ProviderRunHistoryEvent {
-  key: string
   provider: AiProviderKey
   purpose: ProviderPurpose
   runKey: string
@@ -36,23 +35,32 @@ export function buildProviderRunHistorySummary(
   const filter = options.filter ?? "all"
   const sortedAudits = [...audits].sort(compareAudits)
   const events = sortedAudits.map(auditEvent).filter((event) => eventMatchesFilter(event, filter))
+  const counts = audits.reduce(
+    (current, audit) => ({
+      failed: current.failed + (audit.status === "failed" ? 1 : 0),
+      fallback: current.fallback + (hasFallbackWarning(audit) ? 1 : 0),
+      skipped: current.skipped + (audit.status === "skipped" ? 1 : 0),
+      succeeded: current.succeeded + (audit.status === "succeeded" ? 1 : 0),
+      warnings: current.warnings + audit.warnings.length,
+    }),
+    { failed: 0, fallback: 0, skipped: 0, succeeded: 0, warnings: 0 },
+  )
 
   return {
     events,
-    failedCount: audits.filter((audit) => audit.status === "failed").length,
-    fallbackCount: audits.filter(hasFallbackWarning).length,
+    failedCount: counts.failed,
+    fallbackCount: counts.fallback,
     filter,
-    skippedCount: audits.filter((audit) => audit.status === "skipped").length,
-    succeededCount: audits.filter((audit) => audit.status === "succeeded").length,
+    skippedCount: counts.skipped,
+    succeededCount: counts.succeeded,
     totalRuns: audits.length,
-    warningCount: audits.reduce((count, audit) => count + audit.warnings.length, 0),
+    warningCount: counts.warnings,
   }
 }
 
 function auditEvent(audit: ProviderRunAudit): ProviderRunHistoryEvent {
   const detail = audit.errorMessage ?? audit.outputSummary ?? audit.promptExcerpt
   return {
-    key: audit.runKey,
     provider: audit.provider,
     purpose: audit.purpose,
     runKey: audit.runKey,
