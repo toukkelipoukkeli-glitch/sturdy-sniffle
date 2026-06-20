@@ -85,7 +85,10 @@ export function rateCardForPreset(key: RateCardPresetKey): SharedRateCardInput {
   return cloneRateCard(getRateCardPreset(key).rateCard)
 }
 
-export function applyRateCardPreset<T extends { rateCard: SharedRateCardInput }>(input: T, key: RateCardPresetKey): T {
+export function applyRateCardPreset<T extends { rateCard: SharedRateCardInput }>(
+  input: T,
+  key: RateCardPresetKey,
+): Omit<T, "rateCard"> & { rateCard: SharedRateCardInput } {
   return {
     ...input,
     rateCard: rateCardForPreset(key),
