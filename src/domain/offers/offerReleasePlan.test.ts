@@ -184,7 +184,7 @@ describe("offer release command plan", () => {
     expect(plan.nextActions).toContain("RFQ status must be ready before offer release; current status is estimating.")
   })
 
-  it("rejects release gates and export packages for a different offer", () => {
+  it("rejects release gates for a different offer", () => {
     const offer = offerDraft()
 
     expect(() =>
@@ -199,6 +199,27 @@ describe("offer release command plan", () => {
         timezone: "Europe/Helsinki",
       }),
     ).toThrow("release gate offerNumber OFFER-999 does not match offer OFFER-204")
+  })
+
+  it("rejects export packages for a different offer", () => {
+    const offer = offerDraft()
+    const mismatchedExportOffer: OfferDraft = {
+      ...offer,
+      offerNumber: "OFFER-999",
+    }
+
+    expect(() =>
+      buildOfferReleasePlan({
+        actor: "sales",
+        currentRfqStatus: "ready",
+        exportPackage: offerExportPackage(mismatchedExportOffer),
+        offer,
+        offerId: "offer-204",
+        releaseGate: releaseGate(),
+        rfqId: "rfq-204",
+        timezone: "Europe/Helsinki",
+      }),
+    ).toThrow("export package offerNumber OFFER-999 does not match offer OFFER-204")
   })
 })
 

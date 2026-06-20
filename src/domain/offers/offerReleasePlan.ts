@@ -78,13 +78,13 @@ export function buildOfferReleasePlan(input: BuildOfferReleasePlanInput): OfferR
   if (input.releaseGate.status === "blocked" || directBlockers.length > 0) {
     return basePlan({
       commands: [
-        command({
+        {
           detail: [...input.releaseGate.nextActions, ...directBlockers].join(" "),
           key: "manager-review:blockers",
           kind: "manager_review",
           label: "Resolve release blockers",
           status: "blocked",
-        }),
+        },
       ],
       input,
       mode: "blocked",
@@ -99,13 +99,13 @@ export function buildOfferReleasePlan(input: BuildOfferReleasePlanInput): OfferR
   if (input.releaseGate.status === "needs_review" && !reviewedBy) {
     return basePlan({
       commands: [
-        command({
+        {
           detail: input.releaseGate.nextActions.join(" "),
           key: "manager-review:warnings",
           kind: "manager_review",
           label: "Manager release review",
           status: "requires_review",
-        }),
+        },
       ],
       input,
       mode: "manager_review_required",
@@ -312,8 +312,8 @@ function buildReleaseCommands(input: {
   workspaceActions: WorkspaceActionRecord[]
 }): OfferReleaseCommand[] {
   const customerEmail = nonBlank(input.offer.customer.email ?? "", "offer.customer.email")
-  const commands = [
-    command({
+  const commands: OfferReleaseCommand[] = [
+    {
       detail: `Draft customer email to ${customerEmail}.`,
       key: "email-draft",
       kind: "email_draft",
@@ -325,8 +325,8 @@ function buildReleaseCommands(input: {
         to: customerEmail,
       },
       status: "ready",
-    }),
-    command({
+    },
+    {
       detail: `Apply sent lifecycle event at ${input.releaseAt}.`,
       key: "lifecycle-sent",
       kind: "lifecycle_sent",
@@ -337,8 +337,8 @@ function buildReleaseCommands(input: {
         offerNumber: input.offer.offerNumber,
       },
       status: "ready",
-    }),
-    command({
+    },
+    {
       detail: `Move RFQ ${input.rfqId} to sent.`,
       key: "workspace-status",
       kind: "workspace_status",
@@ -348,13 +348,13 @@ function buildReleaseCommands(input: {
         rfqId: input.rfqId,
       },
       status: "ready",
-    }),
+    },
   ]
 
   const followUpEvent = input.lifecycleEvents.find((event) => event.kind === "follow_up_scheduled")
   if (followUpEvent) {
     commands.push(
-      command({
+      {
         detail: `Create lifecycle follow-up task ${followUpEvent.followUpTaskId}.`,
         key: "lifecycle-follow-up",
         kind: "lifecycle_follow_up",
@@ -365,13 +365,13 @@ function buildReleaseCommands(input: {
           offerId: input.offerId,
         },
         status: "ready",
-      }),
+      },
     )
   }
 
   if (input.calendarPlan && input.calendarPlan.events.length > 0) {
     commands.push(
-      command({
+      {
         detail: `Create ${input.calendarPlan.events.length} calendar follow-up event${input.calendarPlan.events.length === 1 ? "" : "s"}.`,
         key: "calendar-follow-up",
         kind: "calendar_follow_up",
@@ -381,14 +381,14 @@ function buildReleaseCommands(input: {
           timezone: input.calendarPlan.events[0]?.timezone ?? "",
         },
         status: "ready",
-      }),
+      },
     )
   }
 
   const followUpAction = input.workspaceActions.find((action) => action.kind === "follow_up_created")
   if (followUpAction) {
     commands.push(
-      command({
+      {
         detail: followUpAction.activityMessage,
         key: "workspace-follow-up",
         kind: "workspace_follow_up",
@@ -398,15 +398,11 @@ function buildReleaseCommands(input: {
           followUpDueAt: followUpAction.followUpDueAt ?? "",
         },
         status: "ready",
-      }),
+      },
     )
   }
 
   return commands
-}
-
-function command(commandInput: OfferReleaseCommand): OfferReleaseCommand {
-  return commandInput
 }
 
 function sentNote(releaseGate: QuoteReleaseGateDecision, reviewedBy: string | undefined, reviewNote: string | undefined): string {
