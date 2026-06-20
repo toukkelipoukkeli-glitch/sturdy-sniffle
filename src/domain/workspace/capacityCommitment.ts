@@ -74,10 +74,10 @@ export function buildCapacityCommitmentPlan(input: CapacityCommitmentInput): Cap
   const planningStartDate = utcDateOnly(generatedAt)
   const planningDates = Array.from({ length: planningDays }, (_, index) => addUtcDays(planningStartDate, index))
   const normalizedCapacity = normalizeCapacity(input.dailyCapacityMinutesByProcess)
-  const workMinutesById = new Map(input.items.map((item) => [item.id, positiveInteger(item.estimatedWorkMinutes, "estimatedWorkMinutes")]))
+  const workMinutesById = new Map(input.items.map((item) => [item.id, item.estimatedWorkMinutes]))
   const rankedItems = rankQuoteQueue(input.items, { now: generatedAt })
     .filter((item) => openStatuses.has(item.status))
-    .map((item) => ({ ...item, estimatedWorkMinutes: workMinutesById.get(item.id) ?? 0 }))
+    .map((item) => ({ ...item, estimatedWorkMinutes: positiveInteger(workMinutesById.get(item.id) ?? 0, "estimatedWorkMinutes") }))
   const processPlans = [...groupItemsByProcess(rankedItems).entries()]
     .map(([process, items]) => buildProcessCommitment(process, items, planningDates, normalizedCapacity[process] ?? 0))
     .sort((left, right) => statusWeight(right.status) - statusWeight(left.status) || compareLex(left.process, right.process))

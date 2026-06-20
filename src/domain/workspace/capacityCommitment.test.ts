@@ -146,7 +146,11 @@ describe("capacity commitment plan", () => {
   it("excludes sent and closed work from capacity demand", () => {
     const plan = buildCapacityCommitmentPlan({
       dailyCapacityMinutesByProcess: { cnc_milling: 100 },
-      items: items.map((item) => ({ ...item, status: item.id === "rfq-mill-a" ? "sent" : "won" })),
+      items: items.map((item, index) => ({
+        ...item,
+        estimatedWorkMinutes: index === 0 ? 0 : -1,
+        status: item.id === "rfq-mill-a" ? "sent" : "won",
+      })),
       now: "2026-06-20T08:00:00+03:00",
       planningDays: 2,
     })
