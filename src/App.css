@@ -1799,7 +1799,8 @@
 .offer-readiness-panel,
 .quote-release-panel,
 .offer-release-plan-panel,
-.offer-release-execution-panel {
+.offer-release-execution-panel,
+.offer-release-history-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
   display: grid;
@@ -1814,6 +1815,7 @@
 .quote-release-heading,
 .offer-release-plan-heading,
 .offer-release-execution-heading,
+.offer-release-history-heading,
 .offer-reply-heading,
 .offer-reply-card {
   align-items: center;
@@ -1828,6 +1830,7 @@
 .quote-release-heading > div,
 .offer-release-plan-heading > div,
 .offer-release-execution-heading > div,
+.offer-release-history-heading > div,
 .offer-reply-heading > div,
 .offer-reply-card > div {
   display: grid;
@@ -1841,6 +1844,7 @@
 .quote-release-heading strong,
 .offer-release-plan-heading strong,
 .offer-release-execution-heading strong,
+.offer-release-history-heading strong,
 .offer-reply-heading strong {
   font-size: 0.92rem;
 }
@@ -1989,6 +1993,24 @@
   color: oklch(0.42 0.11 35);
 }
 
+.offer-release-history-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.offer-release-history-status-ready {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.offer-release-history-status-review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
 .offer-export-summary,
 .quote-approval-summary,
 .quote-approval-checks,
@@ -2003,6 +2025,8 @@
 .offer-release-execution-summary,
 .offer-release-execution-command-list,
 .offer-release-execution-actions,
+.offer-release-history-summary,
+.offer-release-history-retries,
 .offer-reply-summary,
 .offer-reply-list {
   display: grid;
@@ -2031,6 +2055,10 @@
 
 .offer-release-execution-summary {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.offer-release-history-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .quote-approval-summary {
@@ -2471,6 +2499,8 @@
   .offer-release-command-list,
   .offer-release-execution-summary,
   .offer-release-execution-command-list,
+  .offer-release-history-summary,
+  .offer-release-history-retries,
   .offer-reply-summary {
     grid-template-columns: 1fr;
   }

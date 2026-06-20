@@ -113,6 +113,20 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
     /^\s*Fingerprint\s*[a-f0-9]{8}\s*$/i,
   )
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Resolve release blockers")
+  await expect(page.getByLabel("Offer release execution history")).toContainText("1 recorded run")
+  await expect(page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Runs" })).toContainText(
+    "1",
+  )
+  await expect(
+    page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Latest" }),
+  ).toContainText("blocked")
+  await expect(
+    page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Retries" }),
+  ).toContainText("0")
+  await expect(
+    page.getByLabel("Offer release execution history").locator(".metric", { hasText: "Actions" }),
+  ).toContainText("5")
+  await expect(page.getByLabel("Offer release execution history")).toContainText("No repeated release fingerprints.")
   await page.getByRole("button", { name: "Sync replies" }).click()
   await expect(page.getByLabel("Offer reply sync")).toContainText("2 matched reply signals")
   await expect(page.getByLabel("Offer reply sync")).toContainText("fallback")
