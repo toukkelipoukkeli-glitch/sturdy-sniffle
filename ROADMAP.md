@@ -55,9 +55,10 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, and provenance fields.
 - Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
 - Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, and process workload summaries.
-- Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, and follow-up task tracking.
-- CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, and metadata-only fallback behavior.
-- Visible workspace UI for quote queue priority, process workload, provider-run review, and CAD metadata review with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
+- Convex workspace persistence and authorization guard boundaries for RFQ status transitions, workspace activities, offer workflow reads/writes, and migration-safe single-tenant role defaults.
+- Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, revision history, and follow-up task tracking.
+- CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, metadata-only fallback behavior, deterministic attachment review states, and manufacturability flags.
+- Visible workspace UI for quote queue priority, process workload, operator actions, provider-run review, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
 - Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage.
 - Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals.
 - Provider-adapter AI layer with mock/local/provider boundaries plus provider run audit records.
@@ -65,6 +66,9 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 
 ## Next PR Slices
 
-- Implement Convex-backed workspace wiring for RFQ queue state transitions, quote scenario persistence, workload buckets, and follow-up activity creation.
-- Sync Gmail customer replies through the deterministic offer reply parser, with mock fallback fixtures for revoked auth and quota failures.
-- Add operator actions for quote state transitions, scenario saves, offer follow-up creation, and human review handoff notes in the workspace UI.
+- Wire the React workspace to the Convex persistence adapter for RFQ queue transitions, quote scenario saves, activity reads, and offer follow-up activity creation while preserving local fallback mode.
+- Add tenant-aware Convex schema fields and migration-safe defaults for customers, RFQs, quotes, offers, activities, and provider runs.
+- Add real connector-backed Gmail and calendar sync orchestration behind provider boundaries, with deterministic fixtures for revoked auth, quota, and offline fallback.
+- Expand offer generation with alternates, customer-ready revision summaries, PDF rendering/export verification, and send/follow-up lifecycle controls.
+- Surface CAD thumbnails/preview status and manufacturability flags in richer part-review workflows, keeping heavy geometry parsing behind adapters.
+- Add seeded demo data, audit-log views, loading/error states, accessibility checks, and responsive QA coverage for production hardening.
