@@ -1,4 +1,5 @@
 import type { QuoteEngineCurrencyCode, QuoteEngineResult } from "../quoting/registry"
+import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import { formatOfferMoney, type OfferDraft, type OfferLineItem, type OfferRevision } from "./offer"
 import {
   buildOfferDocument,
@@ -191,10 +192,7 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
   if (revisions.length === 0) {
     throw new Error("offer must include at least one revision")
   }
-  const latestRevision = revisions.at(-1)
-  if (!latestRevision) {
-    throw new Error("offer must include at least one revision")
-  }
+  const latestRevision = revisions.at(-1)!
 
   return {
     latestRevision: latestRevision.revision,
@@ -285,17 +283,4 @@ function fingerprint(value: string): string {
 
 function sanitizeFileComponent(value: string): string {
   return nonBlank(value, "fileName").replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "offer"
-}
-
-function optionalTrim(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
-}
-
-function nonBlank(value: string, key: string): string {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    throw new Error(`${key} is required`)
-  }
-  return trimmed
 }

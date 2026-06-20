@@ -1,4 +1,5 @@
 import { formatOfferMoney, type OfferDraft, type OfferLineItem } from "./offer"
+import { nonBlank, optionalTrim } from "../shared/stringValidation"
 
 export const OFFER_DOCUMENT_VERSION = "offer-document.v1"
 
@@ -279,19 +280,6 @@ function normalizeAlternate(alternate: OfferDocumentAlternate): OfferDocumentAlt
     recommendation: nonBlank(alternate.recommendation, "alternate.recommendation"),
     note: optionalTrim(alternate.note),
   }
-}
-
-function nonBlank(value: string, key: string): string {
-  const trimmed = value.trim()
-  if (!trimmed) {
-    throw new Error(`${key} is required`)
-  }
-  return trimmed
-}
-
-function optionalTrim(value: string | undefined): string | undefined {
-  const trimmed = value?.trim()
-  return trimmed ? trimmed : undefined
 }
 
 function humanizeKey(key: string): string {
