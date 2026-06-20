@@ -1,4 +1,5 @@
 import { parseRfqIntake, type ParsedRfqIntake, type RfqAttachmentInput, type RfqIntakeInput } from "../rfq/intake"
+import { normalizeIsoTimestamp } from "../shared/deterministic"
 
 export const GMAIL_RFQ_ADAPTER_VERSION = "gmail-rfq.v1"
 
@@ -305,11 +306,7 @@ function validateSearchRequest(request: GmailRfqSearchRequest) {
 }
 
 function parseRequiredDate(value: string, fieldName: string): string {
-  const timestamp = Date.parse(value)
-  if (Number.isNaN(timestamp)) {
-    throw new Error(`Invalid ${fieldName}: ${value}`)
-  }
-  return new Date(timestamp).toISOString()
+  return normalizeIsoTimestamp(value, fieldName)
 }
 
 function optionalTrim(value: string | undefined): string | undefined {
