@@ -159,6 +159,13 @@ describe("Gmail RFQ intake adapter", () => {
       }),
     ).toThrow("message.subject is required")
 
+    expect(() =>
+      buildRfqIntakeFromGmailMessage({
+        ...cncRfqMessage,
+        receivedAt: "06/15/2026 08:30:00",
+      }),
+    ).toThrow("message.receivedAt must be a valid ISO timestamp")
+
     await expect(createMockGmailRfqProvider().search({ query: "rfq", maxResults: 0 })).rejects.toThrow(
       "maxResults must be a positive integer",
     )
