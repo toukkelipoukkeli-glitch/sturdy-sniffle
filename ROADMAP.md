@@ -56,6 +56,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
 - Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, process workload summaries, capacity commitment planning, and quote approval policy gates.
 - Convex workspace persistence and authorization guard boundaries for RFQ status transitions, workspace activities, offer workflow reads/writes, and migration-safe single-tenant role defaults.
+- Seeded demo workspace import/export with validation, dry-run summaries, and deterministic import-plan fingerprints for pre-write comparison.
 - Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, revision history, and follow-up task tracking.
 - Deterministic offer release command planning, execution audit records, and Convex persistence for email drafts, lifecycle sent events, calendar follow-up events, workspace status changes, idempotent dry-runs, and manager-reviewed warning gates.
 - CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, metadata-only fallback behavior, deterministic attachment review states, and manufacturability flags.

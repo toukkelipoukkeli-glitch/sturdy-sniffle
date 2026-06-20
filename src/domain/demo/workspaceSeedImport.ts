@@ -131,6 +131,22 @@ export function buildDemoWorkspaceImportPlanFromJson(seedJson: string): DemoWork
   return buildDemoWorkspaceImportPlan(parseDemoWorkspaceSeedJson(seedJson))
 }
 
+export function fingerprintDemoWorkspaceImportPlan(plan: DemoWorkspaceImportPlan): string {
+  const stablePayload = stableJson({
+    generatedAt: plan.generatedAt,
+    importPlanVersion: plan.importPlanVersion,
+    operations: plan.operations,
+    seedVersion: plan.seedVersion,
+    tenantId: plan.tenantId,
+  })
+  let hash = 0x811c9dc5
+  for (let index = 0; index < stablePayload.length; index += 1) {
+    hash ^= stablePayload.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return `demo-import-${hash.toString(16).padStart(8, "0")}`
+}
+
 export function assertDemoWorkspaceSeed(value: unknown): DemoWorkspaceSeed {
   const issues = validateDemoWorkspaceSeed(value)
   if (issues.length > 0) {
@@ -400,6 +416,25 @@ function countOperations(operations: DemoWorkspaceImportOperation[]): Partial<Re
 
 function operationKey(kind: DemoWorkspaceImportOperationKind, id: string) {
   return `${kind}:${id}`
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, Object.keys(flattenKeys(value)).sort())
+}
+
+function flattenKeys(value: unknown, keys: Record<string, true> = {}): Record<string, true> {
+  if (Array.isArray(value)) {
+    value.forEach((item) => flattenKeys(item, keys))
+    return keys
+  }
+  if (!value || typeof value !== "object") {
+    return keys
+  }
+  Object.entries(value).forEach(([key, nested]) => {
+    keys[key] = true
+    flattenKeys(nested, keys)
+  })
+  return keys
 }
 
 function arrayIfPresent(value: unknown): unknown[] {

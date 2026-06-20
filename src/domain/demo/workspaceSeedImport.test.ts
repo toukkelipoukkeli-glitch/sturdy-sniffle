@@ -5,6 +5,7 @@ import {
   buildDemoWorkspaceImportPlan,
   buildDemoWorkspaceImportPlanFromJson,
   DemoWorkspaceSeedValidationError,
+  fingerprintDemoWorkspaceImportPlan,
   parseDemoWorkspaceSeedJson,
   summarizeDemoWorkspaceImportPlan,
   validateDemoWorkspaceSeed,
@@ -74,6 +75,21 @@ Operations: 11
 - upsert_offer: 1
 - append_activity: 2
 `)
+  })
+
+  it("fingerprints import plans deterministically for idempotent import audits", () => {
+    const plan = buildDemoWorkspaceImportPlan()
+    const samePlan = buildDemoWorkspaceImportPlanFromJson(serializeDemoWorkspaceSeed().seedJson)
+    const retaggedPlan = buildDemoWorkspaceImportPlan(
+      buildDemoWorkspaceSeed({
+        generatedAt: "2026-06-21T08:00:00.000Z",
+        tenantId: "tenant-demo",
+      }),
+    )
+
+    expect(fingerprintDemoWorkspaceImportPlan(plan)).toBe("demo-import-1eb52340")
+    expect(fingerprintDemoWorkspaceImportPlan(samePlan)).toBe(fingerprintDemoWorkspaceImportPlan(plan))
+    expect(fingerprintDemoWorkspaceImportPlan(retaggedPlan)).not.toBe(fingerprintDemoWorkspaceImportPlan(plan))
   })
 
   it("reports duplicate IDs and broken references with stable paths", () => {
