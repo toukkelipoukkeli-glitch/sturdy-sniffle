@@ -29,6 +29,7 @@
 .tag-row,
 .view-tabs,
 .section-title,
+.scenario-comparison-heading,
 .note-row,
 .flag,
 .priority-badge {
@@ -75,7 +76,11 @@
 .breakdown-row span,
 .lead-time,
 .calculator-version,
-.offer-number {
+.offer-number,
+.scenario-name span,
+.scenario-metric span,
+.scenario-metric small,
+.scenario-score span {
   color: oklch(0.43 0.025 250);
 }
 
@@ -423,6 +428,120 @@
   margin-top: 12px;
 }
 
+.scenario-comparison {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.scenario-comparison-heading {
+  align-items: flex-start;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.scenario-comparison-heading > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.scenario-comparison-heading strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.recommended-pill {
+  background: oklch(0.94 0.035 155);
+  border-radius: 999px;
+  color: oklch(0.31 0.08 155);
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.scenario-list {
+  display: grid;
+  gap: 8px;
+}
+
+.scenario-row {
+  align-items: center;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(150px, 1.2fr) minmax(105px, 0.7fr) minmax(86px, 0.55fr) 56px;
+  min-height: 72px;
+  padding: 10px;
+}
+
+.scenario-row[data-recommended="true"] {
+  background: oklch(0.965 0.028 155);
+  border-color: oklch(0.72 0.09 155);
+}
+
+.scenario-rank {
+  align-items: center;
+  background: white;
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.scenario-name,
+.scenario-metric,
+.scenario-score {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.scenario-name strong {
+  font-size: 0.88rem;
+}
+
+.scenario-name span {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.scenario-metric span,
+.scenario-score span {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scenario-metric strong {
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.scenario-metric small {
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.scenario-score {
+  justify-items: end;
+}
+
+.scenario-score strong {
+  font-size: 1rem;
+}
+
 .part-preview {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -743,6 +862,22 @@
   .breakdown-list,
   .part-preview {
     grid-template-columns: 1fr;
+  }
+
+  .scenario-comparison-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .scenario-row {
+    align-items: stretch;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .scenario-metric,
+  .scenario-score {
+    grid-column: 2;
+    justify-items: start;
   }
 
   .view-tabs {
