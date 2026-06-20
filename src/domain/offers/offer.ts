@@ -3,7 +3,7 @@ import type { QuoteEngineAssumption, QuoteEngineCurrencyCode, QuoteEngineResult,
 
 export const OFFER_BUILDER_VERSION = "offer.v1"
 
-export type OfferStatus = "draft" | "sent" | "accepted" | "declined"
+export type OfferStatus = "draft" | "sent" | "accepted" | "declined" | "superseded"
 
 export interface OfferCustomer {
   name: string

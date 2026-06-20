@@ -2,6 +2,7 @@ import { v, type GenericId } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { buildOfferStatusTransitionPatch } from "./workflowRules";
 
 const processKey = v.union(
   v.literal("cnc_milling"),
@@ -243,6 +244,8 @@ export const listOfferActivities = query({
   },
   handler: async (ctx, args) => {
     await requireAuthenticatedActor(ctx);
+    // FactoryBid OS currently runs as a single-tenant factory workspace:
+    // any authenticated operator can access offer workflow records.
     await requireDocument(ctx, args.offerId, "offerId");
     return await ctx.db
       .query("activities")
@@ -260,16 +263,16 @@ export const transitionOfferStatus = mutation({
   },
   handler: async (ctx, args) => {
     const actorName = await requireAuthenticatedActor(ctx);
+    // FactoryBid OS currently runs as a single-tenant factory workspace:
+    // any authenticated operator can transition offer workflow records.
     const offer = await requireDocument<OfferDocument>(ctx, args.offerId, "offerId");
-    assertOfferStatusTransition(offer.status, args.status);
     const now = Date.now();
-    const patch: { status: OfferStatus; updatedAt: number; sentAt?: number } = {
-      status: args.status,
-      updatedAt: now,
-    };
-    if (args.status === "sent" && !offer.sentAt) {
-      patch.sentAt = now;
-    }
+    const patch = buildOfferStatusTransitionPatch({
+      currentStatus: offer.status,
+      nextStatus: args.status,
+      now,
+      sentAt: offer.sentAt,
+    });
     await ctx.db.patch(args.offerId, patch);
     const transitionMessage = `Moved offer ${offer.offerNumber} from ${offer.status} to ${args.status}.`;
     const note = optionalNonBlank(args.message);
@@ -326,7 +329,6 @@ export const createOfferFollowUpActivity = mutation({
 type RfqDocument = Pick<Doc<"rfqs">, "status">;
 type RfqStatus = RfqDocument["status"];
 type OfferDocument = Pick<Doc<"offers">, "offerNumber" | "quoteId" | "rfqId" | "sentAt" | "status">;
-type OfferStatus = OfferDocument["status"];
 
 async function requireDocument<T = unknown>(ctx: { db: { get: (id: GenericId<string>) => Promise<T | null> } }, id: GenericId<string>, key: string) {
   const document = await ctx.db.get(id);
@@ -352,23 +354,6 @@ function assertRfqStatusTransition(fromStatus: RfqStatus, toStatus: RfqStatus) {
   }
   if (!allowedRfqStatusTransitions[fromStatus].includes(toStatus)) {
     throw new Error(`cannot transition RFQ from ${fromStatus} to ${toStatus}`);
-  }
-}
-
-const allowedOfferStatusTransitions: Record<OfferStatus, OfferStatus[]> = {
-  draft: ["sent", "superseded"],
-  sent: ["accepted", "declined", "superseded"],
-  accepted: [],
-  declined: [],
-  superseded: [],
-};
-
-function assertOfferStatusTransition(fromStatus: OfferStatus, toStatus: OfferStatus) {
-  if (fromStatus === toStatus) {
-    throw new Error("status must change");
-  }
-  if (!allowedOfferStatusTransitions[fromStatus].includes(toStatus)) {
-    throw new Error(`cannot transition offer from ${fromStatus} to ${toStatus}`);
   }
 }
 
