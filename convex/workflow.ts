@@ -545,9 +545,29 @@ export const listProviderRuns = query({
     const actor = await requireFactoryBidActor(ctx, "workspace:read");
     const limit = boundedLimit(args.limit);
     const status = args.status;
-    const runs = status
-      ? await ctx.db.query("providerRuns").withIndex("by_status", (q) => q.eq("status", status)).order("desc").take(limit)
-      : await ctx.db.query("providerRuns").order("desc").take(limit);
+    const tenantRuns = status
+      ? await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_status_created_at", (q) => q.eq("tenantId", actor.tenantId).eq("status", status))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_created_at", (q) => q.eq("tenantId", actor.tenantId))
+          .order("desc")
+          .take(limit);
+    const legacyRuns = status
+      ? await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_status_created_at", (q) => q.eq("tenantId", undefined).eq("status", status))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("providerRuns")
+          .withIndex("by_tenant_created_at", (q) => q.eq("tenantId", undefined))
+          .order("desc")
+          .take(limit);
+    const runs = mergeProviderRunsByCreatedAt(tenantRuns, legacyRuns).slice(0, limit);
 
     return runs.filter((run) => belongsToActorTenant(run, actor)).map(compactProviderRun);
   },
@@ -1265,6 +1285,16 @@ function compactProviderRun(run: ProviderRunDocument) {
     completedAt: run.completedAt,
     createdAt: run.createdAt,
   };
+}
+
+function mergeProviderRunsByCreatedAt(...groups: ProviderRunDocument[][]): ProviderRunDocument[] {
+  const byId = new Map<string, ProviderRunDocument>();
+  for (const run of groups.flat()) {
+    byId.set(String(run._id), run);
+  }
+  return [...byId.values()].sort(
+    (left, right) => right.createdAt - left.createdAt || String(right._id).localeCompare(String(left._id)),
+  );
 }
 
 function mapToRecord<T extends string>(map: Map<string, GenericId<T>>): Record<string, string> {
