@@ -5,6 +5,7 @@ import type { CadMetadataResult } from "../integrations/cadMetadata"
 export const PART_PREVIEW_MODEL_VERSION = "part-preview.v1"
 
 export type PartPreviewMode = "cad" | "drawing" | "photo" | "spreadsheet" | "metadata"
+export type PartPreviewReviewState = "ready" | "metadata_only" | "needs_review" | "unsupported"
 
 export interface PartMeasurementOverlay {
   key: string
@@ -20,6 +21,8 @@ export interface PartPreviewAttachment {
   score: number
   modes: PartPreviewMode[]
   primary: boolean
+  reviewReasons: string[]
+  reviewState: PartPreviewReviewState
 }
 
 export interface PartPreviewModel {
@@ -32,6 +35,7 @@ export interface PartPreviewModel {
   attachments: PartPreviewAttachment[]
   measurementOverlays: PartMeasurementOverlay[]
   cadMetadata: PartPreviewCadMetadata[]
+  manufacturabilityFlags: string[]
   warnings: string[]
   metadata: {
     process?: string
@@ -47,6 +51,8 @@ export interface BuildPartPreviewModelInput {
   cadMetadata?: CadMetadataResult[]
   subject?: string
 }
+
+type RankedPartPreviewAttachment = Omit<PartPreviewAttachment, "primary" | "reviewReasons" | "reviewState">
 
 export interface PartPreviewCadMetadata {
   fileName: string
@@ -98,6 +104,8 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     },
   })
   const warnings = buildWarnings(primaryMode, rankedAttachments, measurementOverlays, cadMetadata)
+  const cadMetadataByFileName = new Map(cadMetadata.map((metadata) => [normalizeToken(metadata.fileName), metadata]))
+  const manufacturabilityFlags = buildManufacturabilityFlags(primaryMode, cadMetadata, measurementOverlays)
 
   return {
     modelVersion: PART_PREVIEW_MODEL_VERSION,
@@ -109,9 +117,11 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     attachments: rankedAttachments.map((attachment) => ({
       ...attachment,
       primary: attachment.fileName === primaryAttachment?.fileName,
+      ...reviewStateForAttachment(attachment, cadMetadataByFileName.get(normalizeToken(attachment.fileName))),
     })),
     measurementOverlays,
     cadMetadata: cadMetadata.map(toPartPreviewCadMetadata),
+    manufacturabilityFlags,
     warnings,
     metadata: {
       process: input.part.process,
@@ -119,6 +129,34 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
       quantity: input.part.quantity,
       subject: optionalTrim(input.subject),
     },
+  }
+}
+
+function reviewStateForAttachment(
+  attachment: Omit<PartPreviewAttachment, "primary" | "reviewReasons" | "reviewState">,
+  metadata: CadMetadataResult | undefined,
+): Pick<PartPreviewAttachment, "reviewReasons" | "reviewState"> {
+  if (attachment.modes[0] === "metadata") {
+    return {
+      reviewReasons: ["Attachment cannot be previewed directly."],
+      reviewState: "unsupported",
+    }
+  }
+  if (metadata?.metadataOnly || metadata?.status === "fallback") {
+    return {
+      reviewReasons: [`${attachment.fileName} only has metadata fallback coverage.`],
+      reviewState: "metadata_only",
+    }
+  }
+  if (metadata && metadata.warnings.length > 0) {
+    return {
+      reviewReasons: metadata.warnings,
+      reviewState: "needs_review",
+    }
+  }
+  return {
+    reviewReasons: [],
+    reviewState: "ready",
   }
 }
 
@@ -154,7 +192,7 @@ function rankAttachment(
   attachment: RfqAttachmentDraft,
   partNumber: string,
   attachmentNames: Set<string>,
-): Omit<PartPreviewAttachment, "primary"> {
+): RankedPartPreviewAttachment {
   const modes = modesForAttachment(attachment.kind)
   const score =
     modePriority[modes[0]] +
@@ -187,7 +225,7 @@ function modesForAttachment(kind: RfqAttachmentKind): PartPreviewMode[] {
   }
 }
 
-function collectAvailableModes(attachments: Array<Omit<PartPreviewAttachment, "primary">>): PartPreviewMode[] {
+function collectAvailableModes(attachments: RankedPartPreviewAttachment[]): PartPreviewMode[] {
   const modes = new Set<PartPreviewMode>()
   for (const attachment of attachments) {
     for (const mode of attachment.modes) {
@@ -222,7 +260,7 @@ function overlay(key: string, label: string, valueMm: number | undefined): PartM
 
 function buildWarnings(
   primaryMode: PartPreviewMode,
-  attachments: Array<Omit<PartPreviewAttachment, "primary">>,
+  attachments: RankedPartPreviewAttachment[],
   measurementOverlays: PartMeasurementOverlay[],
   cadMetadata: CadMetadataResult[],
 ): string[] {
@@ -246,6 +284,29 @@ function buildWarnings(
   return [...new Set(warnings)]
 }
 
+function buildManufacturabilityFlags(
+  primaryMode: PartPreviewMode,
+  cadMetadata: CadMetadataResult[],
+  measurementOverlays: PartMeasurementOverlay[],
+): string[] {
+  const flags = new Set<string>()
+  if (primaryMode !== "cad") {
+    flags.add("cad_geometry_missing")
+  }
+  if (measurementOverlays.length === 0) {
+    flags.add("dimensions_missing")
+  }
+  for (const metadata of cadMetadata) {
+    if (metadata.metadataOnly) {
+      flags.add("metadata_only_review")
+    }
+    for (const warning of metadata.warnings) {
+      flags.add(normalizeFlag(warning))
+    }
+  }
+  return [...flags].sort(compareLex)
+}
+
 function toPartPreviewCadMetadata(metadata: CadMetadataResult): PartPreviewCadMetadata {
   return {
     fileName: metadata.fileName,
@@ -261,6 +322,11 @@ function toPartPreviewCadMetadata(metadata: CadMetadataResult): PartPreviewCadMe
 
 function normalizeToken(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
+function normalizeFlag(value: string): string {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+  return normalized || "review_required"
 }
 
 function optionalTrim(value: string | undefined): string | undefined {

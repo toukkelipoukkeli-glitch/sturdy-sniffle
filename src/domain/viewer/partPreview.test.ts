@@ -16,6 +16,7 @@ describe("part preview model", () => {
       primaryMode: "cad",
       primaryAttachmentName: "FB-204-A.step",
       availableModes: ["cad", "drawing", "metadata"],
+      manufacturabilityFlags: [],
       metadata: {
         process: "cnc_milling",
         materialText: "Aluminum 6082",
@@ -34,11 +35,13 @@ describe("part preview model", () => {
         fileName: "FB-204-A.step",
         kind: "cad",
         primary: true,
+        reviewState: "ready",
       },
       {
         fileName: "FB-204-A.pdf",
         kind: "drawing",
         primary: false,
+        reviewState: "ready",
       },
     ])
   })
@@ -76,6 +79,7 @@ describe("part preview model", () => {
       { key: "thickness", label: "Thickness", valueMm: 2 },
     ])
     expect(model.warnings).toEqual(["CAD geometry is unavailable; using drawing preview."])
+    expect(model.manufacturabilityFlags).toEqual(["cad_geometry_missing"])
   })
 
   it("uses parsed CAD metadata for measurement overlays and adapter warnings", () => {
@@ -135,6 +139,12 @@ describe("part preview model", () => {
         warnings: ["Check bend relief manually."],
       },
     ])
+    expect(model.attachments[0]).toMatchObject({
+      fileName: "LASER-42.dxf",
+      reviewReasons: ["Check bend relief manually."],
+      reviewState: "needs_review",
+    })
+    expect(model.manufacturabilityFlags).toEqual(["cad_geometry_missing", "check_bend_relief_manually"])
     expect(model.warnings).toContain("Check bend relief manually.")
   })
 
@@ -213,6 +223,12 @@ describe("part preview model", () => {
     expect(model.primaryMode).toBe("metadata")
     expect(model.primaryAttachmentName).toBeUndefined()
     expect(model.availableModes).toEqual(["metadata"])
+    expect(model.attachments[0]).toMatchObject({
+      fileName: "notes.txt",
+      reviewReasons: ["Attachment cannot be previewed directly."],
+      reviewState: "unsupported",
+    })
+    expect(model.manufacturabilityFlags).toEqual(["cad_geometry_missing", "dimensions_missing"])
     expect(model.warnings).toEqual([
       "No previewable attachment matched this part; using metadata-only preview.",
       "No extracted dimensions available for measurement overlays.",
