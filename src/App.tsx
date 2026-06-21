@@ -119,6 +119,12 @@ import {
   type OutsideServiceSupplierRule,
 } from "./domain/workspace/outsideServicePlanner"
 import {
+  buildCalendarFollowUpStatus,
+  type CalendarFollowUpStatus,
+  type CalendarFollowUpStatusFilter,
+  type CalendarFollowUpStatusTask,
+} from "./domain/workspace/calendarFollowUpStatus"
+import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
@@ -252,6 +258,7 @@ const connectorLinkDrilldownFilters: ConnectorLinkDrilldownFilter[] = [
   "attention",
   "activity",
 ]
+const calendarFollowUpStatusFilters: CalendarFollowUpStatusFilter[] = ["all", "open", "completed", "review"]
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -1222,6 +1229,8 @@ function App() {
           {activeView === "triage" ? (
             <TriageView
               actions={selectedActions}
+              followUpNow={queueNow}
+              followUpReplySync={offerReplySync}
               handoffDraft={handoffDraft}
               item={selectedItem}
               onAddHandoffNote={addHandoffNote}
@@ -1650,6 +1659,8 @@ function providerHistoryFilterLabel(
 
 function TriageView({
   actions,
+  followUpNow,
+  followUpReplySync,
   handoffDraft,
   item,
   onAddHandoffNote,
@@ -1661,6 +1672,8 @@ function TriageView({
   status,
 }: {
   actions: WorkspaceActionRecord[]
+  followUpNow: string
+  followUpReplySync?: GmailOfferReplySyncResult
   handoffDraft: string
   item: QuoteWorkItem
   onAddHandoffNote: () => void
@@ -1716,6 +1729,13 @@ function TriageView({
           </Button>
         </div>
       </section>
+      <CalendarFollowUpStatusPanel
+        actions={actions}
+        now={followUpNow}
+        offerId={offerNumberFor(item).toLowerCase()}
+        replySync={followUpReplySync}
+        rfqId={item.id}
+      />
       <div className="note-list">
         {item.notes.map((note) => (
           <div className="note-row" key={note}>
@@ -1770,6 +1790,150 @@ function RfqIntakeReadinessPanel({ readiness }: { readiness: RfqIntakeReadinessR
       ) : null}
     </section>
   )
+}
+
+function CalendarFollowUpStatusPanel({
+  actions,
+  now,
+  offerId,
+  replySync,
+  rfqId,
+}: {
+  actions: WorkspaceActionRecord[]
+  now: string
+  offerId: string
+  replySync?: GmailOfferReplySyncResult
+  rfqId: string
+}) {
+  const [filter, setFilter] = useState<CalendarFollowUpStatusFilter>("all")
+  const status = useMemo(
+    () => buildCalendarFollowUpStatus({ actions, filter, now, offerId, replySync, rfqId }),
+    [actions, filter, now, offerId, replySync, rfqId],
+  )
+
+  return (
+    <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
+      <div className="calendar-follow-up-heading">
+        <div>
+          <span className="eyebrow">
+            <CalendarDays aria-hidden="true" />
+            Calendar follow-up
+          </span>
+          <strong>{calendarFollowUpStatusLabel(status)}</strong>
+        </div>
+        <span className={`calendar-follow-up-chip calendar-follow-up-chip-${calendarFollowUpStatusTone(status)}`}>
+          {status.summary.taskCount === 0 ? "pending" : `${status.summary.taskCount} task${status.summary.taskCount === 1 ? "" : "s"}`}
+        </span>
+      </div>
+      <div className="calendar-follow-up-summary">
+        <Metric label="Open" value={String(status.summary.openCount)} />
+        <Metric label="Completed" value={String(status.summary.completedCount)} />
+        <Metric label="Review" value={String(status.summary.reviewCount + status.summary.cancelledCount)} />
+      </div>
+      <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
+        {calendarFollowUpStatusFilters.map((statusFilter) => (
+          <Button
+            aria-pressed={filter === statusFilter}
+            className={filter === statusFilter ? "calendar-follow-up-filter-active" : undefined}
+            key={statusFilter}
+            onClick={() => setFilter(statusFilter)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {calendarFollowUpFilterLabel(statusFilter, status)}
+          </Button>
+        ))}
+      </div>
+      <div className="calendar-follow-up-list">
+        {status.tasks.length > 0 ? (
+          status.tasks.map((task) => <CalendarFollowUpStatusRow key={task.key} task={task} />)
+        ) : (
+          <div className="provider-history-empty" role="status">
+            No calendar follow-ups match {humanizeKey(filter)}.
+          </div>
+        )}
+      </div>
+      {status.warnings.length > 0 ? (
+        <div className="provider-warning-list">
+          {status.warnings.slice(0, 2).map((warning) => (
+            <div className="flag" key={warning}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function CalendarFollowUpStatusRow({ task }: { task: CalendarFollowUpStatusTask }) {
+  return (
+    <article className="calendar-follow-up-row" data-status={task.status}>
+      <span className="integration-source-icon" aria-hidden="true">
+        <CalendarFollowUpStatusIcon status={task.status} />
+      </span>
+      <div>
+        <strong>{calendarFollowUpTaskLabel(task)}</strong>
+        <span>{task.detail}</span>
+      </div>
+      <span className="integration-source-status">{humanizeKey(task.status)}</span>
+    </article>
+  )
+}
+
+function CalendarFollowUpStatusIcon({ status }: { status: CalendarFollowUpStatusTask["status"] }) {
+  if (status === "completed") {
+    return <CheckCircle2 aria-hidden="true" />
+  }
+  if (status === "review" || status === "cancelled") {
+    return <AlertTriangle aria-hidden="true" />
+  }
+  return <Clock3 aria-hidden="true" />
+}
+
+function calendarFollowUpStatusLabel(status: CalendarFollowUpStatus) {
+  if (status.summary.taskCount === 0) {
+    return "No follow-up scheduled"
+  }
+  if (status.summary.reviewCount + status.summary.cancelledCount > 0) {
+    return "Review follow-up"
+  }
+  if (status.summary.openCount > 0) {
+    return "Follow-up scheduled"
+  }
+  return "Follow-up completed"
+}
+
+function calendarFollowUpStatusTone(status: CalendarFollowUpStatus) {
+  if (status.summary.reviewCount + status.summary.cancelledCount > 0) {
+    return "review"
+  }
+  if (status.summary.completedCount > 0 && status.summary.openCount === 0) {
+    return "completed"
+  }
+  return "open"
+}
+
+function calendarFollowUpFilterLabel(filter: CalendarFollowUpStatusFilter, status: CalendarFollowUpStatus): string {
+  switch (filter) {
+    case "all":
+      return `All ${status.summary.taskCount}`
+    case "open":
+      return `Open ${status.summary.openCount}`
+    case "completed":
+      return `Completed ${status.summary.completedCount}`
+    case "review":
+      return `Review ${status.summary.reviewCount + status.summary.cancelledCount}`
+  }
+}
+
+function calendarFollowUpTaskLabel(task: CalendarFollowUpStatusTask) {
+  if (task.status === "completed") {
+    return `Completed ${formatShortDateTime(task.completedAt ?? task.dueAt)}`
+  }
+  return `Due ${formatShortDateTime(task.dueAt)}`
 }
 
 function RfqReadinessCheckIcon({ status }: { status: RfqIntakeReadinessCheckStatus }) {
