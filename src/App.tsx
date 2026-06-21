@@ -77,6 +77,10 @@ import {
   type OfferReplyStateSummary,
 } from "./domain/offers/offerReplyState"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
+import {
+  buildProviderRunHistorySummary,
+  type ProviderRunHistoryFilter,
+} from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -226,6 +230,14 @@ const emptyConnectorSnapshot: ConnectorSyncPersistenceSnapshot = {
   payloads: [],
   syncCount: 0,
 }
+const providerRunHistoryFilters: ProviderRunHistoryFilter[] = [
+  "all",
+  "warnings",
+  "fallbacks",
+  "failed",
+  "skipped",
+  "succeeded",
+]
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -1400,10 +1412,16 @@ function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) 
 }
 
 function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
+  const [filter, setFilter] = useState<ProviderRunHistoryFilter>("all")
   const latestAudit = audits[0]
   if (!latestAudit) {
     return null
   }
+  const history = buildProviderRunHistorySummary(audits, { filter })
+  const auditByRunKey = new Map(audits.map((audit) => [audit.runKey, audit]))
+  const visibleAudits = history.events
+    .map((event) => auditByRunKey.get(event.runKey))
+    .filter((audit): audit is ProviderRunAudit => audit !== undefined)
 
   return (
     <section className="provider-review" aria-label="Provider review">
@@ -1414,45 +1432,92 @@ function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
         </span>
         <span className={`provider-status provider-status-${latestAudit.status}`}>{latestAudit.status}</span>
       </div>
-      <div className="provider-run-list">
-        {audits.map((audit) => (
-          <article className="provider-run-card" key={audit.runKey}>
-            <div className="provider-run-topline">
-              <strong>{humanizeKey(audit.purpose)}</strong>
-              <span>{formatProvider(audit.provider)}</span>
-            </div>
-            <p className="provider-excerpt">{audit.promptExcerpt}</p>
-            {audit.outputSummary ? <p className="provider-output">{audit.outputSummary}</p> : null}
-            {audit.errorMessage ? <p className="provider-error">{audit.errorMessage}</p> : null}
-            <div className="provider-meta-grid">
-              <Metric label="Adapter" value={audit.adapterVersion} />
-              <Metric label="Duration" value={`${audit.durationMs} ms`} />
-              <Metric label="Hash" value={audit.inputHash} />
-            </div>
-            {Object.keys(audit.metadata).length > 0 ? (
-              <div className="provider-metadata" aria-label="Provider metadata">
-                {Object.entries(audit.metadata).map(([key, value]) => (
-                  <span key={key}>
-                    {humanizeKey(key)}: {String(value)}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            {audit.warnings.length > 0 ? (
-              <div className="provider-warning-list">
-                {audit.warnings.map((warning) => (
-                  <div className="flag" key={warning}>
-                    <AlertTriangle aria-hidden="true" />
-                    <span>{warning}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </article>
+      <div className="provider-history-summary" aria-label="Provider run history summary">
+        <Metric label="Runs" value={String(history.totalRuns)} />
+        <Metric label="Warnings" value={String(history.warningCount)} />
+        <Metric label="Fallbacks" value={String(history.fallbackCount)} />
+        <Metric label="Failed" value={String(history.failedCount)} />
+      </div>
+      <div className="provider-history-filters" aria-label="Provider run history filters">
+        {providerRunHistoryFilters.map((historyFilter) => (
+          <Button
+            aria-pressed={filter === historyFilter}
+            className={filter === historyFilter ? "provider-history-filter-active" : undefined}
+            key={historyFilter}
+            onClick={() => setFilter(historyFilter)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {providerHistoryFilterLabel(historyFilter, history)}
+          </Button>
         ))}
+      </div>
+      <div className="provider-run-list">
+        {visibleAudits.length > 0 ? (
+          visibleAudits.map((audit) => (
+            <article className="provider-run-card" key={audit.runKey}>
+              <div className="provider-run-topline">
+                <strong>{humanizeKey(audit.purpose)}</strong>
+                <span>{formatProvider(audit.provider)}</span>
+              </div>
+              <p className="provider-excerpt">{audit.promptExcerpt}</p>
+              {audit.outputSummary ? <p className="provider-output">{audit.outputSummary}</p> : null}
+              {audit.errorMessage ? <p className="provider-error">{audit.errorMessage}</p> : null}
+              <div className="provider-meta-grid">
+                <Metric label="Adapter" value={audit.adapterVersion} />
+                <Metric label="Duration" value={`${audit.durationMs} ms`} />
+                <Metric label="Hash" value={audit.inputHash} />
+              </div>
+              {Object.keys(audit.metadata).length > 0 ? (
+                <div className="provider-metadata" aria-label="Provider metadata">
+                  {Object.entries(audit.metadata).map(([key, value]) => (
+                    <span key={key}>
+                      {humanizeKey(key)}: {String(value)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {audit.warnings.length > 0 ? (
+                <div className="provider-warning-list">
+                  {audit.warnings.map((warning) => (
+                    <div className="flag" key={warning}>
+                      <AlertTriangle aria-hidden="true" />
+                      <span>{warning}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </article>
+          ))
+        ) : (
+          <div className="provider-history-empty" role="status">
+            No provider runs match {humanizeKey(filter)}.
+          </div>
+        )}
       </div>
     </section>
   )
+}
+
+function providerHistoryFilterLabel(
+  filter: ProviderRunHistoryFilter,
+  history: ReturnType<typeof buildProviderRunHistorySummary>,
+): string {
+  switch (filter) {
+    case "all":
+      return `All ${history.totalRuns}`
+    case "failed":
+      return `Failed ${history.failedCount}`
+    case "fallbacks":
+      return `Fallbacks ${history.fallbackCount}`
+    case "skipped":
+      return `Skipped ${history.skippedCount}`
+    case "succeeded":
+      return `Succeeded ${history.succeededCount}`
+    case "warnings":
+      return `Warnings ${history.warningCount}`
+  }
 }
 
 function TriageView({
