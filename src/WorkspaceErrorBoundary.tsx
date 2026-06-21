@@ -3,6 +3,8 @@ import { AlertTriangle, RotateCcw } from "lucide-react"
 
 import { Button } from "./components/ui/button"
 
+const operatorSafeErrorMessage = "Workspace render failed. Please reload and contact support if the issue persists."
+
 type WorkspaceErrorBoundaryProps = {
   children: ReactNode
 }
@@ -52,7 +54,7 @@ class WorkspaceErrorBoundary extends Component<WorkspaceErrorBoundaryProps, Work
               <dl className="workspace-error-details">
                 <div>
                   <dt>Error</dt>
-                  <dd>{error.message || "Unknown workspace error"}</dd>
+                  <dd>{operatorSafeErrorMessage}</dd>
                 </div>
                 {componentTrace ? (
                   <div>

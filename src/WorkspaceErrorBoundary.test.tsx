@@ -33,7 +33,8 @@ describe("WorkspaceErrorBoundary", () => {
 
     expect(screen.getByRole("alert", { name: "Workspace error" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "FactoryBid OS needs a refresh" })).toBeInTheDocument()
-    expect(screen.getByText("Fixture quote panel failed")).toBeInTheDocument()
+    expect(screen.getByText("Workspace render failed. Please reload and contact support if the issue persists.")).toBeInTheDocument()
+    expect(screen.queryByText("Fixture quote panel failed")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Reload workspace" })).toBeInTheDocument()
   })
 
