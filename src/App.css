@@ -1175,6 +1175,128 @@
   padding-top: 14px;
 }
 
+.calendar-follow-up-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.calendar-follow-up-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.calendar-follow-up-heading > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.calendar-follow-up-heading strong {
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-chip {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.calendar-follow-up-chip-open {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.calendar-follow-up-chip-completed {
+  background: oklch(0.93 0.045 188);
+  color: oklch(0.28 0.075 188);
+}
+
+.calendar-follow-up-chip-review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.calendar-follow-up-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.calendar-follow-up-filters {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.calendar-follow-up-filters .inline-flex {
+  justify-content: center;
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: normal;
+}
+
+.calendar-follow-up-filter-active {
+  background: oklch(0.23 0.045 250);
+  border-color: oklch(0.23 0.045 250);
+  color: white;
+}
+
+.calendar-follow-up-list {
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-follow-up-row {
+  align-items: start;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 9px;
+}
+
+.calendar-follow-up-row[data-status="completed"] {
+  background: oklch(0.97 0.026 155);
+  border-color: oklch(0.84 0.05 155);
+}
+
+.calendar-follow-up-row[data-status="review"],
+.calendar-follow-up-row[data-status="cancelled"] {
+  background: oklch(0.98 0.018 85);
+  border-color: oklch(0.84 0.07 82);
+}
+
+.calendar-follow-up-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.calendar-follow-up-row strong {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-row div span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .rfq-readiness-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -2821,6 +2943,9 @@
   .outside-service-row,
   .operator-action-grid,
   .handoff-editor,
+  .calendar-follow-up-summary,
+  .calendar-follow-up-filters,
+  .calendar-follow-up-row,
   .rfq-readiness-summary,
   .rfq-readiness-checks,
   .offer-export-summary,

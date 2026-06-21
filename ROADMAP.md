@@ -60,7 +60,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 - Offer builder domain model with plain-text offer export, PDF-ready offer document content, export fixtures/snapshots, lifecycle timeline, revision history, and follow-up task tracking.
 - Deterministic offer release command planning, execution audit records, run-level fingerprints, history summaries, and Convex persistence adapters for email drafts, lifecycle sent/status events, calendar follow-up events, workspace status changes, idempotent dry-runs, manager-reviewed warning gates, and offer follow-up activity payloads.
 - CAD-like part preview model with attachment ranking, preview modes, extracted dimensions, CAD metadata adapter boundaries for STEP/DXF/PDF, metadata-only fallback behavior, deterministic attachment review states, and manufacturability flags.
-- Visible workspace UI for quote queue priority, process workload, capacity commitment, operator actions, integration health, provider-run review/history filters, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
+- Visible workspace UI for quote queue priority, process workload, capacity commitment, operator actions, integration health, provider-run review/history filters, connector link drill-downs, calendar follow-up status controls, CAD metadata review, attachment review state, and manufacturability flags with documented Browser/Playwright fallback QA when Computer Use permissions are blocked.
 - Calendar integration plans for RFQ due holds/reminders and offer follow-up scheduling through provider/fallback adapters, including export fixture coverage and persisted connector link lookups.
 - Gmail integration for RFQ intake and customer reply ingestion that turns accepted, declined, acknowledgement, and follow-up completion replies into deterministic lifecycle signals, plus tenant-safe Convex connector sync persistence with local fallback routing.
 - Provider-adapter AI layer with mock/local/provider boundaries plus Convex-backed provider run audit records and query APIs.
@@ -69,7 +69,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 ## Next PR Slices
 
 - Expand offer generation with deterministic alternates, customer-ready revision summaries, PDF rendering/export verification, and send/follow-up lifecycle controls.
-- Add persisted connector sync/link drill-downs and calendar follow-up status controls in the React workspace.
+- Add richer persisted connector and calendar drill-downs for cross-RFQ history, stale-link recovery, and follow-up rescheduling controls.
 - Add richer part-review workflows for CAD thumbnails, preview status, dimensional checks, manufacturability flags, and operator overrides while keeping heavy geometry parsing behind adapters.
 - Add production hardening for seeded demo import/export, audit-log views, loading/error states, accessibility checks, and responsive QA coverage.
 - Deepen Convex cloud readiness with tenant-safe activity/link filters, queue/workload views that mirror the local workspace runtime, and UI wiring for persisted offer release history/status/follow-up reads.
