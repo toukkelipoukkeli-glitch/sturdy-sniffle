@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 import {
   AlertTriangle,
   Calculator,
@@ -185,6 +185,18 @@ interface RfqFieldPatch {
   notesText?: string
 }
 
+interface WorkspaceLocalState {
+  actionsById: Record<string, WorkspaceActionRecord[]>
+  activeView: WorkspaceView
+  editsById: Record<string, QuoteEditState>
+  offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  selectedId: string
+  statusById: Record<string, QuoteQueueStatus>
+  version: 1
+  workItems: QuoteWorkItem[]
+}
+
+const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const demoToday = "2026-06-20"
 const demoNow = "2026-06-20T09:00:00+03:00"
 const capacityPlanningDays = 5
@@ -667,32 +679,52 @@ function formatFileSize(bytes: number): string {
 }
 
 function App() {
-  const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(initialWorkItems)
-  const [selectedId, setSelectedId] = useState(initialWorkItems[0].id)
-  const [activeView, setActiveView] = useState<WorkspaceView>("costing")
+  const [workspaceLocalState] = useState(() => readWorkspaceLocalState())
+  const restoredWorkItems = workspaceLocalState?.workItems ?? initialWorkItems
+  const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(restoredWorkItems)
+  const [selectedId, setSelectedId] = useState(() => restoredSelectedId(workspaceLocalState, restoredWorkItems))
+  const [activeView, setActiveView] = useState<WorkspaceView>(workspaceLocalState?.activeView ?? "costing")
   const [queueFilters, setQueueFilters] = useState<QueueFilterState>({ cnc: false, due: false, rush: false })
   const [showAttachments, setShowAttachments] = useState(false)
   const [isCreatingRfq, setIsCreatingRfq] = useState(false)
-  const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
+  const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>(workspaceLocalState?.actionsById ?? {})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
-  const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>(workspaceLocalState?.editsById ?? {})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
-  const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>({})
+  const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
+    workspaceLocalState?.offerLifecycleEventsById ?? {},
+  )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
-  const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
+  const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
-  const manualRfqCountRef = useRef(0)
+  const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
+      initialSnapshot: {
+        actionsById: workspaceLocalState?.actionsById ?? {},
+        statusById: workspaceLocalState?.statusById ?? {},
+      },
       onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
     }),
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
+  useEffect(() => {
+    writeWorkspaceLocalState({
+      actionsById,
+      activeView,
+      editsById,
+      offerLifecycleEventsById,
+      selectedId,
+      statusById,
+      version: 1,
+      workItems,
+    })
+  }, [actionsById, activeView, editsById, offerLifecycleEventsById, selectedId, statusById, workItems])
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
@@ -1627,6 +1659,282 @@ interface ManualRfqFormValues {
   toleranceClass: string
   finish: string
   notes: string
+}
+
+function readWorkspaceLocalState(): WorkspaceLocalState | undefined {
+  if (typeof window === "undefined") {
+    return undefined
+  }
+
+  try {
+    const raw = window.localStorage.getItem(workspaceLocalStorageKey)
+    return raw ? parseWorkspaceLocalState(JSON.parse(raw)) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function writeWorkspaceLocalState(state: WorkspaceLocalState) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(workspaceLocalStorageKey, JSON.stringify(state))
+  } catch {
+    // Browser storage may be disabled or full; keep the in-memory workspace usable.
+  }
+}
+
+function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefined {
+  if (!isObjectRecord(value) || value.version !== 1 || !Array.isArray(value.workItems) || value.workItems.length === 0) {
+    return undefined
+  }
+
+  if (!value.workItems.every(isPersistedQuoteWorkItem)) {
+    return undefined
+  }
+
+  const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
+  const editsById = optionalRecordOfValues(value.editsById, isQuoteEditState)
+  const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
+  if (!actionsById || !editsById || !offerLifecycleEventsById || !statusById) {
+    return undefined
+  }
+
+  const workItems = value.workItems
+  const activeView = value.activeView === "triage" || value.activeView === "costing" || value.activeView === "offer" ? value.activeView : "costing"
+  const selectedId =
+    typeof value.selectedId === "string" && workItems.some((item) => item.id === value.selectedId)
+      ? value.selectedId
+      : fallbackSelectedId(workItems)
+
+  return {
+    actionsById,
+    activeView,
+    editsById,
+    offerLifecycleEventsById,
+    selectedId,
+    statusById,
+    version: 1,
+    workItems,
+  }
+}
+
+function restoredSelectedId(state: WorkspaceLocalState | undefined, workItems: QuoteWorkItem[]): string {
+  if (state?.selectedId && workItems.some((item) => item.id === state.selectedId)) {
+    return state.selectedId
+  }
+  return fallbackSelectedId(workItems)
+}
+
+function fallbackSelectedId(workItems: QuoteWorkItem[]): string {
+  return workItems[0]?.id ?? initialWorkItems[0].id
+}
+
+function optionalRecordOfValues<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const entries = Object.entries(value)
+  if (!entries.every(([, item]) => isValue(item))) {
+    return undefined
+  }
+  return Object.fromEntries(entries) as Record<string, T>
+}
+
+function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T[]> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const entries = Object.entries(value)
+  if (!entries.every(([, items]) => Array.isArray(items) && items.every(isValue))) {
+    return undefined
+  }
+  return Object.fromEntries(entries) as Record<string, T[]>
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isPersistedQuoteWorkItem(value: unknown): value is QuoteWorkItem {
+  return (
+    isObjectRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.customer === "string" &&
+    typeof value.contact === "string" &&
+    typeof value.subject === "string" &&
+    typeof value.received === "string" &&
+    typeof value.receivedAt === "string" &&
+    typeof value.due === "string" &&
+    typeof value.dueAt === "string" &&
+    isPriority(value.priority) &&
+    (value.status === "new" || value.status === "triage" || value.status === "estimating" || value.status === "ready") &&
+    (value.source === "gmail" || value.source === "manual" || value.source === "import") &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === "string") &&
+    Array.isArray(value.attachments) &&
+    Array.isArray(value.cadMetadata) &&
+    Array.isArray(value.notes) &&
+    value.notes.every((note) => typeof note === "string") &&
+    Array.isArray(value.providerRuns) &&
+    isCncQuoteInput(value.quoteInput)
+  )
+}
+
+function isCncQuoteInput(value: unknown): value is CncQuoteInput {
+  return (
+    isObjectRecord(value) &&
+    typeof value.partNumber === "string" &&
+    (value.process === "cnc_milling" || value.process === "cnc_turning") &&
+    isFiniteNumber(value.quantity) &&
+    isPriority(value.priority) &&
+    isCncMaterial(value.material) &&
+    isCncMachine(value.machine) &&
+    isCncRateCard(value.rateCard) &&
+    isCncDimensions(value.stockDimensions) &&
+    (value.finishedDimensions === undefined || isCncDimensions(value.finishedDimensions)) &&
+    isCncOperation(value.operation) &&
+    (value.toleranceClass === undefined || typeof value.toleranceClass === "string") &&
+    (value.finish === undefined || typeof value.finish === "string")
+  )
+}
+
+function isCncMaterial(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    typeof value.name === "string" &&
+    isFiniteNumber(value.densityKgM3) &&
+    isFiniteNumber(value.costCentsPerKg) &&
+    (value.yieldFactor === undefined || isFiniteNumber(value.yieldFactor))
+  )
+}
+
+function isCncMachine(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    typeof value.name === "string" &&
+    isFiniteNumber(value.hourlyRateCents) &&
+    isFiniteNumber(value.setupRateCents) &&
+    (value.capacityMinutesPerDay === undefined || isFiniteNumber(value.capacityMinutesPerDay))
+  )
+}
+
+function isCncRateCard(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    (value.currency === "EUR" || value.currency === "USD" || value.currency === "GBP") &&
+    isFiniteNumber(value.setupMinimumCents) &&
+    isFiniteNumber(value.minimumOrderCents) &&
+    isFiniteNumber(value.marginPercent) &&
+    isFiniteNumber(value.rushMultiplier) &&
+    isFiniteNumber(value.baseLeadTimeDays) &&
+    (value.rushLeadTimeDays === undefined || isFiniteNumber(value.rushLeadTimeDays))
+  )
+}
+
+function isCncDimensions(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    (value.lengthMm === undefined || isFiniteNumber(value.lengthMm)) &&
+    (value.widthMm === undefined || isFiniteNumber(value.widthMm)) &&
+    (value.heightMm === undefined || isFiniteNumber(value.heightMm)) &&
+    (value.diameterMm === undefined || isFiniteNumber(value.diameterMm))
+  )
+}
+
+function isCncOperation(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    isFiniteNumber(value.setupMinutes) &&
+    isFiniteNumber(value.cycleMinutesPerPart) &&
+    (value.programmingMinutes === undefined || isFiniteNumber(value.programmingMinutes)) &&
+    (value.fixtureMinutes === undefined || isFiniteNumber(value.fixtureMinutes)) &&
+    (value.inspectionMinutesPerPart === undefined || isFiniteNumber(value.inspectionMinutesPerPart)) &&
+    (value.consumableCentsPerPart === undefined || isFiniteNumber(value.consumableCentsPerPart)) &&
+    (value.complexityMultiplier === undefined || isFiniteNumber(value.complexityMultiplier)) &&
+    (value.outsideServices === undefined ||
+      (Array.isArray(value.outsideServices) &&
+        value.outsideServices.every(
+          (service) =>
+            isObjectRecord(service) && typeof service.label === "string" && isFiniteNumber(service.amountCents),
+        )))
+  )
+}
+
+function isQuoteEditState(value: unknown): value is QuoteEditState {
+  return (
+    isObjectRecord(value) &&
+    isFiniteNumber(value.cycleMinutes) &&
+    isFiniteNumber(value.quantity) &&
+    typeof value.rush === "boolean" &&
+    isFiniteNumber(value.setupMinutes)
+  )
+}
+
+function isWorkspaceActionRecord(value: unknown): value is WorkspaceActionRecord {
+  return (
+    isObjectRecord(value) &&
+    value.actionVersion === "workspace-action.v1" &&
+    typeof value.key === "string" &&
+    typeof value.actor === "string" &&
+    (value.kind === "status_change" || value.kind === "scenario_saved" || value.kind === "follow_up_created" || value.kind === "handoff_note") &&
+    typeof value.occurredAt === "string" &&
+    typeof value.rfqId === "string" &&
+    (value.fromStatus === undefined || isQuoteQueueStatus(value.fromStatus)) &&
+    (value.toStatus === undefined || isQuoteQueueStatus(value.toStatus)) &&
+    (value.activityKind === "status_change" ||
+      value.activityKind === "quote_update" ||
+      value.activityKind === "calendar_event" ||
+      value.activityKind === "note") &&
+    typeof value.activityMessage === "string"
+  )
+}
+
+function isOfferLifecycleEventInput(value: unknown): value is OfferLifecycleEventInput {
+  return (
+    isObjectRecord(value) &&
+    (value.kind === "sent" ||
+      value.kind === "accepted" ||
+      value.kind === "declined" ||
+      value.kind === "follow_up_scheduled" ||
+      value.kind === "follow_up_completed" ||
+      value.kind === "note_added") &&
+    typeof value.actor === "string" &&
+    typeof value.occurredAt === "string" &&
+    (value.followUpDueAt === undefined || typeof value.followUpDueAt === "string") &&
+    (value.followUpTaskId === undefined || typeof value.followUpTaskId === "string") &&
+    (value.note === undefined || typeof value.note === "string")
+  )
+}
+
+function isQuoteQueueStatus(value: unknown): value is QuoteQueueStatus {
+  return value === "new" || value === "triage" || value === "estimating" || value === "ready" || value === "sent" || value === "won" || value === "lost"
+}
+
+function isPriority(value: unknown): value is QuoteWorkItem["priority"] {
+  return value === "normal" || value === "rush"
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value)
+}
+
+function highestManualRfqCounter(items: QuoteWorkItem[]): number {
+  return items.reduce((highest, item) => {
+    const match = item.id.match(/^rfq-manual-(\d+)$/)
+    return match ? Math.max(highest, Number(match[1])) : highest
+  }, 0)
 }
 
 function buildManualTags(quoteInput: CncQuoteInput): string[] {
