@@ -126,4 +126,23 @@ describe("FactoryBid workspace (component)", () => {
     expect(offerText.value).toContain("Payment: Net 14 days")
     expect(offerText.value).toContain("Customer-facing note for the revised offer.")
   })
+
+  it("records manager release review and unlocks the release plan once the RFQ is ready", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    const releaseGate = screen.getByLabelText("Quote release gate")
+    await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
+    expect(releaseGate).toHaveTextContent("Reviewed by Sari")
+
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    const releasePlan = screen.getByLabelText("Offer release command plan")
+    expect(releasePlan).toHaveTextContent("Release commands ready")
+    expect(releasePlan).toHaveTextContent("manager reviewed")
+    expect(releasePlan).toHaveTextContent("Draft offer email")
+  })
 })

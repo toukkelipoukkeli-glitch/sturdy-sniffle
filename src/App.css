@@ -2609,6 +2609,15 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.quote-release-review-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
 .offer-lifecycle-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
