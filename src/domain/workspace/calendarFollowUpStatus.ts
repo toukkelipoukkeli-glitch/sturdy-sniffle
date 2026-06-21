@@ -69,7 +69,7 @@ function taskFromAction(input: {
   now: string
   rfqId: string
 }): CalendarFollowUpStatusTask {
-  const taskId = `follow-up-${input.rfqId}`
+  const taskId = followUpTaskIdFor(input.action, input.rfqId)
   const dueAt = normalizeIsoTimestamp(input.action.followUpDueAt ?? "", "action.followUpDueAt")
   const completedAt = input.completedByTaskId.get(taskId)
   const status = completedAt
@@ -90,6 +90,10 @@ function taskFromAction(input: {
     scheduledAt: input.action.occurredAt,
     status,
   }
+}
+
+function followUpTaskIdFor(action: WorkspaceActionRecord, rfqId: string): string {
+  return optionalTrim(action.note) ?? `follow-up-${rfqId}`
 }
 
 function completedFollowUps(replySync: GmailOfferReplySyncResult | undefined): Map<string, string> {
@@ -160,4 +164,9 @@ function nonBlank(value: string, key: string): string {
     throw new Error(`${key} is required`)
   }
   return trimmed
+}
+
+function optionalTrim(value: string | undefined): string | undefined {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : undefined
 }

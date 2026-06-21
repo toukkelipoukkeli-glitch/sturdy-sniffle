@@ -95,20 +95,57 @@ describe("calendar follow-up status", () => {
       }),
     ).toThrow("offerId is required")
   })
+
+  it("uses explicit follow-up task IDs to disambiguate repeated actions", () => {
+    const status = buildCalendarFollowUpStatus({
+      actions: [
+        followUpAction("2026-06-27T09:00:00+03:00", "rfq-019", {
+          note: "follow-up-first",
+          occurredAt: "2026-06-20T10:10:00+03:00",
+        }),
+        followUpAction("2026-06-28T09:00:00+03:00", "rfq-019", {
+          note: "follow-up-second",
+          occurredAt: "2026-06-20T10:11:00+03:00",
+        }),
+      ],
+      now: "2026-06-24T09:00:00+03:00",
+      offerId: "offer-019",
+      replySync: replySync("follow_up_completed", "follow-up-second"),
+      rfqId: "rfq-019",
+    })
+
+    expect(status.summary).toMatchObject({
+      completedCount: 1,
+      openCount: 1,
+      taskCount: 2,
+    })
+    expect(status.tasks.map((task) => [task.id, task.status])).toEqual([
+      ["follow-up-first", "open"],
+      ["follow-up-second", "completed"],
+    ])
+  })
 })
 
-function followUpAction(followUpDueAt: string, rfqId = "rfq-019") {
+function followUpAction(
+  followUpDueAt: string,
+  rfqId = "rfq-019",
+  options: {
+    note?: string
+    occurredAt?: string
+  } = {},
+) {
   return buildWorkspaceAction({
     actor: "Sari",
     followUpDueAt,
     kind: "follow_up_created",
-    occurredAt: "2026-06-20T10:10:00+03:00",
+    note: options.note,
+    occurredAt: options.occurredAt ?? "2026-06-20T10:10:00+03:00",
     offerId: "offer-019",
     rfqId,
   })
 }
 
-function replySync(kind: "accepted" | "follow_up_completed"): GmailOfferReplySyncResult {
+function replySync(kind: "accepted" | "follow_up_completed", followUpTaskId = "follow-up-rfq-019"): GmailOfferReplySyncResult {
   return {
     adapterVersion: "gmail-offer-reply.v1",
     offerNumber: "OFFER-019",
@@ -130,7 +167,7 @@ function replySync(kind: "accepted" | "follow_up_completed"): GmailOfferReplySyn
             actor: "buyer@example.test",
             kind,
             occurredAt: "2026-06-24T09:30:00+03:00",
-            ...(kind === "follow_up_completed" ? { followUpTaskId: "follow-up-rfq-019" } : {}),
+            ...(kind === "follow_up_completed" ? { followUpTaskId } : {}),
           },
           matched: true,
           messageId: `reply-${kind}`,
