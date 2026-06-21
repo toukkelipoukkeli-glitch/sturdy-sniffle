@@ -43,7 +43,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
 - 🔴 **Approval/release gates operable** — decisions computed but no Approve/Release buttons. → **Slice A/D**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
-- 🟡 **Loading/empty/stale/error polish** — no skeletons, empty-queue, or error boundary. → **Slice D**
+- 🟡 **Loading/empty/stale/error polish** — queue empty states and a tested workspace error boundary exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 
 ## §3 Deterministic calculators
 
@@ -95,7 +95,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ Dense operator workspace (not a landing page); aria labels present; no overlapping text observed.
 - ✅ **No dead controls** — queue filters (Due soon/Rush/CNC) are real `aria-pressed` toggles that narrow the ranked queue with an empty state; "Open attachments" is a real disclosure of the selected RFQ's files. (Slice B)
 - ✅ **Desktop + mobile responsive** — `src/App.css` has `@media` breakpoints at 1180px/820px; verified usable at 375px (no horizontal overflow, no overlapping text).
-- 🟡 **Loading/empty/error states + error boundary** — queue has an empty state; broader skeletons/error boundary still pending. → **Slice D**
+- 🟡 **Loading/empty/error states + error boundary** — queue has an empty state and the app entrypoint now wraps the workspace in a tested recovery boundary; broader skeleton/loading states remain pending. → **Slice D**
 - 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); durable send/release execution still pending. → **Slice A3/D**
 
 ## §10 Quality gates & test coverage

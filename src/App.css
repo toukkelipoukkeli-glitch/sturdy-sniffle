@@ -9,6 +9,84 @@
   color: oklch(0.18 0.018 250);
 }
 
+.workspace-error-boundary {
+  align-items: center;
+  display: grid;
+  padding: 24px;
+}
+
+.workspace-error-panel {
+  align-items: start;
+  background: oklch(1 0 0);
+  border: 1px solid oklch(0.84 0.045 38);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px oklch(0.3 0.04 245 / 10%);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(0, 560px);
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 24px;
+}
+
+.workspace-error-icon {
+  align-items: center;
+  background: oklch(0.96 0.04 42);
+  border: 1px solid oklch(0.82 0.065 42);
+  border-radius: 8px;
+  color: oklch(0.44 0.12 38);
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.workspace-error-icon svg {
+  height: 22px;
+  width: 22px;
+}
+
+.workspace-error-panel h1 {
+  font-size: 1.35rem;
+  letter-spacing: 0;
+  margin: 4px 0 8px;
+}
+
+.workspace-error-panel p {
+  color: oklch(0.38 0.028 250);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.workspace-error-details {
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 12px;
+}
+
+.workspace-error-details div {
+  display: grid;
+  gap: 2px;
+}
+
+.workspace-error-details dt {
+  color: oklch(0.42 0.028 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workspace-error-details dd {
+  color: oklch(0.22 0.02 250);
+  font-size: 0.86rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .workspace-topbar {
   align-items: center;
   border-bottom: 1px solid oklch(0.88 0.018 235);
