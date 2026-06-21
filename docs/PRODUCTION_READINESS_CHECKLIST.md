@@ -66,8 +66,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **PDF export/rendering verified** — `offerPdf.ts` renders deterministic `pdf-lib` bytes with fixture coverage and smoke-tested download flow.
 - ✅ **Operator can copy/download** — `OfferView` exposes Copy, Download `.txt`, and Download PDF buttons with aria-live feedback.
 - ✅ **Offer lifecycle actions/history** — `OfferLifecyclePanel` wires deterministic sent/accept/decline/follow-up controls to `buildOfferLifecycleTimeline` with smoke coverage.
-- 🟡 **Offer export/revision history is durable** — export feedback is session-local and revision history is still draft-generated. → **Slice A3**
-- 🟡 **Offer is an editable artifact** — validity dates/terms/notes are computed constants. → **Slice A3**
+- 🟡 **Offer export/revision history is durable** — revision reason now flows from editable offer details and persists locally, but copy/download feedback is still session-local. → **Slice A3**
+- ✅ **Offer is an editable artifact** — validity date, customer-facing terms, revision note, and offer notes are editable in the workspace and feed plain-text/PDF-ready exports. (Slice A3)
 
 ## §6 Gmail and Calendar workflow
 
@@ -119,7 +119,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 |------|-------|-----|--------|
 | **A** | Offer export: copy + download `.txt` + real PDF render | §5, §9 | ✅ |
 | **A2** | Offer lifecycle actions/history controls | §5 | ✅ |
-| **A3** | Editable offer header + durable export/revision history | §5, §2 | ☐ |
+| **A3** | Editable offer header + durable export/revision history | §5, §2 | 🟡 |
 | **B** | UI hardening: functional queue filters + Open-attachments disclosure (dead controls removed); mobile responsive verified | §9 | ✅ |
 | **C** | Manual RFQ creation (stateful queue + accessible New-RFQ dialog → deterministic quote) | §1, §2 | ✅ |
 | **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | ✅ |

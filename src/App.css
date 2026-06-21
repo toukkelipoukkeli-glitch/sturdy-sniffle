@@ -2143,6 +2143,24 @@
   padding: 10px;
 }
 
+.offer-draft-editor {
+  margin-top: 14px;
+}
+
+.offer-draft-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.offer-draft-span {
+  grid-column: 1 / -1;
+}
+
+.offer-draft-grid textarea {
+  min-height: 92px;
+}
+
 .offer-reply-panel,
 .offer-export-panel,
 .quote-approval-panel,
@@ -3264,6 +3282,7 @@
   .rfq-readiness-summary,
   .rfq-readiness-checks,
   .offer-export-summary,
+  .offer-draft-grid,
   .alternate-row,
   .quote-approval-summary,
   .quote-approval-checks,

@@ -52,7 +52,7 @@ import {
   createMockGmailRfqProvider,
   type GmailRfqMessage,
 } from "./domain/integrations/gmailRfq"
-import { buildCncOfferDraft, type OfferDraft } from "./domain/offers/offer"
+import { DEFAULT_OFFER_TERMS, buildCncOfferDraft, type OfferDraft, type OfferTerm } from "./domain/offers/offer"
 import {
   buildOfferLifecycleTimeline,
   type OfferLifecycleEventInput,
@@ -188,10 +188,18 @@ interface RfqFieldPatch {
   notesText?: string
 }
 
+interface OfferDraftEditState {
+  notesText: string
+  revisionReason: string
+  termsText: string
+  validUntil: string
+}
+
 interface WorkspaceLocalState {
   actionsById: Record<string, WorkspaceActionRecord[]>
   activeView: WorkspaceView
   editsById: Record<string, Partial<QuoteEditState>>
+  offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
   selectedId: string
   statusById: Record<string, QuoteQueueStatus>
@@ -698,6 +706,9 @@ function App() {
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
   const [editsById, setEditsById] = useState<Record<string, Partial<QuoteEditState>>>(workspaceLocalState?.editsById ?? {})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
+  const [offerDraftEditsById, setOfferDraftEditsById] = useState<Record<string, Partial<OfferDraftEditState>>>(
+    workspaceLocalState?.offerDraftEditsById ?? {},
+  )
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
@@ -724,13 +735,14 @@ function App() {
       actionsById,
       activeView,
       editsById,
+      offerDraftEditsById,
       offerLifecycleEventsById,
       selectedId,
       statusById,
       version: 1,
       workItems,
     })
-  }, [actionsById, activeView, editsById, offerLifecycleEventsById, selectedId, statusById, workItems])
+  }, [actionsById, activeView, editsById, offerDraftEditsById, offerLifecycleEventsById, selectedId, statusById, workItems])
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
@@ -740,12 +752,26 @@ function App() {
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
+  const selectedOfferDraftEdit = useMemo(
+    () => offerDraftEditStateForItem(selectedItem, offerDraftEditsById[selectedId]),
+    [offerDraftEditsById, selectedId, selectedItem],
+  )
   const { cycleMinutes, machineHourlyRateCents, marginPercent, materialCostCentsPerKg, quantity, rush, setupMinutes } = selectedEdit
   const updateSelectedEdit = (patch: Partial<QuoteEditState>) => {
     setEditsById((current) => ({
       ...current,
       [selectedId]: {
         ...defaultEditState(selectedItem),
+        ...current[selectedId],
+        ...patch,
+      },
+    }))
+  }
+  const updateSelectedOfferDraftEdit = (patch: Partial<OfferDraftEditState>) => {
+    setOfferDraftEditsById((current) => ({
+      ...current,
+      [selectedId]: {
+        ...defaultOfferDraftEditState(selectedItem),
         ...current[selectedId],
         ...patch,
       },
@@ -935,14 +961,20 @@ function App() {
           contactName: selectedItem.contact,
         },
         issuedAt: "2026-06-19",
-        validUntil: "2026-07-03",
+        validUntil: selectedOfferDraftEdit.validUntil.trim() || defaultOfferDraftEditState(selectedItem).validUntil,
         lineDescription: subjectLabelFor(selectedItem),
-        notes: selectedItem.notes,
+        notes: parseEditableNotes(selectedOfferDraftEdit.notesText),
         quote,
+        revision: {
+          createdAt: "2026-06-19",
+          createdBy: "Sari",
+          reason: selectedOfferDraftEdit.revisionReason.trim() || "Initial draft",
+        },
         rfqReference: selectedItem.id,
         subject: subjectLabelFor(selectedItem),
+        terms: parseOfferTermsText(selectedOfferDraftEdit.termsText),
       }),
-    [quote, selectedItem],
+    [quote, selectedItem, selectedOfferDraftEdit],
   )
   const offerExportPackage = useMemo(
     () =>
@@ -1578,9 +1610,11 @@ function App() {
               exportPackage={offerExportPackage}
               lifecycle={offerLifecycle}
               offer={offer}
+              offerDraftEdit={selectedOfferDraftEdit}
               onAcceptOffer={acceptOffer}
               onCompleteFollowUp={completeOfferLifecycleFollowUp}
               onDeclineOffer={declineOffer}
+              onDraftEditChange={updateSelectedOfferDraftEdit}
               onMarkSent={markOfferSent}
               onScheduleFollowUp={scheduleOfferLifecycleFollowUp}
               readiness={offerSendReadiness}
@@ -1702,9 +1736,10 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
 
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
   const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
+  const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
-  if (!actionsById || !editsById || !offerLifecycleEventsById || !statusById) {
+  if (!actionsById || !editsById || !offerDraftEditsById || !offerLifecycleEventsById || !statusById) {
     return undefined
   }
 
@@ -1719,6 +1754,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     actionsById,
     activeView,
     editsById,
+    offerDraftEditsById,
     offerLifecycleEventsById,
     selectedId,
     statusById,
@@ -1887,6 +1923,16 @@ function isQuoteEditStatePatch(value: unknown): value is Partial<QuoteEditState>
     isFiniteNumber(value.quantity) &&
     typeof value.rush === "boolean" &&
     isFiniteNumber(value.setupMinutes)
+  )
+}
+
+function isOfferDraftEditStatePatch(value: unknown): value is Partial<OfferDraftEditState> {
+  return (
+    isObjectRecord(value) &&
+    (value.notesText === undefined || typeof value.notesText === "string") &&
+    (value.revisionReason === undefined || typeof value.revisionReason === "string") &&
+    (value.termsText === undefined || typeof value.termsText === "string") &&
+    (value.validUntil === undefined || typeof value.validUntil === "string")
   )
 }
 
@@ -2084,6 +2130,47 @@ function parseEditableNotes(value: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
+}
+
+function defaultOfferDraftEditState(item: QuoteWorkItem): OfferDraftEditState {
+  return {
+    notesText: item.notes.join("\n"),
+    revisionReason: "Initial draft",
+    termsText: formatOfferTermsText(DEFAULT_OFFER_TERMS),
+    validUntil: "2026-07-03",
+  }
+}
+
+function offerDraftEditStateForItem(item: QuoteWorkItem, edit: Partial<OfferDraftEditState> | undefined): OfferDraftEditState {
+  return {
+    ...defaultOfferDraftEditState(item),
+    ...edit,
+  }
+}
+
+function formatOfferTermsText(terms: readonly OfferTerm[]): string {
+  return terms.map((term) => `${term.label}: ${term.value}`).join("\n")
+}
+
+function parseOfferTermsText(value: string): OfferTerm[] {
+  const terms = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const separatorIndex = line.indexOf(":")
+      const label = separatorIndex > 0 ? line.slice(0, separatorIndex).trim() : `Term ${index + 1}`
+      const termValue = separatorIndex > 0 ? line.slice(separatorIndex + 1).trim() : line
+
+      return {
+        key: `custom_${index + 1}`,
+        label,
+        value: termValue,
+      }
+    })
+    .filter((term) => term.label && term.value)
+
+  return terms.length > 0 ? terms : [...DEFAULT_OFFER_TERMS]
 }
 
 function defaultManualDueDate(): string {
@@ -3661,9 +3748,11 @@ function OfferView({
   exportPackage,
   lifecycle,
   offer,
+  offerDraftEdit,
   onAcceptOffer,
   onCompleteFollowUp,
   onDeclineOffer,
+  onDraftEditChange,
   onMarkSent,
   onScheduleFollowUp,
   onSyncReplies,
@@ -3679,9 +3768,11 @@ function OfferView({
   exportPackage: OfferExportPackage
   lifecycle: OfferLifecycleTimeline
   offer: OfferDraft
+  offerDraftEdit: OfferDraftEditState
   onAcceptOffer: () => void
   onCompleteFollowUp: () => void
   onDeclineOffer: () => void
+  onDraftEditChange: (patch: Partial<OfferDraftEditState>) => void
   onMarkSent: () => void
   onScheduleFollowUp: () => void
   onSyncReplies: () => void
@@ -3742,6 +3833,43 @@ function OfferView({
           <div key={term.key}>{term.value}</div>
         ))}
       </div>
+      <section className="offer-draft-editor" aria-label="Editable offer details">
+        <div className="offer-draft-grid">
+          <label className="field">
+            <span>Valid until</span>
+            <input
+              aria-label="Offer valid until"
+              onChange={(event) => onDraftEditChange({ validUntil: event.target.value })}
+              type="date"
+              value={offerDraftEdit.validUntil}
+            />
+          </label>
+          <label className="field">
+            <span>Revision note</span>
+            <input
+              aria-label="Offer revision note"
+              onChange={(event) => onDraftEditChange({ revisionReason: event.target.value })}
+              value={offerDraftEdit.revisionReason}
+            />
+          </label>
+          <label className="field offer-draft-span">
+            <span>Terms</span>
+            <textarea
+              aria-label="Offer terms"
+              onChange={(event) => onDraftEditChange({ termsText: event.target.value })}
+              value={offerDraftEdit.termsText}
+            />
+          </label>
+          <label className="field offer-draft-span">
+            <span>Customer notes</span>
+            <textarea
+              aria-label="Offer notes"
+              onChange={(event) => onDraftEditChange({ notesText: event.target.value })}
+              value={offerDraftEdit.notesText}
+            />
+          </label>
+        </div>
+      </section>
       <OfferExportPackagePanel exportPackage={exportPackage} />
       <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />

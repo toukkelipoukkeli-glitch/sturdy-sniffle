@@ -110,4 +110,24 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(screen.getByRole("button", { name: "Offer" }))
     expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
   })
+
+  it("edits offer validity, terms, and notes in the exported draft", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    await user.clear(screen.getByLabelText("Offer valid until"))
+    await user.type(screen.getByLabelText("Offer valid until"), "2026-07-10")
+    await user.clear(screen.getByLabelText("Offer revision note"))
+    await user.type(screen.getByLabelText("Offer revision note"), "Buyer requested updated validity.")
+    await user.clear(screen.getByLabelText("Offer terms"))
+    await user.type(screen.getByLabelText("Offer terms"), "Payment: Net 14 days\nDelivery: FCA Helsinki")
+    await user.clear(screen.getByLabelText("Offer notes"))
+    await user.type(screen.getByLabelText("Offer notes"), "Customer-facing note for the revised offer.")
+
+    const offerText = screen.getByLabelText("Plain text offer") as HTMLTextAreaElement
+    expect(offerText.value).toContain("Valid until: 2026-07-10")
+    expect(offerText.value).toContain("Payment: Net 14 days")
+    expect(offerText.value).toContain("Customer-facing note for the revised offer.")
+  })
 })
