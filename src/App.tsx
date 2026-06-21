@@ -615,7 +615,7 @@ interface QueueFilterState {
   rush: boolean
 }
 
-const QUEUE_DUE_SOON_DAYS = 7
+const QUEUE_DUE_SOON_DAYS = 3
 
 function queueItemMatchesFilters(item: RankedQuoteQueueItem, filters: QueueFilterState): boolean {
   if (filters.rush && item.priority !== "rush") {
@@ -1286,12 +1286,12 @@ function App() {
 
           {showAttachments ? (
             <div className="attachment-disclosure" id="rfq-attachments" aria-label="RFQ attachments">
-              {selectedItem.attachments.map((attachment) => (
-                <div className="attachment-disclosure-row" key={attachment.fileName}>
+              {selectedItem.attachments.map((attachment, index) => (
+                <div className="attachment-disclosure-row" key={`${attachment.fileName}:${attachment.kind}:${attachment.sizeBytes ?? "unknown"}:${index}`}>
                   <FileText aria-hidden="true" />
                   <span className="attachment-name">{attachment.fileName}</span>
                   <span className="attachment-kind">{humanizeKey(attachment.kind)}</span>
-                  {attachment.sizeBytes ? (
+                  {attachment.sizeBytes !== undefined ? (
                     <span className="attachment-size">{formatFileSize(attachment.sizeBytes)}</span>
                   ) : null}
                 </div>

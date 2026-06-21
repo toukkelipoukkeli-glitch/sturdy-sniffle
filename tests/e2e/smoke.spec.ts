@@ -51,11 +51,17 @@ test("filters the RFQ queue and discloses attachments", async ({ page }) => {
   await expect(queue.getByRole("button", { name: /North Forge/ })).toHaveCount(0)
   await expect(queue.getByRole("button", { name: /Arctic Instruments/ })).toHaveCount(0)
   await rushFilter.click()
+  await expect(rushFilter).toHaveAttribute("aria-pressed", "false")
   await expect(queue.getByRole("button", { name: /North Forge/ })).toBeVisible()
 
   // "Open attachments" is a real disclosure of the selected RFQ's files.
-  await page.getByRole("button", { name: "Open attachments" }).click()
+  const openAttachments = page.getByRole("button", { name: "Open attachments" })
+  await expect(openAttachments).toHaveAttribute("aria-expanded", "false")
+  await expect(page.getByLabel("RFQ attachments")).toHaveCount(0)
+  await openAttachments.click()
+  await expect(openAttachments).toHaveAttribute("aria-expanded", "true")
   const attachments = page.getByLabel("RFQ attachments")
+  await expect(attachments).toBeVisible()
   await expect(attachments).toContainText("FB-204-A.step")
   await expect(attachments).toContainText("FB-204-A.pdf")
 })
