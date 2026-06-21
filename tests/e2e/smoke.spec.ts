@@ -8,6 +8,13 @@ test("exports a customer-ready offer as text and a real PDF", async ({ page }) =
   await page.goto("/")
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
   await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
+  const offerDetails = page.getByLabel("Editable offer details")
+  await offerDetails.getByLabel("Offer valid until").fill("2026-07-10")
+  await offerDetails.getByLabel("Offer revision note").fill("Buyer requested 10-day validity.")
+  await offerDetails.getByLabel("Offer terms").fill("Payment: Net 14 days\nDelivery: FCA Helsinki")
+  await offerDetails.getByLabel("Offer notes").fill("Customer-facing note for the revised offer.")
+  await expect(page.getByLabel("Plain text offer")).toHaveValue(/Valid until: 2026-07-10/)
+  await expect(page.getByLabel("Plain text offer")).toHaveValue(/Payment: Net 14 days/)
 
   const exportActions = page.getByLabel("Offer export actions")
   await expect(exportActions.getByRole("button", { name: "Copy text" })).toBeVisible()
@@ -22,6 +29,9 @@ test("exports a customer-ready offer as text and a real PDF", async ({ page }) =
   const textPath = await textDownload.path()
   const textContent = readFileSync(textPath, "utf8")
   expect(textContent).toContain("Total excluding VAT:")
+  expect(textContent).toContain("Valid until: 2026-07-10")
+  expect(textContent).toContain("Payment: Net 14 days")
+  expect(textContent).toContain("Customer-facing note for the revised offer.")
 
   // PDF export downloads a structurally valid PDF (real bytes, not a cosmetic label).
   const pdfDownloadPromise = page.waitForEvent("download")

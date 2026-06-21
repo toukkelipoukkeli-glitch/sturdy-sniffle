@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 
@@ -109,5 +109,21 @@ describe("FactoryBid workspace (component)", () => {
 
     await user.click(screen.getByRole("button", { name: "Offer" }))
     expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
+  })
+
+  it("edits offer validity, terms, and notes in the exported draft", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    fireEvent.change(screen.getByLabelText("Offer valid until"), { target: { value: "2026-07-10" } })
+    fireEvent.change(screen.getByLabelText("Offer revision note"), { target: { value: "Buyer requested updated validity." } })
+    fireEvent.change(screen.getByLabelText("Offer terms"), { target: { value: "Payment: Net 14 days\nDelivery: FCA Helsinki" } })
+    fireEvent.change(screen.getByLabelText("Offer notes"), { target: { value: "Customer-facing note for the revised offer." } })
+
+    const offerText = screen.getByLabelText("Plain text offer") as HTMLTextAreaElement
+    expect(offerText.value).toContain("Valid until: 2026-07-10")
+    expect(offerText.value).toContain("Payment: Net 14 days")
+    expect(offerText.value).toContain("Customer-facing note for the revised offer.")
   })
 })
