@@ -17,6 +17,7 @@
 - Browser smoke tests: `bun run test:e2e`
 - Regenerate Convex types: `bun run convex:codegen`
 - Start local Convex once: `bun run convex:once`
+- Autonomous build handoff: `docs/AUTONOMOUS_BUILD_HANDOFF.md`
 
 ## Conventions
 
@@ -26,3 +27,4 @@
 - Treat `convex/_generated/**` as generated code. Regenerate it with Convex tooling instead of editing it manually.
 - Keep early PRs small enough for CodeRabbit and Greptile to review well.
 - Prefer feature branches named `codex/<short-description>`.
+- When a long autonomous run pauses or hands off to another machine, update `docs/AUTONOMOUS_BUILD_HANDOFF.md` without committing secrets.
