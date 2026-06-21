@@ -41,7 +41,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ Operator can select RFQs, see workload/capacity/material/outside-services/approval/release panels (`App.tsx` triage/costing/offer views).
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
-- 🔴 **Approval/release gates operable** — decisions computed but no Approve/Release buttons. → **Slice A/D**
+- 🟡 **Approval/release gates operable** — manager release review is now persisted in workspace state and feeds the deterministic release planner; full release execution/send buttons remain pending. → **Slice D**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
 - 🟡 **Loading/empty/stale/error polish** — queue empty states and a tested workspace error boundary exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 

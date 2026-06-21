@@ -195,6 +195,12 @@ interface OfferDraftEditState {
   validUntil: string
 }
 
+interface ReleaseReviewState {
+  note: string
+  reviewedAt: string
+  reviewedBy: string
+}
+
 type OfferExportEventKind = "copy_text" | "download_pdf" | "download_text"
 
 interface OfferExportHistoryEvent {
@@ -213,6 +219,7 @@ interface WorkspaceLocalState {
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  releaseReviewsById: Record<string, ReleaseReviewState>
   selectedId: string
   statusById: Record<string, QuoteQueueStatus>
   version: 1
@@ -729,6 +736,9 @@ function App() {
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
   )
+  const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
+    workspaceLocalState?.releaseReviewsById ?? {},
+  )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
@@ -753,12 +763,24 @@ function App() {
       offerDraftEditsById,
       offerExportEventsById,
       offerLifecycleEventsById,
+      releaseReviewsById,
       selectedId,
       statusById,
       version: 1,
       workItems,
     })
-  }, [actionsById, activeView, editsById, offerDraftEditsById, offerExportEventsById, offerLifecycleEventsById, selectedId, statusById, workItems])
+  }, [
+    actionsById,
+    activeView,
+    editsById,
+    offerDraftEditsById,
+    offerExportEventsById,
+    offerLifecycleEventsById,
+    releaseReviewsById,
+    selectedId,
+    statusById,
+    workItems,
+  ])
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
@@ -769,6 +791,7 @@ function App() {
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
+  const selectedReleaseReview = releaseReviewsById[selectedId]
   const selectedOfferDraftEdit = useMemo(
     () => offerDraftEditStateForItem(selectedItem, offerDraftEditsById[selectedId]),
     [offerDraftEditsById, selectedId, selectedItem],
@@ -1078,6 +1101,8 @@ function App() {
         offer,
         offerId: offer.offerNumber.toLowerCase(),
         releaseGate: quoteReleaseGate,
+        reviewedBy: selectedReleaseReview?.reviewedBy,
+        reviewNote: selectedReleaseReview?.note,
         rfqId: selectedItem.id,
         timezone: "Europe/Helsinki",
       }),
@@ -1086,6 +1111,7 @@ function App() {
       offerExportPackage,
       offerFollowUpScheduledAt,
       quoteReleaseGate,
+      selectedReleaseReview,
       selectedItem.id,
       selectedStatus,
     ],
@@ -1280,6 +1306,16 @@ function App() {
       note: "Customer declined the offer.",
       occurredAt: demoNow,
     })
+  }
+  const markReleaseReviewed = () => {
+    setReleaseReviewsById((current) => ({
+      ...current,
+      [selectedId]: {
+        note: `Manager reviewed ${quoteReleaseGate.warningCount} release warning${quoteReleaseGate.warningCount === 1 ? "" : "s"}.`,
+        reviewedAt: demoNow,
+        reviewedBy: "Sari",
+      },
+    }))
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
     setActionsById(snapshot.actionsById)
@@ -1650,6 +1686,7 @@ function App() {
               onCompleteFollowUp={completeOfferLifecycleFollowUp}
               onDeclineOffer={declineOffer}
               onDraftEditChange={updateSelectedOfferDraftEdit}
+              onMarkReleaseReviewed={markReleaseReviewed}
               onMarkSent={markOfferSent}
               onRecordExportEvent={recordSelectedOfferExportEvent}
               onScheduleFollowUp={scheduleOfferLifecycleFollowUp}
@@ -1658,6 +1695,7 @@ function App() {
               releaseExecution={offerReleaseExecution}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
+              releaseReview={selectedReleaseReview}
               replySnapshot={offerReplySnapshot}
               replySync={offerReplySync}
               onSyncReplies={syncOfferReplies}
@@ -1775,8 +1813,17 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const releaseReviewsById = optionalRecordOfValues(value.releaseReviewsById, isReleaseReviewState)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
-  if (!actionsById || !editsById || !offerDraftEditsById || !offerExportEventsById || !offerLifecycleEventsById || !statusById) {
+  if (
+    !actionsById ||
+    !editsById ||
+    !offerDraftEditsById ||
+    !offerExportEventsById ||
+    !offerLifecycleEventsById ||
+    !releaseReviewsById ||
+    !statusById
+  ) {
     return undefined
   }
 
@@ -1794,6 +1841,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    releaseReviewsById,
     selectedId,
     statusById,
     version: 1,
@@ -1983,6 +2031,15 @@ function isOfferExportHistoryEvent(value: unknown): value is OfferExportHistoryE
     typeof value.occurredAt === "string" &&
     (value.status === "failed" || value.status === "succeeded") &&
     (value.fileName === undefined || typeof value.fileName === "string")
+  )
+}
+
+function isReleaseReviewState(value: unknown): value is ReleaseReviewState {
+  return (
+    isObjectRecord(value) &&
+    typeof value.note === "string" &&
+    typeof value.reviewedAt === "string" &&
+    typeof value.reviewedBy === "string"
   )
 }
 
@@ -3804,6 +3861,7 @@ function OfferView({
   onCompleteFollowUp,
   onDeclineOffer,
   onDraftEditChange,
+  onMarkReleaseReviewed,
   onMarkSent,
   onRecordExportEvent,
   onScheduleFollowUp,
@@ -3813,6 +3871,7 @@ function OfferView({
   releaseExecution,
   releaseHistory,
   releasePlan,
+  releaseReview,
   replySnapshot,
   replySync,
 }: {
@@ -3826,6 +3885,7 @@ function OfferView({
   onCompleteFollowUp: () => void
   onDeclineOffer: () => void
   onDraftEditChange: (patch: Partial<OfferDraftEditState>) => void
+  onMarkReleaseReviewed: () => void
   onMarkSent: () => void
   onRecordExportEvent: (event: Omit<OfferExportHistoryEvent, "id" | "occurredAt">) => void
   onScheduleFollowUp: () => void
@@ -3835,6 +3895,7 @@ function OfferView({
   releaseExecution: OfferReleaseExecutionRun
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
+  releaseReview?: ReleaseReviewState
   replySnapshot?: OfferReplySyncPersistenceSnapshot
   replySync?: GmailOfferReplySyncResult
 }) {
@@ -3956,7 +4017,11 @@ function OfferView({
       <OfferExportPackagePanel exportPackage={exportPackage} />
       <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />
-      <QuoteReleaseGatePanel releaseGate={releaseGate} />
+      <QuoteReleaseGatePanel
+        onMarkReviewed={onMarkReleaseReviewed}
+        releaseGate={releaseGate}
+        releaseReview={releaseReview}
+      />
       <OfferLifecyclePanel
         lifecycle={lifecycle}
         onAcceptOffer={onAcceptOffer}
@@ -4449,8 +4514,17 @@ function offerReleasePlanStatusLabel(status: OfferReleasePlan["status"]) {
   }
 }
 
-function QuoteReleaseGatePanel({ releaseGate }: { releaseGate: QuoteReleaseGateDecision }) {
+function QuoteReleaseGatePanel({
+  onMarkReviewed,
+  releaseGate,
+  releaseReview,
+}: {
+  onMarkReviewed: () => void
+  releaseGate: QuoteReleaseGateDecision
+  releaseReview?: ReleaseReviewState
+}) {
   const statusLabel = quoteReleaseGateStatusLabel(releaseGate.status)
+  const canReview = releaseGate.status === "needs_review" && !releaseReview
 
   return (
     <section className="quote-release-panel" aria-label="Quote release gate">
@@ -4468,6 +4542,20 @@ function QuoteReleaseGatePanel({ releaseGate }: { releaseGate: QuoteReleaseGateD
         <Metric label="Blockers" value={String(releaseGate.blockerCount)} />
         <Metric label="Warnings" value={String(releaseGate.warningCount)} />
         <Metric label="Checked" value={formatShortDateTime(releaseGate.checkedAt)} />
+      </div>
+      <div className="quote-release-review-actions">
+        {releaseReview ? (
+          <div className="flag ok">
+            <CheckCircle2 aria-hidden="true" />
+            <span>
+              Reviewed by {releaseReview.reviewedBy} at {formatShortDateTime(releaseReview.reviewedAt)}.
+            </span>
+          </div>
+        ) : null}
+        <Button disabled={!canReview} onClick={onMarkReviewed} size="sm" type="button" variant="outline">
+          <ShieldCheck aria-hidden="true" />
+          {releaseReview ? "Review recorded" : "Mark reviewed"}
+        </Button>
       </div>
       <div className="quote-release-checks">
         {releaseGate.checks.map((check) => (
