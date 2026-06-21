@@ -91,16 +91,11 @@ export interface ManualRfqQuoteInput {
   finish?: string
 }
 
-/** Coerce a possibly NaN/Infinity numeric field to a finite value before clamping. */
-function finiteOr(value: number, fallback: number): number {
-  return Number.isFinite(value) ? value : fallback
-}
-
 /** Build a complete, valid CNC quote input from the operator's manual RFQ form fields. */
 export function buildManualCncQuoteInput(input: ManualRfqQuoteInput): CncQuoteInput {
   const material = manualMaterialPreset(input.materialKey)
   const dimensions = defaultDimensionsForProcess(input.process)
-  const quantity = Math.max(1, Math.round(finiteOr(input.quantity, 1)))
+  const quantity = clampFiniteNumber(input.quantity, 1, Math.round)
 
   return {
     partNumber: input.partNumber.trim() || "MANUAL-PART",
@@ -118,14 +113,21 @@ export function buildManualCncQuoteInput(input: ManualRfqQuoteInput): CncQuoteIn
     stockDimensions: dimensions.stock,
     finishedDimensions: dimensions.finished,
     operation: {
-      setupMinutes: Math.max(0, finiteOr(input.setupMinutes, 0)),
+      setupMinutes: clampFiniteNumber(input.setupMinutes, 0),
       programmingMinutes: 15,
       fixtureMinutes: 10,
-      cycleMinutesPerPart: Math.max(0.1, finiteOr(input.cycleMinutesPerPart, 0.1)),
+      cycleMinutesPerPart: clampFiniteNumber(input.cycleMinutesPerPart, 0.1),
       inspectionMinutesPerPart: 1,
       consumableCentsPerPart: 150,
     },
     toleranceClass: input.toleranceClass?.trim() || undefined,
     finish: input.finish?.trim() || undefined,
   }
+}
+
+function clampFiniteNumber(value: number, minimum: number, transform: (finiteValue: number) => number = (finiteValue) => finiteValue) {
+  if (!Number.isFinite(value)) {
+    return minimum
+  }
+  return Math.max(minimum, transform(value))
 }

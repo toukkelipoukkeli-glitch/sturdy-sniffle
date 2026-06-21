@@ -45,20 +45,16 @@ describe("manual RFQ quote input", () => {
     expect(input.quantity).toBe(1)
     expect(input.operation.setupMinutes).toBe(0)
     expect(input.operation.cycleMinutesPerPart).toBeGreaterThan(0)
-  })
 
-  it("coerces non-finite numeric inputs to safe finite defaults", () => {
-    const input = buildManualCncQuoteInput({
+    const nonFiniteInput = buildManualCncQuoteInput({
       ...baseInput,
+      cycleMinutesPerPart: Number.POSITIVE_INFINITY,
       quantity: Number.NaN,
-      setupMinutes: Number.POSITIVE_INFINITY,
-      cycleMinutesPerPart: Number.NaN,
+      setupMinutes: Number.NEGATIVE_INFINITY,
     })
-    expect(input.quantity).toBe(1)
-    expect(Number.isFinite(input.operation.setupMinutes)).toBe(true)
-    expect(Number.isFinite(input.operation.cycleMinutesPerPart)).toBe(true)
-    expect(input.operation.cycleMinutesPerPart).toBeGreaterThanOrEqual(0.1)
-    expect(calculateCncQuote(input).totalCents).toBeGreaterThan(0)
+    expect(nonFiniteInput.quantity).toBe(1)
+    expect(nonFiniteInput.operation.setupMinutes).toBe(0)
+    expect(nonFiniteInput.operation.cycleMinutesPerPart).toBe(0.1)
   })
 
   it("omits blank optional tolerance/finish and trims part number", () => {
