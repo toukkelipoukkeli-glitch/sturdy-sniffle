@@ -36,6 +36,30 @@ test("exports a customer-ready offer as text and a real PDF", async ({ page }) =
   await expect(exportActions.getByText(/Saved OFFER-\d+-rev\d+\.pdf/)).toBeVisible()
 })
 
+test("filters the RFQ queue and discloses attachments", async ({ page }) => {
+  await page.goto("/")
+  const queue = page.getByLabel("RFQ queue")
+  await expect(queue.getByRole("button", { name: /North Forge/ })).toBeVisible()
+  await expect(queue.getByRole("button", { name: /Baltic Hydraulics/ })).toBeVisible()
+  await expect(queue.getByRole("button", { name: /Arctic Instruments/ })).toBeVisible()
+
+  // The "Rush" filter is a real toggle that narrows the queue to rush RFQs.
+  const rushFilter = queue.getByRole("button", { name: "Rush" })
+  await rushFilter.click()
+  await expect(rushFilter).toHaveAttribute("aria-pressed", "true")
+  await expect(queue.getByRole("button", { name: /Baltic Hydraulics/ })).toBeVisible()
+  await expect(queue.getByRole("button", { name: /North Forge/ })).toHaveCount(0)
+  await expect(queue.getByRole("button", { name: /Arctic Instruments/ })).toHaveCount(0)
+  await rushFilter.click()
+  await expect(queue.getByRole("button", { name: /North Forge/ })).toBeVisible()
+
+  // "Open attachments" is a real disclosure of the selected RFQ's files.
+  await page.getByRole("button", { name: "Open attachments" }).click()
+  const attachments = page.getByLabel("RFQ attachments")
+  await expect(attachments).toContainText("FB-204-A.step")
+  await expect(attachments).toContainText("FB-204-A.pdf")
+})
+
 test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.goto("/")
 

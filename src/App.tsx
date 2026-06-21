@@ -609,9 +609,43 @@ const workItems: QuoteWorkItem[] = [
   },
 ]
 
+interface QueueFilterState {
+  cnc: boolean
+  due: boolean
+  rush: boolean
+}
+
+const QUEUE_DUE_SOON_DAYS = 7
+
+function queueItemMatchesFilters(item: RankedQuoteQueueItem, filters: QueueFilterState): boolean {
+  if (filters.rush && item.priority !== "rush") {
+    return false
+  }
+  if (filters.cnc && item.process !== "cnc_milling" && item.process !== "cnc_turning") {
+    return false
+  }
+  if (filters.due && item.daysUntilDue > QUEUE_DUE_SOON_DAYS) {
+    return false
+  }
+  return true
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+  const kilobytes = bytes / 1024
+  if (kilobytes < 1024) {
+    return `${kilobytes.toFixed(kilobytes < 10 ? 1 : 0)} KB`
+  }
+  return `${(kilobytes / 1024).toFixed(1)} MB`
+}
+
 function App() {
   const [selectedId, setSelectedId] = useState(workItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
+  const [queueFilters, setQueueFilters] = useState<QueueFilterState>({ cnc: false, due: false, rush: false })
+  const [showAttachments, setShowAttachments] = useState(false)
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
@@ -672,6 +706,13 @@ function App() {
     })
     return rankQuoteQueue(queueInputs, { now: queueNow })
   }, [editsById, queueNow, statusById])
+  const visibleQueue = useMemo(
+    () => rankedQueue.filter((queueItem) => queueItemMatchesFilters(queueItem, queueFilters)),
+    [queueFilters, rankedQueue],
+  )
+  const activeQueueFilterCount = (Object.values(queueFilters) as boolean[]).filter(Boolean).length
+  const toggleQueueFilter = (key: keyof QueueFilterState) =>
+    setQueueFilters((current) => ({ ...current, [key]: !current[key] }))
   const capacityCommitmentPlan = useMemo(
     () =>
       buildCapacityCommitmentPlan({
@@ -1141,21 +1182,41 @@ function App() {
               <Inbox aria-hidden="true" />
               RFQ queue
             </span>
-            <span className="queue-count">{workItems.length}</span>
+            <span className="queue-count">
+              {activeQueueFilterCount > 0 ? `${visibleQueue.length}/${workItems.length}` : workItems.length}
+            </span>
           </div>
-          <div className="queue-filters" aria-label="Queue filters">
-            <Button type="button" variant="secondary" size="sm">
+          <div className="queue-filters" role="group" aria-label="Queue filters">
+            <Button
+              aria-pressed={queueFilters.due}
+              onClick={() => toggleQueueFilter("due")}
+              size="sm"
+              type="button"
+              variant={queueFilters.due ? "secondary" : "ghost"}
+            >
               Due soon
             </Button>
-            <Button type="button" variant="ghost" size="sm">
+            <Button
+              aria-pressed={queueFilters.rush}
+              onClick={() => toggleQueueFilter("rush")}
+              size="sm"
+              type="button"
+              variant={queueFilters.rush ? "secondary" : "ghost"}
+            >
               Rush
             </Button>
-            <Button type="button" variant="ghost" size="sm">
+            <Button
+              aria-pressed={queueFilters.cnc}
+              onClick={() => toggleQueueFilter("cnc")}
+              size="sm"
+              type="button"
+              variant={queueFilters.cnc ? "secondary" : "ghost"}
+            >
               CNC
             </Button>
           </div>
           <div className="queue-list">
-            {rankedQueue.map((queueItem) => {
+            {visibleQueue.map((queueItem) => {
               const item = workItems.find((candidate) => candidate.id === queueItem.id) ?? workItems[0]
               return (
               <button
@@ -1177,6 +1238,20 @@ function App() {
               </button>
               )
             })}
+            {visibleQueue.length === 0 ? (
+              <div className="queue-empty" role="status">
+                <Inbox aria-hidden="true" />
+                <span>No RFQs match these filters.</span>
+                <Button
+                  onClick={() => setQueueFilters({ cnc: false, due: false, rush: false })}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Clear filters
+                </Button>
+              </div>
+            ) : null}
           </div>
         </aside>
 
@@ -1193,11 +1268,36 @@ function App() {
             </div>
             <div className="rfq-header-actions">
               <PriorityBadge priority={rush ? "rush" : "normal"} />
-              <Button type="button" variant="outline" size="icon" title="Open attachments" aria-label="Open attachments">
+              <Button
+                aria-controls="rfq-attachments"
+                aria-expanded={showAttachments}
+                aria-label="Open attachments"
+                onClick={() => setShowAttachments((open) => !open)}
+                size="sm"
+                title="Open attachments"
+                type="button"
+                variant="outline"
+              >
                 <PanelRight aria-hidden="true" />
+                {selectedItem.attachments.length}
               </Button>
             </div>
           </div>
+
+          {showAttachments ? (
+            <div className="attachment-disclosure" id="rfq-attachments" aria-label="RFQ attachments">
+              {selectedItem.attachments.map((attachment) => (
+                <div className="attachment-disclosure-row" key={attachment.fileName}>
+                  <FileText aria-hidden="true" />
+                  <span className="attachment-name">{attachment.fileName}</span>
+                  <span className="attachment-kind">{humanizeKey(attachment.kind)}</span>
+                  {attachment.sizeBytes ? (
+                    <span className="attachment-size">{formatFileSize(attachment.sizeBytes)}</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           <div className="tag-row" aria-label="RFQ tags">
             {selectedItem.tags.map((tag) => (
