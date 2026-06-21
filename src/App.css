@@ -1809,6 +1809,29 @@
   color: oklch(0.42 0.03 250);
 }
 
+.offer-export-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.offer-export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.offer-export-feedback {
+  color: oklch(0.5 0.02 250);
+  font-size: 0.78rem;
+  margin: 0;
+  min-height: 1.1rem;
+}
+
+.offer-export-feedback.is-error {
+  color: oklch(0.55 0.17 25);
+}
+
 .offer-text-field {
   display: grid;
   gap: 8px;

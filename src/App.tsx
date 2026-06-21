@@ -6,10 +6,13 @@ import {
   CheckCircle2,
   Clock3,
   CloudOff,
+  Copy,
   Cuboid,
   Database,
+  Download,
   ExternalLink,
   Factory,
+  FileDown,
   FileText,
   GitCompareArrows,
   Inbox,
@@ -2583,6 +2586,36 @@ function OfferView({
   replySync?: GmailOfferReplySyncResult
 }) {
   const offerText = exportPackage.plainText
+  const [exportFeedback, setExportFeedback] = useState<OfferExportFeedback>({ kind: "idle" })
+
+  const handleCopy = async () => {
+    const copied = await copyTextToClipboard(offerText)
+    setExportFeedback(copied ? { kind: "copied" } : { kind: "error", message: "Copy unavailable; select the text manually." })
+  }
+
+  const handleDownloadText = () => {
+    try {
+      triggerBlobDownload(
+        offerTextFileName(exportPackage),
+        new Blob([offerText], { type: "text/plain;charset=utf-8" }),
+      )
+      setExportFeedback({ kind: "downloaded", message: `Saved ${offerTextFileName(exportPackage)}` })
+    } catch {
+      setExportFeedback({ kind: "error", message: "Download failed in this browser." })
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    setExportFeedback({ kind: "rendering" })
+    try {
+      const { buildOfferPdfBytes } = await import("./domain/offers/offerPdf")
+      const pdf = await buildOfferPdfBytes(exportPackage)
+      triggerBlobDownload(pdf.fileName, new Blob([new Uint8Array(pdf.bytes)], { type: "application/pdf" }))
+      setExportFeedback({ kind: "downloaded", message: `Saved ${pdf.fileName} (${pdf.pageCount} page${pdf.pageCount === 1 ? "" : "s"})` })
+    } catch {
+      setExportFeedback({ kind: "error", message: "PDF rendering failed." })
+    }
+  }
 
   return (
     <div className="workspace-section">
@@ -2609,12 +2642,111 @@ function OfferView({
       <OfferReleaseExecutionPanel execution={releaseExecution} />
       <OfferReleaseHistoryPanel history={releaseHistory} />
       <OfferReplyPanel replySnapshot={replySnapshot} replySync={replySync} onSyncReplies={onSyncReplies} />
+      <section className="offer-export-actions" aria-label="Offer export actions">
+        <div className="offer-export-buttons" role="group">
+          <Button onClick={handleCopy} type="button" variant="outline" size="sm">
+            <Copy aria-hidden="true" />
+            {exportFeedback.kind === "copied" ? "Copied" : "Copy text"}
+          </Button>
+          <Button onClick={handleDownloadText} type="button" variant="outline" size="sm">
+            <Download aria-hidden="true" />
+            Download .txt
+          </Button>
+          <Button
+            disabled={exportFeedback.kind === "rendering"}
+            onClick={() => {
+              void handleDownloadPdf()
+            }}
+            type="button"
+            size="sm"
+          >
+            <FileDown aria-hidden="true" />
+            {exportFeedback.kind === "rendering" ? "Rendering…" : "Download PDF"}
+          </Button>
+        </div>
+        <p
+          aria-live="polite"
+          className={`offer-export-feedback${exportFeedback.kind === "error" ? " is-error" : ""}`}
+          role="status"
+        >
+          {exportFeedbackMessage(exportFeedback, exportPackage)}
+        </p>
+      </section>
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
       </label>
     </div>
   )
+}
+
+type OfferExportFeedback =
+  | { kind: "idle" }
+  | { kind: "copied" }
+  | { kind: "rendering" }
+  | { kind: "downloaded"; message: string }
+  | { kind: "error"; message: string }
+
+function exportFeedbackMessage(feedback: OfferExportFeedback, exportPackage: OfferExportPackage): string {
+  switch (feedback.kind) {
+    case "copied":
+      return "Offer text copied to the clipboard."
+    case "rendering":
+      return "Rendering PDF…"
+    case "downloaded":
+      return feedback.message
+    case "error":
+      return feedback.message
+    default:
+      return exportPackage.pdf.status === "ready"
+        ? "Copy or download the customer-ready offer. PDF mirrors the verified plain-text content."
+        : "Resolve export warnings above before sending; plain-text and PDF still available for review."
+  }
+}
+
+function offerTextFileName(exportPackage: OfferExportPackage): string {
+  return exportPackage.pdf.targetFileName.replace(/\.pdf$/i, ".txt")
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Fall through to the legacy execCommand path below.
+  }
+  if (typeof document === "undefined") {
+    return false
+  }
+  const textarea = document.createElement("textarea")
+  try {
+    textarea.value = text
+    textarea.setAttribute("readonly", "")
+    textarea.style.position = "fixed"
+    textarea.style.left = "-9999px"
+    document.body.appendChild(textarea)
+    textarea.select()
+    return document.execCommand("copy")
+  } catch {
+    return false
+  } finally {
+    textarea.remove()
+  }
+}
+
+function triggerBlobDownload(fileName: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = fileName
+  anchor.rel = "noopener"
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  // Defer revocation so the browser has a tick to begin the download.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionHistorySummary }) {

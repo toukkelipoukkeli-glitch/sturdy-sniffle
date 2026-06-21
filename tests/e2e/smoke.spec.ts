@@ -1,4 +1,40 @@
+import { readFileSync } from "node:fs"
+
 import { expect, test } from "@playwright/test"
+
+test.describe.configure({ mode: "serial" })
+
+test("exports a customer-ready offer as text and a real PDF", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+  await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
+
+  const exportActions = page.getByLabel("Offer export actions")
+  await expect(exportActions.getByRole("button", { name: "Copy text" })).toBeVisible()
+  await expect(exportActions.getByRole("button", { name: "Download .txt" })).toBeVisible()
+  await expect(exportActions.getByRole("button", { name: "Download PDF" })).toBeVisible()
+
+  // Plain-text export downloads a non-empty .txt mirroring the offer content.
+  const textDownloadPromise = page.waitForEvent("download")
+  await exportActions.getByRole("button", { name: "Download .txt" }).click()
+  const textDownload = await textDownloadPromise
+  expect(textDownload.suggestedFilename()).toMatch(/^OFFER-\d+-rev\d+\.txt$/)
+  const textPath = await textDownload.path()
+  const textContent = readFileSync(textPath, "utf8")
+  expect(textContent).toContain("Total excluding VAT:")
+
+  // PDF export downloads a structurally valid PDF (real bytes, not a cosmetic label).
+  const pdfDownloadPromise = page.waitForEvent("download")
+  await exportActions.getByRole("button", { name: "Download PDF" }).click()
+  const pdfDownload = await pdfDownloadPromise
+  expect(pdfDownload.suggestedFilename()).toMatch(/^OFFER-\d+-rev\d+\.pdf$/)
+  const pdfPath = await pdfDownload.path()
+  const pdfBytes = readFileSync(pdfPath)
+  expect(pdfBytes.byteLength).toBeGreaterThan(800)
+  expect(pdfBytes.subarray(0, 7).toString("latin1")).toBe("%PDF-1.")
+  expect(pdfBytes.subarray(-6).toString("latin1")).toContain("%%EOF")
+  await expect(exportActions.getByText(/Saved OFFER-\d+-rev\d+\.pdf/)).toBeVisible()
+})
 
 test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.goto("/")
