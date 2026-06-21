@@ -32,10 +32,10 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 ## §1 End-to-end RFQ intake
 
-- 🔴 **Manual RFQ creation in the UI** — `workItems` is a hardcoded 3-item array (`src/App.tsx:257`); no create flow. → **Slice C**
-- 🟡 **Gmail RFQ intake (fixture + fallback)** — deterministic adapter chain exists (`src/domain/integrations/gmailRfq.ts`), but UI hardwires the primary provider to fail (`src/App.tsx:908-911`) and ingested data only updates a connector snapshot, never materializes an RFQ. → **Slice C/G**
-- 🔴 **Editable, provenance-aware fields** — only quantity (+setup/cycle/rush) editable; customer/material/process/due/tolerance/notes are read-only; extraction source/confidence never rendered. → **Slice C**
-- 🟡 **Readiness states for invalid/incomplete RFQs** — `evaluateRfqIntakeReadiness` + panel exist (`src/domain/rfq/intakeReadiness.ts`, `App.tsx:1539`), but every fixture is permanently "Ready"; needs_review/blocked unreachable from UI. → **Slice C**
+- ✅ **Manual RFQ creation in the UI** — `workItems` is React state; a "New RFQ" button opens an accessible modal that captures customer/contact/subject/part/process/material/quantity/priority/due/setup/cycle/tolerance/finish/notes and builds a valid quote via `src/domain/rfq/manualRfq.ts`; the new RFQ surfaces in the queue and all downstream panels. (Slice C)
+- 🟡 **Gmail RFQ intake (fixture + fallback)** — deterministic adapter chain exists (`src/domain/integrations/gmailRfq.ts`), but UI hardwires the primary provider to fail and ingested data only updates a connector snapshot, never materializes an RFQ. → **Slice C2/G**
+- 🟡 **Editable, provenance-aware fields** — new RFQs are fully operator-entered (Slice C); editing customer/material/process/due/tolerance/notes on *existing* fixtures, plus source/confidence provenance badges, still pending. → **Slice C2**
+- 🟡 **Readiness states for invalid/incomplete RFQs** — `evaluateRfqIntakeReadiness` + panel exist; a manually created RFQ with no attachments now exercises a non-"Ready" warning path, but driving fixtures into blocked from the UI still pending. → **Slice C2**
 
 ## §2 Full quote workspace
 
@@ -121,7 +121,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **A2** | Offer lifecycle actions/history controls | §5 | ✅ |
 | **A3** | Editable offer header + durable export/revision history | §5, §2 | ☐ |
 | **B** | UI hardening: functional queue filters + Open-attachments disclosure (dead controls removed); mobile responsive verified | §9 | ✅ |
-| **C** | Manual RFQ creation + editable provenance-aware intake fields; readiness recompute | §1, §2 | ☐ |
+| **C** | Manual RFQ creation (stateful queue + accessible New-RFQ dialog → deterministic quote) | §1, §2 | ✅ |
+| **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | ☐ |
 | **D** | Costing edit depth (material/rate/margin) + localStorage persistence + loading/empty states + App component tests | §2, §10 | ☐ |
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
 | **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | ☐ |

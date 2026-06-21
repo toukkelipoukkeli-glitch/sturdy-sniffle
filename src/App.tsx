@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react"
+import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 import {
   AlertTriangle,
   Calculator,
@@ -20,6 +20,7 @@ import {
   Mail,
   PackageCheck,
   PanelRight,
+  Plus,
   RefreshCw,
   Ruler,
   ShieldCheck,
@@ -106,6 +107,13 @@ import {
   type RfqIntakeReadinessCheckStatus,
   type RfqIntakeReadinessResult,
 } from "./domain/rfq/intakeReadiness"
+import {
+  MANUAL_MATERIAL_PRESETS,
+  buildManualCncQuoteInput,
+  type ManualCncProcess,
+  type ManualMaterialKey,
+  type ManualPriority,
+} from "./domain/rfq/manualRfq"
 import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
 import {
   buildCapacityCommitmentPlan,
@@ -296,7 +304,7 @@ interface QuoteWorkItem {
   providerRuns: ProviderRunAudit[]
 }
 
-const workItems: QuoteWorkItem[] = [
+const initialWorkItems: QuoteWorkItem[] = [
   {
     id: "rfq-204",
     customer: "North Forge",
@@ -648,10 +656,12 @@ function formatFileSize(bytes: number): string {
 }
 
 function App() {
-  const [selectedId, setSelectedId] = useState(workItems[0].id)
+  const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(initialWorkItems)
+  const [selectedId, setSelectedId] = useState(initialWorkItems[0].id)
   const [activeView, setActiveView] = useState<WorkspaceView>("costing")
   const [queueFilters, setQueueFilters] = useState<QueueFilterState>({ cnc: false, due: false, rush: false })
   const [showAttachments, setShowAttachments] = useState(false)
+  const [isCreatingRfq, setIsCreatingRfq] = useState(false)
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
@@ -664,6 +674,7 @@ function App() {
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
   const connectorSyncLocksRef = useRef(new Set<string>())
+  const manualRfqCountRef = useRef(0)
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
@@ -712,7 +723,7 @@ function App() {
       }
     })
     return rankQuoteQueue(queueInputs, { now: queueNow })
-  }, [editsById, queueNow, statusById])
+  }, [editsById, queueNow, statusById, workItems])
   const visibleQueue = useMemo(
     () => rankedQueue.filter((queueItem) => queueItemMatchesFilters(queueItem, queueFilters)),
     [queueFilters, rankedQueue],
@@ -743,7 +754,7 @@ function App() {
         now: queueNow,
         planningDays: capacityPlanningDays,
       }),
-    [editsById, queueNow, statusById],
+    [editsById, queueNow, statusById, workItems],
   )
   const selectedCapacityCommitment = useMemo(
     () => findCommitmentForItem(capacityCommitmentPlan, selectedId),
@@ -774,7 +785,7 @@ function App() {
         now: queueNow,
         supplierRules: outsideServiceSupplierRules,
       }),
-    [editsById, queueNow, statusById],
+    [editsById, queueNow, statusById, workItems],
   )
   const materialAvailabilityPlan = useMemo(
     () =>
@@ -799,7 +810,7 @@ function App() {
         purchaseBufferDays: 1,
         supplierOptions: materialSupplierOptions,
       }),
-    [editsById, queueNow, statusById],
+    [editsById, queueNow, statusById, workItems],
   )
   const selectedMaterialCommitment = useMemo(
     () => materialAvailabilityPlan.commitments.find((commitment) => commitment.itemId === selectedId),
@@ -1190,6 +1201,48 @@ function App() {
     )
     setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: "" }))
   }
+  const createRfq = (values: ManualRfqFormValues) => {
+    manualRfqCountRef.current += 1
+    const id = `rfq-manual-${manualRfqCountRef.current}`
+    const quoteInput = buildManualCncQuoteInput({
+      partNumber: values.partNumber,
+      process: values.process,
+      materialKey: values.materialKey,
+      quantity: values.quantity,
+      priority: values.priority,
+      setupMinutes: values.setupMinutes,
+      cycleMinutesPerPart: values.cycleMinutesPerPart,
+      toleranceClass: values.toleranceClass,
+      finish: values.finish,
+    })
+    const notes = values.notes
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+    const newItem: QuoteWorkItem = {
+      id,
+      customer: values.customer.trim() || "New customer",
+      contact: values.contact.trim(),
+      subject: values.subject.trim() || quoteInput.partNumber,
+      received: "Just now",
+      receivedAt: demoNow,
+      due: formatManualDueLabel(values.dueDate),
+      dueAt: `${values.dueDate}T12:00:00+03:00`,
+      priority: values.priority,
+      status: "new",
+      source: "manual",
+      tags: buildManualTags(quoteInput),
+      quoteInput,
+      attachments: [],
+      cadMetadata: [],
+      notes,
+      providerRuns: [],
+    }
+    setWorkItems((current) => [newItem, ...current])
+    setSelectedId(id)
+    setActiveView("triage")
+    setIsCreatingRfq(false)
+  }
 
   return (
     <main className="workspace-shell">
@@ -1251,6 +1304,16 @@ function App() {
               {activeQueueFilterCount > 0 ? `${visibleQueue.length}/${workItems.length}` : workItems.length}
             </span>
           </div>
+          <Button
+            className="new-rfq-button"
+            onClick={() => setIsCreatingRfq(true)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Plus aria-hidden="true" />
+            New RFQ
+          </Button>
           <div className="queue-filters" role="group" aria-label="Queue filters">
             <Button
               aria-pressed={queueFilters.due}
@@ -1498,7 +1561,205 @@ function App() {
           <ProviderRunReviewPanel audits={selectedItem.providerRuns} />
         </aside>
       </section>
+      {isCreatingRfq ? <RfqCreateDialog onCancel={() => setIsCreatingRfq(false)} onCreate={createRfq} /> : null}
     </main>
+  )
+}
+
+interface ManualRfqFormValues {
+  customer: string
+  contact: string
+  subject: string
+  partNumber: string
+  process: ManualCncProcess
+  materialKey: ManualMaterialKey
+  quantity: number
+  priority: ManualPriority
+  dueDate: string
+  setupMinutes: number
+  cycleMinutesPerPart: number
+  toleranceClass: string
+  finish: string
+  notes: string
+}
+
+function buildManualTags(quoteInput: CncQuoteInput): string[] {
+  const tags = [formatProcess(quoteInput.process), quoteInput.material.name]
+  if (quoteInput.toleranceClass) {
+    tags.push(quoteInput.toleranceClass)
+  }
+  return tags
+}
+
+function formatManualDueLabel(dateValue: string): string {
+  const parsed = new Date(`${dateValue}T12:00:00`)
+  if (Number.isNaN(parsed.getTime())) {
+    return dateValue
+  }
+  return parsed.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
+}
+
+function defaultManualDueDate(): string {
+  const base = new Date(`${demoToday}T12:00:00`)
+  base.setDate(base.getDate() + 7)
+  return base.toISOString().slice(0, 10)
+}
+
+function RfqCreateDialog({
+  onCancel,
+  onCreate,
+}: {
+  onCancel: () => void
+  onCreate: (values: ManualRfqFormValues) => void
+}) {
+  const [values, setValues] = useState<ManualRfqFormValues>({
+    customer: "",
+    contact: "",
+    subject: "",
+    partNumber: "",
+    process: "cnc_milling",
+    materialKey: "aluminum_6082",
+    quantity: 1,
+    priority: "normal",
+    dueDate: defaultManualDueDate(),
+    setupMinutes: 30,
+    cycleMinutesPerPart: 12,
+    toleranceClass: "",
+    finish: "",
+    notes: "",
+  })
+  const update = <K extends keyof ManualRfqFormValues>(key: K, value: ManualRfqFormValues[K]) =>
+    setValues((current) => ({ ...current, [key]: value }))
+  const canSubmit = values.customer.trim() !== "" && values.partNumber.trim() !== ""
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (canSubmit) {
+      onCreate(values)
+    }
+  }
+
+  return (
+    <div className="rfq-dialog-backdrop" role="presentation" onClick={onCancel}>
+      <div
+        aria-label="Create RFQ"
+        aria-modal="true"
+        className="rfq-dialog"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            onCancel()
+          }
+        }}
+        role="dialog"
+      >
+        <form className="rfq-dialog-form" onSubmit={handleSubmit}>
+          <div className="rfq-dialog-header">
+            <h2>New RFQ</h2>
+            <p>Capture a manual request for quote. Fields use shop defaults you can refine in costing.</p>
+          </div>
+          <div className="rfq-dialog-grid">
+            <label className="field">
+              <span>Customer *</span>
+              <input autoFocus onChange={(event) => update("customer", event.target.value)} required value={values.customer} />
+            </label>
+            <label className="field">
+              <span>Contact</span>
+              <input onChange={(event) => update("contact", event.target.value)} value={values.contact} />
+            </label>
+            <label className="field rfq-dialog-span">
+              <span>Subject</span>
+              <input
+                onChange={(event) => update("subject", event.target.value)}
+                placeholder="e.g. CNC bracket production batch"
+                value={values.subject}
+              />
+            </label>
+            <label className="field">
+              <span>Part number *</span>
+              <input onChange={(event) => update("partNumber", event.target.value)} required value={values.partNumber} />
+            </label>
+            <label className="field">
+              <span>Process</span>
+              <select onChange={(event) => update("process", event.target.value as ManualCncProcess)} value={values.process}>
+                <option value="cnc_milling">CNC milling</option>
+                <option value="cnc_turning">CNC turning</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Material</span>
+              <select onChange={(event) => update("materialKey", event.target.value as ManualMaterialKey)} value={values.materialKey}>
+                {MANUAL_MATERIAL_PRESETS.map((preset) => (
+                  <option key={preset.key} value={preset.key}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Quantity</span>
+              <input
+                min={1}
+                onChange={(event) => update("quantity", toPositiveInteger(event.target.value))}
+                type="number"
+                value={values.quantity}
+              />
+            </label>
+            <label className="field">
+              <span>Priority</span>
+              <select onChange={(event) => update("priority", event.target.value as ManualPriority)} value={values.priority}>
+                <option value="normal">Normal</option>
+                <option value="rush">Rush</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Due date</span>
+              <input onChange={(event) => update("dueDate", event.target.value)} type="date" value={values.dueDate} />
+            </label>
+            <label className="field">
+              <span>Setup minutes</span>
+              <input
+                min={0}
+                onChange={(event) => update("setupMinutes", toNumber(event.target.value))}
+                type="number"
+                value={values.setupMinutes}
+              />
+            </label>
+            <label className="field">
+              <span>Cycle minutes / part</span>
+              <input
+                min={0.1}
+                onChange={(event) => update("cycleMinutesPerPart", toPositiveNumber(event.target.value))}
+                step={0.1}
+                type="number"
+                value={values.cycleMinutesPerPart}
+              />
+            </label>
+            <label className="field">
+              <span>Tolerance</span>
+              <input onChange={(event) => update("toleranceClass", event.target.value)} placeholder="e.g. ISO 2768-M" value={values.toleranceClass} />
+            </label>
+            <label className="field">
+              <span>Finish</span>
+              <input onChange={(event) => update("finish", event.target.value)} placeholder="e.g. Deburred" value={values.finish} />
+            </label>
+            <label className="field rfq-dialog-span">
+              <span>Notes</span>
+              <textarea onChange={(event) => update("notes", event.target.value)} placeholder="One note per line" value={values.notes} />
+            </label>
+          </div>
+          <div className="rfq-dialog-actions">
+            <Button onClick={onCancel} size="sm" type="button" variant="ghost">
+              Cancel
+            </Button>
+            <Button disabled={!canSubmit} size="sm" type="submit">
+              <Plus aria-hidden="true" />
+              Create RFQ
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
