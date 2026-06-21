@@ -2161,6 +2161,53 @@
   min-height: 92px;
 }
 
+.offer-export-history {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.offer-export-history-heading,
+.offer-export-history-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.offer-export-history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.offer-export-history-row,
+.offer-export-history-empty {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.offer-export-history-row[data-status="failed"] {
+  background: oklch(0.96 0.04 32);
+  border-color: oklch(0.82 0.08 32);
+}
+
+.offer-export-history-row div {
+  display: grid;
+  gap: 3px;
+}
+
+.offer-export-history-row span,
+.offer-export-history-row small,
+.offer-export-history-empty {
+  color: oklch(0.42 0.03 250);
+  font-size: 0.78rem;
+}
+
 .offer-reply-panel,
 .offer-export-panel,
 .quote-approval-panel,
@@ -3283,6 +3330,7 @@
   .rfq-readiness-checks,
   .offer-export-summary,
   .offer-draft-grid,
+  .offer-export-history-row,
   .alternate-row,
   .quote-approval-summary,
   .quote-approval-checks,
