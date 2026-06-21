@@ -180,6 +180,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.getByLabel("Material cost per kg").fill("6.40")
   await page.getByLabel("Machine hourly rate").fill("92")
   await page.getByLabel("Margin percent").fill("25")
+  await expect(page.locator(".assumption-row", { hasText: "margin percent" })).toContainText("25")
 
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
   await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
