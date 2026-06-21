@@ -45,7 +45,12 @@ test("exports a customer-ready offer as text and a real PDF", async ({ page }) =
   expect(pdfBytes.subarray(0, 7).toString("latin1")).toBe("%PDF-1.")
   expect(pdfBytes.subarray(-6).toString("latin1")).toContain("%%EOF")
   await expect(exportActions.getByText(/Saved OFFER-\d+-rev\d+\.pdf/)).toBeVisible()
-  await expect(page.getByLabel("Offer export history")).toContainText("Downloaded OFFER-204-rev1.pdf")
+  await expect(page.getByLabel("Offer export history")).toContainText("Downloaded OFFER-204-rev1.pdf (1 page).")
+
+  await page.reload()
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+  await expect(page.getByLabel("Offer export history")).toContainText("Downloaded OFFER-204-rev1.txt.")
+  await expect(page.getByLabel("Offer export history")).toContainText("Downloaded OFFER-204-rev1.pdf (1 page).")
 })
 
 test("filters the RFQ queue and discloses attachments", async ({ page }) => {
