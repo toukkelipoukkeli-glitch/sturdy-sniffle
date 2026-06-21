@@ -74,10 +74,17 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(screen.getByRole("button", { name: "Triage" }))
 
     const editor = screen.getByRole("region", { name: "Editable RFQ fields" })
+    expect(within(editor).getAllByText("GMAIL 96%").length).toBeGreaterThan(0)
+
     const subject = within(editor).getByLabelText("RFQ subject")
     await user.clear(subject)
     await user.type(subject, "CNC bracket FB-204-B")
     expect(screen.getByRole("heading", { name: "CNC bracket FB-204-B" })).toBeInTheDocument()
+
+    await user.selectOptions(within(editor).getByLabelText("RFQ process"), "cnc_turning")
+    await user.selectOptions(within(editor).getByLabelText("RFQ material"), "aluminum_7075")
+    expect(screen.getByLabelText("RFQ tags")).toHaveTextContent("CNC turning")
+    expect(screen.getByLabelText("RFQ tags")).toHaveTextContent("Aluminum 7075")
 
     const customer = within(editor).getByLabelText("RFQ customer")
     await user.clear(customer)

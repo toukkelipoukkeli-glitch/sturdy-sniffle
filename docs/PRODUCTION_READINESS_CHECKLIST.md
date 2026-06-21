@@ -34,8 +34,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ **Manual RFQ creation in the UI** — `workItems` is React state; a "New RFQ" button opens an accessible modal that captures customer/contact/subject/part/process/material/quantity/priority/due/setup/cycle/tolerance/finish/notes and builds a valid quote via `src/domain/rfq/manualRfq.ts`; the new RFQ surfaces in the queue and all downstream panels. (Slice C)
 - 🟡 **Gmail RFQ intake (fixture + fallback)** — deterministic adapter chain exists (`src/domain/integrations/gmailRfq.ts`), but UI hardwires the primary provider to fail and ingested data only updates a connector snapshot, never materializes an RFQ. → **Slice C2/G**
-- 🟡 **Editable, provenance-aware fields** — new RFQs are fully operator-entered (Slice C); existing RFQs now allow customer/contact/subject/due/tolerance/finish/notes edits (Slice C2), but material/process editing and confidence provenance badges are still pending. → **Slice C2/E**
-- 🟡 **Readiness states for invalid/incomplete RFQs** — `evaluateRfqIntakeReadiness` + panel exist; a manually created RFQ with no attachments now exercises a non-"Ready" warning path, but driving fixtures into blocked from the UI still pending. → **Slice C2**
+- ✅ **Editable, provenance-aware fields** — new RFQs are fully operator-entered (Slice C); existing CNC RFQs now allow customer/contact/subject/material/process/due/tolerance/finish/notes edits, show per-field extraction confidence/source badges, and update queue tags plus downstream plans deterministically. (Slice C2)
+- ✅ **Readiness states for invalid/incomplete RFQs** — `evaluateRfqIntakeReadiness` + panel exist; manual RFQs exercise warning paths, and existing RFQs can be driven into blocked states from the UI through missing customer or past due-date edits. (Slice C2)
 
 ## §2 Full quote workspace
 
@@ -122,7 +122,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **A3** | Editable offer header + durable export/revision history | §5, §2 | ☐ |
 | **B** | UI hardening: functional queue filters + Open-attachments disclosure (dead controls removed); mobile responsive verified | §9 | ✅ |
 | **C** | Manual RFQ creation (stateful queue + accessible New-RFQ dialog → deterministic quote) | §1, §2 | ✅ |
-| **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | 🟡 |
+| **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | ✅ |
 | **D** | Costing edit depth (material/rate/margin) + loading/empty states + App component tests | §2, §10 | 🟡 |
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
 | **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | ☐ |
