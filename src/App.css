@@ -1997,6 +1997,7 @@
 .quote-approval-panel,
 .offer-readiness-panel,
 .quote-release-panel,
+.offer-lifecycle-panel,
 .offer-release-plan-panel,
 .offer-release-execution-panel,
 .offer-release-history-panel {
@@ -2012,6 +2013,7 @@
 .quote-approval-heading,
 .offer-readiness-heading,
 .quote-release-heading,
+.offer-lifecycle-heading,
 .offer-release-plan-heading,
 .offer-release-execution-heading,
 .offer-release-history-heading,
@@ -2027,6 +2029,7 @@
 .quote-approval-heading > div,
 .offer-readiness-heading > div,
 .quote-release-heading > div,
+.offer-lifecycle-heading > div,
 .offer-release-plan-heading > div,
 .offer-release-execution-heading > div,
 .offer-release-history-heading > div,
@@ -2041,6 +2044,7 @@
 .quote-approval-heading strong,
 .offer-readiness-heading strong,
 .quote-release-heading strong,
+.offer-lifecycle-heading strong,
 .offer-release-plan-heading strong,
 .offer-release-execution-heading strong,
 .offer-release-history-heading strong,
@@ -2139,6 +2143,32 @@
   color: oklch(0.42 0.11 35);
 }
 
+.offer-lifecycle-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.offer-lifecycle-status-accepted,
+.offer-lifecycle-status-sent {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.offer-lifecycle-status-draft {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.offer-lifecycle-status-declined,
+.offer-lifecycle-status-superseded {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
 .offer-release-plan-status {
   border-radius: 999px;
   flex: 0 0 auto;
@@ -2218,6 +2248,9 @@
 .quote-release-summary,
 .quote-release-checks,
 .quote-release-actions,
+.offer-lifecycle-summary,
+.offer-lifecycle-actions,
+.offer-lifecycle-grid,
 .offer-release-plan-summary,
 .offer-release-command-list,
 .offer-release-next-actions,
@@ -2280,6 +2313,61 @@
 
 .quote-release-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.offer-lifecycle-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.offer-lifecycle-actions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.offer-lifecycle-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.offer-lifecycle-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.offer-lifecycle-row,
+.offer-lifecycle-empty {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px;
+}
+
+.offer-lifecycle-row[data-status="open"] {
+  border-color: oklch(0.82 0.09 82);
+}
+
+.offer-lifecycle-row[data-status="completed"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.offer-lifecycle-row[data-status="cancelled"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
+.offer-lifecycle-row span,
+.offer-lifecycle-row small,
+.offer-lifecycle-empty {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.offer-lifecycle-row strong {
+  font-size: 0.82rem;
 }
 
 .offer-release-plan-summary {
@@ -3031,6 +3119,8 @@
   .offer-readiness-checks,
   .quote-release-summary,
   .quote-release-checks,
+  .offer-lifecycle-summary,
+  .offer-lifecycle-grid,
   .offer-release-plan-summary,
   .offer-release-command-list,
   .offer-release-execution-summary,

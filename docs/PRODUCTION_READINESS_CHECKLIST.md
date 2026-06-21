@@ -65,8 +65,9 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **Plain-text export exercisable** — read-only offer text remains inspectable and can be copied or downloaded as `.txt` from `OfferView`.
 - ✅ **PDF export/rendering verified** — `offerPdf.ts` renders deterministic `pdf-lib` bytes with fixture coverage and smoke-tested download flow.
 - ✅ **Operator can copy/download** — `OfferView` exposes Copy, Download `.txt`, and Download PDF buttons with aria-live feedback.
-- 🔴 **Offer history (exports/sends/accept/decline/follow-ups/revisions)** — `buildOfferLifecycleTimeline` is dead code in UI; offer status permanently "draft". → **Slice A**
-- 🟡 **Offer is an editable artifact** — validity dates/terms/notes are computed constants. → **Slice A**
+- ✅ **Offer lifecycle actions/history** — `OfferLifecyclePanel` wires deterministic sent/accept/decline/follow-up controls to `buildOfferLifecycleTimeline` with smoke coverage.
+- 🟡 **Offer export/revision history is durable** — export feedback is session-local and revision history is still draft-generated. → **Slice A3**
+- 🟡 **Offer is an editable artifact** — validity dates/terms/notes are computed constants. → **Slice A3**
 
 ## §6 Gmail and Calendar workflow
 
@@ -95,7 +96,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **No dead controls** — queue filters (Due soon/Rush/CNC) are real `aria-pressed` toggles that narrow the ranked queue with an empty state; "Open attachments" is a real disclosure of the selected RFQ's files. (Slice B)
 - ✅ **Desktop + mobile responsive** — `src/App.css` has `@media` breakpoints at 1180px/820px; verified usable at 375px (no horizontal overflow, no overlapping text).
 - 🟡 **Loading/empty/error states + error boundary** — queue has an empty state; broader skeletons/error boundary still pending. → **Slice D**
-- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); send/release actions still pending. → **Slice A2/D**
+- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); durable send/release execution still pending. → **Slice A3/D**
 
 ## §10 Quality gates & test coverage
 
@@ -117,7 +118,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | Slice | Title | DoD | Status |
 |------|-------|-----|--------|
 | **A** | Offer export: copy + download `.txt` + real PDF render | §5, §9 | ✅ |
-| **A2** | Offer lifecycle actions/history + editable offer header | §5, §2 | ☐ |
+| **A2** | Offer lifecycle actions/history controls | §5 | ✅ |
+| **A3** | Editable offer header + durable export/revision history | §5, §2 | ☐ |
 | **B** | UI hardening: functional queue filters + Open-attachments disclosure (dead controls removed); mobile responsive verified | §9 | ✅ |
 | **C** | Manual RFQ creation + editable provenance-aware intake fields; readiness recompute | §1, §2 | ☐ |
 | **D** | Costing edit depth (material/rate/margin) + localStorage persistence + loading/empty states + App component tests | §2, §10 | ☐ |
