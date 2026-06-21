@@ -195,11 +195,23 @@ interface OfferDraftEditState {
   validUntil: string
 }
 
+type OfferExportEventKind = "copy_text" | "download_pdf" | "download_text"
+
+interface OfferExportHistoryEvent {
+  fileName?: string
+  id: string
+  kind: OfferExportEventKind
+  message: string
+  occurredAt: string
+  status: "failed" | "succeeded"
+}
+
 interface WorkspaceLocalState {
   actionsById: Record<string, WorkspaceActionRecord[]>
   activeView: WorkspaceView
   editsById: Record<string, Partial<QuoteEditState>>
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
+  offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
   selectedId: string
   statusById: Record<string, QuoteQueueStatus>
@@ -709,6 +721,9 @@ function App() {
   const [offerDraftEditsById, setOfferDraftEditsById] = useState<Record<string, Partial<OfferDraftEditState>>>(
     workspaceLocalState?.offerDraftEditsById ?? {},
   )
+  const [offerExportEventsById, setOfferExportEventsById] = useState<Record<string, OfferExportHistoryEvent[]>>(
+    workspaceLocalState?.offerExportEventsById ?? {},
+  )
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
@@ -736,13 +751,14 @@ function App() {
       activeView,
       editsById,
       offerDraftEditsById,
+      offerExportEventsById,
       offerLifecycleEventsById,
       selectedId,
       statusById,
       version: 1,
       workItems,
     })
-  }, [actionsById, activeView, editsById, offerDraftEditsById, offerLifecycleEventsById, selectedId, statusById, workItems])
+  }, [actionsById, activeView, editsById, offerDraftEditsById, offerExportEventsById, offerLifecycleEventsById, selectedId, statusById, workItems])
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
@@ -752,6 +768,7 @@ function App() {
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
+  const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
   const selectedOfferDraftEdit = useMemo(
     () => offerDraftEditStateForItem(selectedItem, offerDraftEditsById[selectedId]),
     [offerDraftEditsById, selectedId, selectedItem],
@@ -776,6 +793,23 @@ function App() {
         ...patch,
       },
     }))
+  }
+  const recordSelectedOfferExportEvent = (event: Omit<OfferExportHistoryEvent, "id" | "occurredAt">) => {
+    setOfferExportEventsById((current) => {
+      const events = current[selectedId] ?? []
+      const nextIndex = events.length + 1
+      return {
+        ...current,
+        [selectedId]: [
+          ...events,
+          {
+            ...event,
+            id: `${selectedId}:offer-export:${nextIndex}`,
+            occurredAt: demoNow,
+          },
+        ],
+      }
+    })
   }
   const updateSelectedRfqFields = (patch: RfqFieldPatch) => {
     setWorkItems((current) =>
@@ -1611,11 +1645,13 @@ function App() {
               lifecycle={offerLifecycle}
               offer={offer}
               offerDraftEdit={selectedOfferDraftEdit}
+              offerExportEvents={selectedOfferExportEvents}
               onAcceptOffer={acceptOffer}
               onCompleteFollowUp={completeOfferLifecycleFollowUp}
               onDeclineOffer={declineOffer}
               onDraftEditChange={updateSelectedOfferDraftEdit}
               onMarkSent={markOfferSent}
+              onRecordExportEvent={recordSelectedOfferExportEvent}
               onScheduleFollowUp={scheduleOfferLifecycleFollowUp}
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
@@ -1737,9 +1773,10 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
   const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
+  const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
-  if (!actionsById || !editsById || !offerDraftEditsById || !offerLifecycleEventsById || !statusById) {
+  if (!actionsById || !editsById || !offerDraftEditsById || !offerExportEventsById || !offerLifecycleEventsById || !statusById) {
     return undefined
   }
 
@@ -1755,6 +1792,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     activeView,
     editsById,
     offerDraftEditsById,
+    offerExportEventsById,
     offerLifecycleEventsById,
     selectedId,
     statusById,
@@ -1933,6 +1971,18 @@ function isOfferDraftEditStatePatch(value: unknown): value is Partial<OfferDraft
     (value.revisionReason === undefined || typeof value.revisionReason === "string") &&
     (value.termsText === undefined || typeof value.termsText === "string") &&
     (value.validUntil === undefined || typeof value.validUntil === "string")
+  )
+}
+
+function isOfferExportHistoryEvent(value: unknown): value is OfferExportHistoryEvent {
+  return (
+    isObjectRecord(value) &&
+    typeof value.id === "string" &&
+    (value.kind === "copy_text" || value.kind === "download_pdf" || value.kind === "download_text") &&
+    typeof value.message === "string" &&
+    typeof value.occurredAt === "string" &&
+    (value.status === "failed" || value.status === "succeeded") &&
+    (value.fileName === undefined || typeof value.fileName === "string")
   )
 }
 
@@ -3749,11 +3799,13 @@ function OfferView({
   lifecycle,
   offer,
   offerDraftEdit,
+  offerExportEvents,
   onAcceptOffer,
   onCompleteFollowUp,
   onDeclineOffer,
   onDraftEditChange,
   onMarkSent,
+  onRecordExportEvent,
   onScheduleFollowUp,
   onSyncReplies,
   readiness,
@@ -3769,11 +3821,13 @@ function OfferView({
   lifecycle: OfferLifecycleTimeline
   offer: OfferDraft
   offerDraftEdit: OfferDraftEditState
+  offerExportEvents: OfferExportHistoryEvent[]
   onAcceptOffer: () => void
   onCompleteFollowUp: () => void
   onDeclineOffer: () => void
   onDraftEditChange: (patch: Partial<OfferDraftEditState>) => void
   onMarkSent: () => void
+  onRecordExportEvent: (event: Omit<OfferExportHistoryEvent, "id" | "occurredAt">) => void
   onScheduleFollowUp: () => void
   onSyncReplies: () => void
   readiness: OfferSendReadinessResult
@@ -3789,6 +3843,11 @@ function OfferView({
 
   const handleCopy = async () => {
     const copied = await copyTextToClipboard(offerText)
+    onRecordExportEvent({
+      kind: "copy_text",
+      message: copied ? `Copied ${offer.offerNumber} plain text.` : "Copy failed; operator must select the text manually.",
+      status: copied ? "succeeded" : "failed",
+    })
     setExportFeedback(copied ? { kind: "copied" } : { kind: "error", message: "Copy unavailable; select the text manually." })
   }
 
@@ -3798,8 +3857,20 @@ function OfferView({
         offerTextFileName(exportPackage),
         new Blob([offerText], { type: "text/plain;charset=utf-8" }),
       )
+      onRecordExportEvent({
+        fileName: offerTextFileName(exportPackage),
+        kind: "download_text",
+        message: `Downloaded ${offerTextFileName(exportPackage)}.`,
+        status: "succeeded",
+      })
       setExportFeedback({ kind: "downloaded", message: `Saved ${offerTextFileName(exportPackage)}` })
     } catch {
+      onRecordExportEvent({
+        fileName: offerTextFileName(exportPackage),
+        kind: "download_text",
+        message: `Download failed for ${offerTextFileName(exportPackage)}.`,
+        status: "failed",
+      })
       setExportFeedback({ kind: "error", message: "Download failed in this browser." })
     }
   }
@@ -3810,8 +3881,20 @@ function OfferView({
       const { buildOfferPdfBytes } = await import("./domain/offers/offerPdf")
       const pdf = await buildOfferPdfBytes(exportPackage)
       triggerBlobDownload(pdf.fileName, new Blob([new Uint8Array(pdf.bytes)], { type: "application/pdf" }))
+      onRecordExportEvent({
+        fileName: pdf.fileName,
+        kind: "download_pdf",
+        message: `Downloaded ${pdf.fileName} (${pdf.pageCount} page${pdf.pageCount === 1 ? "" : "s"}).`,
+        status: "succeeded",
+      })
       setExportFeedback({ kind: "downloaded", message: `Saved ${pdf.fileName} (${pdf.pageCount} page${pdf.pageCount === 1 ? "" : "s"})` })
     } catch {
+      onRecordExportEvent({
+        fileName: exportPackage.pdf.targetFileName,
+        kind: "download_pdf",
+        message: `PDF rendering failed for ${exportPackage.pdf.targetFileName}.`,
+        status: "failed",
+      })
       setExportFeedback({ kind: "error", message: "PDF rendering failed." })
     }
   }
@@ -3916,6 +3999,7 @@ function OfferView({
           {exportFeedbackMessage(exportFeedback, exportPackage)}
         </p>
       </section>
+      <OfferExportHistoryPanel events={offerExportEvents} />
       <label className="offer-text-field">
         <span>Plain text offer</span>
         <textarea aria-label="Plain text offer" readOnly value={offerText} />
@@ -3946,6 +4030,39 @@ function exportFeedbackMessage(feedback: OfferExportFeedback, exportPackage: Off
         ? "Copy or download the customer-ready offer. PDF mirrors the verified plain-text content."
         : "Resolve export warnings above before sending; plain-text and PDF still available for review."
   }
+}
+
+function OfferExportHistoryPanel({ events }: { events: OfferExportHistoryEvent[] }) {
+  return (
+    <section className="offer-export-history" aria-label="Offer export history">
+      <div className="offer-export-history-heading">
+        <span className="eyebrow">
+          <FileText aria-hidden="true" />
+          Export history
+        </span>
+        <span className="count-badge">{events.length}</span>
+      </div>
+      {events.length === 0 ? (
+        <div className="offer-export-history-empty">No export events recorded.</div>
+      ) : (
+        <div className="offer-export-history-list">
+          {events.map((event) => (
+            <div className="offer-export-history-row" data-status={event.status} key={event.id}>
+              <div>
+                <strong>{humanizeKey(event.kind)}</strong>
+                <span>{event.message}</span>
+              </div>
+              <small>{formatAuditTimestamp(event.occurredAt)}</small>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function formatAuditTimestamp(value: string): string {
+  return value.replace("T", " ").slice(0, 16)
 }
 
 function offerTextFileName(exportPackage: OfferExportPackage): string {
