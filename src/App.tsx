@@ -2046,13 +2046,16 @@ function cncDimensionsForProcess(
   const finished = quoteInput.finishedDimensions
 
   if (process === "cnc_turning") {
+    const finishedDiameter = Math.max(finished?.diameterMm ?? 0, finished?.widthMm ?? 0, finished?.heightMm ?? 0) || 32
+    const stockDiameter = Math.max(stock.diameterMm ?? 0, stock.widthMm ?? 0, stock.heightMm ?? 0) || 40
+
     return {
       finished: {
-        diameterMm: finished?.diameterMm ?? finished?.widthMm ?? finished?.heightMm ?? 32,
+        diameterMm: finishedDiameter,
         lengthMm: finished?.lengthMm ?? stock.lengthMm ?? 80,
       },
       stock: {
-        diameterMm: stock.diameterMm ?? stock.widthMm ?? stock.heightMm ?? 40,
+        diameterMm: stockDiameter,
         lengthMm: stock.lengthMm ?? finished?.lengthMm ?? 90,
       },
     }
