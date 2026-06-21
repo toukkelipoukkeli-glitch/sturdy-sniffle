@@ -4,7 +4,7 @@ Local-first manufacturing quote automation workspace.
 
 This repository is in active product buildout. The stack, CI, automated review bots, deterministic quote engines, Convex workflow boundaries, connector adapter boundaries, and the first operator workspace flows are already in place.
 
-See [ROADMAP.md](./ROADMAP.md) for the planned FactoryBid OS product slices.
+See [ROADMAP.md](./ROADMAP.md) for the planned FactoryBid OS product slices and [docs/AUTONOMOUS_BUILD_HANDOFF.md](./docs/AUTONOMOUS_BUILD_HANDOFF.md) for the current autonomous build-loop handoff.
 
 ## Stack
 
