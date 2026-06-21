@@ -34,6 +34,28 @@ test("creates a manual RFQ and surfaces it in the queue", async ({ page }) => {
   await expect(page.getByLabel("RFQ intake readiness")).toBeVisible()
 })
 
+test("edits selected RFQ intake fields inline", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { exact: true, name: "Triage" }).click()
+
+  const editor = page.getByLabel("Editable RFQ fields")
+  await expect(editor).toBeVisible()
+  await editor.getByLabel("RFQ subject").fill("CNC bracket FB-204-B")
+  await expect(page.getByRole("heading", { name: "CNC bracket FB-204-B" })).toBeVisible()
+  await expect(page.getByLabel("RFQ queue").getByRole("button", { name: /CNC bracket FB-204-B/ })).toBeVisible()
+
+  await editor.getByLabel("RFQ tolerance").fill("ISO 2768-F")
+  await expect(page.getByLabel("RFQ tags")).toContainText("ISO 2768-F")
+
+  await editor.getByLabel("RFQ customer").fill("")
+  await expect(page.getByLabel("RFQ intake readiness")).toContainText("Customer name is missing")
+  await editor.getByLabel("RFQ customer").fill("North Forge Works")
+  await expect(page.getByLabel("RFQ intake readiness")).not.toContainText("Customer name is missing")
+
+  await editor.getByLabel("RFQ due date").fill("2026-06-18")
+  await expect(page.getByLabel("RFQ intake readiness")).toContainText("Buyer due date is already in the past.")
+})
+
 test("closes the manual RFQ dialog with Escape", async ({ page }) => {
   await openCreateRfqDialog(page)
 
