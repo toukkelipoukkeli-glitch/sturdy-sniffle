@@ -2505,6 +2505,107 @@
   color: oklch(0.36 0.035 250);
 }
 
+.integration-source-status a {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.integration-source-status svg {
+  height: 13px;
+  width: 13px;
+}
+
+.connector-drilldown {
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.connector-drilldown-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.connector-drilldown-summary .metric {
+  background: white;
+  min-height: 58px;
+  padding: 8px;
+}
+
+.connector-drilldown-filters {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.connector-drilldown-filters .inline-flex {
+  justify-content: center;
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: normal;
+}
+
+.connector-drilldown-filter-active {
+  background: oklch(0.23 0.045 250);
+  border-color: oklch(0.23 0.045 250);
+  color: white;
+}
+
+.connector-drilldown-list {
+  display: grid;
+  gap: 8px;
+}
+
+.connector-drilldown-row {
+  align-items: start;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 9px;
+}
+
+.connector-drilldown-row[data-kind="activity"] {
+  background: oklch(0.97 0.012 210);
+}
+
+.connector-drilldown-row[data-status="stale"] {
+  background: oklch(0.98 0.018 85);
+  border-color: oklch(0.84 0.07 82);
+}
+
+.connector-drilldown-row[data-status="blocked"] {
+  background: oklch(0.985 0.02 35);
+  border-color: oklch(0.8 0.09 35);
+}
+
+.connector-drilldown-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.connector-drilldown-row strong {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.connector-drilldown-row div span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .provider-review-heading,
 .provider-run-topline {
   gap: 10px;
@@ -2738,7 +2839,9 @@
   .offer-release-history-retries,
   .offer-reply-summary,
   .offer-reply-state-summary,
-  .integration-source-row {
+  .integration-source-row,
+  .connector-drilldown-summary,
+  .connector-drilldown-row {
     grid-template-columns: 1fr;
   }
 

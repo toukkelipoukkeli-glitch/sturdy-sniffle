@@ -8,6 +8,7 @@ import {
   CloudOff,
   Cuboid,
   Database,
+  ExternalLink,
   Factory,
   FileText,
   GitCompareArrows,
@@ -28,6 +29,12 @@ import { Button } from "./components/ui/button"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
 import { createCalendarRfqScheduler, createMockCalendarRfqProvider } from "./domain/integrations/calendarRfq"
 import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
+import {
+  buildConnectorLinkDrilldown,
+  type ConnectorLinkDrilldown,
+  type ConnectorLinkDrilldownFilter,
+  type ConnectorLinkDrilldownItem,
+} from "./domain/integrations/connectorLinkDrilldown"
 import {
   createLocalConnectorSyncPersistence,
   type ConnectorSyncPersistenceSnapshot,
@@ -237,6 +244,13 @@ const providerRunHistoryFilters: ProviderRunHistoryFilter[] = [
   "failed",
   "skipped",
   "succeeded",
+]
+const connectorLinkDrilldownFilters: ConnectorLinkDrilldownFilter[] = [
+  "all",
+  "gmail",
+  "calendar",
+  "attention",
+  "activity",
 ]
 
 interface QuoteEditState {
@@ -1291,9 +1305,11 @@ function App() {
             )}
           </div>
           <IntegrationStatusPanel
+            connectorSnapshot={selectedConnectorSnapshot}
             isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
             onSyncReplies={syncOfferReplies}
+            rfqId={selectedItem.id}
             status={integrationStatus}
           />
           <ProviderRunReviewPanel audits={selectedItem.providerRuns} />
@@ -1324,16 +1340,26 @@ function PersistenceStatus({
 }
 
 function IntegrationStatusPanel({
+  connectorSnapshot,
   isConnectorSyncing,
   onSyncConnector,
   onSyncReplies,
+  rfqId,
   status,
 }: {
+  connectorSnapshot: ConnectorSyncPersistenceSnapshot
   isConnectorSyncing: boolean
   onSyncConnector: () => void
   onSyncReplies: () => void
+  rfqId: string
   status: WorkspaceIntegrationStatus
 }) {
+  const [connectorFilter, setConnectorFilter] = useState<ConnectorLinkDrilldownFilter>("all")
+  const connectorDrilldown = useMemo(
+    () => buildConnectorLinkDrilldown(connectorSnapshot, { filter: connectorFilter, limit: 6, rfqId }),
+    [connectorFilter, connectorSnapshot, rfqId],
+  )
+
   return (
     <section className="integration-status-panel" aria-label="Integration health">
       <div className="integration-status-heading">
@@ -1363,6 +1389,11 @@ function IntegrationStatusPanel({
           <IntegrationSourceRow key={source.key} source={source} />
         ))}
       </div>
+      <ConnectorLinkDrilldownPanel
+        drilldown={connectorDrilldown}
+        filter={connectorFilter}
+        onFilterChange={setConnectorFilter}
+      />
       {status.warnings.length > 0 ? (
         <div className="provider-warning-list">
           {status.warnings.slice(0, 3).map((warning) => (
@@ -1375,6 +1406,103 @@ function IntegrationStatusPanel({
       ) : null}
     </section>
   )
+}
+
+function ConnectorLinkDrilldownPanel({
+  drilldown,
+  filter,
+  onFilterChange,
+}: {
+  drilldown: ConnectorLinkDrilldown
+  filter: ConnectorLinkDrilldownFilter
+  onFilterChange: (filter: ConnectorLinkDrilldownFilter) => void
+}) {
+  return (
+    <section className="connector-drilldown" aria-label="Connector link drill-down">
+      <div className="connector-drilldown-summary">
+        <Metric label="Links" value={String(drilldown.summary.linkCount)} />
+        <Metric label="Gmail" value={String(drilldown.summary.gmailLinkCount)} />
+        <Metric label="Calendar" value={String(drilldown.summary.calendarLinkCount)} />
+        <Metric label="Activity" value={String(drilldown.summary.activityCount)} />
+      </div>
+      <div className="connector-drilldown-filters" aria-label="Connector drill-down filters">
+        {connectorLinkDrilldownFilters.map((drilldownFilter) => (
+          <Button
+            aria-pressed={filter === drilldownFilter}
+            className={filter === drilldownFilter ? "connector-drilldown-filter-active" : undefined}
+            key={drilldownFilter}
+            onClick={() => onFilterChange(drilldownFilter)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {connectorLinkDrilldownFilterLabel(drilldownFilter, drilldown)}
+          </Button>
+        ))}
+      </div>
+      <div className="connector-drilldown-list">
+        {drilldown.items.length > 0 ? (
+          drilldown.items.map((item) => <ConnectorLinkDrilldownRow item={item} key={item.key} />)
+        ) : (
+          <div className="provider-history-empty" role="status">
+            No connector records match {humanizeKey(filter)}.
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function ConnectorLinkDrilldownRow({ item }: { item: ConnectorLinkDrilldownItem }) {
+  return (
+    <article className="connector-drilldown-row" data-kind={item.kind} data-status={item.status}>
+      <span className="integration-source-icon" aria-hidden="true">
+        <ConnectorLinkDrilldownIcon item={item} />
+      </span>
+      <div>
+        <strong>{item.label}</strong>
+        <span>{item.detail}</span>
+      </div>
+      <span className="integration-source-status">
+        {item.externalUrl ? (
+          <a href={item.externalUrl} rel="noreferrer" target="_blank">
+            <ExternalLink aria-hidden="true" />
+            Open
+          </a>
+        ) : (
+          humanizeKey(String(item.status ?? item.kind))
+        )}
+      </span>
+    </article>
+  )
+}
+
+function ConnectorLinkDrilldownIcon({ item }: { item: ConnectorLinkDrilldownItem }) {
+  if (item.kind === "activity") {
+    return <Clock3 aria-hidden="true" />
+  }
+  if (item.provider === "calendar") {
+    return <CalendarDays aria-hidden="true" />
+  }
+  return <Mail aria-hidden="true" />
+}
+
+function connectorLinkDrilldownFilterLabel(
+  filter: ConnectorLinkDrilldownFilter,
+  drilldown: ConnectorLinkDrilldown,
+): string {
+  switch (filter) {
+    case "all":
+      return `All ${drilldown.summary.linkCount + drilldown.summary.activityCount}`
+    case "gmail":
+      return `Gmail ${drilldown.summary.gmailLinkCount}`
+    case "calendar":
+      return `Calendar ${drilldown.summary.calendarLinkCount}`
+    case "attention":
+      return `Attention ${drilldown.summary.blockedCount + drilldown.summary.staleCount}`
+    case "activity":
+      return `Activity ${drilldown.summary.activityCount}`
+  }
 }
 
 function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
