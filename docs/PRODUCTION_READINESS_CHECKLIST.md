@@ -92,15 +92,15 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §9 UI production hardening
 
 - ✅ Dense operator workspace (not a landing page); aria labels present; no overlapping text observed.
-- 🔴 **No dead controls** — queue filters "Due soon/Rush/CNC" (`App.tsx:1110`) and "Open attachments" (`App.tsx:1160`) have no handlers. → **Slice B**
-- 🔴 **Desktop + mobile responsive** — `src/App.css` (2,750 lines) has **zero `@media` queries**; fixed 3-col grid overflows on mobile. → **Slice B**
-- 🟡 **Loading/empty/error states + error boundary** — absent. → **Slice B/D**
-- 🟡 **Offer/release pipeline actionable** — no send/release/copy buttons. → **Slice A**
+- ✅ **No dead controls** — queue filters (Due soon/Rush/CNC) are real `aria-pressed` toggles that narrow the ranked queue with an empty state; "Open attachments" is a real disclosure of the selected RFQ's files. (Slice B)
+- ✅ **Desktop + mobile responsive** — `src/App.css` has `@media` breakpoints at 1180px/820px; verified usable at 375px (no horizontal overflow, no overlapping text).
+- 🟡 **Loading/empty/error states + error boundary** — queue has an empty state; broader skeletons/error boundary still pending. → **Slice D**
+- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); send/release actions still pending. → **Slice A2/D**
 
 ## §10 Quality gates & test coverage
 
 - ✅ CI covers lint / unit / e2e / build (`.github/workflows/ci.yml`).
-- 🔴 **Convex codegen/backend typecheck is a CI gate** — backend types never validated in CI; drift would ship. → **Slice B**
+- 🟡 **Convex codegen/backend typecheck is a CI gate** — deferred: needs either committed `convex/_generated` or a `CONVEX_DEPLOY_KEY` secret (cloud auth), neither available without a policy change. Codegen works locally (`bun run convex:codegen`, exit 0, no drift). Tracked as a secret-gated follow-up.
 - 🔴 **Component/unit coverage for `App.tsx`** — UI verified only by the single e2e; deps for `@testing-library/react` already present. → **Slice D**
 - 🟡 **e2e breadth** — only 1 spec; manual creation, multi-process, mobile viewport, error states untested. → grows with each slice
 
@@ -118,7 +118,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 |------|-------|-----|--------|
 | **A** | Offer export: copy + download `.txt` + real PDF render | §5, §9 | ✅ |
 | **A2** | Offer lifecycle actions/history + editable offer header | §5, §2 | ☐ |
-| **B** | UI hardening: wire/remove dead controls; mobile-responsive `@media`; error boundary; convex-codegen CI gate | §9, §10 | ☐ |
+| **B** | UI hardening: functional queue filters + Open-attachments disclosure (dead controls removed); mobile responsive verified | §9 | ✅ |
 | **C** | Manual RFQ creation + editable provenance-aware intake fields; readiness recompute | §1, §2 | ☐ |
 | **D** | Costing edit depth (material/rate/margin) + localStorage persistence + loading/empty states + App component tests | §2, §10 | ☐ |
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
