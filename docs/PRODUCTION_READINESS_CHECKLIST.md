@@ -40,7 +40,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §2 Full quote workspace
 
 - ✅ Operator can select RFQs, see workload/capacity/material/outside-services/approval/release panels (`App.tsx` triage/costing/offer views).
-- 🔴 **Edit costing assumptions** — most quote inputs read-only (only 4 fields). → **Slice C/D**
+- 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
 - 🔴 **Approval/release gates operable** — decisions computed but no Approve/Release buttons. → **Slice A/D**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
 - 🟡 **Loading/empty/stale/error polish** — no skeletons, empty-queue, or error boundary. → **Slice D**
