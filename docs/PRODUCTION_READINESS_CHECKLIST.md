@@ -62,9 +62,9 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §5 Offer builder and export
 
 - ✅ Customer-ready offer content (prices, lead times, assumptions, validity, alternates, revision summary) — `offerDocument.ts`, `offerExportPackage.ts`.
-- 🔴 **Plain-text export exercisable** — text is view-only in a readOnly textarea; no Copy/Download. → **Slice A**
-- 🔴 **PDF export/rendering verified** — "PDF ready" + filename are cosmetic; no PDF bytes ever produced. → **Slice A**
-- 🔴 **Operator can copy/download** — no clipboard/Blob/anchor anywhere. → **Slice A**
+- ✅ **Plain-text export exercisable** — read-only offer text remains inspectable and can be copied or downloaded as `.txt` from `OfferView`.
+- ✅ **PDF export/rendering verified** — `offerPdf.ts` renders deterministic `pdf-lib` bytes with fixture coverage and smoke-tested download flow.
+- ✅ **Operator can copy/download** — `OfferView` exposes Copy, Download `.txt`, and Download PDF buttons with aria-live feedback.
 - 🔴 **Offer history (exports/sends/accept/decline/follow-ups/revisions)** — `buildOfferLifecycleTimeline` is dead code in UI; offer status permanently "draft". → **Slice A**
 - 🟡 **Offer is an editable artifact** — validity dates/terms/notes are computed constants. → **Slice A**
 
@@ -116,7 +116,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 | Slice | Title | DoD | Status |
 |------|-------|-----|--------|
-| **A** | Offer export: copy + download `.txt` + real PDF render; offer lifecycle actions/history; editable offer header | §5, §2, §9 | ☐ |
+| **A** | Offer export: copy + download `.txt` + real PDF render | §5, §9 | ✅ |
+| **A2** | Offer lifecycle actions/history + editable offer header | §5, §2 | ☐ |
 | **B** | UI hardening: wire/remove dead controls; mobile-responsive `@media`; error boundary; convex-codegen CI gate | §9, §10 | ☐ |
 | **C** | Manual RFQ creation + editable provenance-aware intake fields; readiness recompute | §1, §2 | ☐ |
 | **D** | Costing edit depth (material/rate/margin) + localStorage persistence + loading/empty states + App component tests | §2, §10 | ☐ |

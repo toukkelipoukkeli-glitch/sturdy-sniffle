@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs"
 
 import { expect, test } from "@playwright/test"
 
+test.describe.configure({ mode: "serial" })
+
 test("exports a customer-ready offer as text and a real PDF", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
