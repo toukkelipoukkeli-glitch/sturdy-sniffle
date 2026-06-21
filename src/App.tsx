@@ -53,6 +53,11 @@ import {
 } from "./domain/integrations/gmailRfq"
 import { buildCncOfferDraft, type OfferDraft } from "./domain/offers/offer"
 import {
+  buildOfferLifecycleTimeline,
+  type OfferLifecycleEventInput,
+  type OfferLifecycleTimeline,
+} from "./domain/offers/offerLifecycle"
+import {
   buildOfferExportPackage,
   type OfferAlternateQuoteInput,
   type OfferExportPackage,
@@ -262,6 +267,7 @@ const connectorLinkDrilldownFilters: ConnectorLinkDrilldownFilter[] = [
   "activity",
 ]
 const calendarFollowUpStatusFilters: CalendarFollowUpStatusFilter[] = ["all", "open", "completed", "review"]
+const offerLifecycleFollowUpDueAt = "2026-06-27T09:00:00+03:00"
 
 interface QuoteEditState {
   cycleMinutes: number
@@ -653,6 +659,7 @@ function App() {
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
+  const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>({})
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
@@ -858,6 +865,10 @@ function App() {
       }),
     [offer, quoteInput],
   )
+  const offerLifecycle = useMemo(
+    () => buildOfferLifecycleTimeline(offer, offerLifecycleEventsById[selectedId] ?? []),
+    [offer, offerLifecycleEventsById, selectedId],
+  )
   const offerFollowUpScheduledAt = useMemo(() => latestOfferFollowUpScheduledAt(selectedActions, offer), [offer, selectedActions])
   const offerSendReadiness = useMemo(
     () =>
@@ -1062,6 +1073,60 @@ function App() {
     } catch {
       setPersistenceSyncErrorCount((count) => count + 1)
     }
+  }
+  const appendOfferLifecycleEvent = (event: OfferLifecycleEventInput) => {
+    const rfqId = selectedId
+    setOfferLifecycleEventsById((current) => ({
+      ...current,
+      [rfqId]: [...(current[rfqId] ?? []), event],
+    }))
+  }
+  const markOfferSent = () => {
+    appendOfferLifecycleEvent({
+      actor: "Sari",
+      kind: "sent",
+      note: `Sent customer-ready offer ${offer.offerNumber}.`,
+      occurredAt: demoNow,
+    })
+  }
+  const scheduleOfferLifecycleFollowUp = () => {
+    appendOfferLifecycleEvent({
+      actor: "Sari",
+      followUpDueAt: offerLifecycleFollowUpDueAt,
+      followUpTaskId: offerLifecycleFollowUpTaskId(selectedItem.id),
+      kind: "follow_up_scheduled",
+      note: "Calendar hold prepared for offer follow-up.",
+      occurredAt: demoNow,
+    })
+  }
+  const completeOfferLifecycleFollowUp = () => {
+    const task = offerLifecycle.followUpTasks.find((candidate) => candidate.status === "open")
+    if (!task) {
+      return
+    }
+    appendOfferLifecycleEvent({
+      actor: "Sari",
+      followUpTaskId: task.id,
+      kind: "follow_up_completed",
+      note: "Operator confirmed the follow-up was completed.",
+      occurredAt: demoNow,
+    })
+  }
+  const acceptOffer = () => {
+    appendOfferLifecycleEvent({
+      actor: selectedItem.contact,
+      kind: "accepted",
+      note: "Customer accepted the offer.",
+      occurredAt: demoNow,
+    })
+  }
+  const declineOffer = () => {
+    appendOfferLifecycleEvent({
+      actor: selectedItem.contact,
+      kind: "declined",
+      note: "Customer declined the offer.",
+      occurredAt: demoNow,
+    })
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
     setActionsById(snapshot.actionsById)
@@ -1365,7 +1430,13 @@ function App() {
             <OfferView
               approval={quoteApproval}
               exportPackage={offerExportPackage}
+              lifecycle={offerLifecycle}
               offer={offer}
+              onAcceptOffer={acceptOffer}
+              onCompleteFollowUp={completeOfferLifecycleFollowUp}
+              onDeclineOffer={declineOffer}
+              onMarkSent={markOfferSent}
+              onScheduleFollowUp={scheduleOfferLifecycleFollowUp}
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
@@ -2663,7 +2734,13 @@ function CadMetadataPanel({ preview }: { preview: PartPreviewModel }) {
 function OfferView({
   approval,
   exportPackage,
+  lifecycle,
   offer,
+  onAcceptOffer,
+  onCompleteFollowUp,
+  onDeclineOffer,
+  onMarkSent,
+  onScheduleFollowUp,
   onSyncReplies,
   readiness,
   releaseGate,
@@ -2675,7 +2752,13 @@ function OfferView({
 }: {
   approval: QuoteApprovalDecision
   exportPackage: OfferExportPackage
+  lifecycle: OfferLifecycleTimeline
   offer: OfferDraft
+  onAcceptOffer: () => void
+  onCompleteFollowUp: () => void
+  onDeclineOffer: () => void
+  onMarkSent: () => void
+  onScheduleFollowUp: () => void
   onSyncReplies: () => void
   readiness: OfferSendReadinessResult
   releaseGate: QuoteReleaseGateDecision
@@ -2738,6 +2821,14 @@ function OfferView({
       <QuoteApprovalPanel approval={approval} />
       <OfferSendReadinessPanel readiness={readiness} />
       <QuoteReleaseGatePanel releaseGate={releaseGate} />
+      <OfferLifecyclePanel
+        lifecycle={lifecycle}
+        onAcceptOffer={onAcceptOffer}
+        onCompleteFollowUp={onCompleteFollowUp}
+        onDeclineOffer={onDeclineOffer}
+        onMarkSent={onMarkSent}
+        onScheduleFollowUp={onScheduleFollowUp}
+      />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferReleaseExecutionPanel execution={releaseExecution} />
       <OfferReleaseHistoryPanel history={releaseHistory} />
@@ -2985,6 +3076,138 @@ function offerReleaseExecutionStatusLabel(status: OfferReleaseExecutionRun["stat
 
 function shortAuditFingerprint(fingerprint: string) {
   return fingerprint.replace(/^offer-release-execution-/, "")
+}
+
+function OfferLifecyclePanel({
+  lifecycle,
+  onAcceptOffer,
+  onCompleteFollowUp,
+  onDeclineOffer,
+  onMarkSent,
+  onScheduleFollowUp,
+}: {
+  lifecycle: OfferLifecycleTimeline
+  onAcceptOffer: () => void
+  onCompleteFollowUp: () => void
+  onDeclineOffer: () => void
+  onMarkSent: () => void
+  onScheduleFollowUp: () => void
+}) {
+  const openTask = lifecycle.followUpTasks.find((task) => task.status === "open")
+  const canMarkSent = lifecycle.status === "draft"
+  const canUpdateTerminalStatus = lifecycle.status === "sent"
+  const canScheduleFollowUp = lifecycle.status === "sent" && lifecycle.followUpTasks.length === 0
+
+  return (
+    <section className="offer-lifecycle-panel" aria-label="Offer lifecycle">
+      <div className="offer-lifecycle-heading">
+        <div>
+          <span className="eyebrow">
+            <Clock3 aria-hidden="true" />
+            Lifecycle
+          </span>
+          <strong>{offerLifecycleStatusLabel(lifecycle.status)}</strong>
+        </div>
+        <span className={`offer-lifecycle-status offer-lifecycle-status-${lifecycle.status}`}>
+          {humanizeKey(lifecycle.status)}
+        </span>
+      </div>
+      <div className="offer-lifecycle-summary">
+        <Metric label="Events" value={String(lifecycle.events.length)} />
+        <Metric label="Open follow-ups" value={String(lifecycle.followUpTasks.filter((task) => task.status === "open").length)} />
+        <Metric label="Tasks" value={String(lifecycle.followUpTasks.length)} />
+      </div>
+      <div className="offer-lifecycle-actions" role="group" aria-label="Offer lifecycle actions">
+        <Button disabled={!canMarkSent} onClick={onMarkSent} type="button" variant="outline" size="sm">
+          <Mail aria-hidden="true" />
+          Mark sent
+        </Button>
+        <Button disabled={!canScheduleFollowUp} onClick={onScheduleFollowUp} type="button" variant="outline" size="sm">
+          <CalendarDays aria-hidden="true" />
+          Schedule follow-up
+        </Button>
+        <Button disabled={!openTask} onClick={onCompleteFollowUp} type="button" variant="outline" size="sm">
+          <CheckCircle2 aria-hidden="true" />
+          Complete follow-up
+        </Button>
+        <Button disabled={!canUpdateTerminalStatus} onClick={onAcceptOffer} type="button" size="sm">
+          <CheckCircle2 aria-hidden="true" />
+          Mark accepted
+        </Button>
+        <Button disabled={!canUpdateTerminalStatus} onClick={onDeclineOffer} type="button" variant="outline" size="sm">
+          <AlertTriangle aria-hidden="true" />
+          Mark declined
+        </Button>
+      </div>
+      <div className="offer-lifecycle-grid">
+        <div className="offer-lifecycle-list" aria-label="Offer lifecycle events">
+          {lifecycle.events.length > 0 ? (
+            lifecycle.events.map((event) => (
+              <div className="offer-lifecycle-row" key={event.key}>
+                <span>{formatShortDateTime(event.occurredAt)}</span>
+                <strong>{offerLifecycleEventLabel(event.kind)}</strong>
+                <small>
+                  {event.actor} · {humanizeKey(event.statusAfter)}
+                  {event.note ? ` · ${event.note}` : ""}
+                </small>
+              </div>
+            ))
+          ) : (
+            <div className="offer-lifecycle-empty">No lifecycle events recorded.</div>
+          )}
+        </div>
+        <div className="offer-lifecycle-list" aria-label="Offer follow-up tasks">
+          {lifecycle.followUpTasks.length > 0 ? (
+            lifecycle.followUpTasks.map((task) => (
+              <div className="offer-lifecycle-row" data-status={task.status} key={task.id}>
+                <span>{formatShortDateTime(task.dueAt)}</span>
+                <strong>{task.title}</strong>
+                <small>
+                  {humanizeKey(task.status)}
+                  {task.completedAt ? ` · completed ${formatShortDateTime(task.completedAt)}` : ""}
+                  {task.cancelledAt ? ` · cancelled ${formatShortDateTime(task.cancelledAt)}` : ""}
+                </small>
+              </div>
+            ))
+          ) : (
+            <div className="offer-lifecycle-empty">No follow-up tasks yet.</div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function offerLifecycleStatusLabel(status: OfferLifecycleTimeline["status"]) {
+  switch (status) {
+    case "accepted":
+      return "Offer accepted"
+    case "declined":
+      return "Offer declined"
+    case "draft":
+      return "Draft not sent"
+    case "sent":
+      return "Sent and awaiting decision"
+    case "superseded":
+      return "Offer superseded"
+  }
+}
+
+function offerLifecycleEventLabel(kind: OfferLifecycleEventInput["kind"]) {
+  switch (kind) {
+    case "accepted":
+      return "Accepted"
+    case "declined":
+      return "Declined"
+    case "follow_up_completed":
+      return "Follow-up completed"
+    case "follow_up_scheduled":
+      return "Follow-up scheduled"
+    case "note_added":
+      return "Note added"
+    case "sent":
+      return "Sent"
+  }
 }
 
 function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
@@ -3928,6 +4151,10 @@ function buildCadMetadataResult({
 
 function offerNumberFor(item: QuoteWorkItem) {
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
+}
+
+function offerLifecycleFollowUpTaskId(rfqId: string) {
+  return `offer-lifecycle-follow-up-${rfqId}`
 }
 
 function contactEmailFor(item: QuoteWorkItem) {
