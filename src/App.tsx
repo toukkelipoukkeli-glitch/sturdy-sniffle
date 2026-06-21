@@ -3097,6 +3097,7 @@ function OfferLifecyclePanel({
   const canMarkSent = lifecycle.status === "draft"
   const canUpdateTerminalStatus = lifecycle.status === "sent"
   const canScheduleFollowUp = lifecycle.status === "sent" && lifecycle.followUpTasks.length === 0
+  const canCompleteFollowUp = lifecycle.status === "sent" && Boolean(openTask)
 
   return (
     <section className="offer-lifecycle-panel" aria-label="Offer lifecycle">
@@ -3126,7 +3127,7 @@ function OfferLifecyclePanel({
           <CalendarDays aria-hidden="true" />
           Schedule follow-up
         </Button>
-        <Button disabled={!openTask} onClick={onCompleteFollowUp} type="button" variant="outline" size="sm">
+        <Button disabled={!canCompleteFollowUp} onClick={onCompleteFollowUp} type="button" variant="outline" size="sm">
           <CheckCircle2 aria-hidden="true" />
           Complete follow-up
         </Button>

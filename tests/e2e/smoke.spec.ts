@@ -218,6 +218,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await offerLifecycle.getByRole("button", { name: "Mark accepted" }).click()
   await expect(offerLifecycle).toContainText("Offer accepted")
   await expect(offerLifecycle.locator(".metric", { hasText: "Events" })).toContainText("4")
+  await expect(offerLifecycle.getByRole("button", { name: "Complete follow-up" })).toBeDisabled()
   await expect(offerLifecycle.getByRole("button", { name: "Mark declined" })).toBeDisabled()
   await expect(page.getByLabel("Offer release command plan")).toContainText("Blocked before release")
   await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Mode" })).toContainText("blocked")
