@@ -110,6 +110,7 @@ import {
 import {
   MANUAL_MATERIAL_PRESETS,
   buildManualCncQuoteInput,
+  manualMaterialPreset,
   type ManualCncProcess,
   type ManualMaterialKey,
   type ManualPriority,
@@ -180,6 +181,8 @@ interface RfqFieldPatch {
   contact?: string
   subject?: string
   dueDate?: string
+  materialKey?: ManualMaterialKey
+  process?: ManualCncProcess
   toleranceClass?: string
   finish?: string
   notesText?: string
@@ -758,14 +761,7 @@ function App() {
         const customer = normalizeEditableText(patch.customer, item.customer, patch.commit)
         const contact = normalizeEditableText(patch.contact, item.contact, patch.commit)
         const subject = normalizeEditableText(patch.subject, item.subject, patch.commit)
-        const quoteInput =
-          patch.toleranceClass === undefined && patch.finish === undefined
-            ? item.quoteInput
-            : {
-                ...item.quoteInput,
-                toleranceClass: normalizeOptionalText(patch.toleranceClass, item.quoteInput.toleranceClass),
-                finish: normalizeOptionalText(patch.finish, item.quoteInput.finish),
-              }
+        const quoteInput = applyRfqFieldPatch(item.quoteInput, patch)
         const dueDate = patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt)
 
         return {
@@ -1996,6 +1992,93 @@ function normalizeEditableText(value: string | undefined, fallback: string, comm
   return commit ? value.trim() : value
 }
 
+function applyRfqFieldPatch(quoteInput: CncQuoteInput, patch: RfqFieldPatch): CncQuoteInput {
+  const materialPreset = patch.materialKey ? manualMaterialPreset(patch.materialKey) : undefined
+  const quoteInputPatch: Partial<CncQuoteInput> = {}
+
+  if (patch.process !== undefined) {
+    const dimensions = cncDimensionsForProcess(patch.process, quoteInput)
+    quoteInputPatch.process = patch.process
+    quoteInputPatch.stockDimensions = dimensions.stock
+    quoteInputPatch.finishedDimensions = dimensions.finished
+  }
+
+  if (materialPreset) {
+    quoteInputPatch.material = {
+      ...quoteInput.material,
+      costCentsPerKg: materialPreset.costCentsPerKg,
+      densityKgM3: materialPreset.densityKgM3,
+      name: materialPreset.name,
+      yieldFactor: materialPreset.yieldFactor,
+    }
+  }
+
+  if (patch.toleranceClass !== undefined) {
+    quoteInputPatch.toleranceClass = normalizeOptionalText(patch.toleranceClass, quoteInput.toleranceClass)
+  }
+
+  if (patch.finish !== undefined) {
+    quoteInputPatch.finish = normalizeOptionalText(patch.finish, quoteInput.finish)
+  }
+
+  if (Object.keys(quoteInputPatch).length === 0) {
+    return quoteInput
+  }
+
+  return {
+    ...quoteInput,
+    ...quoteInputPatch,
+  }
+}
+
+function materialKeyForQuoteInput(quoteInput: CncQuoteInput): ManualMaterialKey | undefined {
+  return MANUAL_MATERIAL_PRESETS.find((preset) => preset.name === quoteInput.material.name)?.key
+}
+
+function cncDimensionsForProcess(
+  process: ManualCncProcess,
+  quoteInput: CncQuoteInput,
+): {
+  finished: CncQuoteInput["finishedDimensions"]
+  stock: CncQuoteInput["stockDimensions"]
+} {
+  const stock = quoteInput.stockDimensions
+  const finished = quoteInput.finishedDimensions
+
+  if (process === "cnc_turning") {
+    const finishedDiameter = Math.max(finished?.diameterMm ?? 0, finished?.widthMm ?? 0, finished?.heightMm ?? 0) || 32
+    const stockDiameter = Math.max(stock.diameterMm ?? 0, stock.widthMm ?? 0, stock.heightMm ?? 0) || 40
+
+    return {
+      finished: {
+        diameterMm: finishedDiameter,
+        lengthMm: finished?.lengthMm ?? stock.lengthMm ?? 80,
+      },
+      stock: {
+        diameterMm: stockDiameter,
+        lengthMm: stock.lengthMm ?? finished?.lengthMm ?? 90,
+      },
+    }
+  }
+
+  return {
+    finished: {
+      heightMm: finished?.heightMm ?? finished?.diameterMm ?? 18,
+      lengthMm: finished?.lengthMm ?? stock.lengthMm ?? 110,
+      widthMm: finished?.widthMm ?? finished?.diameterMm ?? 70,
+    },
+    stock: {
+      heightMm: stock.heightMm ?? stock.diameterMm ?? 25,
+      lengthMm: stock.lengthMm ?? finished?.lengthMm ?? 120,
+      widthMm: stock.widthMm ?? stock.diameterMm ?? 80,
+    },
+  }
+}
+
+function rfqFieldProvenanceByKey(item: QuoteWorkItem): Record<string, RfqExtractedField> {
+  return Object.fromEntries(parsedRfqForWorkItem(item).extractedFields.map((field) => [field.key, field]))
+}
+
 function parseEditableNotes(value: string): string[] {
   return value
     .split("\n")
@@ -2528,6 +2611,8 @@ function TriageView({
   const nextStatus = nextStatusFor(status)
   const notesText = item.notes.join("\n")
   const dueDate = dateInputValueFor(item.dueAt)
+  const materialKey = materialKeyForQuoteInput(item.quoteInput)
+  const provenanceByKey = rfqFieldProvenanceByKey(item)
 
   return (
     <div className="workspace-section">
@@ -2550,7 +2635,10 @@ function TriageView({
         </div>
         <div className="rfq-field-grid">
           <label className="field">
-            <span>Customer</span>
+            <span className="rfq-field-label">
+              <span>Customer</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.customer_name} />
+            </span>
             <input
               aria-label="RFQ customer"
               onBlur={(event) => onUpdateFields({ commit: true, customer: event.target.value })}
@@ -2559,7 +2647,10 @@ function TriageView({
             />
           </label>
           <label className="field">
-            <span>Contact</span>
+            <span className="rfq-field-label">
+              <span>Contact</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.contact_name ?? provenanceByKey.contact_email} />
+            </span>
             <input
               aria-label="RFQ contact"
               onBlur={(event) => onUpdateFields({ commit: true, contact: event.target.value })}
@@ -2568,7 +2659,10 @@ function TriageView({
             />
           </label>
           <label className="field rfq-field-span">
-            <span>Subject</span>
+            <span className="rfq-field-label">
+              <span>Subject</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.subject} />
+            </span>
             <input
               aria-label="RFQ subject"
               onBlur={(event) => onUpdateFields({ commit: true, subject: event.target.value })}
@@ -2577,11 +2671,45 @@ function TriageView({
             />
           </label>
           <label className="field">
-            <span>Due date</span>
+            <span className="rfq-field-label">
+              <span>Process</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.process} />
+            </span>
+            <select aria-label="RFQ process" onChange={(event) => onUpdateFields({ process: event.target.value as ManualCncProcess })} value={item.quoteInput.process}>
+              <option value="cnc_milling">CNC milling</option>
+              <option value="cnc_turning">CNC turning</option>
+            </select>
+          </label>
+          <label className="field">
+            <span className="rfq-field-label">
+              <span>Material</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.material} />
+            </span>
+            <select
+              aria-label="RFQ material"
+              onChange={(event) => onUpdateFields({ materialKey: event.target.value as ManualMaterialKey })}
+              value={materialKey ?? "custom"}
+            >
+              {materialKey ? null : <option value="custom">{item.quoteInput.material.name}</option>}
+              {MANUAL_MATERIAL_PRESETS.map((preset) => (
+                <option key={preset.key} value={preset.key}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="rfq-field-label">
+              <span>Due date</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.due_at} />
+            </span>
             <input aria-label="RFQ due date" onChange={(event) => onUpdateFields({ dueDate: event.target.value })} type="date" value={dueDate} />
           </label>
           <label className="field">
-            <span>Tolerance</span>
+            <span className="rfq-field-label">
+              <span>Tolerance</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.tolerance} />
+            </span>
             <input
               aria-label="RFQ tolerance"
               onChange={(event) => onUpdateFields({ toleranceClass: event.target.value })}
@@ -2590,7 +2718,10 @@ function TriageView({
             />
           </label>
           <label className="field">
-            <span>Finish</span>
+            <span className="rfq-field-label">
+              <span>Finish</span>
+              <RfqFieldProvenanceBadge field={provenanceByKey.finish} />
+            </span>
             <input
               aria-label="RFQ finish"
               onChange={(event) => onUpdateFields({ finish: event.target.value })}
@@ -2658,6 +2789,17 @@ function TriageView({
       </div>
       <ActionTimeline actions={actions} />
     </div>
+  )
+}
+
+function RfqFieldProvenanceBadge({ field }: { field?: RfqExtractedField }) {
+  const label = field ? `${field.source.label} ${Math.round(field.confidence * 100)}%` : "Operator"
+  const title = field ? `${field.source.label} extraction confidence ${Math.round(field.confidence * 100)}%` : "Operator-entered field"
+
+  return (
+    <span className="rfq-field-source" title={title}>
+      {label}
+    </span>
   )
 }
 
@@ -4817,12 +4959,14 @@ function parsedRfqForWorkItem(item: QuoteWorkItem): ParsedRfqIntake {
   const receivedAt = parseWorkspaceTimestamp(item.receivedAt, "receivedAt")
   const extractedFields: RfqExtractedField[] = [
     rfqField("contact_email", contactEmailFor(item), 0.98, source),
+    rfqField("contact_name", item.contact, 0.92, source),
     rfqField("customer_name", item.customer, 0.96, source),
     rfqField("due_at", new Date(dueAt).toISOString(), 0.9, source),
     rfqField("currency", item.quoteInput.rateCard.currency, 0.96, source),
     rfqField("priority", item.priority, 0.95, source),
     rfqField("part_number", item.quoteInput.partNumber, 0.98, source),
     rfqField("process", item.quoteInput.process, 0.96, source),
+    rfqField("subject", item.subject, 0.89, source),
     rfqField("material", item.quoteInput.material.name, 0.93, source),
     rfqField("quantity", String(item.quoteInput.quantity), 0.95, source),
   ]
@@ -4833,6 +4977,10 @@ function parsedRfqForWorkItem(item: QuoteWorkItem): ParsedRfqIntake {
 
   if (item.quoteInput.toleranceClass) {
     extractedFields.push(rfqField("tolerance", item.quoteInput.toleranceClass, 0.86, source))
+  }
+
+  if (item.quoteInput.finish) {
+    extractedFields.push(rfqField("finish", item.quoteInput.finish, 0.84, source))
   }
 
   return {

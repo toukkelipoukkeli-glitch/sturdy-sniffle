@@ -51,9 +51,16 @@ test("edits selected RFQ intake fields inline", async ({ page }) => {
 
   const editor = page.getByLabel("Editable RFQ fields")
   await expect(editor).toBeVisible()
+  await expect(editor.getByText("GMAIL 96%").first()).toBeVisible()
+
   await editor.getByLabel("RFQ subject").fill("CNC bracket FB-204-B")
   await expect(page.getByRole("heading", { name: "CNC bracket FB-204-B" })).toBeVisible()
   await expect(page.getByLabel("RFQ queue").getByRole("button", { name: /CNC bracket FB-204-B/ })).toBeVisible()
+
+  await editor.getByLabel("RFQ process").selectOption("cnc_turning")
+  await editor.getByLabel("RFQ material").selectOption("aluminum_7075")
+  await expect(page.getByLabel("RFQ tags")).toContainText("CNC turning")
+  await expect(page.getByLabel("RFQ tags")).toContainText("Aluminum 7075")
 
   await editor.getByLabel("RFQ tolerance").fill("ISO 2768-F")
   await expect(page.getByLabel("RFQ tags")).toContainText("ISO 2768-F")
