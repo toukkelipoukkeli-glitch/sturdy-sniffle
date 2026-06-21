@@ -174,6 +174,17 @@ import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
 
+interface RfqFieldPatch {
+  commit?: boolean
+  customer?: string
+  contact?: string
+  subject?: string
+  dueDate?: string
+  toleranceClass?: string
+  finish?: string
+  notesText?: string
+}
+
 const demoToday = "2026-06-20"
 const demoNow = "2026-06-20T09:00:00+03:00"
 const capacityPlanningDays = 5
@@ -702,6 +713,40 @@ function App() {
       },
     }))
   }
+  const updateSelectedRfqFields = (patch: RfqFieldPatch) => {
+    setWorkItems((current) =>
+      current.map((item) => {
+        if (item.id !== selectedId) {
+          return item
+        }
+
+        const customer = normalizeEditableText(patch.customer, item.customer, patch.commit)
+        const contact = normalizeEditableText(patch.contact, item.contact, patch.commit)
+        const subject = normalizeEditableText(patch.subject, item.subject, patch.commit)
+        const quoteInput =
+          patch.toleranceClass === undefined && patch.finish === undefined
+            ? item.quoteInput
+            : {
+                ...item.quoteInput,
+                toleranceClass: normalizeOptionalText(patch.toleranceClass, item.quoteInput.toleranceClass),
+                finish: normalizeOptionalText(patch.finish, item.quoteInput.finish),
+              }
+        const dueDate = patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt)
+
+        return {
+          ...item,
+          customer,
+          contact,
+          subject,
+          due: patch.dueDate === undefined ? item.due : formatManualDueLabel(dueDate),
+          dueAt: patch.dueDate === undefined ? item.dueAt : `${dueDate}T12:00:00+03:00`,
+          quoteInput,
+          tags: quoteInput === item.quoteInput ? item.tags : buildManualTags(quoteInput),
+          notes: patch.notesText === undefined ? item.notes : parseEditableNotes(patch.notesText),
+        }
+      }),
+    )
+  }
 
   const quoteInput = useMemo<CncQuoteInput>(() => applyQuoteEdit(selectedItem, selectedEdit), [selectedEdit, selectedItem])
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
@@ -712,8 +757,8 @@ function App() {
       const itemStatus = statusById[item.id] ?? item.status
       return {
         id: item.id,
-        customerName: item.customer,
-        subject: item.subject,
+        customerName: customerLabelFor(item),
+        subject: subjectLabelFor(item),
         dueAt: item.dueAt,
         priority: item.priority,
         process: item.quoteInput.process,
@@ -739,7 +784,7 @@ function App() {
           const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
           const itemQuote = calculateCncQuote(itemQuoteInput)
           return {
-            customerName: item.customer,
+            customerName: customerLabelFor(item),
             dueAt: item.dueAt,
             estimatedValueCents: itemQuote.totalCents,
             estimatedWorkMinutes: estimateCapacityWorkMinutes(itemQuoteInput),
@@ -748,7 +793,7 @@ function App() {
             process: itemQuoteInput.process,
             receivedAt: item.receivedAt,
             status: statusById[item.id] ?? item.status,
-            subject: item.subject,
+            subject: subjectLabelFor(item),
           }
         }),
         now: queueNow,
@@ -767,7 +812,7 @@ function App() {
           const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
           const itemQuote = calculateCncQuote(itemQuoteInput)
           return {
-            customerName: item.customer,
+            customerName: customerLabelFor(item),
             dueAt: item.dueAt,
             estimatedValueCents: itemQuote.totalCents,
             id: item.id,
@@ -779,7 +824,7 @@ function App() {
             process: itemQuoteInput.process,
             receivedAt: item.receivedAt,
             status: statusById[item.id] ?? item.status,
-            subject: item.subject,
+            subject: subjectLabelFor(item),
           }
         }),
         now: queueNow,
@@ -794,7 +839,7 @@ function App() {
         items: workItems.map((item) => {
           const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
           return {
-            customerName: item.customer,
+            customerName: customerLabelFor(item),
             dueAt: item.dueAt,
             id: item.id,
             materialName: itemQuoteInput.material.name,
@@ -803,7 +848,7 @@ function App() {
             receivedAt: item.receivedAt,
             requiredKg: estimateMaterialRequirementKg(itemQuoteInput),
             status: statusById[item.id] ?? item.status,
-            subject: item.subject,
+            subject: subjectLabelFor(item),
           }
         }),
         now: queueNow,
@@ -855,16 +900,16 @@ function App() {
         offerNumber: offerNumberFor(selectedItem),
         customer: {
           email: contactEmailFor(selectedItem),
-          name: selectedItem.customer,
+          name: customerLabelFor(selectedItem),
           contactName: selectedItem.contact,
         },
         issuedAt: "2026-06-19",
         validUntil: "2026-07-03",
-        lineDescription: selectedItem.subject,
+        lineDescription: subjectLabelFor(selectedItem),
         notes: selectedItem.notes,
         quote,
         rfqReference: selectedItem.id,
-        subject: selectedItem.subject,
+        subject: subjectLabelFor(selectedItem),
       }),
     [quote, selectedItem],
   )
@@ -1468,6 +1513,7 @@ function App() {
               onAdvanceStatus={advanceStatus}
               onCreateFollowUp={createFollowUp}
               onHandoffDraftChange={(value) => setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: value }))}
+              onUpdateFields={updateSelectedRfqFields}
               onSaveScenario={saveScenario}
               readiness={rfqIntakeReadiness}
               status={selectedStatus}
@@ -1591,12 +1637,50 @@ function buildManualTags(quoteInput: CncQuoteInput): string[] {
   return tags
 }
 
+function customerLabelFor(item: QuoteWorkItem): string {
+  return item.customer.trim() || "Unconfirmed customer"
+}
+
+function customerKeyFor(item: QuoteWorkItem): string {
+  return item.customer.trim()
+}
+
+function subjectLabelFor(item: QuoteWorkItem): string {
+  return item.subject.trim() || item.quoteInput.partNumber
+}
+
 function formatManualDueLabel(dateValue: string): string {
   const parsed = new Date(`${dateValue}T12:00:00`)
   if (Number.isNaN(parsed.getTime())) {
     return dateValue
   }
   return parsed.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
+}
+
+function dateInputValueFor(timestamp: string): string {
+  const match = timestamp.match(/^\d{4}-\d{2}-\d{2}/)
+  return match?.[0] ?? demoToday
+}
+
+function normalizeOptionalText(value: string | undefined, fallback: string | undefined): string | undefined {
+  if (value === undefined) {
+    return fallback
+  }
+  return value.trim() || undefined
+}
+
+function normalizeEditableText(value: string | undefined, fallback: string, commit = false): string {
+  if (value === undefined) {
+    return fallback
+  }
+  return commit ? value.trim() : value
+}
+
+function parseEditableNotes(value: string): string[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 function defaultManualDueDate(): string {
@@ -2102,6 +2186,7 @@ function TriageView({
   onAdvanceStatus,
   onCreateFollowUp,
   onHandoffDraftChange,
+  onUpdateFields,
   onSaveScenario,
   readiness,
   status,
@@ -2115,11 +2200,14 @@ function TriageView({
   onAdvanceStatus: () => void
   onCreateFollowUp: () => void
   onHandoffDraftChange: (value: string) => void
+  onUpdateFields: (patch: RfqFieldPatch) => void
   onSaveScenario: () => void
   readiness: RfqIntakeReadinessResult
   status: QuoteQueueStatus
 }) {
   const nextStatus = nextStatusFor(status)
+  const notesText = item.notes.join("\n")
+  const dueDate = dateInputValueFor(item.dueAt)
 
   return (
     <div className="workspace-section">
@@ -2132,6 +2220,75 @@ function TriageView({
         <Metric label="Source" value={item.source.toUpperCase()} />
         <Metric label="Contact" value={item.contact} />
       </div>
+      <section className="rfq-field-editor" aria-label="Editable RFQ fields">
+        <div className="rfq-field-editor-heading">
+          <span className="eyebrow">
+            <FileText aria-hidden="true" />
+            Intake fields
+          </span>
+          <span className="rfq-provenance-chip">{item.source.toUpperCase()} reviewed</span>
+        </div>
+        <div className="rfq-field-grid">
+          <label className="field">
+            <span>Customer</span>
+            <input
+              aria-label="RFQ customer"
+              onBlur={(event) => onUpdateFields({ commit: true, customer: event.target.value })}
+              onChange={(event) => onUpdateFields({ customer: event.target.value })}
+              value={item.customer}
+            />
+          </label>
+          <label className="field">
+            <span>Contact</span>
+            <input
+              aria-label="RFQ contact"
+              onBlur={(event) => onUpdateFields({ commit: true, contact: event.target.value })}
+              onChange={(event) => onUpdateFields({ contact: event.target.value })}
+              value={item.contact}
+            />
+          </label>
+          <label className="field rfq-field-span">
+            <span>Subject</span>
+            <input
+              aria-label="RFQ subject"
+              onBlur={(event) => onUpdateFields({ commit: true, subject: event.target.value })}
+              onChange={(event) => onUpdateFields({ subject: event.target.value })}
+              value={item.subject}
+            />
+          </label>
+          <label className="field">
+            <span>Due date</span>
+            <input aria-label="RFQ due date" onChange={(event) => onUpdateFields({ dueDate: event.target.value })} type="date" value={dueDate} />
+          </label>
+          <label className="field">
+            <span>Tolerance</span>
+            <input
+              aria-label="RFQ tolerance"
+              onChange={(event) => onUpdateFields({ toleranceClass: event.target.value })}
+              placeholder="ISO 2768-M"
+              value={item.quoteInput.toleranceClass ?? ""}
+            />
+          </label>
+          <label className="field">
+            <span>Finish</span>
+            <input
+              aria-label="RFQ finish"
+              onChange={(event) => onUpdateFields({ finish: event.target.value })}
+              placeholder="Deburred"
+              value={item.quoteInput.finish ?? ""}
+            />
+          </label>
+          <label className="field rfq-field-span">
+            <span>Notes</span>
+            <textarea
+              aria-label="RFQ notes"
+              onChange={(event) => onUpdateFields({ notesText: event.target.value })}
+              placeholder="One note per line"
+              value={notesText}
+            />
+          </label>
+        </div>
+      </section>
       <RfqIntakeReadinessPanel readiness={readiness} />
       <section className="operator-actions" aria-label="Operator actions">
         <div className="operator-action-grid">
@@ -4134,32 +4291,32 @@ function formatMaterialIssueSummary(commitment: MaterialAvailabilityCommitment) 
 }
 
 function outsideServiceStatusFor(item: QuoteWorkItem, serviceLabel: string) {
-  if (item.customer === "Baltic Hydraulics" && serviceLabel.toLowerCase().includes("passivation")) {
+  if (customerKeyFor(item) === "Baltic Hydraulics" && serviceLabel.toLowerCase().includes("passivation")) {
     return "not_requested" as const
   }
   return "quoted" as const
 }
 
 function approvalCustomerPolicyFor(item: QuoteWorkItem): QuoteApprovalCustomerPolicy {
-  switch (item.customer) {
+  switch (customerKeyFor(item)) {
     case "Arctic Instruments":
       return {
         creditLimitCents: 220_000,
-        customerName: item.customer,
+        customerName: customerLabelFor(item),
         openBalanceCents: 35_000,
         paymentTerm: "standard",
       }
     case "Baltic Hydraulics":
       return {
         creditLimitCents: 60_000,
-        customerName: item.customer,
+        customerName: customerLabelFor(item),
         openBalanceCents: 20_000,
         paymentTerm: "prepay_required",
       }
     default:
       return {
         creditLimitCents: 500_000,
-        customerName: item.customer,
+        customerName: customerLabelFor(item),
         openBalanceCents: 100_000,
         paymentTerm: "standard",
       }

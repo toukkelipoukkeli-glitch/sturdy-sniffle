@@ -361,6 +361,8 @@
 .queue-item:focus-visible,
 .segment-button:focus-visible,
 .field input:focus,
+.field select:focus,
+.field textarea:focus,
 .offer-text-field textarea:focus,
 .range-field input:focus-visible {
   outline: 2px solid oklch(0.58 0.12 200);
@@ -1235,7 +1237,9 @@
 }
 
 .metric strong,
-.field input {
+.field input,
+.field select,
+.field textarea {
   font-size: 0.9rem;
 }
 
@@ -1999,7 +2003,9 @@
   gap: 8px;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   background: white;
   border: 1px solid oklch(0.84 0.02 235);
   border-radius: 6px;
@@ -2008,6 +2014,50 @@
   min-width: 0;
   padding: 0 9px;
   width: 100%;
+}
+
+.field textarea {
+  font: inherit;
+  line-height: 1.45;
+  min-height: 74px;
+  padding-block: 8px;
+  resize: vertical;
+}
+
+.rfq-field-editor {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.rfq-field-editor-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.rfq-provenance-chip {
+  background: oklch(0.94 0.035 188);
+  border-radius: 999px;
+  color: oklch(0.28 0.075 188);
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.rfq-field-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rfq-field-span {
+  grid-column: 1 / -1;
 }
 
 .toggle-field {
@@ -3183,6 +3233,7 @@
   .outside-service-row,
   .operator-action-grid,
   .handoff-editor,
+  .rfq-field-grid,
   .calendar-follow-up-summary,
   .calendar-follow-up-filters,
   .calendar-follow-up-row,

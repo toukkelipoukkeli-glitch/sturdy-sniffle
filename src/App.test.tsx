@@ -54,4 +54,40 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(within(tabs).getByRole("button", { name: "Triage" }))
     expect(screen.getByRole("heading", { name: "RFQ intake" })).toBeInTheDocument()
   })
+
+  it("edits RFQ intake fields and feeds the readiness model", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    const editor = screen.getByRole("region", { name: "Editable RFQ fields" })
+    const subject = within(editor).getByLabelText("RFQ subject")
+    await user.clear(subject)
+    await user.type(subject, "CNC bracket FB-204-B")
+    expect(screen.getByRole("heading", { name: "CNC bracket FB-204-B" })).toBeInTheDocument()
+
+    const customer = within(editor).getByLabelText("RFQ customer")
+    await user.clear(customer)
+    expect(screen.getByLabelText("RFQ intake readiness")).toHaveTextContent("Customer name is missing")
+
+    await user.type(customer, "North Forge Works")
+    expect(screen.getByLabelText("RFQ intake readiness")).not.toHaveTextContent("Customer name is missing")
+  })
+
+  it("normalizes edited customer whitespace before approval policy selection", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const queue = screen.getByRole("complementary", { name: "RFQ queue" })
+    await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    const editor = screen.getByRole("region", { name: "Editable RFQ fields" })
+    const customer = within(editor).getByLabelText("RFQ customer")
+    await user.clear(customer)
+    await user.type(customer, "Baltic Hydraulics ")
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
+  })
 })
