@@ -73,4 +73,21 @@ describe("FactoryBid workspace (component)", () => {
     await user.type(customer, "North Forge Works")
     expect(screen.getByLabelText("RFQ intake readiness")).not.toHaveTextContent("Customer name is missing")
   })
+
+  it("normalizes edited customer whitespace before approval policy selection", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const queue = screen.getByRole("complementary", { name: "RFQ queue" })
+    await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    const editor = screen.getByRole("region", { name: "Editable RFQ fields" })
+    const customer = within(editor).getByLabelText("RFQ customer")
+    await user.clear(customer)
+    await user.type(customer, "Baltic Hydraulics ")
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
+  })
 })

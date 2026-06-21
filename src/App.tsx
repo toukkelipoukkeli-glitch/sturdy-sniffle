@@ -175,6 +175,7 @@ import "./App.css"
 type WorkspaceView = "triage" | "costing" | "offer"
 
 interface RfqFieldPatch {
+  commit?: boolean
   customer?: string
   contact?: string
   subject?: string
@@ -719,6 +720,9 @@ function App() {
           return item
         }
 
+        const customer = normalizeEditableText(patch.customer, item.customer, patch.commit)
+        const contact = normalizeEditableText(patch.contact, item.contact, patch.commit)
+        const subject = normalizeEditableText(patch.subject, item.subject, patch.commit)
         const quoteInput =
           patch.toleranceClass === undefined && patch.finish === undefined
             ? item.quoteInput
@@ -731,9 +735,9 @@ function App() {
 
         return {
           ...item,
-          customer: patch.customer ?? item.customer,
-          contact: patch.contact ?? item.contact,
-          subject: patch.subject ?? item.subject,
+          customer,
+          contact,
+          subject,
           due: patch.dueDate === undefined ? item.due : formatManualDueLabel(dueDate),
           dueAt: patch.dueDate === undefined ? item.dueAt : `${dueDate}T12:00:00+03:00`,
           quoteInput,
@@ -1637,6 +1641,10 @@ function customerLabelFor(item: QuoteWorkItem): string {
   return item.customer.trim() || "Unconfirmed customer"
 }
 
+function customerKeyFor(item: QuoteWorkItem): string {
+  return item.customer.trim()
+}
+
 function subjectLabelFor(item: QuoteWorkItem): string {
   return item.subject.trim() || item.quoteInput.partNumber
 }
@@ -1659,6 +1667,13 @@ function normalizeOptionalText(value: string | undefined, fallback: string | und
     return fallback
   }
   return value.trim() || undefined
+}
+
+function normalizeEditableText(value: string | undefined, fallback: string, commit = false): string {
+  if (value === undefined) {
+    return fallback
+  }
+  return commit ? value.trim() : value
 }
 
 function parseEditableNotes(value: string): string[] {
@@ -2216,15 +2231,30 @@ function TriageView({
         <div className="rfq-field-grid">
           <label className="field">
             <span>Customer</span>
-            <input aria-label="RFQ customer" onChange={(event) => onUpdateFields({ customer: event.target.value })} value={item.customer} />
+            <input
+              aria-label="RFQ customer"
+              onBlur={(event) => onUpdateFields({ commit: true, customer: event.target.value })}
+              onChange={(event) => onUpdateFields({ customer: event.target.value })}
+              value={item.customer}
+            />
           </label>
           <label className="field">
             <span>Contact</span>
-            <input aria-label="RFQ contact" onChange={(event) => onUpdateFields({ contact: event.target.value })} value={item.contact} />
+            <input
+              aria-label="RFQ contact"
+              onBlur={(event) => onUpdateFields({ commit: true, contact: event.target.value })}
+              onChange={(event) => onUpdateFields({ contact: event.target.value })}
+              value={item.contact}
+            />
           </label>
           <label className="field rfq-field-span">
             <span>Subject</span>
-            <input aria-label="RFQ subject" onChange={(event) => onUpdateFields({ subject: event.target.value })} value={item.subject} />
+            <input
+              aria-label="RFQ subject"
+              onBlur={(event) => onUpdateFields({ commit: true, subject: event.target.value })}
+              onChange={(event) => onUpdateFields({ subject: event.target.value })}
+              value={item.subject}
+            />
           </label>
           <label className="field">
             <span>Due date</span>
@@ -4261,14 +4291,14 @@ function formatMaterialIssueSummary(commitment: MaterialAvailabilityCommitment) 
 }
 
 function outsideServiceStatusFor(item: QuoteWorkItem, serviceLabel: string) {
-  if (item.customer === "Baltic Hydraulics" && serviceLabel.toLowerCase().includes("passivation")) {
+  if (customerKeyFor(item) === "Baltic Hydraulics" && serviceLabel.toLowerCase().includes("passivation")) {
     return "not_requested" as const
   }
   return "quoted" as const
 }
 
 function approvalCustomerPolicyFor(item: QuoteWorkItem): QuoteApprovalCustomerPolicy {
-  switch (item.customer) {
+  switch (customerKeyFor(item)) {
     case "Arctic Instruments":
       return {
         creditLimitCents: 220_000,
