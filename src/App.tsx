@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 import {
   AlertTriangle,
   Calculator,
@@ -185,6 +185,18 @@ interface RfqFieldPatch {
   notesText?: string
 }
 
+interface WorkspaceLocalState {
+  actionsById: Record<string, WorkspaceActionRecord[]>
+  activeView: WorkspaceView
+  editsById: Record<string, QuoteEditState>
+  offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  selectedId: string
+  statusById: Record<string, QuoteQueueStatus>
+  version: 1
+  workItems: QuoteWorkItem[]
+}
+
+const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const demoToday = "2026-06-20"
 const demoNow = "2026-06-20T09:00:00+03:00"
 const capacityPlanningDays = 5
@@ -667,32 +679,52 @@ function formatFileSize(bytes: number): string {
 }
 
 function App() {
-  const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(initialWorkItems)
-  const [selectedId, setSelectedId] = useState(initialWorkItems[0].id)
-  const [activeView, setActiveView] = useState<WorkspaceView>("costing")
+  const [workspaceLocalState] = useState(() => readWorkspaceLocalState())
+  const restoredWorkItems = workspaceLocalState?.workItems ?? initialWorkItems
+  const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(restoredWorkItems)
+  const [selectedId, setSelectedId] = useState(() => restoredSelectedId(workspaceLocalState, restoredWorkItems))
+  const [activeView, setActiveView] = useState<WorkspaceView>(workspaceLocalState?.activeView ?? "costing")
   const [queueFilters, setQueueFilters] = useState<QueueFilterState>({ cnc: false, due: false, rush: false })
   const [showAttachments, setShowAttachments] = useState(false)
   const [isCreatingRfq, setIsCreatingRfq] = useState(false)
-  const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
+  const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>(workspaceLocalState?.actionsById ?? {})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
-  const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>({})
+  const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>(workspaceLocalState?.editsById ?? {})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
-  const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>({})
+  const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
+    workspaceLocalState?.offerLifecycleEventsById ?? {},
+  )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
-  const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>({})
+  const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
-  const manualRfqCountRef = useRef(0)
+  const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
+      initialSnapshot: {
+        actionsById: workspaceLocalState?.actionsById ?? {},
+        statusById: workspaceLocalState?.statusById ?? {},
+      },
       onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
     }),
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
+  useEffect(() => {
+    writeWorkspaceLocalState({
+      actionsById,
+      activeView,
+      editsById,
+      offerLifecycleEventsById,
+      selectedId,
+      statusById,
+      version: 1,
+      workItems,
+    })
+  }, [actionsById, activeView, editsById, offerLifecycleEventsById, selectedId, statusById, workItems])
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
@@ -1627,6 +1659,80 @@ interface ManualRfqFormValues {
   toleranceClass: string
   finish: string
   notes: string
+}
+
+function readWorkspaceLocalState(): WorkspaceLocalState | undefined {
+  if (typeof window === "undefined") {
+    return undefined
+  }
+
+  try {
+    const raw = window.localStorage.getItem(workspaceLocalStorageKey)
+    return raw ? parseWorkspaceLocalState(JSON.parse(raw)) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function writeWorkspaceLocalState(state: WorkspaceLocalState) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(workspaceLocalStorageKey, JSON.stringify(state))
+  } catch {
+    // Browser storage may be disabled or full; keep the in-memory workspace usable.
+  }
+}
+
+function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefined {
+  if (!isObjectRecord(value) || value.version !== 1 || !Array.isArray(value.workItems) || value.workItems.length === 0) {
+    return undefined
+  }
+
+  const activeView = value.activeView === "triage" || value.activeView === "costing" || value.activeView === "offer" ? value.activeView : "costing"
+  const selectedId =
+    typeof value.selectedId === "string" && value.workItems.some((item) => isObjectRecord(item) && item.id === value.selectedId)
+      ? value.selectedId
+      : fallbackSelectedId(value.workItems as QuoteWorkItem[])
+
+  return {
+    actionsById: recordOrEmpty<WorkspaceActionRecord[]>(value.actionsById),
+    activeView,
+    editsById: recordOrEmpty<QuoteEditState>(value.editsById),
+    offerLifecycleEventsById: recordOrEmpty<OfferLifecycleEventInput[]>(value.offerLifecycleEventsById),
+    selectedId,
+    statusById: recordOrEmpty<QuoteQueueStatus>(value.statusById),
+    version: 1,
+    workItems: value.workItems as QuoteWorkItem[],
+  }
+}
+
+function restoredSelectedId(state: WorkspaceLocalState | undefined, workItems: QuoteWorkItem[]): string {
+  if (state?.selectedId && workItems.some((item) => item.id === state.selectedId)) {
+    return state.selectedId
+  }
+  return fallbackSelectedId(workItems)
+}
+
+function fallbackSelectedId(workItems: QuoteWorkItem[]): string {
+  return workItems[0]?.id ?? initialWorkItems[0].id
+}
+
+function recordOrEmpty<T>(value: unknown): Record<string, T> {
+  return isObjectRecord(value) ? (value as Record<string, T>) : {}
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function highestManualRfqCounter(items: QuoteWorkItem[]): number {
+  return items.reduce((highest, item) => {
+    const match = item.id.match(/^rfq-manual-(\d+)$/)
+    return match ? Math.max(highest, Number(match[1])) : highest
+  }, 0)
 }
 
 function buildManualTags(quoteInput: CncQuoteInput): string[] {

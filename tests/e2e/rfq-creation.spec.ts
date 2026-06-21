@@ -32,6 +32,10 @@ test("creates a manual RFQ and surfaces it in the queue", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Gripper mount" })).toBeVisible()
   await expect(page.getByText(/MANUAL.*Just now/)).toBeVisible()
   await expect(page.getByLabel("RFQ intake readiness")).toBeVisible()
+
+  await page.reload()
+  await expect(queue.getByRole("button", { name: /Helsinki Robotics/ })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Gripper mount" })).toBeVisible()
 })
 
 test("edits selected RFQ intake fields inline", async ({ page }) => {
