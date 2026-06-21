@@ -212,6 +212,58 @@
   gap: 8px;
 }
 
+.queue-empty {
+  align-items: center;
+  color: oklch(0.5 0.02 250);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 18px 12px;
+  text-align: center;
+}
+
+.queue-empty svg {
+  height: 20px;
+  opacity: 0.6;
+  width: 20px;
+}
+
+.attachment-disclosure {
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+}
+
+.attachment-disclosure-row {
+  align-items: center;
+  color: oklch(0.32 0.03 250);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.attachment-disclosure-row svg {
+  height: 15px;
+  opacity: 0.65;
+  width: 15px;
+}
+
+.attachment-disclosure-row .attachment-name {
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-disclosure-row .attachment-kind,
+.attachment-disclosure-row .attachment-size {
+  color: oklch(0.55 0.02 250);
+  font-size: 0.72rem;
+}
+
 .queue-item {
   background: oklch(0.985 0.004 240);
   border: 1px solid transparent;
