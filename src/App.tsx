@@ -188,7 +188,7 @@ interface RfqFieldPatch {
 interface WorkspaceLocalState {
   actionsById: Record<string, WorkspaceActionRecord[]>
   activeView: WorkspaceView
-  editsById: Record<string, QuoteEditState>
+  editsById: Record<string, Partial<QuoteEditState>>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
   selectedId: string
   statusById: Record<string, QuoteQueueStatus>
@@ -302,6 +302,9 @@ const offerLifecycleFollowUpDueAt = "2026-06-27T09:00:00+03:00"
 
 interface QuoteEditState {
   cycleMinutes: number
+  machineHourlyRateCents: number
+  marginPercent: number
+  materialCostCentsPerKg: number
   quantity: number
   rush: boolean
   setupMinutes: number
@@ -690,7 +693,7 @@ function App() {
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>(workspaceLocalState?.actionsById ?? {})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
-  const [editsById, setEditsById] = useState<Record<string, QuoteEditState>>(workspaceLocalState?.editsById ?? {})
+  const [editsById, setEditsById] = useState<Record<string, Partial<QuoteEditState>>>(workspaceLocalState?.editsById ?? {})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
@@ -728,13 +731,13 @@ function App() {
   const queueNow = demoNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
-  const selectedEdit = editsById[selectedId] ?? defaultEditState(selectedItem)
+  const selectedEdit = editStateForItem(selectedItem, editsById[selectedId])
   const selectedStatus = statusById[selectedId] ?? selectedItem.status
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
-  const { cycleMinutes, quantity, rush, setupMinutes } = selectedEdit
+  const { cycleMinutes, machineHourlyRateCents, marginPercent, materialCostCentsPerKg, quantity, rush, setupMinutes } = selectedEdit
   const updateSelectedEdit = (patch: Partial<QuoteEditState>) => {
     setEditsById((current) => ({
       ...current,
@@ -784,7 +787,7 @@ function App() {
   const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
   const rankedQueue = useMemo(() => {
     const queueInputs = workItems.map((item) => {
-      const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+      const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
       const itemQuote = calculateCncQuote(itemQuoteInput)
       const itemStatus = statusById[item.id] ?? item.status
       return {
@@ -813,7 +816,7 @@ function App() {
       buildCapacityCommitmentPlan({
         dailyCapacityMinutesByProcess: buildDailyCapacityMinutesByProcess(workItems),
         items: workItems.map((item) => {
-          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
           const itemQuote = calculateCncQuote(itemQuoteInput)
           return {
             customerName: customerLabelFor(item),
@@ -841,7 +844,7 @@ function App() {
     () =>
       buildOutsideServicePlan({
         items: workItems.map((item) => {
-          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
           const itemQuote = calculateCncQuote(itemQuoteInput)
           return {
             customerName: customerLabelFor(item),
@@ -869,7 +872,7 @@ function App() {
       buildMaterialAvailabilityPlan({
         inventoryLots: materialInventoryLots,
         items: workItems.map((item) => {
-          const itemQuoteInput = applyQuoteEdit(item, editsById[item.id] ?? defaultEditState(item))
+          const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
           return {
             customerName: customerLabelFor(item),
             dueAt: item.dueAt,
@@ -1555,12 +1558,18 @@ function App() {
             <CostingView
               cycleMinutes={cycleMinutes}
               partPreview={partPreview}
+              machineHourlyRateCents={machineHourlyRateCents}
+              marginPercent={marginPercent}
+              materialCostCentsPerKg={materialCostCentsPerKg}
               quantity={quantity}
               quote={quote}
               rush={rush}
               scenarioComparison={scenarioComparison}
               selectedItem={selectedItem}
               setCycleMinutes={(value) => updateSelectedEdit({ cycleMinutes: value })}
+              setMachineHourlyRateCents={(value) => updateSelectedEdit({ machineHourlyRateCents: value })}
+              setMarginPercent={(value) => updateSelectedEdit({ marginPercent: value })}
+              setMaterialCostCentsPerKg={(value) => updateSelectedEdit({ materialCostCentsPerKg: value })}
               setQuantity={(value) => updateSelectedEdit({ quantity: value })}
               setRush={(value) => updateSelectedEdit({ rush: value })}
               setSetupMinutes={(value) => updateSelectedEdit({ setupMinutes: value })}
@@ -1696,7 +1705,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   }
 
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
-  const editsById = optionalRecordOfValues(value.editsById, isQuoteEditState)
+  const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
   if (!actionsById || !editsById || !offerLifecycleEventsById || !statusById) {
@@ -1872,10 +1881,13 @@ function isCncOperation(value: unknown) {
   )
 }
 
-function isQuoteEditState(value: unknown): value is QuoteEditState {
+function isQuoteEditStatePatch(value: unknown): value is Partial<QuoteEditState> {
   return (
     isObjectRecord(value) &&
     isFiniteNumber(value.cycleMinutes) &&
+    (value.machineHourlyRateCents === undefined || isFiniteNumber(value.machineHourlyRateCents)) &&
+    (value.marginPercent === undefined || isFiniteNumber(value.marginPercent)) &&
+    (value.materialCostCentsPerKg === undefined || isFiniteNumber(value.materialCostCentsPerKg)) &&
     isFiniteNumber(value.quantity) &&
     typeof value.rush === "boolean" &&
     isFiniteNumber(value.setupMinutes)
@@ -3229,6 +3241,9 @@ function CapacityProcessRow({
 
 function CostingView({
   cycleMinutes,
+  machineHourlyRateCents,
+  marginPercent,
+  materialCostCentsPerKg,
   partPreview,
   quantity,
   quote,
@@ -3236,12 +3251,18 @@ function CostingView({
   scenarioComparison,
   selectedItem,
   setCycleMinutes,
+  setMachineHourlyRateCents,
+  setMarginPercent,
+  setMaterialCostCentsPerKg,
   setQuantity,
   setRush,
   setSetupMinutes,
   setupMinutes,
 }: {
   cycleMinutes: number
+  machineHourlyRateCents: number
+  marginPercent: number
+  materialCostCentsPerKg: number
   partPreview: PartPreviewModel
   quantity: number
   quote: CncQuoteResult
@@ -3249,6 +3270,9 @@ function CostingView({
   scenarioComparison: QuoteComparisonResult
   selectedItem: QuoteWorkItem
   setCycleMinutes: (value: number) => void
+  setMachineHourlyRateCents: (value: number) => void
+  setMarginPercent: (value: number) => void
+  setMaterialCostCentsPerKg: (value: number) => void
   setQuantity: (value: number) => void
   setRush: (value: boolean) => void
   setSetupMinutes: (value: number) => void
@@ -3289,6 +3313,39 @@ function CostingView({
         <label className="toggle-field">
           <input checked={rush} onChange={(event) => setRush(event.target.checked)} type="checkbox" />
           <span>Rush</span>
+        </label>
+        <label className="field">
+          <span>Material €/kg</span>
+          <input
+            aria-label="Material cost per kg"
+            min={0}
+            onChange={(event) => setMaterialCostCentsPerKg(toCents(event.target.value))}
+            step={0.01}
+            type="number"
+            value={formatCentsInput(materialCostCentsPerKg)}
+          />
+        </label>
+        <label className="field">
+          <span>Machine €/h</span>
+          <input
+            aria-label="Machine hourly rate"
+            min={0.01}
+            onChange={(event) => setMachineHourlyRateCents(toPositiveCents(event.target.value))}
+            step={0.01}
+            type="number"
+            value={formatCentsInput(machineHourlyRateCents)}
+          />
+        </label>
+        <label className="field">
+          <span>Margin %</span>
+          <input
+            aria-label="Margin percent"
+            min={0}
+            onChange={(event) => setMarginPercent(toNumber(event.target.value))}
+            step={0.1}
+            type="number"
+            value={marginPercent}
+          />
         </label>
       </div>
       <label className="range-field">
@@ -4485,20 +4542,56 @@ function toPositiveInteger(value: string) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
 }
 
+function toCents(value: string) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) : 0
+}
+
+function toPositiveCents(value: string) {
+  const cents = toCents(value)
+  return cents > 0 ? cents : 1
+}
+
+function formatCentsInput(cents: number) {
+  return (cents / 100).toFixed(2)
+}
+
 function defaultEditState(item: QuoteWorkItem): QuoteEditState {
   return {
     cycleMinutes: item.quoteInput.operation.cycleMinutesPerPart,
+    machineHourlyRateCents: item.quoteInput.machine.hourlyRateCents,
+    marginPercent: item.quoteInput.rateCard.marginPercent,
+    materialCostCentsPerKg: item.quoteInput.material.costCentsPerKg,
     quantity: item.quoteInput.quantity,
     rush: item.quoteInput.priority === "rush",
     setupMinutes: item.quoteInput.operation.setupMinutes,
   }
 }
 
+function editStateForItem(item: QuoteWorkItem, edit: Partial<QuoteEditState> | undefined): QuoteEditState {
+  return {
+    ...defaultEditState(item),
+    ...edit,
+  }
+}
+
 function applyQuoteEdit(item: QuoteWorkItem, edit: QuoteEditState): CncQuoteInput {
   return {
     ...item.quoteInput,
+    machine: {
+      ...item.quoteInput.machine,
+      hourlyRateCents: edit.machineHourlyRateCents,
+    },
+    material: {
+      ...item.quoteInput.material,
+      costCentsPerKg: edit.materialCostCentsPerKg,
+    },
     quantity: edit.quantity,
     priority: edit.rush ? "rush" : "normal",
+    rateCard: {
+      ...item.quoteInput.rateCard,
+      marginPercent: edit.marginPercent,
+    },
     operation: {
       ...item.quoteInput.operation,
       setupMinutes: edit.setupMinutes,

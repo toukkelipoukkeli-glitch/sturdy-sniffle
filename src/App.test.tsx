@@ -28,6 +28,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(totalText(container)).toMatch(/€\d/)
   })
 
+  it("recomputes the quote when editable costing rates change", async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    const before = totalText(container)
+
+    const margin = screen.getByLabelText("Margin percent")
+    await user.clear(margin)
+    await user.type(margin, "18.5")
+
+    expect(totalText(container)).not.toBe(before)
+    expect(screen.getByText("margin percent").closest(".assumption-row")).toHaveTextContent("18.5")
+  })
+
   it("toggles the Rush queue filter to narrow and restore the queue", async () => {
     const user = userEvent.setup()
     render(<App />)
