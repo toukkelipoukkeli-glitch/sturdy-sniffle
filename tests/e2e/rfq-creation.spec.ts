@@ -33,6 +33,13 @@ test("creates a manual RFQ and surfaces it in the queue", async ({ page }) => {
   await expect(page.getByText(/MANUAL.*Just now/)).toBeVisible()
   await expect(page.getByLabel("RFQ intake readiness")).toBeVisible()
 
+  await page.waitForFunction(() => {
+    try {
+      return window.localStorage.getItem("factorybid.workspace.v1")?.includes("Helsinki Robotics")
+    } catch {
+      return false
+    }
+  })
   await page.reload()
   await expect(queue.getByRole("button", { name: /Helsinki Robotics/ })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Gripper mount" })).toBeVisible()

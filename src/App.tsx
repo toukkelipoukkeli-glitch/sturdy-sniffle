@@ -1691,21 +1691,34 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     return undefined
   }
 
+  if (!value.workItems.every(isPersistedQuoteWorkItem)) {
+    return undefined
+  }
+
+  const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
+  const editsById = optionalRecordOfValues(value.editsById, isQuoteEditState)
+  const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
+  if (!actionsById || !editsById || !offerLifecycleEventsById || !statusById) {
+    return undefined
+  }
+
+  const workItems = value.workItems
   const activeView = value.activeView === "triage" || value.activeView === "costing" || value.activeView === "offer" ? value.activeView : "costing"
   const selectedId =
-    typeof value.selectedId === "string" && value.workItems.some((item) => isObjectRecord(item) && item.id === value.selectedId)
+    typeof value.selectedId === "string" && workItems.some((item) => item.id === value.selectedId)
       ? value.selectedId
-      : fallbackSelectedId(value.workItems as QuoteWorkItem[])
+      : fallbackSelectedId(workItems)
 
   return {
-    actionsById: recordOrEmpty<WorkspaceActionRecord[]>(value.actionsById),
+    actionsById,
     activeView,
-    editsById: recordOrEmpty<QuoteEditState>(value.editsById),
-    offerLifecycleEventsById: recordOrEmpty<OfferLifecycleEventInput[]>(value.offerLifecycleEventsById),
+    editsById,
+    offerLifecycleEventsById,
     selectedId,
-    statusById: recordOrEmpty<QuoteQueueStatus>(value.statusById),
+    statusById,
     version: 1,
-    workItems: value.workItems as QuoteWorkItem[],
+    workItems,
   }
 }
 
@@ -1720,12 +1733,201 @@ function fallbackSelectedId(workItems: QuoteWorkItem[]): string {
   return workItems[0]?.id ?? initialWorkItems[0].id
 }
 
-function recordOrEmpty<T>(value: unknown): Record<string, T> {
-  return isObjectRecord(value) ? (value as Record<string, T>) : {}
+function optionalRecordOfValues<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const entries = Object.entries(value)
+  if (!entries.every(([, item]) => isValue(item))) {
+    return undefined
+  }
+  return Object.fromEntries(entries) as Record<string, T>
+}
+
+function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T[]> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const entries = Object.entries(value)
+  if (!entries.every(([, items]) => Array.isArray(items) && items.every(isValue))) {
+    return undefined
+  }
+  return Object.fromEntries(entries) as Record<string, T[]>
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isPersistedQuoteWorkItem(value: unknown): value is QuoteWorkItem {
+  return (
+    isObjectRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.customer === "string" &&
+    typeof value.contact === "string" &&
+    typeof value.subject === "string" &&
+    typeof value.received === "string" &&
+    typeof value.receivedAt === "string" &&
+    typeof value.due === "string" &&
+    typeof value.dueAt === "string" &&
+    isPriority(value.priority) &&
+    (value.status === "new" || value.status === "triage" || value.status === "estimating" || value.status === "ready") &&
+    (value.source === "gmail" || value.source === "manual" || value.source === "import") &&
+    Array.isArray(value.tags) &&
+    value.tags.every((tag) => typeof tag === "string") &&
+    Array.isArray(value.attachments) &&
+    Array.isArray(value.cadMetadata) &&
+    Array.isArray(value.notes) &&
+    value.notes.every((note) => typeof note === "string") &&
+    Array.isArray(value.providerRuns) &&
+    isCncQuoteInput(value.quoteInput)
+  )
+}
+
+function isCncQuoteInput(value: unknown): value is CncQuoteInput {
+  return (
+    isObjectRecord(value) &&
+    typeof value.partNumber === "string" &&
+    (value.process === "cnc_milling" || value.process === "cnc_turning") &&
+    isFiniteNumber(value.quantity) &&
+    isPriority(value.priority) &&
+    isCncMaterial(value.material) &&
+    isCncMachine(value.machine) &&
+    isCncRateCard(value.rateCard) &&
+    isCncDimensions(value.stockDimensions) &&
+    (value.finishedDimensions === undefined || isCncDimensions(value.finishedDimensions)) &&
+    isCncOperation(value.operation) &&
+    (value.toleranceClass === undefined || typeof value.toleranceClass === "string") &&
+    (value.finish === undefined || typeof value.finish === "string")
+  )
+}
+
+function isCncMaterial(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    typeof value.name === "string" &&
+    isFiniteNumber(value.densityKgM3) &&
+    isFiniteNumber(value.costCentsPerKg) &&
+    (value.yieldFactor === undefined || isFiniteNumber(value.yieldFactor))
+  )
+}
+
+function isCncMachine(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    typeof value.name === "string" &&
+    isFiniteNumber(value.hourlyRateCents) &&
+    isFiniteNumber(value.setupRateCents) &&
+    (value.capacityMinutesPerDay === undefined || isFiniteNumber(value.capacityMinutesPerDay))
+  )
+}
+
+function isCncRateCard(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    (value.currency === "EUR" || value.currency === "USD" || value.currency === "GBP") &&
+    isFiniteNumber(value.setupMinimumCents) &&
+    isFiniteNumber(value.minimumOrderCents) &&
+    isFiniteNumber(value.marginPercent) &&
+    isFiniteNumber(value.rushMultiplier) &&
+    isFiniteNumber(value.baseLeadTimeDays) &&
+    (value.rushLeadTimeDays === undefined || isFiniteNumber(value.rushLeadTimeDays))
+  )
+}
+
+function isCncDimensions(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    (value.lengthMm === undefined || isFiniteNumber(value.lengthMm)) &&
+    (value.widthMm === undefined || isFiniteNumber(value.widthMm)) &&
+    (value.heightMm === undefined || isFiniteNumber(value.heightMm)) &&
+    (value.diameterMm === undefined || isFiniteNumber(value.diameterMm))
+  )
+}
+
+function isCncOperation(value: unknown) {
+  return (
+    isObjectRecord(value) &&
+    isFiniteNumber(value.setupMinutes) &&
+    isFiniteNumber(value.cycleMinutesPerPart) &&
+    (value.programmingMinutes === undefined || isFiniteNumber(value.programmingMinutes)) &&
+    (value.fixtureMinutes === undefined || isFiniteNumber(value.fixtureMinutes)) &&
+    (value.inspectionMinutesPerPart === undefined || isFiniteNumber(value.inspectionMinutesPerPart)) &&
+    (value.consumableCentsPerPart === undefined || isFiniteNumber(value.consumableCentsPerPart)) &&
+    (value.complexityMultiplier === undefined || isFiniteNumber(value.complexityMultiplier)) &&
+    (value.outsideServices === undefined ||
+      (Array.isArray(value.outsideServices) &&
+        value.outsideServices.every(
+          (service) =>
+            isObjectRecord(service) && typeof service.label === "string" && isFiniteNumber(service.amountCents),
+        )))
+  )
+}
+
+function isQuoteEditState(value: unknown): value is QuoteEditState {
+  return (
+    isObjectRecord(value) &&
+    isFiniteNumber(value.cycleMinutes) &&
+    isFiniteNumber(value.quantity) &&
+    typeof value.rush === "boolean" &&
+    isFiniteNumber(value.setupMinutes)
+  )
+}
+
+function isWorkspaceActionRecord(value: unknown): value is WorkspaceActionRecord {
+  return (
+    isObjectRecord(value) &&
+    value.actionVersion === "workspace-action.v1" &&
+    typeof value.key === "string" &&
+    typeof value.actor === "string" &&
+    (value.kind === "status_change" || value.kind === "scenario_saved" || value.kind === "follow_up_created" || value.kind === "handoff_note") &&
+    typeof value.occurredAt === "string" &&
+    typeof value.rfqId === "string" &&
+    (value.fromStatus === undefined || isQuoteQueueStatus(value.fromStatus)) &&
+    (value.toStatus === undefined || isQuoteQueueStatus(value.toStatus)) &&
+    (value.activityKind === "status_change" ||
+      value.activityKind === "quote_update" ||
+      value.activityKind === "calendar_event" ||
+      value.activityKind === "note") &&
+    typeof value.activityMessage === "string"
+  )
+}
+
+function isOfferLifecycleEventInput(value: unknown): value is OfferLifecycleEventInput {
+  return (
+    isObjectRecord(value) &&
+    (value.kind === "sent" ||
+      value.kind === "accepted" ||
+      value.kind === "declined" ||
+      value.kind === "follow_up_scheduled" ||
+      value.kind === "follow_up_completed" ||
+      value.kind === "note_added") &&
+    typeof value.actor === "string" &&
+    typeof value.occurredAt === "string" &&
+    (value.followUpDueAt === undefined || typeof value.followUpDueAt === "string") &&
+    (value.followUpTaskId === undefined || typeof value.followUpTaskId === "string") &&
+    (value.note === undefined || typeof value.note === "string")
+  )
+}
+
+function isQuoteQueueStatus(value: unknown): value is QuoteQueueStatus {
+  return value === "new" || value === "triage" || value === "estimating" || value === "ready" || value === "sent" || value === "won" || value === "lost"
+}
+
+function isPriority(value: unknown): value is QuoteWorkItem["priority"] {
+  return value === "normal" || value === "rush"
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value)
 }
 
 function highestManualRfqCounter(items: QuoteWorkItem[]): number {
