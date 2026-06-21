@@ -656,7 +656,7 @@ function App() {
   const [queueFilters, setQueueFilters] = useState<QueueFilterState>({ cnc: false, due: false, rush: false })
   const [showAttachments, setShowAttachments] = useState(false)
   const [isCreatingRfq, setIsCreatingRfq] = useState(false)
-  const [manualRfqCount, setManualRfqCount] = useState(0)
+  const manualRfqCounterRef = useRef(0)
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
@@ -1137,8 +1137,9 @@ function App() {
     setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: "" }))
   }
   const createRfq = (values: ManualRfqFormValues) => {
-    const nextCount = manualRfqCount + 1
-    const id = `rfq-manual-${nextCount}`
+    // Increment a ref synchronously so rapid submissions can't collide on a stale count.
+    manualRfqCounterRef.current += 1
+    const id = `rfq-manual-${manualRfqCounterRef.current}`
     const quoteInput = buildManualCncQuoteInput({
       partNumber: values.partNumber,
       process: values.process,
@@ -1174,7 +1175,6 @@ function App() {
       providerRuns: [],
     }
     setWorkItems((current) => [newItem, ...current])
-    setManualRfqCount(nextCount)
     setSelectedId(id)
     setActiveView("triage")
     setIsCreatingRfq(false)
