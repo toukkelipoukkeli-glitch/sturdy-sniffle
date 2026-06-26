@@ -34,6 +34,8 @@ import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
 import {
   createCalendarRfqScheduler,
   createMockCalendarRfqProvider,
+  buildRfqCalendarPlan,
+  type CalendarRfqPlan,
   type CalendarRfqEventDraft,
 } from "./domain/integrations/calendarRfq"
 import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
@@ -235,6 +237,7 @@ interface WorkspaceLocalState {
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const demoToday = "2026-06-20"
 const demoNow = "2026-06-20T09:00:00+03:00"
+const workspaceTimezone = "Europe/Helsinki"
 const capacityPlanningDays = 5
 const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
   cnc_milling: 420,
@@ -801,6 +804,15 @@ function App() {
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
+  const selectedRfqCalendarPlan = useMemo(
+    () =>
+      buildRfqCalendarPlan({
+        parsedRfq: parsedRfqForCalendarPlan(selectedItem),
+        rfqId: selectedItem.id,
+        timezone: workspaceTimezone,
+      }),
+    [selectedItem],
+  )
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
   const selectedReleaseExecutionRuns = useMemo(
@@ -861,7 +873,7 @@ function App() {
         const contact = normalizeEditableText(patch.contact, item.contact, patch.commit)
         const subject = normalizeEditableText(patch.subject, item.subject, patch.commit)
         const quoteInput = applyRfqFieldPatch(item.quoteInput, patch)
-        const dueDate = patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt)
+        const dueDate = normalizeManualDueDate(patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt), dateInputValueFor(item.dueAt))
 
         return {
           ...item,
@@ -869,7 +881,7 @@ function App() {
           contact,
           subject,
           due: patch.dueDate === undefined ? item.due : formatManualDueLabel(dueDate),
-          dueAt: patch.dueDate === undefined ? item.dueAt : `${dueDate}T12:00:00+03:00`,
+          dueAt: patch.dueDate === undefined ? item.dueAt : manualDueAtFor(dueDate, dateInputValueFor(item.dueAt)),
           quoteInput,
           tags: quoteInput === item.quoteInput ? item.tags : buildManualTags(quoteInput),
           notes: patch.notesText === undefined ? item.notes : parseEditableNotes(patch.notesText),
@@ -1456,7 +1468,7 @@ function App() {
       received: "Just now",
       receivedAt: demoNow,
       due: formatManualDueLabel(values.dueDate),
-      dueAt: `${values.dueDate}T12:00:00+03:00`,
+      dueAt: manualDueAtFor(values.dueDate),
       priority: values.priority,
       status: "new",
       source: "manual",
@@ -1794,6 +1806,7 @@ function App() {
             )}
           </div>
           <IntegrationStatusPanel
+            calendarPlan={selectedRfqCalendarPlan}
             connectorSnapshot={selectedConnectorSnapshot}
             isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
@@ -1912,6 +1925,30 @@ function restoredSelectedId(state: WorkspaceLocalState | undefined, workItems: Q
 
 function fallbackSelectedId(workItems: QuoteWorkItem[]): string {
   return workItems[0]?.id ?? initialWorkItems[0].id
+}
+
+function parsedRfqForCalendarPlan(item: QuoteWorkItem): ParsedRfqIntake {
+  return {
+    attachments: item.attachments,
+    currency: "EUR",
+    customerName: item.customer,
+    dueAt: optionalTimestampFor(item.dueAt),
+    extractedFields: [],
+    parts: [
+      {
+        attachmentNames: item.attachments.map((attachment) => attachment.fileName),
+        description: item.subject,
+        materialText: item.quoteInput.material.name,
+        partNumber: item.quoteInput.partNumber,
+        process: item.quoteInput.process,
+        quantity: item.quoteInput.quantity,
+      },
+    ],
+    priority: item.priority,
+    receivedAt: new Date(item.receivedAt).getTime(),
+    subject: subjectLabelFor(item),
+    summary: item.notes.join(" "),
+  }
 }
 
 function optionalRecordOfValues<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T> | undefined {
@@ -2258,16 +2295,91 @@ function subjectLabelFor(item: QuoteWorkItem): string {
 }
 
 function formatManualDueLabel(dateValue: string): string {
-  const parsed = new Date(`${dateValue}T12:00:00`)
-  if (Number.isNaN(parsed.getTime())) {
-    return dateValue
+  const parsed = parseManualDueDate(dateValue)
+  if (!parsed) {
+    return "No due date"
   }
   return parsed.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
 }
 
 function dateInputValueFor(timestamp: string): string {
   const match = timestamp.match(/^\d{4}-\d{2}-\d{2}/)
-  return match?.[0] ?? demoToday
+  return normalizeManualDueDate(match?.[0] ?? "", demoToday)
+}
+
+function manualDueAtFor(dateValue: string, fallback = defaultManualDueDate()): string {
+  return zonedDateTimeIso(normalizeManualDueDate(dateValue, fallback), workspaceTimezone, 12)
+}
+
+function normalizeManualDueDate(dateValue: string, fallback: string): string {
+  return parseManualDueDate(dateValue) ? dateValue.trim() : fallback
+}
+
+function parseManualDueDate(dateValue: string): Date | undefined {
+  const dateParts = parseManualDueDateParts(dateValue)
+  if (!dateParts) {
+    return undefined
+  }
+  const { day, month, year } = dateParts
+  const parsed = new Date(year, month - 1, day, 12)
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+    return undefined
+  }
+  return parsed
+}
+
+function parseManualDueDateParts(dateValue: string): { day: number; month: number; year: number } | undefined {
+  const trimmed = dateValue.trim()
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) {
+    return undefined
+  }
+  const [, yearText, monthText, dayText] = match
+  return {
+    day: Number(dayText),
+    month: Number(monthText),
+    year: Number(yearText),
+  }
+}
+
+function zonedDateTimeIso(dateValue: string, timezone: string, hour: number): string {
+  const dateParts = parseManualDueDateParts(dateValue)
+  if (!dateParts || !parseManualDueDate(dateValue)) {
+    throw new Error("Cannot build a timestamp from an invalid due date.")
+  }
+  const targetWallClockUtc = Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day, hour)
+  const initialOffsetMinutes = timeZoneOffsetMinutes(new Date(targetWallClockUtc), timezone)
+  const initialInstant = new Date(targetWallClockUtc - initialOffsetMinutes * 60_000)
+  const resolvedOffsetMinutes = timeZoneOffsetMinutes(initialInstant, timezone)
+  return new Date(targetWallClockUtc - resolvedOffsetMinutes * 60_000).toISOString()
+}
+
+function timeZoneOffsetMinutes(date: Date, timezone: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    second: "2-digit",
+    timeZone: timezone,
+    year: "numeric",
+  }).formatToParts(date)
+  const valueFor = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "0"
+  const asUtc = Date.UTC(
+    Number(valueFor("year")),
+    Number(valueFor("month")) - 1,
+    Number(valueFor("day")),
+    Number(valueFor("hour")) % 24,
+    Number(valueFor("minute")),
+    Number(valueFor("second")),
+  )
+  return (asUtc - date.getTime()) / 60_000
+}
+
+function optionalTimestampFor(value: string): number | undefined {
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : undefined
 }
 
 function normalizeOptionalText(value: string | undefined, fallback: string | undefined): string | undefined {
@@ -2450,7 +2562,7 @@ function RfqCreateDialog({
   })
   const update = <K extends keyof ManualRfqFormValues>(key: K, value: ManualRfqFormValues[K]) =>
     setValues((current) => ({ ...current, [key]: value }))
-  const canSubmit = values.customer.trim() !== "" && values.partNumber.trim() !== ""
+  const canSubmit = values.customer.trim() !== "" && values.partNumber.trim() !== "" && parseManualDueDate(values.dueDate) !== undefined
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -2534,7 +2646,7 @@ function RfqCreateDialog({
             </label>
             <label className="field">
               <span>Due date</span>
-              <input onChange={(event) => update("dueDate", event.target.value)} type="date" value={values.dueDate} />
+              <input onChange={(event) => update("dueDate", event.target.value)} required type="date" value={values.dueDate} />
             </label>
             <label className="field">
               <span>Setup minutes</span>
@@ -2604,6 +2716,7 @@ function PersistenceStatus({
 }
 
 function IntegrationStatusPanel({
+  calendarPlan,
   connectorSnapshot,
   isConnectorSyncing,
   onSyncConnector,
@@ -2611,6 +2724,7 @@ function IntegrationStatusPanel({
   rfqId,
   status,
 }: {
+  calendarPlan: CalendarRfqPlan
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   isConnectorSyncing: boolean
   onSyncConnector: () => void
@@ -2653,6 +2767,7 @@ function IntegrationStatusPanel({
           <IntegrationSourceRow key={source.key} source={source} />
         ))}
       </div>
+      <RfqCalendarPlanPreview plan={calendarPlan} />
       <ConnectorLinkDrilldownPanel
         drilldown={connectorDrilldown}
         filter={connectorFilter}
@@ -2661,6 +2776,52 @@ function IntegrationStatusPanel({
       {status.warnings.length > 0 ? (
         <div className="provider-warning-list">
           {status.warnings.slice(0, 3).map((warning) => (
+            <div className="flag" key={warning}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function RfqCalendarPlanPreview({ plan }: { plan: CalendarRfqPlan }) {
+  return (
+    <section className="rfq-calendar-plan-preview" aria-label="RFQ calendar plan preview">
+      <div className="rfq-calendar-plan-heading">
+        <span>
+          <CalendarDays aria-hidden="true" />
+          RFQ calendar plan
+        </span>
+        <strong>{plan.events.length} drafts</strong>
+      </div>
+      {plan.events.length > 0 ? (
+        <div className="rfq-calendar-plan-list">
+          {plan.events.map((event) => (
+            <article className="rfq-calendar-plan-row" key={`${event.kind}:${event.startAt}:${event.title}`}>
+              <span className="rfq-calendar-plan-icon" aria-hidden="true">
+                <CalendarDays />
+              </span>
+              <div>
+                <strong>{event.title}</strong>
+                <span>
+                  {formatCalendarEventRange(event)} · {event.timezone}
+                </span>
+                {event.description ? <small>{event.description}</small> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="provider-history-empty" role="status">
+          No RFQ calendar drafts.
+        </div>
+      )}
+      {plan.warnings.length > 0 ? (
+        <div className="provider-warning-list">
+          {plan.warnings.map((warning) => (
             <div className="flag" key={warning}>
               <AlertTriangle aria-hidden="true" />
               <span>{warning}</span>

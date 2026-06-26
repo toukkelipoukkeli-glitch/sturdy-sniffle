@@ -3087,6 +3087,89 @@
   gap: 8px;
 }
 
+.rfq-calendar-plan-preview {
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.rfq-calendar-plan-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.rfq-calendar-plan-heading span,
+.rfq-calendar-plan-heading strong {
+  align-items: center;
+  color: oklch(0.29 0.036 250);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 850;
+  gap: 6px;
+}
+
+.rfq-calendar-plan-heading svg {
+  height: 15px;
+  width: 15px;
+}
+
+.rfq-calendar-plan-list {
+  display: grid;
+  gap: 8px;
+}
+
+.rfq-calendar-plan-row {
+  align-items: start;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.84 0.05 178);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-height: 58px;
+  padding: 9px;
+}
+
+.rfq-calendar-plan-icon {
+  align-items: center;
+  background: oklch(0.94 0.035 155);
+  border-radius: 999px;
+  color: oklch(0.31 0.08 155);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.rfq-calendar-plan-icon svg {
+  height: 16px;
+  width: 16px;
+}
+
+.rfq-calendar-plan-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rfq-calendar-plan-row strong {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.rfq-calendar-plan-row span,
+.rfq-calendar-plan-row small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .integration-source-row {
   align-items: start;
   background: oklch(0.985 0.004 240);
