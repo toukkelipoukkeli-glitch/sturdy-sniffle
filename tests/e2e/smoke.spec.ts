@@ -85,6 +85,7 @@ test("filters the RFQ queue and discloses attachments", async ({ page }) => {
 
 test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.goto("/")
+  const queue = page.getByLabel("RFQ queue")
 
   await expect(page.getByRole("heading", { name: "FactoryBid OS" })).toBeVisible()
   await expect(page.getByLabel("Persistence status")).toContainText("Local fallback")
@@ -115,6 +116,15 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await connectorDrilldown.getByRole("button", { name: "Attention 0" }).click()
   await expect(connectorDrilldown).toContainText("No connector records match attention.")
   await connectorDrilldown.getByRole("button", { name: "All 6" }).click()
+  await expect(queue.getByRole("button", { name: /Tampere Robotics/ })).toBeVisible()
+  await queue.getByRole("button", { name: /Tampere Robotics/ }).click()
+  await expect(page.getByRole("heading", { name: "RFQ: CNC fixture PN TR-301" })).toBeVisible()
+  await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await expect(page.getByLabel("RFQ intake readiness")).toContainText("Ready for costing")
+  await expect(page.getByLabel("Selected RFQ")).toContainText("Imported from Gmail RFQ sync")
+  await queue.getByRole("button", { name: /North Forge/ }).click()
+  await expect(page.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeVisible()
+  await page.getByRole("button", { exact: true, name: "Costing" }).click()
   await expect(page.getByLabel("Part preview")).toContainText("FB-204-A.step")
   await expect(page.getByLabel("Attachments", { exact: true })).toContainText("ready")
   await expect(page.getByLabel("Measurements")).toContainText("Length")
