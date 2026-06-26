@@ -141,6 +141,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(releaseGate).toHaveTextContent("Reviewed by Sari")
 
     await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
     await user.click(screen.getByRole("button", { name: "Move to ready" }))
 
     await user.click(screen.getByRole("button", { name: "Offer" }))
@@ -148,6 +149,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(releasePlan).toHaveTextContent("Release commands ready")
     expect(releasePlan).toHaveTextContent("manager reviewed")
     expect(releasePlan).toHaveTextContent("Draft offer email")
+    const calendarDrafts = within(releasePlan).getByLabelText("Offer release calendar drafts")
+    expect(calendarDrafts).toHaveTextContent("Follow up: OFFER-204")
+    expect(calendarDrafts).toHaveTextContent("Europe/Helsinki")
+    expect(calendarDrafts).toHaveTextContent("Follow up with North Forge about offer OFFER-204.")
 
     const executionAudit = screen.getByLabelText("Offer release execution audit")
     await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))

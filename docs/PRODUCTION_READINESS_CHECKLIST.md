@@ -74,7 +74,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ Gmail reply ingestion → deterministic lifecycle signals (`gmailOfferReply.ts`, OfferReplyPanel).
 - ✅ Connector failures visible but nonfatal.
 - 🔴 **Connector drill-down (linked RFQ/offer/calendar details)** — only aggregate counts surfaced. → **Slice G**
-- 🔴 **Calendar follow-up + RFQ due-date planning surfaced** — computed event drafts never shown. → **Slice G**
+- 🟡 **Calendar follow-up + RFQ due-date planning surfaced** — offer release follow-up drafts are now visible before execution; RFQ due-date planning drafts remain pending. → **Slice G**
 - 🟡 **Healthy connector/calendar path demonstrable** — demo forces failure so "linked/scheduled" never shown. → **Slice G**
 
 ## §7 Provider/AI layer

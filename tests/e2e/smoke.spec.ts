@@ -313,10 +313,13 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await expect(page.getByLabel("Quote release gate")).toContainText("Reviewed by Sari")
 
   await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await page.getByRole("button", { name: "Create follow-up" }).click()
   await page.getByRole("button", { name: "Move to ready" }).click()
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
 
   await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
+  await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Follow up: OFFER-204")
+  await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
   await page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" }).click()
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
