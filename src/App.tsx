@@ -1874,7 +1874,6 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !offerDraftEditsById ||
     !offerExportEventsById ||
     !offerLifecycleEventsById ||
-    !releaseExecutionRunsById ||
     !releaseReviewsById ||
     !statusById
   ) {
@@ -1895,7 +1894,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
-    releaseExecutionRunsById,
+    releaseExecutionRunsById: releaseExecutionRunsById ?? {},
     releaseReviewsById,
     selectedId,
     statusById,

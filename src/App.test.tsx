@@ -197,6 +197,7 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => expect(executionAudit).toHaveTextContent("Execution completed"))
 
     const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
     const selectedRuns = stored.releaseExecutionRunsById?.[stored.selectedId]
     selectedRuns[0].calendarEvents = [
       {
@@ -212,11 +213,10 @@ describe("FactoryBid workspace (component)", () => {
     unmount()
 
     render(<App />)
-    await user.click(screen.getByRole("button", { name: "Offer" }))
+    expect(screen.getByRole("heading", { name: "Offer draft" })).toBeInTheDocument()
     const restoredExecutionAudit = screen.getByLabelText("Offer release execution audit")
     expect(restoredExecutionAudit).toHaveTextContent("Blocked before execution")
-    expect(restoredExecutionAudit).toHaveTextContent("dry run")
-    expect(restoredExecutionAudit).not.toHaveTextContent("commit")
+    expect(within(restoredExecutionAudit).getByText("Mode").closest(".metric")).toHaveTextContent("dry run")
     expect(within(restoredExecutionAudit).queryByRole("button", { name: "Release executed" })).toBeNull()
   })
 })
