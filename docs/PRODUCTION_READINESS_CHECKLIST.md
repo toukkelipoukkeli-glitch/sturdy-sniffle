@@ -80,7 +80,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §7 Provider/AI layer
 
 - ✅ Mock/local/provider adapters explicit; outputs audited with prompt/output/review/failure metadata; AI never required for core calc (`providers/*`).
-- ✅ **Provider run history filterable in UI** — `ProviderRunReviewPanel` exposes provider run summary metrics plus All/Warnings/Fallbacks/Failed filters backed by `providerRunHistory.ts`.
+- ✅ **Provider run history filterable in UI** — `ProviderRunReviewPanel` exposes provider run summary metrics plus all, failed, fallbacks, skipped, succeeded, and warnings filters backed by `providerRunHistory.ts`.
 - 🟡 **Provider runs read from Convex** — query APIs exist; UI reads static fixtures. → **Slice H (optional)**
 
 ## §8 Convex / data production readiness
