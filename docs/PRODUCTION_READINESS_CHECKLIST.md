@@ -1,6 +1,6 @@
 # FactoryBid OS — Production Readiness Checklist
 
-Last updated: 2026-06-21 (Europe/Helsinki). Owner: autonomous build loop.
+Last updated: 2026-06-26 (Europe/Helsinki). Owner: autonomous build loop.
 
 This checklist tracks the gap between the current `main` and a production-grade local-first
 factory tarjouslaskenta system, as defined by the mission Definition of Done (DoD §1–§10).
@@ -80,7 +80,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §7 Provider/AI layer
 
 - ✅ Mock/local/provider adapters explicit; outputs audited with prompt/output/review/failure metadata; AI never required for core calc (`providers/*`).
-- 🔴 **Provider run history filterable in UI** — `providerRunHistory.ts` summary/filters exist but `ProviderRunReviewPanel` renders an unfiltered list. (PR #111 surfaces this but is unmerged.) → **Slice G**
+- ✅ **Provider run history filterable in UI** — `ProviderRunReviewPanel` exposes provider run summary metrics plus all, failed, fallbacks, skipped, succeeded, and warnings filters backed by `providerRunHistory.ts`.
 - 🟡 **Provider runs read from Convex** — query APIs exist; UI reads static fixtures. → **Slice H (optional)**
 
 ## §8 Convex / data production readiness

@@ -1,23 +1,24 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-06-21 Europe/Helsinki.
+Last refreshed: 2026-06-26 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9d06368` (`[codex] Add provider run history filters (#109)`).
+- Main branch checkpoint: `14cd4bf` (`Demonstrate healthy connector sync (#130)`).
 - Open PRs at this checkpoint: none.
 - Latest merged sequence:
-  - `#109` provider run history filters.
-  - `#108` offer reply state filters in the workspace.
-  - `#107` offer reply state summaries.
-  - `#106` offer reply sync persistence wiring.
-  - `#105` offer reply persistence payloads.
-  - `#104` workspace audit feed.
-  - `#103` workspace integration health.
-  - `#98` through `#102` provider run and connector persistence bridges.
+  - `#130` healthy deterministic RFQ connector sync path.
+  - `#129` selected-RFQ calendar plan preview.
+  - `#128` offer release calendar draft preview.
+  - `#127` local release execution controls.
+  - `#126` release review action.
+  - `#125` workspace error boundary.
+  - `#111` provider run history filters.
+  - `#112` connector link drill-downs.
+  - `#113` calendar follow-up status controls.
 - The build loop has been using small `codex/*` branches, CodeRabbit review rounds, GitHub CI, and local Bun validation before merge.
 - Greptile is currently an external blocker because the trial account reached its 50-review limit. Continue with CI, local validation, CodeRabbit, and documented fallbacks unless the account is upgraded.
 
@@ -35,7 +36,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
 - CAD-like attachment preview models, CAD metadata adapter boundaries, review state, and manufacturability flags.
-- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review, CAD metadata review, integration health, offer reply state, and audit visibility.
+- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
 
@@ -96,31 +97,37 @@ Use this loop for each slice:
 
 Work in small, reviewed slices. Good next candidates from the current checkpoint:
 
-1. Surface provider run history filters in the React workspace.
-   - Reuse `src/domain/providers/providerRunHistory.ts`.
-   - Add compact filters for provider, status, review state, and recent run summaries.
+1. Materialize Gmail RFQ intake into the workspace behind a safe review/import boundary.
+   - Reuse `src/domain/integrations/gmailRfq.ts` and the existing connector sync payloads.
+   - Keep duplicate detection deterministic and never require live Gmail for tests.
+   - Imported RFQs should enter the queue as `source: "import"` or a reviewed manual conversion, not overwrite selected RFQs silently.
+
+2. Move the app's quote path toward the multi-process registry.
+   - Start by routing CNC through `calculateQuote` without changing visible pricing.
+   - Then add one non-CNC demo item or guarded process selector in a separate UI slice.
+   - Keep all calculators deterministic and preserve focused tests for each process.
+
+3. Add CAD review operator overrides.
+   - Let operators correct dimensions/material/process notes and clear or justify manufacturability flags.
+   - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
-2. Add connector sync/link drill-downs.
-   - Extend the integration health UI with linked RFQ/offer/provider run details.
-   - Keep tenant and connector IDs explicit.
-   - Add focused domain tests for sorting, empty states, and stale-error states.
+4. Introduce operator identity and a single injected workspace clock.
+   - Replace hardcoded "Sari" and mixed `demoToday`/`demoNow`/wall-clock writes with explicit local workspace context.
+   - Keep audit records deterministic in tests.
+   - Avoid auth scope creep; this is local identity plumbing, not a full login system.
 
-3. Add calendar follow-up status controls.
-   - Surface pending/scheduled/skipped follow-up events in the workspace.
-   - Keep Gmail/calendar connector failures isolated from core offer state.
-   - Use deterministic fixture data for tests.
+5. Wire optional Convex reads into the UI with local fallback.
+   - Use existing Convex workflow/persistence APIs only when configured.
+   - Keep local-first e2e green without cloud auth.
+   - Do not commit secrets or deployment-specific values.
 
-4. Harden PDF/export verification for offers.
+6. Harden PDF/export verification for offers.
    - Keep deterministic plain-text and PDF-ready content as source of truth.
    - Add render/export verification without making AI required.
    - Record export warnings and assumptions in offer history.
 
-5. Deepen part-review workflows.
-   - Add preview status, dimension checks, manufacturability override notes, and thumbnail placeholders behind adapter boundaries.
-   - Avoid committing heavy geometry parsing until adapter and fallback behavior are clear.
-
-6. Production hardening pass.
+7. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
    - Add accessibility checks for dense workspace controls.
    - Keep screenshots or Playwright artifacts out of git unless intentionally documenting visual baselines.
