@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it } from "vitest"
 
 import App from "./App"
 
@@ -9,6 +9,10 @@ function totalText(container: HTMLElement): string {
 }
 
 describe("FactoryBid workspace (component)", () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
   it("renders the dense operator workspace with the first RFQ selected and a computed quote", () => {
     const { container } = render(<App />)
     expect(screen.getByRole("heading", { name: "FactoryBid OS" })).toBeInTheDocument()
@@ -144,5 +148,75 @@ describe("FactoryBid workspace (component)", () => {
     expect(releasePlan).toHaveTextContent("Release commands ready")
     expect(releasePlan).toHaveTextContent("manager reviewed")
     expect(releasePlan).toHaveTextContent("Draft offer email")
+
+    const executionAudit = screen.getByLabelText("Offer release execution audit")
+    await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))
+
+    expect(executionAudit).toHaveTextContent("Execution completed")
+    expect(executionAudit).toHaveTextContent("commit")
+    expect(executionAudit).toHaveTextContent("Release execution has been recorded.")
+    expect(within(executionAudit).getByRole("button", { name: "Release executed" })).toBeDisabled()
+  })
+
+  it("guards local release execution against duplicate clicks", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    const releaseGate = screen.getByLabelText("Quote release gate")
+    await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+
+    const executionAudit = screen.getByLabelText("Offer release execution audit")
+    const execute = within(executionAudit).getByRole("button", { name: "Execute release" })
+    fireEvent.click(execute)
+    fireEvent.click(execute)
+
+    await waitFor(() => expect(executionAudit).toHaveTextContent("Execution completed"))
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      expect(stored.releaseExecutionRunsById?.[stored.selectedId]).toHaveLength(1)
+    })
+  })
+
+  it("rejects restored release executions with malformed calendar events", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    const releaseGate = screen.getByLabelText("Quote release gate")
+    await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+
+    const executionAudit = screen.getByLabelText("Offer release execution audit")
+    await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))
+    await waitFor(() => expect(executionAudit).toHaveTextContent("Execution completed"))
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
+    const selectedRuns = stored.releaseExecutionRunsById?.[stored.selectedId]
+    selectedRuns[0].calendarEvents = [
+      {
+        endAt: "2026-06-25T10:30:00.000Z",
+        kind: "offer_follow_up",
+        metadata: { invalid: 42 },
+        startAt: "2026-06-25T10:00:00.000Z",
+        timezone: "Europe/Helsinki",
+        title: "Follow up offer",
+      },
+    ]
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    expect(screen.getByRole("heading", { name: "Offer draft" })).toBeInTheDocument()
+    const restoredExecutionAudit = screen.getByLabelText("Offer release execution audit")
+    expect(restoredExecutionAudit).toHaveTextContent("Blocked before execution")
+    expect(within(restoredExecutionAudit).getByText("Mode").closest(".metric")).toHaveTextContent("dry run")
+    expect(within(restoredExecutionAudit).queryByRole("button", { name: "Release executed" })).toBeNull()
   })
 })

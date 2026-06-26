@@ -31,7 +31,11 @@ import {
 
 import { Button } from "./components/ui/button"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
-import { createCalendarRfqScheduler, createMockCalendarRfqProvider } from "./domain/integrations/calendarRfq"
+import {
+  createCalendarRfqScheduler,
+  createMockCalendarRfqProvider,
+  type CalendarRfqEventDraft,
+} from "./domain/integrations/calendarRfq"
 import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
 import {
   buildConnectorLinkDrilldown,
@@ -65,6 +69,7 @@ import {
 } from "./domain/offers/offerExportPackage"
 import {
   buildOfferReleaseExecutionRun,
+  type OfferReleaseCommandOutcomeInput,
   type OfferReleaseCommandExecutionStatus,
   type OfferReleaseExecutionRun,
 } from "./domain/offers/offerReleaseExecution"
@@ -219,6 +224,7 @@ interface WorkspaceLocalState {
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  releaseExecutionRunsById: Record<string, OfferReleaseExecutionRun[]>
   releaseReviewsById: Record<string, ReleaseReviewState>
   selectedId: string
   statusById: Record<string, QuoteQueueStatus>
@@ -736,6 +742,9 @@ function App() {
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
   )
+  const [releaseExecutionRunsById, setReleaseExecutionRunsById] = useState<Record<string, OfferReleaseExecutionRun[]>>(
+    workspaceLocalState?.releaseExecutionRunsById ?? {},
+  )
   const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
     workspaceLocalState?.releaseReviewsById ?? {},
   )
@@ -744,6 +753,7 @@ function App() {
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
+  const releaseExecutionLocksRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
@@ -763,6 +773,7 @@ function App() {
       offerDraftEditsById,
       offerExportEventsById,
       offerLifecycleEventsById,
+      releaseExecutionRunsById,
       releaseReviewsById,
       selectedId,
       statusById,
@@ -776,6 +787,7 @@ function App() {
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    releaseExecutionRunsById,
     releaseReviewsById,
     selectedId,
     statusById,
@@ -791,6 +803,10 @@ function App() {
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
+  const selectedReleaseExecutionRuns = useMemo(
+    () => releaseExecutionRunsById[selectedId] ?? [],
+    [releaseExecutionRunsById, selectedId],
+  )
   const selectedReleaseReview = releaseReviewsById[selectedId]
   const selectedOfferDraftEdit = useMemo(
     () => offerDraftEditStateForItem(selectedItem, offerDraftEditsById[selectedId]),
@@ -1116,7 +1132,7 @@ function App() {
       selectedStatus,
     ],
   )
-  const offerReleaseExecution = useMemo(
+  const offerReleaseExecutionPreview = useMemo(
     () =>
       buildOfferReleaseExecutionRun({
         actor: "Sari",
@@ -1126,9 +1142,10 @@ function App() {
       }),
     [offerReleasePlan],
   )
+  const offerReleaseExecution = selectedReleaseExecutionRuns.at(-1) ?? offerReleaseExecutionPreview
   const offerReleaseHistory = useMemo(
-    () => summarizeOfferReleaseExecutionHistory([offerReleaseExecution]),
-    [offerReleaseExecution],
+    () => summarizeOfferReleaseExecutionHistory([offerReleaseExecutionPreview, ...selectedReleaseExecutionRuns]),
+    [offerReleaseExecutionPreview, selectedReleaseExecutionRuns],
   )
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
@@ -1316,6 +1333,40 @@ function App() {
         reviewedBy: "Sari",
       },
     }))
+  }
+  const executeReleasePlan = async () => {
+    const executionRfqId = selectedId
+    const alreadyCommitted = selectedReleaseExecutionRuns.some((run) => run.mode === "commit" && run.status === "succeeded")
+    if (offerReleasePlan.status !== "ready" || alreadyCommitted || releaseExecutionLocksRef.current.has(executionRfqId)) {
+      return
+    }
+
+    releaseExecutionLocksRef.current.add(executionRfqId)
+    try {
+      const run = buildOfferReleaseExecutionRun({
+        actor: "Sari",
+        commandOutcomes: buildLocalReleaseCommandOutcomes(offerReleasePlan),
+        executedAt: demoNow,
+        mode: "commit",
+        plan: offerReleasePlan,
+      })
+
+      for (const action of run.workspaceActions) {
+        await recordWorkspaceAction(action)
+      }
+      setReleaseExecutionRunsById((current) => ({
+        ...current,
+        [executionRfqId]: [...(current[executionRfqId] ?? []), run],
+      }))
+      if (run.lifecycleEvents.length > 0) {
+        setOfferLifecycleEventsById((current) => ({
+          ...current,
+          [executionRfqId]: [...(current[executionRfqId] ?? []), ...run.lifecycleEvents],
+        }))
+      }
+    } finally {
+      releaseExecutionLocksRef.current.delete(executionRfqId)
+    }
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
     setActionsById(snapshot.actionsById)
@@ -1686,6 +1737,7 @@ function App() {
               onCompleteFollowUp={completeOfferLifecycleFollowUp}
               onDeclineOffer={declineOffer}
               onDraftEditChange={updateSelectedOfferDraftEdit}
+              onExecuteRelease={executeReleasePlan}
               onMarkReleaseReviewed={markReleaseReviewed}
               onMarkSent={markOfferSent}
               onRecordExportEvent={recordSelectedOfferExportEvent}
@@ -1813,6 +1865,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const releaseExecutionRunsById = optionalRecordOfArrays(value.releaseExecutionRunsById, isOfferReleaseExecutionRun)
   const releaseReviewsById = optionalRecordOfValues(value.releaseReviewsById, isReleaseReviewState)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
   if (
@@ -1841,6 +1894,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    releaseExecutionRunsById: releaseExecutionRunsById ?? {},
     releaseReviewsById,
     selectedId,
     statusById,
@@ -1892,6 +1946,10 @@ function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => i
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isRecordOfStrings(value: unknown): value is Record<string, string> {
+  return isObjectRecord(value) && Object.values(value).every((item) => typeof item === "string")
 }
 
 function isPersistedQuoteWorkItem(value: unknown): value is QuoteWorkItem {
@@ -2043,6 +2101,75 @@ function isReleaseReviewState(value: unknown): value is ReleaseReviewState {
   )
 }
 
+function isOfferReleaseExecutionRun(value: unknown): value is OfferReleaseExecutionRun {
+  return (
+    isObjectRecord(value) &&
+    value.executionVersion === "offer-release-execution.v1" &&
+    typeof value.executionFingerprint === "string" &&
+    typeof value.actor === "string" &&
+    typeof value.executedAt === "string" &&
+    typeof value.releaseAt === "string" &&
+    (value.mode === "commit" || value.mode === "dry_run") &&
+    isOfferReleaseExecutionStatus(value.status) &&
+    typeof value.offerId === "string" &&
+    typeof value.offerNumber === "string" &&
+    typeof value.rfqId === "string" &&
+    value.planVersion === "offer-release-plan.v1" &&
+    Array.isArray(value.commands) &&
+    value.commands.every(isOfferReleaseCommandExecution) &&
+    Array.isArray(value.lifecycleEvents) &&
+    value.lifecycleEvents.every(isOfferLifecycleEventInput) &&
+    Array.isArray(value.workspaceActions) &&
+    value.workspaceActions.every(isWorkspaceActionRecord) &&
+    Array.isArray(value.calendarEvents) &&
+    value.calendarEvents.every(isCalendarRfqEventDraft) &&
+    Array.isArray(value.nextActions) &&
+    value.nextActions.every((action) => typeof action === "string") &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every((warning) => typeof warning === "string")
+  )
+}
+
+function isCalendarRfqEventDraft(value: unknown): value is CalendarRfqEventDraft {
+  return (
+    isObjectRecord(value) &&
+    (value.kind === "quote_due" || value.kind === "quote_work_hold" || value.kind === "offer_follow_up") &&
+    typeof value.title === "string" &&
+    typeof value.startAt === "string" &&
+    typeof value.endAt === "string" &&
+    typeof value.timezone === "string" &&
+    (value.description === undefined || typeof value.description === "string") &&
+    isRecordOfStrings(value.metadata)
+  )
+}
+
+function isOfferReleaseCommandExecution(value: unknown): value is OfferReleaseExecutionRun["commands"][number] {
+  return (
+    isObjectRecord(value) &&
+    typeof value.key === "string" &&
+    (value.kind === "calendar_follow_up" ||
+      value.kind === "email_draft" ||
+      value.kind === "lifecycle_follow_up" ||
+      value.kind === "lifecycle_sent" ||
+      value.kind === "manager_review" ||
+      value.kind === "workspace_follow_up" ||
+      value.kind === "workspace_status") &&
+    typeof value.label === "string" &&
+    typeof value.detail === "string" &&
+    (value.status === "applied" ||
+      value.status === "blocked" ||
+      value.status === "failed" ||
+      value.status === "pending" ||
+      value.status === "prepared" ||
+      value.status === "requires_review") &&
+    typeof value.idempotencyKey === "string" &&
+    (value.externalId === undefined || typeof value.externalId === "string") &&
+    (value.message === undefined || typeof value.message === "string") &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every((warning) => typeof warning === "string")
+  )
+}
+
 function isWorkspaceActionRecord(value: unknown): value is WorkspaceActionRecord {
   return (
     isObjectRecord(value) &&
@@ -2081,6 +2208,18 @@ function isOfferLifecycleEventInput(value: unknown): value is OfferLifecycleEven
 
 function isQuoteQueueStatus(value: unknown): value is QuoteQueueStatus {
   return value === "new" || value === "triage" || value === "estimating" || value === "ready" || value === "sent" || value === "won" || value === "lost"
+}
+
+function isOfferReleaseExecutionStatus(value: unknown): value is OfferReleaseExecutionRun["status"] {
+  return (
+    value === "blocked" ||
+    value === "failed" ||
+    value === "needs_review" ||
+    value === "partial" ||
+    value === "pending" ||
+    value === "prepared" ||
+    value === "succeeded"
+  )
 }
 
 function isPriority(value: unknown): value is QuoteWorkItem["priority"] {
@@ -3861,6 +4000,7 @@ function OfferView({
   onCompleteFollowUp,
   onDeclineOffer,
   onDraftEditChange,
+  onExecuteRelease,
   onMarkReleaseReviewed,
   onMarkSent,
   onRecordExportEvent,
@@ -3885,6 +4025,7 @@ function OfferView({
   onCompleteFollowUp: () => void
   onDeclineOffer: () => void
   onDraftEditChange: (patch: Partial<OfferDraftEditState>) => void
+  onExecuteRelease: () => void
   onMarkReleaseReviewed: () => void
   onMarkSent: () => void
   onRecordExportEvent: (event: Omit<OfferExportHistoryEvent, "id" | "occurredAt">) => void
@@ -4031,7 +4172,11 @@ function OfferView({
         onScheduleFollowUp={onScheduleFollowUp}
       />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
-      <OfferReleaseExecutionPanel execution={releaseExecution} />
+      <OfferReleaseExecutionPanel
+        execution={releaseExecution}
+        onExecuteRelease={onExecuteRelease}
+        releasePlan={releasePlan}
+      />
       <OfferReleaseHistoryPanel history={releaseHistory} />
       <OfferReplyPanel replySnapshot={replySnapshot} replySync={replySync} onSyncReplies={onSyncReplies} />
       <section className="offer-export-actions" aria-label="Offer export actions">
@@ -4226,9 +4371,18 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
   )
 }
 
-function OfferReleaseExecutionPanel({ execution }: { execution: OfferReleaseExecutionRun }) {
+function OfferReleaseExecutionPanel({
+  execution,
+  onExecuteRelease,
+  releasePlan,
+}: {
+  execution: OfferReleaseExecutionRun
+  onExecuteRelease: () => void
+  releasePlan: OfferReleasePlan
+}) {
   const statusLabel = offerReleaseExecutionStatusLabel(execution.status)
   const artifactCount = execution.lifecycleEvents.length + execution.workspaceActions.length + execution.calendarEvents.length
+  const canExecuteRelease = releasePlan.status === "ready" && execution.mode === "dry_run" && execution.status === "prepared"
 
   return (
     <section className="offer-release-execution-panel" aria-label="Offer release execution audit">
@@ -4251,6 +4405,19 @@ function OfferReleaseExecutionPanel({ execution }: { execution: OfferReleaseExec
         <Metric label="Warnings" value={String(execution.warnings.length)} />
         <Metric label="Fingerprint" value={shortAuditFingerprint(execution.executionFingerprint)} />
       </div>
+      <div className="offer-release-execution-controls">
+        <Button disabled={!canExecuteRelease} onClick={onExecuteRelease} size="sm" type="button">
+          <Truck aria-hidden="true" />
+          {execution.status === "succeeded" ? "Release executed" : "Execute release"}
+        </Button>
+        <span>
+          {canExecuteRelease
+            ? "Applies local release artifacts and records command outcomes."
+            : execution.status === "succeeded"
+              ? "Release execution has been recorded."
+              : "Resolve release blockers before execution."}
+        </span>
+      </div>
       <div className="offer-release-execution-command-list">
         {execution.commands.map((command) => (
           <div className="offer-release-execution-command" data-status={command.status} key={command.key}>
@@ -4258,6 +4425,10 @@ function OfferReleaseExecutionPanel({ execution }: { execution: OfferReleaseExec
             <div>
               <strong>{command.label}</strong>
               <span>{command.detail}</span>
+              {command.message ? <small>{command.message}</small> : null}
+              {command.warnings.map((warning) => (
+                <small key={warning}>{warning}</small>
+              ))}
             </div>
           </div>
         ))}
@@ -4307,6 +4478,19 @@ function offerReleaseExecutionStatusLabel(status: OfferReleaseExecutionRun["stat
     case "succeeded":
       return "Execution completed"
   }
+}
+
+function buildLocalReleaseCommandOutcomes(releasePlan: OfferReleasePlan): OfferReleaseCommandOutcomeInput[] {
+  return releasePlan.commands.map((command) => ({
+    externalId: `local-release:${releasePlan.offerId}:${command.key}`,
+    key: command.key,
+    message: `${command.label} applied in the local release adapter.`,
+    status: "applied",
+    warnings:
+      command.kind === "email_draft" || command.kind === "calendar_follow_up"
+        ? ["Local adapter recorded the command; no external connector call was made."]
+        : [],
+  }))
 }
 
 function shortAuditFingerprint(fingerprint: string) {

@@ -304,3 +304,32 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
   await expect(page.getByLabel("Plain text offer")).toHaveValue(/Total excluding VAT: EUR 500\.00/)
 })
+
+test("executes a reviewed release plan through the local adapter", async ({ page }) => {
+  await page.goto("/")
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+
+  await page.getByLabel("Quote release gate").getByRole("button", { name: "Mark reviewed" }).click()
+  await expect(page.getByLabel("Quote release gate")).toContainText("Reviewed by Sari")
+
+  await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await page.getByRole("button", { name: "Move to ready" }).click()
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+
+  await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
+  await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
+  await page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" }).click()
+  await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
+  await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
+  await expect(page.getByLabel("Offer release execution audit")).toContainText(
+    "Local adapter recorded the command; no external connector call was made.",
+  )
+  await expect(page.getByLabel("Offer release execution audit").getByRole("button", { name: "Release executed" })).toBeDisabled()
+  await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
+
+  await page.reload()
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+  await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
+  await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
+  await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
+})

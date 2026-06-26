@@ -41,7 +41,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ Operator can select RFQs, see workload/capacity/material/outside-services/approval/release panels (`App.tsx` triage/costing/offer views).
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
-- 🟡 **Approval/release gates operable** — manager release review is now persisted in workspace state and feeds the deterministic release planner; full release execution/send buttons remain pending. → **Slice D**
+- 🟡 **Approval/release gates operable** — manager release review and local release execution controls now persist audited runs and feed the deterministic release planner; real connector send/commit remains behind provider boundaries. → **Slice D/G**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
 - 🟡 **Loading/empty/stale/error polish** — queue empty states and a tested workspace error boundary exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 
@@ -96,7 +96,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **No dead controls** — queue filters (Due soon/Rush/CNC) are real `aria-pressed` toggles that narrow the ranked queue with an empty state; "Open attachments" is a real disclosure of the selected RFQ's files. (Slice B)
 - ✅ **Desktop + mobile responsive** — `src/App.css` has `@media` breakpoints at 1180px/820px; verified usable at 375px (no horizontal overflow, no overlapping text).
 - 🟡 **Loading/empty/error states + error boundary** — queue has an empty state and the app entrypoint now wraps the workspace in a tested recovery boundary; broader skeleton/loading states remain pending. → **Slice D**
-- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); durable send/release execution still pending. → **Slice A3/D**
+- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); local release execution controls now record deterministic command outcomes; real connector-backed send remains pending. → **Slice D/G**
 
 ## §10 Quality gates & test coverage
 
