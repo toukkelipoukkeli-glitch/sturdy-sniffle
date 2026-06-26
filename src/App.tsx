@@ -4693,7 +4693,7 @@ function OfferReleaseCalendarDrafts({ events }: { events: CalendarRfqEventDraft[
           <div>
             <strong>{event.title}</strong>
             <span>
-              {formatShortDateTime(event.startAt)} - {formatShortDateTime(event.endAt)} · {event.timezone}
+              {formatCalendarEventRange(event)} · {event.timezone}
             </span>
             {event.description ? <small>{event.description}</small> : null}
             <div className="offer-release-calendar-metadata" aria-label={`${event.title} metadata`}>
@@ -5888,6 +5888,17 @@ function formatShortDateTime(value: string) {
     minute: "2-digit",
     month: "short",
   }).format(new Date(value))
+}
+
+function formatCalendarEventRange(event: CalendarRfqEventDraft) {
+  const formatter = new Intl.DateTimeFormat("en-FI", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+    timeZone: event.timezone,
+  })
+  return `${formatter.format(new Date(event.startAt))} - ${formatter.format(new Date(event.endAt))}`
 }
 
 function formatProcess(process: QuoteProcessKey) {

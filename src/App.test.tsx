@@ -151,6 +151,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(releasePlan).toHaveTextContent("Draft offer email")
     const calendarDrafts = within(releasePlan).getByLabelText("Offer release calendar drafts")
     expect(calendarDrafts).toHaveTextContent("Follow up: OFFER-204")
+    expect(calendarDrafts).toHaveTextContent("03 Jul, 10.00 - 03 Jul, 10.30")
     expect(calendarDrafts).toHaveTextContent("Europe/Helsinki")
     expect(calendarDrafts).toHaveTextContent("Follow up with North Forge about offer OFFER-204.")
 

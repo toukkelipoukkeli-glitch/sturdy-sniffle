@@ -319,6 +319,7 @@ test("executes a reviewed release plan through the local adapter", async ({ page
 
   await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Follow up: OFFER-204")
+  await expect(page.getByLabel("Offer release calendar drafts")).toContainText("03 Jul, 10.00 - 03 Jul, 10.30")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
   await page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" }).click()
