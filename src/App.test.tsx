@@ -280,6 +280,9 @@ describe("calculateWorkspaceCncQuote", () => {
       expect(workspaceQuote.totalCents).toBe(registryQuote.totalCents)
       expect(workspaceQuote.unitPriceCents).toBe(registryQuote.unitPriceCents)
       expect(workspaceQuote.unitRemainderCents).toBe(registryQuote.unitRemainderCents)
+      expect(workspaceQuote.breakdown).toStrictEqual(registryQuote.breakdown)
+      expect(workspaceQuote.assumptions).toStrictEqual(registryQuote.assumptions)
+      expect(workspaceQuote.warnings).toStrictEqual(registryQuote.warnings)
       expect(workspaceQuote.process).toBe(input.process)
       expect(workspaceQuote.calculatorVersion).toBe(CNC_CALCULATOR_VERSION)
     }
