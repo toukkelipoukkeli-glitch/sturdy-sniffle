@@ -237,6 +237,7 @@ interface WorkspaceLocalState {
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const demoToday = "2026-06-20"
 const demoNow = "2026-06-20T09:00:00+03:00"
+const workspaceTimezone = "Europe/Helsinki"
 const capacityPlanningDays = 5
 const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
   cnc_milling: 420,
@@ -808,7 +809,7 @@ function App() {
       buildRfqCalendarPlan({
         parsedRfq: parsedRfqForCalendarPlan(selectedItem),
         rfqId: selectedItem.id,
-        timezone: "Europe/Helsinki",
+        timezone: workspaceTimezone,
       }),
     [selectedItem],
   )
@@ -2307,7 +2308,7 @@ function dateInputValueFor(timestamp: string): string {
 }
 
 function manualDueAtFor(dateValue: string, fallback = defaultManualDueDate()): string {
-  return `${normalizeManualDueDate(dateValue, fallback)}T12:00:00+03:00`
+  return zonedDateTimeIso(normalizeManualDueDate(dateValue, fallback), workspaceTimezone, 12)
 }
 
 function normalizeManualDueDate(dateValue: string, fallback: string): string {
@@ -2315,20 +2316,65 @@ function normalizeManualDueDate(dateValue: string, fallback: string): string {
 }
 
 function parseManualDueDate(dateValue: string): Date | undefined {
+  const dateParts = parseManualDueDateParts(dateValue)
+  if (!dateParts) {
+    return undefined
+  }
+  const { day, month, year } = dateParts
+  const parsed = new Date(year, month - 1, day, 12)
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+    return undefined
+  }
+  return parsed
+}
+
+function parseManualDueDateParts(dateValue: string): { day: number; month: number; year: number } | undefined {
   const trimmed = dateValue.trim()
   const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!match) {
     return undefined
   }
   const [, yearText, monthText, dayText] = match
-  const year = Number(yearText)
-  const month = Number(monthText)
-  const day = Number(dayText)
-  const parsed = new Date(year, month - 1, day, 12)
-  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
-    return undefined
+  return {
+    day: Number(dayText),
+    month: Number(monthText),
+    year: Number(yearText),
   }
-  return parsed
+}
+
+function zonedDateTimeIso(dateValue: string, timezone: string, hour: number): string {
+  const dateParts = parseManualDueDateParts(dateValue)
+  if (!dateParts || !parseManualDueDate(dateValue)) {
+    throw new Error("Cannot build a timestamp from an invalid due date.")
+  }
+  const targetWallClockUtc = Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day, hour)
+  const initialOffsetMinutes = timeZoneOffsetMinutes(new Date(targetWallClockUtc), timezone)
+  const initialInstant = new Date(targetWallClockUtc - initialOffsetMinutes * 60_000)
+  const resolvedOffsetMinutes = timeZoneOffsetMinutes(initialInstant, timezone)
+  return new Date(targetWallClockUtc - resolvedOffsetMinutes * 60_000).toISOString()
+}
+
+function timeZoneOffsetMinutes(date: Date, timezone: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    second: "2-digit",
+    timeZone: timezone,
+    year: "numeric",
+  }).formatToParts(date)
+  const valueFor = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "0"
+  const asUtc = Date.UTC(
+    Number(valueFor("year")),
+    Number(valueFor("month")) - 1,
+    Number(valueFor("day")),
+    Number(valueFor("hour")) % 24,
+    Number(valueFor("minute")),
+    Number(valueFor("second")),
+  )
+  return (asUtc - date.getTime()) / 60_000
 }
 
 function optionalTimestampFor(value: string): number | undefined {

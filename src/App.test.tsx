@@ -40,6 +40,27 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(dialog).getByRole("button", { name: "Create RFQ" })).toBeDisabled()
   })
 
+  it("stores winter manual RFQ due dates at Helsinki noon for calendar planning", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "New RFQ" }))
+    const dialog = screen.getByRole("dialog", { name: "Create RFQ" })
+    await user.type(within(dialog).getByLabelText("Customer *"), "Acme Manufacturing")
+    await user.type(within(dialog).getByLabelText("Part number *"), "ACME-101")
+    fireEvent.change(within(dialog).getByLabelText("Due date"), { target: { value: "2026-01-15" } })
+    await user.click(within(dialog).getByRole("button", { name: "Create RFQ" }))
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    expect(stored.workItems.find((item: { id: string }) => item.id === stored.selectedId)?.dueAt).toBe("2026-01-15T10:00:00.000Z")
+
+    const calendarPlan = screen.getByLabelText("RFQ calendar plan preview")
+    expect(calendarPlan).toHaveTextContent("Quote work: ACME-101")
+    expect(calendarPlan).toHaveTextContent("15 Jan, 09.00 - 15 Jan, 11.00")
+    expect(calendarPlan).toHaveTextContent("Quote due: ACME-101")
+    expect(calendarPlan).toHaveTextContent("15 Jan, 11.30 - 15 Jan, 12.00")
+  })
+
   it("recomputes the quote deterministically when a costing assumption changes", async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
