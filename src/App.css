@@ -2547,6 +2547,7 @@
 .offer-lifecycle-grid,
 .offer-release-plan-summary,
 .offer-release-command-list,
+.offer-release-calendar-drafts,
 .offer-release-next-actions,
 .offer-release-execution-summary,
 .offer-release-execution-controls,
@@ -2720,6 +2721,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.offer-release-calendar-drafts {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
 .offer-release-execution-command-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -2728,6 +2733,7 @@
 .offer-readiness-check,
 .quote-release-check,
 .offer-release-command,
+.offer-release-calendar-draft,
 .offer-release-execution-command {
   align-items: start;
   background: oklch(0.985 0.004 240);
@@ -2744,6 +2750,7 @@
 .offer-readiness-check[data-status="passed"],
 .quote-release-check[data-status="passed"],
 .offer-release-command[data-status="ready"],
+.offer-release-calendar-draft,
 .offer-release-execution-command[data-status="applied"],
 .offer-release-execution-command[data-status="prepared"] {
   border-color: oklch(0.84 0.05 155);
@@ -2771,6 +2778,7 @@
 .offer-readiness-check-icon,
 .quote-release-check-icon,
 .offer-release-command-icon,
+.offer-release-calendar-icon,
 .offer-release-execution-command-icon {
   align-items: center;
   border-radius: 999px;
@@ -2784,6 +2792,7 @@
 .offer-readiness-check-icon svg,
 .quote-release-check-icon svg,
 .offer-release-command-icon svg,
+.offer-release-calendar-icon svg,
 .offer-release-execution-command-icon svg {
   height: 16px;
   width: 16px;
@@ -2793,6 +2802,7 @@
 .offer-readiness-check[data-status="passed"] .offer-readiness-check-icon,
 .quote-release-check[data-status="passed"] .quote-release-check-icon,
 .offer-release-command[data-status="ready"] .offer-release-command-icon,
+.offer-release-calendar-icon,
 .offer-release-execution-command[data-status="applied"] .offer-release-execution-command-icon,
 .offer-release-execution-command[data-status="prepared"] .offer-release-execution-command-icon {
   background: oklch(0.94 0.035 155);
@@ -2823,6 +2833,7 @@
 .offer-readiness-check div,
 .quote-release-check div,
 .offer-release-command div,
+.offer-release-calendar-draft div,
 .offer-release-execution-command div {
   display: grid;
   gap: 4px;
@@ -2833,6 +2844,7 @@
 .offer-readiness-check strong,
 .quote-release-check strong,
 .offer-release-command strong,
+.offer-release-calendar-draft strong,
 .offer-release-execution-command strong {
   font-size: 0.82rem;
 }
@@ -2841,6 +2853,8 @@
 .offer-readiness-check span,
 .quote-release-check span,
 .offer-release-command span,
+.offer-release-calendar-draft span,
+.offer-release-calendar-draft small,
 .offer-release-execution-command span,
 .offer-release-execution-command small {
   color: oklch(0.43 0.025 250);
@@ -2851,6 +2865,25 @@
 
 .offer-release-execution-command small {
   color: oklch(0.48 0.032 45);
+}
+
+.offer-release-calendar-draft small {
+  color: oklch(0.36 0.04 178);
+}
+
+.offer-release-calendar-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.offer-release-calendar-metadata span {
+  background: oklch(0.96 0.018 178);
+  border: 1px solid oklch(0.84 0.05 178);
+  border-radius: 999px;
+  color: oklch(0.32 0.06 178);
+  font-size: 0.68rem;
+  padding: 4px 7px;
 }
 
 .alternate-list {

@@ -4663,6 +4663,7 @@ function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan 
           </div>
         ))}
       </div>
+      <OfferReleaseCalendarDrafts events={releasePlan.calendarPlan?.events ?? []} />
       {releasePlan.nextActions.length > 0 ? (
         <div className="offer-release-next-actions">
           {releasePlan.nextActions.map((action) => (
@@ -4674,6 +4675,38 @@ function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan 
         </div>
       ) : null}
     </section>
+  )
+}
+
+function OfferReleaseCalendarDrafts({ events }: { events: CalendarRfqEventDraft[] }) {
+  if (events.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="offer-release-calendar-drafts" aria-label="Offer release calendar drafts">
+      {events.map((event) => (
+        <article className="offer-release-calendar-draft" key={`${event.kind}:${event.startAt}:${event.title}`}>
+          <span className="offer-release-calendar-icon" aria-hidden="true">
+            <CalendarDays />
+          </span>
+          <div>
+            <strong>{event.title}</strong>
+            <span>
+              {formatCalendarEventRange(event)} · {event.timezone}
+            </span>
+            {event.description ? <small>{event.description}</small> : null}
+            <div className="offer-release-calendar-metadata" aria-label={`${event.title} metadata`}>
+              {Object.entries(event.metadata).map(([key, value]) => (
+                <span key={key}>
+                  {humanizeKey(key)}: {value}
+                </span>
+              ))}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
   )
 }
 
@@ -5855,6 +5888,17 @@ function formatShortDateTime(value: string) {
     minute: "2-digit",
     month: "short",
   }).format(new Date(value))
+}
+
+function formatCalendarEventRange(event: CalendarRfqEventDraft) {
+  const formatter = new Intl.DateTimeFormat("en-FI", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+    timeZone: event.timezone,
+  })
+  return `${formatter.format(new Date(event.startAt))} - ${formatter.format(new Date(event.endAt))}`
 }
 
 function formatProcess(process: QuoteProcessKey) {
