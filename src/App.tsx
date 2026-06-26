@@ -31,7 +31,11 @@ import {
 
 import { Button } from "./components/ui/button"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
-import { createCalendarRfqScheduler, createMockCalendarRfqProvider } from "./domain/integrations/calendarRfq"
+import {
+  createCalendarRfqScheduler,
+  createMockCalendarRfqProvider,
+  type CalendarRfqEventDraft,
+} from "./domain/integrations/calendarRfq"
 import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
 import {
   buildConnectorLinkDrilldown,
@@ -749,6 +753,7 @@ function App() {
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
+  const releaseExecutionLocksRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
@@ -1330,30 +1335,37 @@ function App() {
     }))
   }
   const executeReleasePlan = async () => {
-    if (offerReleasePlan.status !== "ready") {
+    const executionRfqId = selectedId
+    const alreadyCommitted = selectedReleaseExecutionRuns.some((run) => run.mode === "commit" && run.status === "succeeded")
+    if (offerReleasePlan.status !== "ready" || alreadyCommitted || releaseExecutionLocksRef.current.has(executionRfqId)) {
       return
     }
 
-    const run = buildOfferReleaseExecutionRun({
-      actor: "Sari",
-      commandOutcomes: buildLocalReleaseCommandOutcomes(offerReleasePlan),
-      executedAt: demoNow,
-      mode: "commit",
-      plan: offerReleasePlan,
-    })
+    releaseExecutionLocksRef.current.add(executionRfqId)
+    try {
+      const run = buildOfferReleaseExecutionRun({
+        actor: "Sari",
+        commandOutcomes: buildLocalReleaseCommandOutcomes(offerReleasePlan),
+        executedAt: demoNow,
+        mode: "commit",
+        plan: offerReleasePlan,
+      })
 
-    setReleaseExecutionRunsById((current) => ({
-      ...current,
-      [selectedId]: [...(current[selectedId] ?? []), run],
-    }))
-    if (run.lifecycleEvents.length > 0) {
-      setOfferLifecycleEventsById((current) => ({
+      for (const action of run.workspaceActions) {
+        await recordWorkspaceAction(action)
+      }
+      setReleaseExecutionRunsById((current) => ({
         ...current,
-        [selectedId]: [...(current[selectedId] ?? []), ...run.lifecycleEvents],
+        [executionRfqId]: [...(current[executionRfqId] ?? []), run],
       }))
-    }
-    for (const action of run.workspaceActions) {
-      await recordWorkspaceAction(action)
+      if (run.lifecycleEvents.length > 0) {
+        setOfferLifecycleEventsById((current) => ({
+          ...current,
+          [executionRfqId]: [...(current[executionRfqId] ?? []), ...run.lifecycleEvents],
+        }))
+      }
+    } finally {
+      releaseExecutionLocksRef.current.delete(executionRfqId)
     }
   }
   const applyWorkspaceSnapshot = (snapshot: WorkspacePersistenceSnapshot) => {
@@ -1937,6 +1949,10 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
+function isRecordOfStrings(value: unknown): value is Record<string, string> {
+  return isObjectRecord(value) && Object.values(value).every((item) => typeof item === "string")
+}
+
 function isPersistedQuoteWorkItem(value: unknown): value is QuoteWorkItem {
   return (
     isObjectRecord(value) &&
@@ -2107,10 +2123,24 @@ function isOfferReleaseExecutionRun(value: unknown): value is OfferReleaseExecut
     Array.isArray(value.workspaceActions) &&
     value.workspaceActions.every(isWorkspaceActionRecord) &&
     Array.isArray(value.calendarEvents) &&
+    value.calendarEvents.every(isCalendarRfqEventDraft) &&
     Array.isArray(value.nextActions) &&
     value.nextActions.every((action) => typeof action === "string") &&
     Array.isArray(value.warnings) &&
     value.warnings.every((warning) => typeof warning === "string")
+  )
+}
+
+function isCalendarRfqEventDraft(value: unknown): value is CalendarRfqEventDraft {
+  return (
+    isObjectRecord(value) &&
+    (value.kind === "quote_due" || value.kind === "quote_work_hold" || value.kind === "offer_follow_up") &&
+    typeof value.title === "string" &&
+    typeof value.startAt === "string" &&
+    typeof value.endAt === "string" &&
+    typeof value.timezone === "string" &&
+    (value.description === undefined || typeof value.description === "string") &&
+    isRecordOfStrings(value.metadata)
   )
 }
 
