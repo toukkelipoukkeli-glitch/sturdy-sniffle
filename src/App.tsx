@@ -34,6 +34,8 @@ import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
 import {
   createCalendarRfqScheduler,
   createMockCalendarRfqProvider,
+  buildRfqCalendarPlan,
+  type CalendarRfqPlan,
   type CalendarRfqEventDraft,
 } from "./domain/integrations/calendarRfq"
 import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
@@ -801,6 +803,15 @@ function App() {
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
+  const selectedRfqCalendarPlan = useMemo(
+    () =>
+      buildRfqCalendarPlan({
+        parsedRfq: parsedRfqForCalendarPlan(selectedItem),
+        rfqId: selectedItem.id,
+        timezone: "Europe/Helsinki",
+      }),
+    [selectedItem],
+  )
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
   const selectedReleaseExecutionRuns = useMemo(
@@ -1794,6 +1805,7 @@ function App() {
             )}
           </div>
           <IntegrationStatusPanel
+            calendarPlan={selectedRfqCalendarPlan}
             connectorSnapshot={selectedConnectorSnapshot}
             isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
@@ -1912,6 +1924,30 @@ function restoredSelectedId(state: WorkspaceLocalState | undefined, workItems: Q
 
 function fallbackSelectedId(workItems: QuoteWorkItem[]): string {
   return workItems[0]?.id ?? initialWorkItems[0].id
+}
+
+function parsedRfqForCalendarPlan(item: QuoteWorkItem): ParsedRfqIntake {
+  return {
+    attachments: item.attachments,
+    currency: "EUR",
+    customerName: item.customer,
+    dueAt: new Date(item.dueAt).getTime(),
+    extractedFields: [],
+    parts: [
+      {
+        attachmentNames: item.attachments.map((attachment) => attachment.fileName),
+        description: item.subject,
+        materialText: item.quoteInput.material.name,
+        partNumber: item.quoteInput.partNumber,
+        process: item.quoteInput.process,
+        quantity: item.quoteInput.quantity,
+      },
+    ],
+    priority: item.priority,
+    receivedAt: new Date(item.receivedAt).getTime(),
+    subject: subjectLabelFor(item),
+    summary: item.notes.join(" "),
+  }
 }
 
 function optionalRecordOfValues<T>(value: unknown, isValue: (item: unknown) => item is T): Record<string, T> | undefined {
@@ -2604,6 +2640,7 @@ function PersistenceStatus({
 }
 
 function IntegrationStatusPanel({
+  calendarPlan,
   connectorSnapshot,
   isConnectorSyncing,
   onSyncConnector,
@@ -2611,6 +2648,7 @@ function IntegrationStatusPanel({
   rfqId,
   status,
 }: {
+  calendarPlan: CalendarRfqPlan
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   isConnectorSyncing: boolean
   onSyncConnector: () => void
@@ -2653,6 +2691,7 @@ function IntegrationStatusPanel({
           <IntegrationSourceRow key={source.key} source={source} />
         ))}
       </div>
+      <RfqCalendarPlanPreview plan={calendarPlan} />
       <ConnectorLinkDrilldownPanel
         drilldown={connectorDrilldown}
         filter={connectorFilter}
@@ -2661,6 +2700,52 @@ function IntegrationStatusPanel({
       {status.warnings.length > 0 ? (
         <div className="provider-warning-list">
           {status.warnings.slice(0, 3).map((warning) => (
+            <div className="flag" key={warning}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{warning}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function RfqCalendarPlanPreview({ plan }: { plan: CalendarRfqPlan }) {
+  return (
+    <section className="rfq-calendar-plan-preview" aria-label="RFQ calendar plan preview">
+      <div className="rfq-calendar-plan-heading">
+        <span>
+          <CalendarDays aria-hidden="true" />
+          RFQ calendar plan
+        </span>
+        <strong>{plan.events.length} drafts</strong>
+      </div>
+      {plan.events.length > 0 ? (
+        <div className="rfq-calendar-plan-list">
+          {plan.events.map((event) => (
+            <article className="rfq-calendar-plan-row" key={`${event.kind}:${event.startAt}:${event.title}`}>
+              <span className="rfq-calendar-plan-icon" aria-hidden="true">
+                <CalendarDays />
+              </span>
+              <div>
+                <strong>{event.title}</strong>
+                <span>
+                  {formatCalendarEventRange(event)} · {event.timezone}
+                </span>
+                {event.description ? <small>{event.description}</small> : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="provider-history-empty" role="status">
+          No RFQ calendar drafts.
+        </div>
+      )}
+      {plan.warnings.length > 0 ? (
+        <div className="provider-warning-list">
+          {plan.warnings.map((warning) => (
             <div className="flag" key={warning}>
               <AlertTriangle aria-hidden="true" />
               <span>{warning}</span>

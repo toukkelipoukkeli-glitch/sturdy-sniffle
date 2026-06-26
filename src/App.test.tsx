@@ -17,6 +17,12 @@ describe("FactoryBid workspace (component)", () => {
     const { container } = render(<App />)
     expect(screen.getByRole("heading", { name: "FactoryBid OS" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeInTheDocument()
+    const calendarPlan = screen.getByLabelText("RFQ calendar plan preview")
+    expect(calendarPlan).toHaveTextContent("2 drafts")
+    expect(calendarPlan).toHaveTextContent("Quote work: CNC bracket FB-204-A")
+    expect(calendarPlan).toHaveTextContent("30 Jun, 12.00 - 30 Jun, 14.00")
+    expect(calendarPlan).toHaveTextContent("Quote due: CNC bracket FB-204-A")
+    expect(calendarPlan).toHaveTextContent("30 Jun, 14.30 - 30 Jun, 15.00")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
