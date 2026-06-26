@@ -167,6 +167,7 @@ describe("FactoryBid workspace (component)", () => {
 
   it("acknowledges CAD manufacturability flags with a persistent operator note", async () => {
     const user = userEvent.setup()
+    window.localStorage.clear()
     const { unmount } = render(<App />)
 
     const queue = screen.getByRole("complementary", { name: "RFQ queue" })
@@ -185,7 +186,12 @@ describe("FactoryBid workspace (component)", () => {
     const restoredQueue = screen.getByRole("complementary", { name: "RFQ queue" })
     await user.click(within(restoredQueue).getByRole("button", { name: /Baltic Hydraulics/ }))
     expect(screen.queryByLabelText("Manufacturability flags")).toBeNull()
-    expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Drawing is enough for turning setup.")
+    const restoredOverride = screen.getByLabelText("CAD review override")
+    expect(restoredOverride).toHaveTextContent("Drawing is enough for turning setup.")
+
+    await user.click(within(restoredOverride).getByRole("button", { name: "Reopen flags" }))
+    expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
+    expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Drawing is enough for turning setup.")
   })
 
   it("edits offer validity, terms, and notes in the exported draft", async () => {
