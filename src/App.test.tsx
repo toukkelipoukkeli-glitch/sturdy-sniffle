@@ -144,5 +144,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(releasePlan).toHaveTextContent("Release commands ready")
     expect(releasePlan).toHaveTextContent("manager reviewed")
     expect(releasePlan).toHaveTextContent("Draft offer email")
+
+    const executionAudit = screen.getByLabelText("Offer release execution audit")
+    await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))
+
+    expect(executionAudit).toHaveTextContent("Execution completed")
+    expect(executionAudit).toHaveTextContent("commit")
+    expect(executionAudit).toHaveTextContent("Release execution has been recorded.")
+    expect(within(executionAudit).getByRole("button", { name: "Release executed" })).toBeDisabled()
   })
 })

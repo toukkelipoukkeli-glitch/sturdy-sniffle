@@ -2549,6 +2549,7 @@
 .offer-release-command-list,
 .offer-release-next-actions,
 .offer-release-execution-summary,
+.offer-release-execution-controls,
 .offer-release-execution-command-list,
 .offer-release-execution-actions,
 .offer-release-history-summary,
@@ -2679,6 +2680,20 @@
 
 .offer-release-execution-summary {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.offer-release-execution-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.offer-release-execution-controls span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .offer-release-history-summary {
@@ -2826,11 +2841,16 @@
 .offer-readiness-check span,
 .quote-release-check span,
 .offer-release-command span,
-.offer-release-execution-command span {
+.offer-release-execution-command span,
+.offer-release-execution-command small {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+.offer-release-execution-command small {
+  color: oklch(0.48 0.032 45);
 }
 
 .alternate-list {
