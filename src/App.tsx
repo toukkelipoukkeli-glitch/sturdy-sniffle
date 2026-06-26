@@ -872,7 +872,7 @@ function App() {
         const contact = normalizeEditableText(patch.contact, item.contact, patch.commit)
         const subject = normalizeEditableText(patch.subject, item.subject, patch.commit)
         const quoteInput = applyRfqFieldPatch(item.quoteInput, patch)
-        const dueDate = patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt)
+        const dueDate = normalizeManualDueDate(patch.dueDate?.trim() ? patch.dueDate : dateInputValueFor(item.dueAt), dateInputValueFor(item.dueAt))
 
         return {
           ...item,
@@ -880,7 +880,7 @@ function App() {
           contact,
           subject,
           due: patch.dueDate === undefined ? item.due : formatManualDueLabel(dueDate),
-          dueAt: patch.dueDate === undefined ? item.dueAt : `${dueDate}T12:00:00+03:00`,
+          dueAt: patch.dueDate === undefined ? item.dueAt : manualDueAtFor(dueDate, dateInputValueFor(item.dueAt)),
           quoteInput,
           tags: quoteInput === item.quoteInput ? item.tags : buildManualTags(quoteInput),
           notes: patch.notesText === undefined ? item.notes : parseEditableNotes(patch.notesText),
@@ -1467,7 +1467,7 @@ function App() {
       received: "Just now",
       receivedAt: demoNow,
       due: formatManualDueLabel(values.dueDate),
-      dueAt: `${values.dueDate}T12:00:00+03:00`,
+      dueAt: manualDueAtFor(values.dueDate),
       priority: values.priority,
       status: "new",
       source: "manual",
@@ -1931,7 +1931,7 @@ function parsedRfqForCalendarPlan(item: QuoteWorkItem): ParsedRfqIntake {
     attachments: item.attachments,
     currency: "EUR",
     customerName: item.customer,
-    dueAt: new Date(item.dueAt).getTime(),
+    dueAt: optionalTimestampFor(item.dueAt),
     extractedFields: [],
     parts: [
       {
@@ -2294,16 +2294,46 @@ function subjectLabelFor(item: QuoteWorkItem): string {
 }
 
 function formatManualDueLabel(dateValue: string): string {
-  const parsed = new Date(`${dateValue}T12:00:00`)
-  if (Number.isNaN(parsed.getTime())) {
-    return dateValue
+  const parsed = parseManualDueDate(dateValue)
+  if (!parsed) {
+    return "No due date"
   }
   return parsed.toLocaleDateString("en-US", { day: "2-digit", month: "short" })
 }
 
 function dateInputValueFor(timestamp: string): string {
   const match = timestamp.match(/^\d{4}-\d{2}-\d{2}/)
-  return match?.[0] ?? demoToday
+  return normalizeManualDueDate(match?.[0] ?? "", demoToday)
+}
+
+function manualDueAtFor(dateValue: string, fallback = defaultManualDueDate()): string {
+  return `${normalizeManualDueDate(dateValue, fallback)}T12:00:00+03:00`
+}
+
+function normalizeManualDueDate(dateValue: string, fallback: string): string {
+  return parseManualDueDate(dateValue) ? dateValue.trim() : fallback
+}
+
+function parseManualDueDate(dateValue: string): Date | undefined {
+  const trimmed = dateValue.trim()
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) {
+    return undefined
+  }
+  const [, yearText, monthText, dayText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const parsed = new Date(year, month - 1, day, 12)
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
+    return undefined
+  }
+  return parsed
+}
+
+function optionalTimestampFor(value: string): number | undefined {
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : undefined
 }
 
 function normalizeOptionalText(value: string | undefined, fallback: string | undefined): string | undefined {
@@ -2486,7 +2516,7 @@ function RfqCreateDialog({
   })
   const update = <K extends keyof ManualRfqFormValues>(key: K, value: ManualRfqFormValues[K]) =>
     setValues((current) => ({ ...current, [key]: value }))
-  const canSubmit = values.customer.trim() !== "" && values.partNumber.trim() !== ""
+  const canSubmit = values.customer.trim() !== "" && values.partNumber.trim() !== "" && parseManualDueDate(values.dueDate) !== undefined
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -2570,7 +2600,7 @@ function RfqCreateDialog({
             </label>
             <label className="field">
               <span>Due date</span>
-              <input onChange={(event) => update("dueDate", event.target.value)} type="date" value={values.dueDate} />
+              <input onChange={(event) => update("dueDate", event.target.value)} required type="date" value={values.dueDate} />
             </label>
             <label className="field">
               <span>Setup minutes</span>

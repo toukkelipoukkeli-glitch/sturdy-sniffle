@@ -27,6 +27,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(totalText(container)).toMatch(/€\d/)
   })
 
+  it("requires a valid due date before creating a manual RFQ", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "New RFQ" }))
+    const dialog = screen.getByRole("dialog", { name: "Create RFQ" })
+    await user.type(within(dialog).getByLabelText("Customer *"), "Acme Manufacturing")
+    await user.type(within(dialog).getByLabelText("Part number *"), "ACME-101")
+    await user.clear(within(dialog).getByLabelText("Due date"))
+
+    expect(within(dialog).getByRole("button", { name: "Create RFQ" })).toBeDisabled()
+  })
+
   it("recomputes the quote deterministically when a costing assumption changes", async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
