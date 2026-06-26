@@ -110,9 +110,9 @@ import {
   type ProviderRunHistoryFilter,
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
-import { calculateCncQuote, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
+import { CNC_CALCULATOR_VERSION, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
-import type { QuoteProcessKey } from "./domain/quoting/registry"
+import { calculateQuote, type QuoteProcessKey } from "./domain/quoting/registry"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
 import {
   evaluateRfqIntakeReadiness,
@@ -896,11 +896,11 @@ function App() {
   }
 
   const quoteInput = useMemo<CncQuoteInput>(() => applyQuoteEdit(selectedItem, selectedEdit), [selectedEdit, selectedItem])
-  const quote = useMemo(() => calculateCncQuote(quoteInput), [quoteInput])
+  const quote = useMemo(() => calculateWorkspaceCncQuote(quoteInput), [quoteInput])
   const rankedQueue = useMemo(() => {
     const queueInputs = workItems.map((item) => {
       const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
-      const itemQuote = calculateCncQuote(itemQuoteInput)
+      const itemQuote = calculateWorkspaceCncQuote(itemQuoteInput)
       const itemStatus = statusById[item.id] ?? item.status
       return {
         id: item.id,
@@ -929,7 +929,7 @@ function App() {
         dailyCapacityMinutesByProcess: buildDailyCapacityMinutesByProcess(workItems),
         items: workItems.map((item) => {
           const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
-          const itemQuote = calculateCncQuote(itemQuoteInput)
+          const itemQuote = calculateWorkspaceCncQuote(itemQuoteInput)
           return {
             customerName: customerLabelFor(item),
             dueAt: item.dueAt,
@@ -957,7 +957,7 @@ function App() {
       buildOutsideServicePlan({
         items: workItems.map((item) => {
           const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
-          const itemQuote = calculateCncQuote(itemQuoteInput)
+          const itemQuote = calculateWorkspaceCncQuote(itemQuoteInput)
           return {
             customerName: customerLabelFor(item),
             dueAt: item.dueAt,
@@ -2299,6 +2299,15 @@ function buildManualTags(quoteInput: CncQuoteInput): string[] {
     tags.push(quoteInput.toleranceClass)
   }
   return tags
+}
+
+function calculateWorkspaceCncQuote(input: CncQuoteInput): CncQuoteResult {
+  const quote = calculateQuote({ process: input.process, input })
+  return {
+    ...quote,
+    calculatorVersion: CNC_CALCULATOR_VERSION,
+    process: input.process,
+  }
 }
 
 function gmailRecordRfqId(record: GmailRfqIntakeRecord, currentRfqId: string): string {
@@ -5739,9 +5748,9 @@ function buildScenarioComparisonInputs(
 
   return [
     { id: "current", label: "Current edits", quote: currentQuote },
-    { id: "baseline", label: "RFQ baseline", quote: calculateCncQuote(normalizedBaseInput) },
-    { id: "standard", label: "Standard lead time", quote: calculateCncQuote(standardInput) },
-    { id: "rush", label: "Rush expedite", quote: calculateCncQuote(rushInput) },
+    { id: "baseline", label: "RFQ baseline", quote: calculateWorkspaceCncQuote(normalizedBaseInput) },
+    { id: "standard", label: "Standard lead time", quote: calculateWorkspaceCncQuote(standardInput) },
+    { id: "rush", label: "Rush expedite", quote: calculateWorkspaceCncQuote(rushInput) },
   ]
 }
 
@@ -5758,7 +5767,7 @@ function buildOfferAlternateInputs(input: CncQuoteInput): OfferAlternateQuoteInp
       id: alternatePriority,
       label,
       note,
-      quote: calculateCncQuote({
+      quote: calculateWorkspaceCncQuote({
         ...input,
         priority: alternatePriority,
       }),
