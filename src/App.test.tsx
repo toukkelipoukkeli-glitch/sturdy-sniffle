@@ -215,6 +215,27 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Drawing is enough for turning setup.")
   })
 
+  it("persists an operator-selected primary attachment for part preview", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    expect(preview).toHaveTextContent("FB-204-A.step")
+
+    const attachments = within(preview).getByLabelText("Attachments")
+    const drawingRow = within(attachments).getByText("FB-204-A.pdf").closest(".attachment-row")
+    expect(drawingRow).not.toBeNull()
+    await user.click(within(drawingRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    expect(stored.primaryAttachmentById?.[stored.selectedId]).toBe("FB-204-A.pdf")
+
+    unmount()
+    render(<App />)
+    expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+  })
+
   it("edits offer validity, terms, and notes in the exported draft", async () => {
     const user = userEvent.setup()
     render(<App />)

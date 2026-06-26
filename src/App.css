@@ -2166,6 +2166,28 @@
   font-size: 0.78rem;
 }
 
+.attachment-actions {
+  align-items: end;
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  min-width: 96px;
+}
+
+.attachment-actions strong {
+  text-align: right;
+}
+
+.attachment-actions button {
+  min-height: 30px;
+  padding-inline: 8px;
+  white-space: nowrap;
+}
+
+.attachment-actions button:disabled {
+  cursor: not-allowed;
+}
+
 .attachment-row[data-primary="true"] {
   border-color: oklch(0.72 0.08 190);
 }

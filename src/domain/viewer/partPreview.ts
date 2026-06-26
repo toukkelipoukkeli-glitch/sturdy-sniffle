@@ -49,6 +49,7 @@ export interface BuildPartPreviewModelInput {
   part: RfqPartDraft
   attachments: RfqAttachmentDraft[]
   cadMetadata?: CadMetadataResult[]
+  preferredPrimaryAttachmentName?: string
   subject?: string
 }
 
@@ -90,7 +91,11 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
   const rankedAttachments = matchingAttachments
     .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames))
     .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
-  const primaryAttachment = rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
+  const preferredPrimaryToken = input.preferredPrimaryAttachmentName ? normalizeToken(input.preferredPrimaryAttachmentName) : undefined
+  const preferredPrimaryAttachment = preferredPrimaryToken
+    ? rankedAttachments.find((attachment) => normalizeToken(attachment.fileName) === preferredPrimaryToken && attachment.modes[0] !== "metadata")
+    : undefined
+  const primaryAttachment = preferredPrimaryAttachment ?? rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
   const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentNames, input.cadMetadata ?? [])
   const primaryAttachmentToken = primaryAttachment ? normalizeToken(primaryAttachment.fileName) : undefined

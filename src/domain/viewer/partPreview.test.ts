@@ -46,6 +46,29 @@ describe("part preview model", () => {
     ])
   })
 
+  it("honors an operator-selected primary attachment when it can be previewed", () => {
+    const parsed = parseRfqIntake(cncBracketEmail)
+    const model = buildPartPreviewModel({
+      attachments: parsed.attachments,
+      part: parsed.parts[0],
+      preferredPrimaryAttachmentName: "FB-204-A.pdf",
+      subject: parsed.subject,
+    })
+
+    expect(model.primaryMode).toBe("drawing")
+    expect(model.primaryAttachmentName).toBe("FB-204-A.pdf")
+    expect(model.attachments).toMatchObject([
+      {
+        fileName: "FB-204-A.step",
+        primary: false,
+      },
+      {
+        fileName: "FB-204-A.pdf",
+        primary: true,
+      },
+    ])
+  })
+
   it("falls back to drawing previews when CAD geometry is unavailable", () => {
     const model = buildPartPreviewModel({
       subject: "RFQ: laser bracket",
