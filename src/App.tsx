@@ -1235,8 +1235,14 @@ function App() {
       const importedItems = importedWorkItemsFromConnectorSync(result, rfqId)
       if (importedItems.length > 0) {
         setWorkItems((current) => {
-          const existingIds = new Set(current.map((workItem) => workItem.id))
-          const nextImports = importedItems.filter((workItem) => !existingIds.has(workItem.id))
+          const seenIds = new Set(current.map((workItem) => workItem.id))
+          const nextImports = importedItems.filter((workItem) => {
+            if (seenIds.has(workItem.id)) {
+              return false
+            }
+            seenIds.add(workItem.id)
+            return true
+          })
           return nextImports.length > 0 ? [...nextImports, ...current] : current
         })
       }
