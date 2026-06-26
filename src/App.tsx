@@ -38,7 +38,11 @@ import {
   type CalendarRfqPlan,
   type CalendarRfqEventDraft,
 } from "./domain/integrations/calendarRfq"
-import { createConnectorRfqSyncOrchestrator } from "./domain/integrations/connectorSync"
+import {
+  createConnectorRfqSyncOrchestrator,
+  type ConnectorRfqSyncRecord,
+  type ConnectorRfqSyncResult,
+} from "./domain/integrations/connectorSync"
 import {
   buildConnectorLinkDrilldown,
   type ConnectorLinkDrilldown,
@@ -56,6 +60,7 @@ import {
 import {
   createGmailRfqIntakeAdapter,
   createMockGmailRfqProvider,
+  type GmailRfqIntakeRecord,
   type GmailRfqMessage,
 } from "./domain/integrations/gmailRfq"
 import { DEFAULT_OFFER_TERMS, buildCncOfferDraft, type OfferDraft, type OfferTerm } from "./domain/offers/offer"
@@ -1205,7 +1210,7 @@ function App() {
         fallbackProvider: createMockGmailRfqProvider({ messages: fallbackMessages }),
         provider: createMockGmailRfqProvider({ messages: fallbackMessages }),
       }),
-      resolveRfqId: () => rfqId,
+      resolveRfqId: (record) => gmailRecordRfqId(record, rfqId),
     })
     const persistence = createLocalConnectorSyncPersistence({
       initialSnapshot: connectorSnapshot,
@@ -1219,14 +1224,28 @@ function App() {
       const result = await orchestrator.syncRfqInbox({
         dueReminderMinutes: 30,
         gmail: {
-          maxResults: 1,
-          query: `rfq ${item.quoteInput.partNumber}`,
+          maxResults: 2,
+          query: "rfq",
         },
         quoteWorkMinutes: 120,
         timezone: "Europe/Helsinki",
       })
       const snapshot = await persistence.recordSync(result)
       setConnectorSnapshotsById((current) => ({ ...current, [rfqId]: snapshot }))
+      const importedItems = importedWorkItemsFromConnectorSync(result, rfqId)
+      if (importedItems.length > 0) {
+        setWorkItems((current) => {
+          const seenIds = new Set(current.map((workItem) => workItem.id))
+          const nextImports = importedItems.filter((workItem) => {
+            if (seenIds.has(workItem.id)) {
+              return false
+            }
+            seenIds.add(workItem.id)
+            return true
+          })
+          return nextImports.length > 0 ? [...nextImports, ...current] : current
+        })
+      }
     } catch {
       setConnectorSyncErrorCountById((current) => ({ ...current, [rfqId]: (current[rfqId] ?? 0) + 1 }))
     } finally {
@@ -2280,6 +2299,112 @@ function buildManualTags(quoteInput: CncQuoteInput): string[] {
     tags.push(quoteInput.toleranceClass)
   }
   return tags
+}
+
+function gmailRecordRfqId(record: GmailRfqIntakeRecord, currentRfqId: string): string {
+  return record.messageId === `${currentRfqId}-gmail-message` ? currentRfqId : importedRfqIdForGmailRecord(record)
+}
+
+function importedRfqIdForGmailRecord(record: GmailRfqIntakeRecord): string {
+  const externalId = record.threadId?.trim() || record.messageId
+  return `rfq-import-${slugForId(externalId)}`
+}
+
+function importedWorkItemsFromConnectorSync(result: ConnectorRfqSyncResult, currentRfqId: string): QuoteWorkItem[] {
+  const statusByRfqId = new Map(result.records.map((record) => [record.rfqId, record]))
+  return result.gmail.records.flatMap((record) => {
+    const rfqId = record.messageId === `${currentRfqId}-gmail-message` ? currentRfqId : importedRfqIdForGmailRecord(record)
+    if (rfqId === currentRfqId) {
+      return []
+    }
+
+    const syncRecord = statusByRfqId.get(rfqId)
+    return [workItemFromParsedConnectorRecord({ parsedRfq: record.parsed, rfqId, syncRecord })]
+  })
+}
+
+function workItemFromParsedConnectorRecord({
+  parsedRfq,
+  rfqId,
+  syncRecord,
+}: {
+  parsedRfq: ParsedRfqIntake
+  rfqId: string
+  syncRecord: ConnectorRfqSyncRecord | undefined
+}): QuoteWorkItem {
+  const primaryPart = parsedRfq.parts[0]
+  const process = manualProcessForParsedPart(primaryPart)
+  const materialKey = manualMaterialKeyForParsedPart(primaryPart)
+  const partNumber = primaryPart?.partNumber.trim() || rfqId.replace(/^rfq-import-/, "").toUpperCase()
+  const quantity = primaryPart?.quantity ?? 1
+  const priority = parsedRfq.priority === "rush" ? "rush" : "normal"
+  const dueAt = parsedRfq.dueAt === undefined ? manualDueAtFor(defaultManualDueDate()) : new Date(parsedRfq.dueAt).toISOString()
+  const quoteInput = buildManualCncQuoteInput({
+    cycleMinutesPerPart: process === "cnc_turning" ? 14 : 18,
+    finish: "",
+    materialKey,
+    partNumber,
+    priority,
+    process,
+    quantity,
+    setupMinutes: process === "cnc_turning" ? 35 : 45,
+    toleranceClass: "",
+  })
+
+  return {
+    attachments: parsedRfq.attachments,
+    cadMetadata: [],
+    contact: parsedRfq.contactEmail ?? "Imported RFQ contact",
+    customer: parsedRfq.customerName ?? "Imported customer",
+    due: formatManualDueLabel(dueAt.slice(0, 10)),
+    dueAt,
+    id: rfqId,
+    notes: [
+      `Imported from Gmail RFQ sync as ${rfqId}.`,
+      ...(syncRecord ? [`Calendar sync status: ${humanizeKey(syncRecord.status)}.`] : []),
+      ...(syncRecord?.warnings ?? []),
+    ],
+    priority,
+    providerRuns: [],
+    quoteInput,
+    received: `Imported ${formatShortDateTime(new Date(parsedRfq.receivedAt).toISOString())}`,
+    receivedAt: new Date(parsedRfq.receivedAt).toISOString(),
+    source: "import",
+    status: "new",
+    subject: parsedRfq.subject,
+    tags: buildManualTags(quoteInput),
+  }
+}
+
+function manualProcessForParsedPart(part: RfqPartDraft | undefined): ManualCncProcess {
+  return part?.process === "cnc_turning" ? "cnc_turning" : "cnc_milling"
+}
+
+function manualMaterialKeyForParsedPart(part: RfqPartDraft | undefined): ManualMaterialKey {
+  const material = part?.materialText?.toLowerCase() ?? ""
+  if (material.includes("7075")) {
+    return "aluminum_7075"
+  }
+  if (material.includes("316")) {
+    return "stainless_316l"
+  }
+  if (material.includes("s355") || material.includes("steel")) {
+    return "steel_s355"
+  }
+  if (material.includes("brass")) {
+    return "brass_cuzn"
+  }
+  if (material.includes("pom") || material.includes("acetal")) {
+    return "pom_acetal"
+  }
+  return "aluminum_6082"
+}
+
+function slugForId(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "gmail-rfq"
 }
 
 function customerLabelFor(item: QuoteWorkItem): string {
@@ -5993,6 +6118,27 @@ function buildConnectorRfqMessages(item: QuoteWorkItem): GmailRfqMessage[] {
       snippet: `RFQ ${item.quoteInput.partNumber} from ${item.customer}`,
       subject: `RFQ: ${item.subject}`,
       threadId: `${item.id}-thread`,
+    },
+    {
+      attachments: [
+        {
+          fileName: "TR-301.step",
+          id: "tr-301-attachment-1",
+          mimeType: "model/step",
+          sizeBytes: 184320,
+        },
+      ],
+      fromHeader: '"Tampere Robotics" <rfq@tampererobotics.example>',
+      id: "tr-301-gmail-message",
+      labelIds: ["INBOX", "RFQ"],
+      plainText:
+        "Please quote part: TR-301. CNC milling, aluminum 7075, qty 12 pcs. Dimensions 90 x 60 x 12 mm. Deadline 2026-07-04. Budget in EUR.",
+      receivedAt: "2026-06-20T10:05:00+03:00",
+      senderEmail: "rfq@tampererobotics.example",
+      senderName: "Tampere Robotics",
+      snippet: "RFQ TR-301 from Tampere Robotics",
+      subject: "RFQ: CNC fixture PN TR-301",
+      threadId: "tr-301-thread",
     },
   ]
 }
