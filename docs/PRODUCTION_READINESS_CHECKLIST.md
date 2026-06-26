@@ -33,7 +33,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §1 End-to-end RFQ intake
 
 - ✅ **Manual RFQ creation in the UI** — `workItems` is React state; a "New RFQ" button opens an accessible modal that captures customer/contact/subject/part/process/material/quantity/priority/due/setup/cycle/tolerance/finish/notes and builds a valid quote via `src/domain/rfq/manualRfq.ts`; the new RFQ surfaces in the queue and all downstream panels. (Slice C)
-- 🟡 **Gmail RFQ intake (fixture + fallback)** — deterministic adapter chain exists (`src/domain/integrations/gmailRfq.ts`), but UI hardwires the primary provider to fail and ingested data only updates a connector snapshot, never materializes an RFQ. → **Slice C2/G**
+- 🟡 **Gmail RFQ intake (fixture + fallback)** — deterministic adapter chain exists (`src/domain/integrations/gmailRfq.ts`) and RFQ sync now demonstrates a healthy mock Gmail/calendar link path in the workspace drill-down; ingested data still updates connector snapshots rather than materializing new RFQs. → **Slice C2/G**
 - ✅ **Editable, provenance-aware fields** — new RFQs are fully operator-entered (Slice C); existing CNC RFQs now allow customer/contact/subject/material/process/due/tolerance/finish/notes edits, show per-field extraction confidence/source badges, and update queue tags plus downstream plans deterministically. (Slice C2)
 - ✅ **Readiness states for invalid/incomplete RFQs** — `evaluateRfqIntakeReadiness` + panel exist; manual RFQs exercise warning paths, and existing RFQs can be driven into blocked states from the UI through missing customer or past due-date edits. (Slice C2)
 
@@ -73,9 +73,9 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ Gmail reply ingestion → deterministic lifecycle signals (`gmailOfferReply.ts`, OfferReplyPanel).
 - ✅ Connector failures visible but nonfatal.
-- 🔴 **Connector drill-down (linked RFQ/offer/calendar details)** — only aggregate counts surfaced. → **Slice G**
-- 🟡 **Calendar follow-up + RFQ due-date planning surfaced** — offer release follow-up drafts and selected-RFQ quote work/due drafts are visible before connector execution; live connector scheduling remains fallback-only in demo. → **Slice G**
-- 🟡 **Healthy connector/calendar path demonstrable** — demo forces failure so "linked/scheduled" never shown. → **Slice G**
+- ✅ **Connector drill-down (linked RFQ/calendar details)** — integration health exposes linked Gmail/calendar records, provider filters, attention empty states, and connector activity rows for the selected RFQ.
+- 🟡 **Calendar follow-up + RFQ due-date planning surfaced** — offer release follow-up drafts and selected-RFQ quote work/due drafts are visible before connector execution; deterministic mock connector scheduling now shows linked calendar events, while real connector scheduling remains behind provider boundaries. → **Slice G**
+- ✅ **Healthy connector/calendar path demonstrable** — RFQ sync now uses healthy mock Gmail/calendar providers by default, records linked connector rows, and keeps fallback behavior covered in domain tests.
 
 ## §7 Provider/AI layer
 
@@ -126,7 +126,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **D** | Costing edit depth (material/rate/margin) + loading/empty states + App component tests | §2, §10 | 🟡 |
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
 | **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | ☐ |
-| **G** | Connector/calendar drill-downs + provider run history filters (supersedes PR #111) | §6, §7 | ☐ |
+| **G** | Connector/calendar drill-downs + provider run history filters (supersedes PR #111) | §6, §7 | 🟡 |
 | **I** | Real operator identity + single injected clock | cross-cutting | ☐ |
 | **H** | (Optional) Wire `ConvexReactClient` so Convex is used when configured, local fallback otherwise | §8, §7 | ☐ |
 

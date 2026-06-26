@@ -1199,11 +1199,11 @@ function App() {
     const orchestrator = createConnectorRfqSyncOrchestrator({
       calendarScheduler: createCalendarRfqScheduler({
         fallbackProvider: createMockCalendarRfqProvider(),
-        provider: createMockCalendarRfqProvider({ shouldFail: true }),
+        provider: createMockCalendarRfqProvider(),
       }),
       gmailAdapter: createGmailRfqIntakeAdapter({
         fallbackProvider: createMockGmailRfqProvider({ messages: fallbackMessages }),
-        provider: createMockGmailRfqProvider({ shouldFail: true }),
+        provider: createMockGmailRfqProvider({ messages: fallbackMessages }),
       }),
       resolveRfqId: () => rfqId,
     })
