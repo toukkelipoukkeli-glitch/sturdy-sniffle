@@ -1450,6 +1450,7 @@
 .measurement-list,
 .cad-metadata-list,
 .manufacturability-list,
+.cad-review-override,
 .attachment-list,
 .preview-warning-list,
 .action-list {
@@ -2036,6 +2037,52 @@
   flex: 0 0 auto;
   height: 14px;
   width: 14px;
+}
+
+.cad-review-override {
+  background: oklch(0.985 0.006 160);
+  border: 1px solid oklch(0.86 0.045 160);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.cad-review-summary {
+  align-items: center;
+  color: oklch(0.31 0.08 155);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.cad-review-summary svg {
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
+}
+
+.cad-review-override p {
+  color: oklch(0.34 0.035 250);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.cad-review-override .field {
+  margin-top: 8px;
+}
+
+.cad-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cad-review-actions button {
+  min-height: 34px;
 }
 
 .measurement-row,

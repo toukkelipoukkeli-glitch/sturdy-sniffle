@@ -165,6 +165,29 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
   })
 
+  it("acknowledges CAD manufacturability flags with a persistent operator note", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    const queue = screen.getByRole("complementary", { name: "RFQ queue" })
+    await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
+
+    expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
+    const override = screen.getByLabelText("CAD review override")
+    await user.type(within(override).getByLabelText("CAD review note"), "Drawing is enough for turning setup.")
+    await user.click(within(override).getByRole("button", { name: "Acknowledge flags" }))
+
+    expect(screen.queryByLabelText("Manufacturability flags")).toBeNull()
+    expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Drawing is enough for turning setup.")
+
+    unmount()
+    render(<App />)
+    const restoredQueue = screen.getByRole("complementary", { name: "RFQ queue" })
+    await user.click(within(restoredQueue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    expect(screen.queryByLabelText("Manufacturability flags")).toBeNull()
+    expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Drawing is enough for turning setup.")
+  })
+
   it("edits offer validity, terms, and notes in the exported draft", async () => {
     const user = userEvent.setup()
     render(<App />)

@@ -215,6 +215,13 @@ interface ReleaseReviewState {
   reviewedBy: string
 }
 
+interface CadReviewOverrideState {
+  acknowledgedFlags: string[]
+  note: string
+  reviewedAt: string
+  reviewedBy: string
+}
+
 type OfferExportEventKind = "copy_text" | "download_pdf" | "download_text"
 
 interface OfferExportHistoryEvent {
@@ -229,6 +236,7 @@ interface OfferExportHistoryEvent {
 interface WorkspaceLocalState {
   actionsById: Record<string, WorkspaceActionRecord[]>
   activeView: WorkspaceView
+  cadReviewOverridesById: Record<string, CadReviewOverrideState>
   editsById: Record<string, Partial<QuoteEditState>>
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
@@ -737,6 +745,10 @@ function App() {
   const [showAttachments, setShowAttachments] = useState(false)
   const [isCreatingRfq, setIsCreatingRfq] = useState(false)
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>(workspaceLocalState?.actionsById ?? {})
+  const [cadReviewOverridesById, setCadReviewOverridesById] = useState<Record<string, CadReviewOverrideState>>(
+    workspaceLocalState?.cadReviewOverridesById ?? {},
+  )
+  const [cadReviewDraftById, setCadReviewDraftById] = useState<Record<string, string>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
   const [editsById, setEditsById] = useState<Record<string, Partial<QuoteEditState>>>(workspaceLocalState?.editsById ?? {})
@@ -779,6 +791,7 @@ function App() {
     writeWorkspaceLocalState({
       actionsById,
       activeView,
+      cadReviewOverridesById,
       editsById,
       offerDraftEditsById,
       offerExportEventsById,
@@ -793,6 +806,7 @@ function App() {
   }, [
     actionsById,
     activeView,
+    cadReviewOverridesById,
     editsById,
     offerDraftEditsById,
     offerExportEventsById,
@@ -1044,6 +1058,31 @@ function App() {
       }),
     [quoteInput, selectedItem],
   )
+  const selectedCadReviewOverride = cadReviewOverridesById[selectedId]
+  const selectedCadReviewDraft = cadReviewDraftById[selectedId] ?? ""
+  const acknowledgeSelectedCadFlags = () => {
+    if (partPreview.manufacturabilityFlags.length === 0) {
+      return
+    }
+    setCadReviewOverridesById((current) => ({
+      ...current,
+      [selectedId]: {
+        acknowledgedFlags: [...partPreview.manufacturabilityFlags],
+        note:
+          selectedCadReviewDraft.trim() ||
+          `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
+        reviewedAt: demoNow,
+        reviewedBy: "Sari",
+      },
+    }))
+  }
+  const resetSelectedCadReview = () => {
+    setCadReviewOverridesById((current) => {
+      const next = { ...current }
+      delete next[selectedId]
+      return next
+    })
+  }
   const offer = useMemo(
     () =>
       buildCncOfferDraft({
@@ -1740,6 +1779,8 @@ function App() {
           ) : null}
           {activeView === "costing" ? (
             <CostingView
+              cadReviewDraft={selectedCadReviewDraft}
+              cadReviewOverride={selectedCadReviewOverride}
               cycleMinutes={cycleMinutes}
               partPreview={partPreview}
               machineHourlyRateCents={machineHourlyRateCents}
@@ -1750,6 +1791,9 @@ function App() {
               rush={rush}
               scenarioComparison={scenarioComparison}
               selectedItem={selectedItem}
+              onAcknowledgeCadFlags={acknowledgeSelectedCadFlags}
+              onCadReviewDraftChange={(value) => setCadReviewDraftById((current) => ({ ...current, [selectedId]: value }))}
+              onResetCadReview={resetSelectedCadReview}
               setCycleMinutes={(value) => updateSelectedEdit({ cycleMinutes: value })}
               setMachineHourlyRateCents={(value) => updateSelectedEdit({ machineHourlyRateCents: value })}
               setMarginPercent={(value) => updateSelectedEdit({ marginPercent: value })}
@@ -1897,6 +1941,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   }
 
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
+  const cadReviewOverridesById = optionalRecordOfValues(value.cadReviewOverridesById, isCadReviewOverrideState)
   const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
@@ -1906,6 +1951,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
   if (
     !actionsById ||
+    !cadReviewOverridesById ||
     !editsById ||
     !offerDraftEditsById ||
     !offerExportEventsById ||
@@ -1926,6 +1972,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   return {
     actionsById,
     activeView,
+    cadReviewOverridesById,
     editsById,
     offerDraftEditsById,
     offerExportEventsById,
@@ -2155,6 +2202,17 @@ function isOfferExportHistoryEvent(value: unknown): value is OfferExportHistoryE
 function isReleaseReviewState(value: unknown): value is ReleaseReviewState {
   return (
     isObjectRecord(value) &&
+    typeof value.note === "string" &&
+    typeof value.reviewedAt === "string" &&
+    typeof value.reviewedBy === "string"
+  )
+}
+
+function isCadReviewOverrideState(value: unknown): value is CadReviewOverrideState {
+  return (
+    isObjectRecord(value) &&
+    Array.isArray(value.acknowledgedFlags) &&
+    value.acknowledgedFlags.every((flag) => typeof flag === "string") &&
     typeof value.note === "string" &&
     typeof value.reviewedAt === "string" &&
     typeof value.reviewedBy === "string"
@@ -4052,6 +4110,8 @@ function CapacityProcessRow({
 }
 
 function CostingView({
+  cadReviewDraft,
+  cadReviewOverride,
   cycleMinutes,
   machineHourlyRateCents,
   marginPercent,
@@ -4062,6 +4122,9 @@ function CostingView({
   rush,
   scenarioComparison,
   selectedItem,
+  onAcknowledgeCadFlags,
+  onCadReviewDraftChange,
+  onResetCadReview,
   setCycleMinutes,
   setMachineHourlyRateCents,
   setMarginPercent,
@@ -4071,6 +4134,8 @@ function CostingView({
   setSetupMinutes,
   setupMinutes,
 }: {
+  cadReviewDraft: string
+  cadReviewOverride: CadReviewOverrideState | undefined
   cycleMinutes: number
   machineHourlyRateCents: number
   marginPercent: number
@@ -4081,6 +4146,9 @@ function CostingView({
   rush: boolean
   scenarioComparison: QuoteComparisonResult
   selectedItem: QuoteWorkItem
+  onAcknowledgeCadFlags: () => void
+  onCadReviewDraftChange: (value: string) => void
+  onResetCadReview: () => void
   setCycleMinutes: (value: number) => void
   setMachineHourlyRateCents: (value: number) => void
   setMarginPercent: (value: number) => void
@@ -4102,7 +4170,14 @@ function CostingView({
         <Metric label="Material" value={selectedItem.quoteInput.material.name} />
         <Metric label="Machine" value={selectedItem.quoteInput.machine.name} />
       </div>
-      <PartPreviewPanel preview={partPreview} />
+      <PartPreviewPanel
+        cadReviewDraft={cadReviewDraft}
+        onAcknowledgeCadFlags={onAcknowledgeCadFlags}
+        onCadReviewDraftChange={onCadReviewDraftChange}
+        onResetCadReview={onResetCadReview}
+        override={cadReviewOverride}
+        preview={partPreview}
+      />
       <div className="assumption-grid">
         <label className="field">
           <span>Quantity</span>
@@ -4228,7 +4303,23 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
   )
 }
 
-function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
+function PartPreviewPanel({
+  cadReviewDraft,
+  onAcknowledgeCadFlags,
+  onCadReviewDraftChange,
+  onResetCadReview,
+  override,
+  preview,
+}: {
+  cadReviewDraft: string
+  onAcknowledgeCadFlags: () => void
+  onCadReviewDraftChange: (value: string) => void
+  onResetCadReview: () => void
+  override: CadReviewOverrideState | undefined
+  preview: PartPreviewModel
+}) {
+  const acknowledgedFlags = new Set(override?.acknowledgedFlags ?? [])
+  const visibleManufacturabilityFlags = preview.manufacturabilityFlags.filter((flag) => !acknowledgedFlags.has(flag))
   return (
     <section className="part-preview" aria-label="Part preview">
       <div className="preview-viewport" data-mode={preview.primaryMode}>
@@ -4258,14 +4349,44 @@ function PartPreviewPanel({ preview }: { preview: PartPreviewModel }) {
           ))}
         </div>
         <CadMetadataPanel preview={preview} />
-        {preview.manufacturabilityFlags.length > 0 ? (
+        {visibleManufacturabilityFlags.length > 0 ? (
           <div className="manufacturability-list" aria-label="Manufacturability flags">
-            {preview.manufacturabilityFlags.map((flag) => (
+            {visibleManufacturabilityFlags.map((flag) => (
               <span className="manufacturability-chip" key={flag}>
                 <AlertTriangle aria-hidden="true" />
                 {humanizeKey(flag)}
               </span>
             ))}
+          </div>
+        ) : null}
+        {preview.manufacturabilityFlags.length > 0 ? (
+          <div className="cad-review-override" aria-label="CAD review override">
+            {override ? (
+              <div className="cad-review-summary">
+                <CheckCircle2 aria-hidden="true" />
+                <span>
+                  Acknowledged {override.acknowledgedFlags.length} flag{override.acknowledgedFlags.length === 1 ? "" : "s"} by {override.reviewedBy} at{" "}
+                  {formatShortDateTime(override.reviewedAt)}.
+                </span>
+              </div>
+            ) : null}
+            {override?.note ? <p>{override.note}</p> : null}
+            <label className="field">
+              <span>CAD review note</span>
+              <input
+                onChange={(event) => onCadReviewDraftChange(event.target.value)}
+                placeholder="Justify cleared manufacturability flags"
+                value={cadReviewDraft}
+              />
+            </label>
+            <div className="cad-review-actions">
+              <button disabled={visibleManufacturabilityFlags.length === 0} onClick={onAcknowledgeCadFlags} type="button">
+                Acknowledge flags
+              </button>
+              <button disabled={!override} onClick={onResetCadReview} type="button">
+                Reopen flags
+              </button>
+            </div>
           </div>
         ) : null}
         <div className="attachment-list" aria-label="Attachments">
