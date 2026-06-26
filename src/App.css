@@ -815,6 +815,119 @@
   white-space: normal;
 }
 
+.process-demo-panel {
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.process-demo-heading,
+.process-demo-card-heading,
+.process-demo-breakdown div {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.process-demo-heading > div,
+.process-demo-card-heading > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.process-demo-heading strong,
+.process-demo-card-heading strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-heading > span,
+.process-demo-card-heading > span {
+  background: oklch(0.94 0.024 210);
+  border-radius: 999px;
+  color: oklch(0.32 0.055 220);
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.process-demo-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.process-demo-card {
+  background: oklch(0.984 0.006 225);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+}
+
+.process-demo-card-heading > div span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.76rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-demo-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.process-demo-metrics .metric {
+  padding: 8px;
+}
+
+.process-demo-breakdown {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.process-demo-breakdown dt,
+.process-demo-breakdown dd,
+.process-demo-footer small,
+.process-demo-footer span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.process-demo-breakdown dd {
+  margin: 0;
+}
+
+.process-demo-footer {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.process-demo-footer small {
+  overflow-wrap: anywhere;
+}
+
+.process-demo-footer span {
+  background: oklch(0.94 0.022 250);
+  border-radius: 999px;
+  color: oklch(0.32 0.045 250);
+  flex: 0 0 auto;
+  padding: 4px 7px;
+}
+
 .capacity-commitment-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
