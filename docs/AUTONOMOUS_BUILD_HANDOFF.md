@@ -7,13 +7,14 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `7306b76` (`Route workspace CNC quotes through registry (#133)`).
+- Main branch checkpoint: `c31c6ea` (`Surface non-CNC registry demos (#134)`).
 - Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: `#134` read-only non-CNC registry demo panel.
+- In-flight PR at this checkpoint: CAD manufacturability flag acknowledgements.
 - Latest merged sequence:
   - `#130` healthy deterministic RFQ connector sync path.
   - `#132` Gmail RFQ sync materializes duplicate-safe imported queue items for operator review.
   - `#133` workspace CNC pricing routes through the shared `calculateQuote` registry.
+  - `#134` read-only non-CNC registry demos surface quote breakdowns in the workspace.
   - `#131` autonomous handoff refresh.
   - `#129` selected-RFQ calendar plan preview.
   - `#128` offer release calendar draft preview.
@@ -107,7 +108,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
-   - Let operators correct dimensions/material/process notes and clear or justify manufacturability flags.
+   - Current in-flight slice lets operators acknowledge manufacturability flags with a persistent note.
+   - Next steps: correct dimensions/material/process notes and choose the primary attachment.
    - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
