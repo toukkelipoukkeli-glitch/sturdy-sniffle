@@ -111,7 +111,7 @@ import {
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
-import { buildProcessDemoQuotes, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
+import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
@@ -3776,7 +3776,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
           </span>
           <strong>Non-CNC quote samples</strong>
         </div>
-        <span>{demos.length} guarded</span>
+        <span title={PROCESS_DEMO_QUOTES_VERSION}>{shortProcessDemoVersion(PROCESS_DEMO_QUOTES_VERSION)}</span>
       </div>
       <div className="process-demo-grid">
         {demos.map((demo) => (
@@ -3801,7 +3801,10 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
                 </div>
               ))}
             </dl>
-            <small>{demo.quote.warnings[0] ?? `${demo.quote.calculatorVersion} ready`}</small>
+            <div className="process-demo-footer">
+              <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
+              <span>{demo.quote.calculatorVersion}</span>
+            </div>
           </article>
         ))}
       </div>
@@ -5527,6 +5530,10 @@ function QueueUrgencyBadge({ item }: { item: RankedQuoteQueueItem }) {
 
 function shortCapabilityMatrixVersion(version: ProcessCapabilityMatrix["matrixVersion"]) {
   return version.replace("process-capability-matrix.", "")
+}
+
+function shortProcessDemoVersion(version: typeof PROCESS_DEMO_QUOTES_VERSION) {
+  return version.replace("process-demo-quotes.", "")
 }
 
 function capacityStatusLabel(status: CapacityCommitmentPlan["status"]) {
