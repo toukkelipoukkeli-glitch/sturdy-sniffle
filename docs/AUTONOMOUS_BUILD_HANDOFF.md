@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `14cd4bf` (`Demonstrate healthy connector sync (#130)`).
+- Main branch checkpoint: `e96b92e` (`Materialize Gmail RFQ imports (#132)`).
 - Open PRs at this checkpoint: none.
 - Latest merged sequence:
   - `#130` healthy deterministic RFQ connector sync path.
+  - `#132` Gmail RFQ sync materializes duplicate-safe imported queue items for operator review.
+  - `#131` autonomous handoff refresh.
   - `#129` selected-RFQ calendar plan preview.
   - `#128` offer release calendar draft preview.
   - `#127` local release execution controls.
@@ -97,37 +99,32 @@ Use this loop for each slice:
 
 Work in small, reviewed slices. Good next candidates from the current checkpoint:
 
-1. Materialize Gmail RFQ intake into the workspace behind a safe review/import boundary.
-   - Reuse `src/domain/integrations/gmailRfq.ts` and the existing connector sync payloads.
-   - Keep duplicate detection deterministic and never require live Gmail for tests.
-   - Imported RFQs should enter the queue as `source: "import"` or a reviewed manual conversion, not overwrite selected RFQs silently.
-
-2. Move the app's quote path toward the multi-process registry.
-   - Start by routing CNC through `calculateQuote` without changing visible pricing.
+1. Move the app's quote path toward the multi-process registry.
+   - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
    - Then add one non-CNC demo item or guarded process selector in a separate UI slice.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
-3. Add CAD review operator overrides.
+2. Add CAD review operator overrides.
    - Let operators correct dimensions/material/process notes and clear or justify manufacturability flags.
    - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
-4. Introduce operator identity and a single injected workspace clock.
+3. Introduce operator identity and a single injected workspace clock.
    - Replace hardcoded "Sari" and mixed `demoToday`/`demoNow`/wall-clock writes with explicit local workspace context.
    - Keep audit records deterministic in tests.
    - Avoid auth scope creep; this is local identity plumbing, not a full login system.
 
-5. Wire optional Convex reads into the UI with local fallback.
+4. Wire optional Convex reads into the UI with local fallback.
    - Use existing Convex workflow/persistence APIs only when configured.
    - Keep local-first e2e green without cloud auth.
    - Do not commit secrets or deployment-specific values.
 
-6. Harden PDF/export verification for offers.
+5. Harden PDF/export verification for offers.
    - Keep deterministic plain-text and PDF-ready content as source of truth.
    - Add render/export verification without making AI required.
    - Record export warnings and assumptions in offer history.
 
-7. Production hardening pass.
+6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
    - Add accessibility checks for dense workspace controls.
    - Keep screenshots or Playwright artifacts out of git unless intentionally documenting visual baselines.

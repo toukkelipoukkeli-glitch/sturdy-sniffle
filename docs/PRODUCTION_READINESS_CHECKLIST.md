@@ -49,8 +49,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ **CNC** — complete realistic quoting + edge-case tests + fixtures (`src/domain/quoting/cnc.ts`).
 - ✅ All 5 engines (cnc/sheetMetal/plastics/wireEdm/fabrication) are domain-complete, deterministic, explainable, unit-tested, with a registry dispatcher (`registry.ts calculateQuote`).
-- 🔴 **Sheet metal / plastics / wire-EDM / fabrication reachable from UI** — workspace calls `calculateCncQuote` only; the other 4 run once on a fixture for a read-only capability sample. No process selector, no editable inputs, no offer. → **Slice E**
-- 🟡 **Registry used as the app's quoting path** — dispatcher exists/tested but app bypasses it. → **Slice E**
+- 🟡 **Sheet metal / plastics / wire-EDM / fabrication reachable from UI** — workspace CNC pricing now routes through the shared `calculateQuote` registry, and the other 4 engines run on fixtures for a read-only capability sample. No non-CNC process selector, editable inputs, or offer path yet. → **Slice E**
+- 🟡 **Registry used as the app's quoting path** — dispatcher exists/tested and the CNC workspace path now uses it; non-CNC UI flows still need typed inputs and offer wiring. → **Slice E**
 
 ## §4 CAD-like part review
 
