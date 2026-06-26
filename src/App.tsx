@@ -110,9 +110,9 @@ import {
   type ProviderRunHistoryFilter,
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
-import { CNC_CALCULATOR_VERSION, type CncQuoteInput, type CncQuoteResult } from "./domain/quoting/cnc"
+import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
-import { calculateQuote, type QuoteProcessKey } from "./domain/quoting/registry"
+import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
 import {
   evaluateRfqIntakeReadiness,
@@ -176,6 +176,7 @@ import {
 } from "./domain/workspace/quoteComparison"
 import { rankQuoteQueue, type QuoteQueueStatus, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
 import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
+import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
 import { buildWorkspaceAction, type WorkspaceActionRecord } from "./domain/workspace/workspaceActions"
 import type { WorkspacePersistenceSnapshot } from "./domain/workspace/workspacePersistence"
 import {
@@ -2299,15 +2300,6 @@ function buildManualTags(quoteInput: CncQuoteInput): string[] {
     tags.push(quoteInput.toleranceClass)
   }
   return tags
-}
-
-function calculateWorkspaceCncQuote(input: CncQuoteInput): CncQuoteResult {
-  const quote = calculateQuote({ process: input.process, input })
-  return {
-    ...quote,
-    calculatorVersion: CNC_CALCULATOR_VERSION,
-    process: input.process,
-  }
 }
 
 function gmailRecordRfqId(record: GmailRfqIntakeRecord, currentRfqId: string): string {

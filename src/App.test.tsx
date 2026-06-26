@@ -3,6 +3,10 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it } from "vitest"
 
 import App from "./App"
+import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
+import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
+import { calculateQuote } from "./domain/quoting/registry"
+import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
 
 function totalText(container: HTMLElement): string {
   return container.querySelector(".total-box span")?.textContent ?? ""
@@ -264,5 +268,20 @@ describe("FactoryBid workspace (component)", () => {
     expect(restoredExecutionAudit).toHaveTextContent("Blocked before execution")
     expect(within(restoredExecutionAudit).getByText("Mode").closest(".metric")).toHaveTextContent("dry run")
     expect(within(restoredExecutionAudit).queryByRole("button", { name: "Release executed" })).toBeNull()
+  })
+})
+
+describe("calculateWorkspaceCncQuote", () => {
+  it("preserves CNC registry pricing and metadata for milling and turning fixtures", () => {
+    for (const input of [aluminumBracketFixture, rushTurnedSpacerFixture]) {
+      const registryQuote = calculateQuote({ process: input.process, input })
+      const workspaceQuote = calculateWorkspaceCncQuote(input)
+
+      expect(workspaceQuote.totalCents).toBe(registryQuote.totalCents)
+      expect(workspaceQuote.unitPriceCents).toBe(registryQuote.unitPriceCents)
+      expect(workspaceQuote.unitRemainderCents).toBe(registryQuote.unitRemainderCents)
+      expect(workspaceQuote.process).toBe(input.process)
+      expect(workspaceQuote.calculatorVersion).toBe(CNC_CALCULATOR_VERSION)
+    }
   })
 })
