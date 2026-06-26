@@ -326,4 +326,10 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   )
   await expect(page.getByLabel("Offer release execution audit").getByRole("button", { name: "Release executed" })).toBeDisabled()
   await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
+
+  await page.reload()
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+  await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
+  await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
+  await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
 })
