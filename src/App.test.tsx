@@ -27,6 +27,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(calendarPlan).toHaveTextContent("30 Jun, 12.00 - 30 Jun, 14.00")
     expect(calendarPlan).toHaveTextContent("Quote due: CNC bracket FB-204-A")
     expect(calendarPlan).toHaveTextContent("30 Jun, 14.30 - 30 Jun, 15.00")
+    const processDemos = screen.getByLabelText("Non-CNC registry demos")
+    expect(processDemos).toHaveTextContent("Sheet metal")
+    expect(processDemos).toHaveTextContent("Wire EDM")
+    expect(processDemos).toHaveTextContent("EDM-KEY-077")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })

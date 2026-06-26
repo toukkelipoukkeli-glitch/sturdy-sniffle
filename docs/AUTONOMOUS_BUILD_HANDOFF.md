@@ -7,11 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e96b92e` (`Materialize Gmail RFQ imports (#132)`).
+- Main branch checkpoint: `7306b76` (`Route workspace CNC quotes through registry (#133)`).
 - Open PRs at this checkpoint: none.
 - Latest merged sequence:
   - `#130` healthy deterministic RFQ connector sync path.
   - `#132` Gmail RFQ sync materializes duplicate-safe imported queue items for operator review.
+  - `#133` workspace CNC pricing routes through the shared `calculateQuote` registry.
   - `#131` autonomous handoff refresh.
   - `#129` selected-RFQ calendar plan preview.
   - `#128` offer release calendar draft preview.
@@ -101,7 +102,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Then add one non-CNC demo item or guarded process selector in a separate UI slice.
+   - Non-CNC engines now need guarded editable process selection/inputs and offer wiring beyond read-only registry demos.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.

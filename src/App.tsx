@@ -111,6 +111,7 @@ import {
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
+import { buildProcessDemoQuotes, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
@@ -1024,6 +1025,7 @@ function App() {
   )
   const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
   const processCapabilityMatrix = useMemo(() => buildProcessCapabilityMatrix(), [])
+  const processDemoQuotes = useMemo(() => buildProcessDemoQuotes(), [])
   const rfqIntakeReadiness = useMemo(
     () => evaluateRfqIntakeReadiness(parsedRfqForWorkItem(selectedItem), { nowDate: demoToday }),
     [selectedItem],
@@ -1714,6 +1716,7 @@ function App() {
 
           <WorkloadPanel selectedQueueItem={selectedQueueItem} summary={workloadSummary} />
           <ProcessCapabilityPanel activeProcess={selectedItem.quoteInput.process} matrix={processCapabilityMatrix} />
+          <ProcessDemoQuotesPanel demos={processDemoQuotes} />
           <CapacityCommitmentPanel plan={capacityCommitmentPlan} selectedItem={selectedItem} />
           <MaterialAvailabilityPanel plan={materialAvailabilityPlan} selectedItem={selectedItem} />
           <OutsideServicePanel plan={outsideServicePlan} selectedItem={selectedItem} />
@@ -3755,6 +3758,50 @@ function ProcessCapabilityPanel({
               <span>{capability.rateCardPresetKeys.length} cards</span>
             </div>
             <small>{capability.warnings[0] ?? "No calculator flags"}</small>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
+  return (
+    <section className="process-demo-panel" aria-label="Non-CNC registry demos">
+      <div className="process-demo-heading">
+        <div>
+          <span className="eyebrow">
+            <Calculator aria-hidden="true" />
+            Registry demos
+          </span>
+          <strong>Non-CNC quote samples</strong>
+        </div>
+        <span>{demos.length} guarded</span>
+      </div>
+      <div className="process-demo-grid">
+        {demos.map((demo) => (
+          <article className="process-demo-card" key={demo.process}>
+            <div className="process-demo-card-heading">
+              <div>
+                <strong>{demo.label}</strong>
+                <span>{demo.quote.partNumber}</span>
+              </div>
+              <span>{formatCurrency(demo.quote.totalCents, demo.quote.currency)}</span>
+            </div>
+            <div className="process-demo-metrics">
+              <Metric label="Qty" value={String(demo.quote.quantity)} />
+              <Metric label="Lead" value={`${demo.quote.leadTimeDays}d`} />
+              <Metric label="Unit" value={formatCurrency(demo.quote.unitPriceCents, demo.quote.currency)} />
+            </div>
+            <dl className="process-demo-breakdown">
+              {demo.quote.breakdown.slice(0, 3).map((line) => (
+                <div key={line.key}>
+                  <dt>{line.label}</dt>
+                  <dd>{formatCurrency(line.amountCents, demo.quote.currency)}</dd>
+                </div>
+              ))}
+            </dl>
+            <small>{demo.quote.warnings[0] ?? `${demo.quote.calculatorVersion} ready`}</small>
           </article>
         ))}
       </div>
