@@ -107,8 +107,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 ## Cross-cutting correctness
 
-- 🔴 **Real operator identity** — every audit record attributed to hardcoded "Sari". → **Slice I**
-- 🔴 **Injected clock** — mixed `demoToday`/`demoNow` constants vs real wall-clock in actions; readiness windows frozen. → **Slice I**
+- 🟡 **Real operator identity** — app actions now read from an explicit local workspace runtime context; auth/tenant-resolved actors remain pending. → **Slice I**
+- 🟡 **Injected clock** — app actions now share one deterministic local workspace clock; auth/provider-resolved runtime clock injection remains pending. → **Slice I**
 - ✅ No obvious correctness bug found in core quote domain logic.
 
 ---
@@ -127,7 +127,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
 | **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | ☐ |
 | **G** | Connector/calendar drill-downs + provider run history filters (supersedes PR #111) | §6, §7 | 🟡 |
-| **I** | Real operator identity + single injected clock | cross-cutting | ☐ |
+| **I** | Real operator identity + single injected clock | cross-cutting | ◐ |
 | **H** | (Optional) Wire `ConvexReactClient` so Convex is used when configured, local fallback otherwise | §8, §7 | ☐ |
 
 Slices are ordered by value × independence × risk. A and B are self-contained and unlock the

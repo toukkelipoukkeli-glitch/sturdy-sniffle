@@ -222,6 +222,18 @@ interface CadReviewOverrideState {
   reviewedBy: string
 }
 
+interface WorkspaceRuntimeContext {
+  clock: {
+    now: string
+    today: string
+  }
+  operator: {
+    id: string
+    name: string
+  }
+  timezone: string
+}
+
 type OfferExportEventKind = "copy_text" | "download_pdf" | "download_text"
 
 interface OfferExportHistoryEvent {
@@ -250,9 +262,19 @@ interface WorkspaceLocalState {
 }
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
-const demoToday = "2026-06-20"
-const demoNow = "2026-06-20T09:00:00+03:00"
-const workspaceTimezone = "Europe/Helsinki"
+const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
+  clock: {
+    now: "2026-06-20T09:00:00+03:00",
+    today: "2026-06-20",
+  },
+  operator: {
+    id: "operator-sari",
+    name: "Sari",
+  },
+  timezone: "Europe/Helsinki",
+}
+const demoToday = defaultWorkspaceRuntimeContext.clock.today
+const defaultWorkspaceTimezone = defaultWorkspaceRuntimeContext.timezone
 const capacityPlanningDays = 5
 const defaultDailyCapacityMinutesByProcess: Record<QuoteProcessKey, number> = {
   cnc_milling: 420,
@@ -736,6 +758,11 @@ function formatFileSize(bytes: number): string {
 }
 
 function App() {
+  const [workspaceContext] = useState(defaultWorkspaceRuntimeContext)
+  const workspaceNow = workspaceContext.clock.now
+  const workspaceToday = workspaceContext.clock.today
+  const workspaceOperatorName = workspaceContext.operator.name
+  const workspaceTimezone = workspaceContext.timezone
   const [workspaceLocalState] = useState(() => readWorkspaceLocalState())
   const restoredWorkItems = workspaceLocalState?.workItems ?? initialWorkItems
   const [workItems, setWorkItems] = useState<QuoteWorkItem[]>(restoredWorkItems)
@@ -817,7 +844,7 @@ function App() {
     statusById,
     workItems,
   ])
-  const queueNow = demoNow
+  const queueNow = workspaceNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
   const selectedEdit = editStateForItem(selectedItem, editsById[selectedId])
@@ -832,7 +859,7 @@ function App() {
         rfqId: selectedItem.id,
         timezone: workspaceTimezone,
       }),
-    [selectedItem],
+    [selectedItem, workspaceTimezone],
   )
   const handoffDraft = handoffDraftById[selectedId] ?? ""
   const selectedOfferExportEvents = offerExportEventsById[selectedId] ?? []
@@ -877,7 +904,7 @@ function App() {
           {
             ...event,
             id: `${selectedId}:offer-export:${nextIndex}`,
-            occurredAt: demoNow,
+            occurredAt: workspaceNow,
           },
         ],
       }
@@ -1041,8 +1068,8 @@ function App() {
   const processCapabilityMatrix = useMemo(() => buildProcessCapabilityMatrix(), [])
   const processDemoQuotes = useMemo(() => buildProcessDemoQuotes(), [])
   const rfqIntakeReadiness = useMemo(
-    () => evaluateRfqIntakeReadiness(parsedRfqForWorkItem(selectedItem), { nowDate: demoToday }),
-    [selectedItem],
+    () => evaluateRfqIntakeReadiness(parsedRfqForWorkItem(selectedItem), { nowDate: workspaceToday }),
+    [selectedItem, workspaceToday],
   )
   const scenarioComparison = useMemo(
     () => compareQuoteScenarios(buildScenarioComparisonInputs(selectedItem.quoteInput, quoteInput, quote)),
@@ -1071,8 +1098,8 @@ function App() {
         note:
           selectedCadReviewDraft.trim() ||
           `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
-        reviewedAt: demoNow,
-        reviewedBy: "Sari",
+        reviewedAt: workspaceNow,
+        reviewedBy: workspaceOperatorName,
       },
     }))
   }
@@ -1092,21 +1119,21 @@ function App() {
           name: customerLabelFor(selectedItem),
           contactName: selectedItem.contact,
         },
-        issuedAt: "2026-06-19",
+        issuedAt: workspaceToday,
         validUntil: selectedOfferDraftEdit.validUntil.trim() || defaultOfferDraftEditState(selectedItem).validUntil,
         lineDescription: subjectLabelFor(selectedItem),
         notes: parseEditableNotes(selectedOfferDraftEdit.notesText),
         quote,
         revision: {
-          createdAt: "2026-06-19",
-          createdBy: "Sari",
+          createdAt: workspaceToday,
+          createdBy: workspaceOperatorName,
           reason: selectedOfferDraftEdit.revisionReason.trim() || "Initial draft",
         },
         rfqReference: selectedItem.id,
         subject: subjectLabelFor(selectedItem),
         terms: parseOfferTermsText(selectedOfferDraftEdit.termsText),
       }),
-    [quote, selectedItem, selectedOfferDraftEdit],
+    [quote, selectedItem, selectedOfferDraftEdit, workspaceOperatorName, workspaceToday],
   )
   const offerExportPackage = useMemo(
     () =>
@@ -1126,10 +1153,10 @@ function App() {
       evaluateOfferSendReadiness({
         exportPackage: offerExportPackage,
         followUpScheduledAt: offerFollowUpScheduledAt,
-        nowDate: demoToday,
+        nowDate: workspaceToday,
         offer,
       }),
-    [offer, offerExportPackage, offerFollowUpScheduledAt],
+    [offer, offerExportPackage, offerFollowUpScheduledAt, workspaceToday],
   )
   const quoteApproval = useMemo(
     () =>
@@ -1137,16 +1164,16 @@ function App() {
         capacityCommitment: selectedCapacityCommitment,
         customer: approvalCustomerPolicyFor(selectedItem),
         quote,
-        reviewedAt: demoToday,
+        reviewedAt: workspaceToday,
       }),
-    [quote, selectedCapacityCommitment, selectedItem],
+    [quote, selectedCapacityCommitment, selectedItem, workspaceToday],
   )
   const quoteReleaseGate = useMemo(
     () =>
       evaluateQuoteReleaseGate({
         approval: quoteApproval,
         capacityCommitment: selectedCapacityCommitment,
-        checkedAt: demoNow,
+        checkedAt: workspaceNow,
         intakeReadiness: rfqIntakeReadiness,
         materialCommitment: selectedMaterialCommitment,
         offerNumber: offer.offerNumber,
@@ -1163,12 +1190,13 @@ function App() {
       selectedItem.id,
       selectedMaterialCommitment,
       selectedOutsideServiceCommitments,
+      workspaceNow,
     ],
   )
   const offerReleasePlan = useMemo(
     () =>
       buildOfferReleasePlan({
-        actor: "Sari",
+        actor: workspaceOperatorName,
         currentRfqStatus: selectedStatus,
         exportPackage: offerExportPackage,
         followUpDueAt: offerFollowUpScheduledAt,
@@ -1179,7 +1207,7 @@ function App() {
         reviewedBy: selectedReleaseReview?.reviewedBy,
         reviewNote: selectedReleaseReview?.note,
         rfqId: selectedItem.id,
-        timezone: "Europe/Helsinki",
+        timezone: workspaceTimezone,
       }),
     [
       offer,
@@ -1189,17 +1217,19 @@ function App() {
       selectedReleaseReview,
       selectedItem.id,
       selectedStatus,
+      workspaceOperatorName,
+      workspaceTimezone,
     ],
   )
   const offerReleaseExecutionPreview = useMemo(
     () =>
       buildOfferReleaseExecutionRun({
-        actor: "Sari",
-        executedAt: demoNow,
+        actor: workspaceOperatorName,
+        executedAt: workspaceNow,
         mode: "dry_run",
         plan: offerReleasePlan,
       }),
-    [offerReleasePlan],
+    [offerReleasePlan, workspaceNow, workspaceOperatorName],
   )
   const offerReleaseExecution = selectedReleaseExecutionRuns.at(-1) ?? offerReleaseExecutionPreview
   const offerReleaseHistory = useMemo(
@@ -1270,7 +1300,7 @@ function App() {
           query: "rfq",
         },
         quoteWorkMinutes: 120,
-        timezone: "Europe/Helsinki",
+        timezone: workspaceTimezone,
       })
       const snapshot = await persistence.recordSync(result)
       setConnectorSnapshotsById((current) => ({ ...current, [rfqId]: snapshot }))
@@ -1352,20 +1382,20 @@ function App() {
   }
   const markOfferSent = () => {
     appendOfferLifecycleEvent({
-      actor: "Sari",
+      actor: workspaceOperatorName,
       kind: "sent",
       note: `Sent customer-ready offer ${offer.offerNumber}.`,
-      occurredAt: demoNow,
+      occurredAt: workspaceNow,
     })
   }
   const scheduleOfferLifecycleFollowUp = () => {
     appendOfferLifecycleEvent({
-      actor: "Sari",
+      actor: workspaceOperatorName,
       followUpDueAt: offerLifecycleFollowUpDueAt,
       followUpTaskId: offerLifecycleFollowUpTaskId(selectedItem.id),
       kind: "follow_up_scheduled",
       note: "Calendar hold prepared for offer follow-up.",
-      occurredAt: demoNow,
+      occurredAt: workspaceNow,
     })
   }
   const completeOfferLifecycleFollowUp = () => {
@@ -1374,11 +1404,11 @@ function App() {
       return
     }
     appendOfferLifecycleEvent({
-      actor: "Sari",
+      actor: workspaceOperatorName,
       followUpTaskId: task.id,
       kind: "follow_up_completed",
       note: "Operator confirmed the follow-up was completed.",
-      occurredAt: demoNow,
+      occurredAt: workspaceNow,
     })
   }
   const acceptOffer = () => {
@@ -1386,7 +1416,7 @@ function App() {
       actor: selectedItem.contact,
       kind: "accepted",
       note: "Customer accepted the offer.",
-      occurredAt: demoNow,
+      occurredAt: workspaceNow,
     })
   }
   const declineOffer = () => {
@@ -1394,7 +1424,7 @@ function App() {
       actor: selectedItem.contact,
       kind: "declined",
       note: "Customer declined the offer.",
-      occurredAt: demoNow,
+      occurredAt: workspaceNow,
     })
   }
   const markReleaseReviewed = () => {
@@ -1402,8 +1432,8 @@ function App() {
       ...current,
       [selectedId]: {
         note: `Manager reviewed ${quoteReleaseGate.warningCount} release warning${quoteReleaseGate.warningCount === 1 ? "" : "s"}.`,
-        reviewedAt: demoNow,
-        reviewedBy: "Sari",
+        reviewedAt: workspaceNow,
+        reviewedBy: workspaceOperatorName,
       },
     }))
   }
@@ -1417,9 +1447,9 @@ function App() {
     releaseExecutionLocksRef.current.add(executionRfqId)
     try {
       const run = buildOfferReleaseExecutionRun({
-        actor: "Sari",
+        actor: workspaceOperatorName,
         commandOutcomes: buildLocalReleaseCommandOutcomes(offerReleasePlan),
-        executedAt: demoNow,
+        executedAt: workspaceNow,
         mode: "commit",
         plan: offerReleasePlan,
       })
@@ -1454,10 +1484,10 @@ function App() {
       return
     }
     const action = buildWorkspaceAction({
-      actor: "Sari",
+      actor: workspaceOperatorName,
       fromStatus: selectedStatus,
       kind: "status_change",
-      occurredAt: new Date().toISOString(),
+      occurredAt: workspaceNow,
       rfqId: selectedItem.id,
       toStatus,
     })
@@ -1466,9 +1496,9 @@ function App() {
   const saveScenario = async () => {
     await recordWorkspaceAction(
       buildWorkspaceAction({
-        actor: "Sari",
+        actor: workspaceOperatorName,
         kind: "scenario_saved",
-        occurredAt: new Date().toISOString(),
+        occurredAt: workspaceNow,
         quoteId: `quote-${selectedItem.id.slice(-3)}`,
         rfqId: selectedItem.id,
         scenarioId: `${selectedItem.id}-current-edits`,
@@ -1478,10 +1508,10 @@ function App() {
   const createFollowUp = async () => {
     await recordWorkspaceAction(
       buildWorkspaceAction({
-        actor: "Sari",
+        actor: workspaceOperatorName,
         followUpDueAt: followUpDueAtFor(selectedItem),
         kind: "follow_up_created",
-        occurredAt: new Date().toISOString(),
+        occurredAt: workspaceNow,
         offerId: offerNumberFor(selectedItem).toLowerCase(),
         rfqId: selectedItem.id,
       }),
@@ -1494,10 +1524,10 @@ function App() {
     }
     await recordWorkspaceAction(
       buildWorkspaceAction({
-        actor: "Sari",
+        actor: workspaceOperatorName,
         kind: "handoff_note",
         note,
-        occurredAt: new Date().toISOString(),
+        occurredAt: workspaceNow,
         rfqId: selectedItem.id,
       }),
     )
@@ -1527,7 +1557,7 @@ function App() {
       contact: values.contact.trim(),
       subject: values.subject.trim() || quoteInput.partNumber,
       received: "Just now",
-      receivedAt: demoNow,
+      receivedAt: workspaceNow,
       due: formatManualDueLabel(values.dueDate),
       dueAt: manualDueAtFor(values.dueDate),
       priority: values.priority,
@@ -2495,7 +2525,7 @@ function dateInputValueFor(timestamp: string): string {
 }
 
 function manualDueAtFor(dateValue: string, fallback = defaultManualDueDate()): string {
-  return zonedDateTimeIso(normalizeManualDueDate(dateValue, fallback), workspaceTimezone, 12)
+  return zonedDateTimeIso(normalizeManualDueDate(dateValue, fallback), defaultWorkspaceTimezone, 12)
 }
 
 function normalizeManualDueDate(dateValue: string, fallback: string): string {

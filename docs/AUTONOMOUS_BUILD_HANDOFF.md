@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c31c6ea` (`Surface non-CNC registry demos (#134)`).
+- Main branch checkpoint: `20ae11f` (`Add CAD review flag acknowledgements (#135)`).
 - Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: CAD manufacturability flag acknowledgements.
+- In-flight PR at this checkpoint: local workspace runtime context for operator identity and clock.
 - Latest merged sequence:
+  - `#135` CAD manufacturability flags can be acknowledged and reopened with a persistent operator note.
   - `#130` healthy deterministic RFQ connector sync path.
   - `#132` Gmail RFQ sync materializes duplicate-safe imported queue items for operator review.
   - `#133` workspace CNC pricing routes through the shared `calculateQuote` registry.
@@ -108,13 +109,14 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
-   - Current in-flight slice lets operators acknowledge manufacturability flags with a persistent note.
+   - Manufacturability flags can now be acknowledged and reopened with a persistent note.
    - Next steps: correct dimensions/material/process notes and choose the primary attachment.
    - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
 3. Introduce operator identity and a single injected workspace clock.
-   - Replace hardcoded "Sari" and mixed `demoToday`/`demoNow`/wall-clock writes with explicit local workspace context.
+   - Current in-flight slice replaces action-time wall-clock writes and scattered operator names with an explicit local workspace context.
+   - Next steps: let Convex/auth-resolved actor data feed the same context when configured.
    - Keep audit records deterministic in tests.
    - Avoid auth scope creep; this is local identity plumbing, not a full login system.
 

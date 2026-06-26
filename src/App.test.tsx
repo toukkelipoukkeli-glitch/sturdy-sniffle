@@ -122,6 +122,27 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByRole("heading", { name: "RFQ intake" })).toBeInTheDocument()
   })
 
+  it("records workspace actions with the deterministic local operator context", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const queue = screen.getByRole("complementary", { name: "RFQ queue" })
+    await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: /Move to estimating/i }))
+
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      const actions = stored.actionsById?.[stored.selectedId] ?? []
+      expect(actions.at(-1)).toMatchObject({
+        actor: "Sari",
+        kind: "status_change",
+        occurredAt: "2026-06-20T06:00:00.000Z",
+        toStatus: "estimating",
+      })
+    })
+  })
+
   it("edits RFQ intake fields and feeds the readiness model", async () => {
     const user = userEvent.setup()
     render(<App />)
