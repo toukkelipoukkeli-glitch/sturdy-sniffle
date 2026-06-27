@@ -111,6 +111,7 @@ import {
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
+import type { FabricationInputEditPatch, FabricationInputEditState } from "./domain/quoting/fabricationInputEdits"
 import {
   buildNonCncInputEditState,
   calculateEditedNonCncQuote,
@@ -3971,9 +3972,12 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [wireEdmEdits, setWireEdmEdits] = useState<WireEdmInputEditState>(
     () => buildNonCncInputEditState({ process: "wire_edm" }) as WireEdmInputEditState,
   )
+  const [fabricationEdits, setFabricationEdits] = useState<FabricationInputEditState>(
+    () => buildNonCncInputEditState({ process: "fabrication" }) as FabricationInputEditState,
+  )
   const editedDemoState = useMemo(
-    () => buildEditedNonCncDemos(demos, sheetMetalEdits, plasticEdits, wireEdmEdits),
-    [demos, plasticEdits, sheetMetalEdits, wireEdmEdits],
+    () => buildEditedNonCncDemos(demos, sheetMetalEdits, plasticEdits, wireEdmEdits, fabricationEdits),
+    [demos, fabricationEdits, plasticEdits, sheetMetalEdits, wireEdmEdits],
   )
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
   const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
@@ -3986,6 +3990,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   }
   const updateWireEdmEdit = <K extends keyof WireEdmInputEditPatch>(field: K, value: WireEdmInputEditPatch[K]) => {
     setWireEdmEdits((current) => ({ ...current, [field]: value }))
+  }
+  const updateFabricationEdit = <K extends keyof FabricationInputEditPatch>(field: K, value: FabricationInputEditPatch[K]) => {
+    setFabricationEdits((current) => ({ ...current, [field]: value }))
   }
 
   return (
@@ -4036,6 +4043,15 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
               }
             : undefined
         }
+        fabricationEditor={
+          preview.selected.process === "fabrication"
+            ? {
+                error: editedDemoState.fabricationError,
+                onChange: updateFabricationEdit,
+                state: fabricationEdits,
+              }
+            : undefined
+        }
       />
     </section>
   )
@@ -4046,8 +4062,10 @@ function buildEditedNonCncDemos(
   sheetMetalEdits: SheetMetalInputEditState,
   plasticEdits: PlasticsInputEditState,
   wireEdmEdits: WireEdmInputEditState,
-): { demos: ProcessDemoQuote[]; plasticError?: string; sheetMetalError?: string; wireEdmError?: string } {
+  fabricationEdits: FabricationInputEditState,
+): { demos: ProcessDemoQuote[]; fabricationError?: string; plasticError?: string; sheetMetalError?: string; wireEdmError?: string } {
   let editedDemos = demos
+  let fabricationError: string | undefined
   let sheetMetalError: string | undefined
   let plasticError: string | undefined
   let wireEdmError: string | undefined
@@ -4101,8 +4119,26 @@ function buildEditedNonCncDemos(
     wireEdmError = error instanceof Error ? error.message : "Wire EDM preview edits are invalid"
   }
 
+  try {
+    const edited = calculateEditedNonCncQuote({
+      patch: {
+        assemblyMinutesPerPart: fabricationEdits.assemblyMinutesPerPart,
+        complexityMultiplier: fabricationEdits.complexityMultiplier,
+        fabricationMinutesPerPart: fabricationEdits.fabricationMinutesPerPart,
+        finishRequirement: fabricationEdits.finishRequirement,
+        inspectionMinutesPerPart: fabricationEdits.inspectionMinutesPerPart,
+        weldingMinutesPerPart: fabricationEdits.weldingMinutesPerPart,
+      },
+      process: "fabrication",
+    })
+    editedDemos = editedDemos.map((demo) => (demo.process === "fabrication" ? { ...demo, quote: edited.quote } : demo))
+  } catch (error) {
+    fabricationError = error instanceof Error ? error.message : "Fabrication preview edits are invalid"
+  }
+
   return {
     demos: editedDemos,
+    fabricationError,
     plasticError,
     sheetMetalError,
     wireEdmError,
@@ -4166,13 +4202,21 @@ type WireEdmPreviewEditorControl = {
   state: WireEdmInputEditState
 }
 
+type FabricationPreviewEditorControl = {
+  error?: string
+  onChange: <K extends keyof FabricationInputEditPatch>(field: K, value: FabricationInputEditPatch[K]) => void
+  state: FabricationInputEditState
+}
+
 export function ProcessQuotePreviewCard({
+  fabricationEditor,
   inputEditAdapter,
   plasticEditor,
   preview,
   sheetMetalEditor,
   wireEdmEditor,
 }: {
+  fabricationEditor?: FabricationPreviewEditorControl
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
@@ -4189,10 +4233,14 @@ export function ProcessQuotePreviewCard({
     summaryText: string
   }>({ kind: "idle", summaryText: preview.summaryText })
   const copyableSummaryText = inputEditAdapter
-    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter, Boolean(plasticEditor ?? sheetMetalEditor ?? wireEdmEditor))
+    ? buildProcessPreviewCopySummary(
+        preview.summaryText,
+        inputEditAdapter,
+        Boolean(fabricationEditor ?? plasticEditor ?? sheetMetalEditor ?? wireEdmEditor),
+      )
     : preview.summaryText
   const activeSummaryFeedback = summaryFeedback.summaryText === copyableSummaryText ? summaryFeedback.kind : "idle"
-  const hasPreviewEditor = Boolean(plasticEditor ?? sheetMetalEditor ?? wireEdmEditor)
+  const hasPreviewEditor = Boolean(fabricationEditor ?? plasticEditor ?? sheetMetalEditor ?? wireEdmEditor)
 
   const handleCopySummary = async () => {
     const copied = await copyTextToClipboard(copyableSummaryText)
@@ -4278,7 +4326,7 @@ export function ProcessQuotePreviewCard({
               <li>{formatFieldCount(inputEditAdapter.editableFieldKeys.length, "editable")} mapped</li>
               <li>{formatFieldCount(inputEditAdapter.readOnlyFieldKeys.length, "read-only")} guarded</li>
               <li>
-                {plasticEditor || sheetMetalEditor || wireEdmEditor
+                {fabricationEditor || plasticEditor || sheetMetalEditor || wireEdmEditor
                   ? "Preview controls enabled for supported fields"
                   : "UI controls guarded until process forms are enabled"}
               </li>
@@ -4288,6 +4336,7 @@ export function ProcessQuotePreviewCard({
         {sheetMetalEditor ? <SheetMetalPreviewEditor editor={sheetMetalEditor} /> : null}
         {plasticEditor ? <PlasticPreviewEditor editor={plasticEditor} /> : null}
         {wireEdmEditor ? <WireEdmPreviewEditor editor={wireEdmEditor} /> : null}
+        {fabricationEditor ? <FabricationPreviewEditor editor={fabricationEditor} /> : null}
         <div className="process-demo-input-draft" aria-label="Read-only process input draft">
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
@@ -4440,6 +4489,67 @@ function WireEdmPreviewEditor({
       </div>
       <p aria-live="polite" role="status">
         {editor.error ?? "Wire EDM preview quote recalculated through the non-CNC edit registry."}
+      </p>
+    </div>
+  )
+}
+
+function FabricationPreviewEditor({
+  editor,
+}: {
+  editor: FabricationPreviewEditorControl
+}) {
+  return (
+    <div className="process-demo-input-editor" aria-label="Fabrication preview edit controls">
+      <div>
+        <span>Preview editor</span>
+        <strong>Fabrication only</strong>
+        <small>Updates this registry preview only; RFQ quote, offer, and release paths stay unchanged.</small>
+      </div>
+      <div className="process-demo-input-editor-grid">
+        <NumberEditInput
+          label="Fabrication minutes"
+          min={1}
+          onChange={(value) => editor.onChange("fabricationMinutesPerPart", value)}
+          suffix="min"
+          value={editor.state.fabricationMinutesPerPart}
+        />
+        <NumberEditInput
+          label="Welding minutes"
+          min={0}
+          onChange={(value) => editor.onChange("weldingMinutesPerPart", value)}
+          suffix="min"
+          value={editor.state.weldingMinutesPerPart}
+        />
+        <NumberEditInput
+          label="Assembly minutes"
+          min={0}
+          onChange={(value) => editor.onChange("assemblyMinutesPerPart", value)}
+          suffix="min"
+          value={editor.state.assemblyMinutesPerPart}
+        />
+        <NumberEditInput
+          label="Inspection minutes"
+          min={0}
+          onChange={(value) => editor.onChange("inspectionMinutesPerPart", value)}
+          suffix="min"
+          value={editor.state.inspectionMinutesPerPart}
+        />
+        <NumberEditInput
+          label="Complexity multiplier"
+          min={0.1}
+          onChange={(value) => editor.onChange("complexityMultiplier", value)}
+          step={0.05}
+          value={editor.state.complexityMultiplier}
+        />
+        <TextEditInput
+          label="Finish requirement"
+          onChange={(value) => editor.onChange("finishRequirement", value)}
+          value={editor.state.finishRequirement}
+        />
+      </div>
+      <p aria-live="polite" role="status">
+        {editor.error ?? "Fabrication preview quote recalculated through the non-CNC edit registry."}
       </p>
     </div>
   )
