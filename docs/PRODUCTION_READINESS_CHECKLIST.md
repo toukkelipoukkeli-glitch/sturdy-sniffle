@@ -55,8 +55,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §4 CAD-like part review
 
 - ✅ Preview states (ready/metadata-only/needs-review/unsupported), metadata, manufacturability flags computed and shown; model never blank (`partPreview.ts`, `cadMetadata.ts`).
-- 🟡 **Operator override UI** — manufacturability flags can now be acknowledged with a persistent operator note, primary preview attachment selection is durable, and dimension/material/process correction notes are in progress. Applying corrections to quote inputs remains pending. → **Slice F**
-- 🔴 **Thumbnails / real previews** — every part shows the same generic cuboid icon; no `<img>`/canvas. → **Slice F**
+- ✅ **Operator override UI** — manufacturability flags can be acknowledged/reopened with a persistent operator note, primary preview attachment selection is durable, and dimension/material/process correction notes can be saved/restored/cleared; reviewed corrections surface as explicit quote assumptions without changing deterministic totals or raw RFQ inputs. (Slice F)
+- 🟡 **Thumbnails / real previews** — attachment-specific preview and thumbnail labels now distinguish CAD models, drawings, photos, spreadsheets, and metadata-only cards, but the viewport still uses a deterministic placeholder instead of real `<img>`/canvas previews. → **Slice F**
 - 🟡 **Real STEP/DXF/PDF adapter wired** — adapter interface exists; no real parser, app uses fixtures. → **Slice F (deferred; keep behind adapter)**
 
 ## §5 Offer builder and export
@@ -125,7 +125,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | ✅ |
 | **D** | Costing edit depth (material/rate/margin) + loading/empty states + App component tests | §2, §10 | 🟡 |
 | **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
-| **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | ☐ |
+| **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | 🟡 |
 | **G** | Connector/calendar drill-downs + provider run history filters (supersedes PR #111) | §6, §7 | 🟡 |
 | **I** | Real operator identity + single injected clock | cross-cutting | ◐ |
 | **H** | (Optional) Wire `ConvexReactClient` so Convex is used when configured, local fallback otherwise | §8, §7 | ☐ |
