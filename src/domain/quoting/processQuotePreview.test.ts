@@ -17,6 +17,15 @@ describe("process quote preview", () => {
       ["wire_edm", true, []],
       ["fabrication", false, []],
     ])
+    expect(preview.comparison).toEqual({
+      cheapestLabel: "Sheet metal",
+      cheapestTotalCents: 54905,
+      currency: "EUR",
+      fastestLabel: "Sheet metal",
+      fastestLeadTimeDays: 7,
+      selectedLeadTimeDeltaDays: 9,
+      selectedPriceDeltaCents: 526069,
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))

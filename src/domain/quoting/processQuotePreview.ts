@@ -22,9 +22,20 @@ export interface ProcessQuotePreviewChecklistItem {
   level: ProcessQuotePreviewChecklistLevel
 }
 
+export interface ProcessQuotePreviewComparison {
+  cheapestLabel: string
+  cheapestTotalCents: number
+  fastestLabel: string
+  fastestLeadTimeDays: number
+  selectedLeadTimeDeltaDays: number
+  selectedPriceDeltaCents: number
+  currency: QuoteEngineResult["currency"]
+}
+
 export interface ProcessQuotePreview {
   previewVersion: typeof PROCESS_QUOTE_PREVIEW_VERSION
   selected: ProcessDemoQuote
+  comparison: ProcessQuotePreviewComparison
   options: ProcessQuotePreviewOption[]
   editable: false
   guardrailCopy: string
@@ -51,6 +62,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
+    comparison: buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays),
     options: demos.map((demo) => ({
       process: demo.process,
       label: demo.label,
@@ -67,6 +79,25 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     summaryText: buildPreviewSummaryText(selected, operatorChecklist),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
+  }
+}
+
+function buildComparisonSummary(
+  selected: ProcessDemoQuote,
+  demos: ProcessDemoQuote[],
+  lowestTotalCents: number,
+  shortestLeadTimeDays: number,
+): ProcessQuotePreviewComparison {
+  const cheapest = demos.find((demo) => demo.quote.totalCents === lowestTotalCents) ?? selected
+  const fastest = demos.find((demo) => demo.quote.leadTimeDays === shortestLeadTimeDays) ?? selected
+  return {
+    cheapestLabel: cheapest.label,
+    cheapestTotalCents: lowestTotalCents,
+    currency: selected.quote.currency,
+    fastestLabel: fastest.label,
+    fastestLeadTimeDays: shortestLeadTimeDays,
+    selectedLeadTimeDeltaDays: selected.quote.leadTimeDays - shortestLeadTimeDays,
+    selectedPriceDeltaCents: selected.quote.totalCents - lowestTotalCents,
   }
 }
 
