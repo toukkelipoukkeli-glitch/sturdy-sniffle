@@ -1,16 +1,19 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-06-26 Europe/Helsinki.
+Last refreshed: 2026-06-27 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1be5fcd` (`Add CAD primary attachment selection (#137)`).
+- Main branch checkpoint: `5fca5ff` (`Add attachment preview state labels (#140)`).
 - Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: CAD correction notes.
+- In-flight PR at this checkpoint: none.
 - Latest merged sequence:
+  - `#140` part preview attachments now expose deterministic per-type preview and thumbnail labels in the workspace.
+  - `#139` reviewed CAD correction notes surface as explicit quote assumptions without changing deterministic totals or raw RFQ inputs.
+  - `#138` durable CAD dimension/material/process correction notes can be saved, restored, and cleared.
   - `#137` operators can choose and persist the primary part preview attachment.
   - `#136` app actions now use a local workspace runtime context for deterministic operator/timezone/clock values.
   - `#135` CAD manufacturability flags can be acknowledged and reopened with a persistent operator note.
@@ -43,7 +46,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
-- CAD-like attachment preview models, CAD metadata adapter boundaries, review state, and manufacturability flags.
+- CAD-like attachment preview models, CAD metadata adapter boundaries, review state, manufacturability flags, and deterministic preview/thumbnail labels.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
@@ -113,9 +116,10 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 2. Add CAD review operator overrides.
    - Manufacturability flags can now be acknowledged and reopened with a persistent note.
    - Operators can choose the primary preview attachment and persist that choice.
-   - Current in-flight slice adds durable dimension/material/process correction notes without changing quote math.
-   - Next steps: apply reviewed corrections to quote inputs and add richer per-type thumbnails/previews.
-   - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
+   - Operators can save durable dimension/material/process correction notes; those notes now appear as explicit quote assumptions without changing quote math or raw RFQ inputs.
+   - Deterministic per-type preview and thumbnail labels distinguish CAD models, drawings, photos, spreadsheets, and metadata-only attachments.
+   - Next steps: add richer thumbnail/preview adapter outputs for real STEP/DXF/PDF/image handling while keeping parser failures nonfatal.
+   - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
 3. Introduce operator identity and a single injected workspace clock.
