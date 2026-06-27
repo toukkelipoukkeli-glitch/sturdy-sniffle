@@ -884,7 +884,7 @@
   display: grid;
   gap: 4px;
   justify-items: start;
-  min-height: 74px;
+  min-height: 92px;
   padding: 9px;
   text-align: left;
 }
@@ -916,6 +916,24 @@
   color: oklch(0.43 0.025 250);
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.process-demo-option .process-demo-option-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  white-space: normal;
+}
+
+.process-demo-option-badges em {
+  background: oklch(0.93 0.05 145);
+  border-radius: 999px;
+  color: oklch(0.32 0.07 145);
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1;
+  padding: 4px 6px;
 }
 
 .process-demo-card {

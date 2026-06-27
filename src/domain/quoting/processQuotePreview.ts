@@ -7,6 +7,7 @@ export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
   label: string
   selected: boolean
+  badges: string[]
   totalCents: number
   leadTimeDays: number
   currency: QuoteEngineResult["currency"]
@@ -40,6 +41,8 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   }
   const selected = demos.find((demo) => demo.process === selectedProcess) ?? demos[0]
   const operatorChecklist = buildOperatorChecklist(selected)
+  const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
+  const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
@@ -48,6 +51,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
       process: demo.process,
       label: demo.label,
       selected: demo.process === selected.process,
+      badges: buildOptionBadges(demo, lowestTotalCents, shortestLeadTimeDays),
       totalCents: demo.quote.totalCents,
       leadTimeDays: demo.quote.leadTimeDays,
       currency: demo.quote.currency,
@@ -60,6 +64,18 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
+}
+
+function buildOptionBadges(
+  demo: ProcessDemoQuote,
+  lowestTotalCents: number,
+  shortestLeadTimeDays: number,
+): string[] {
+  return [
+    demo.quote.totalCents === lowestTotalCents ? "Best price" : undefined,
+    demo.quote.leadTimeDays === shortestLeadTimeDays ? "Fastest lead" : undefined,
+    demo.quote.warnings.length > 0 ? "Review flags" : undefined,
+  ].filter((badge): badge is string => Boolean(badge))
 }
 
 function buildOperatorChecklist(selected: ProcessDemoQuote): ProcessQuotePreviewChecklistItem[] {

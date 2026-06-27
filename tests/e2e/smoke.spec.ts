@@ -149,6 +149,8 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Process capability matrix")).toContainText("Minimum order adjustment applied.")
   const nonCncDemos = page.getByLabel("Non-CNC registry demos")
   await expect(nonCncDemos).toContainText("Sheet metal")
+  await expect(nonCncDemos.getByRole("button", { name: /Sheet metal/ })).toContainText("Best price")
+  await expect(nonCncDemos.getByRole("button", { name: /Sheet metal/ })).toContainText("Fastest lead")
   await nonCncDemos.getByRole("button", { name: /Wire EDM/ }).click()
   await expect(nonCncDemos.getByLabel("Selected non-CNC quote preview")).toContainText("EDM-KEY-077")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Input model read-only")
