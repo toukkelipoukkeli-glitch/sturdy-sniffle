@@ -1519,6 +1519,92 @@
   line-height: 1.35;
 }
 
+.process-demo-promotion-record {
+  background: oklch(0.97 0.012 210);
+  border: 1px solid oklch(0.84 0.04 210);
+  border-left: 4px solid oklch(0.54 0.08 210);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+
+.process-demo-promotion-record[data-disposition="review_only"] {
+  background: oklch(0.985 0.018 45);
+  border-color: oklch(0.84 0.065 45);
+  border-left-color: oklch(0.58 0.11 45);
+}
+
+.process-demo-promotion-record-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.process-demo-promotion-record-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.process-demo-promotion-record-heading span,
+.process-demo-promotion-record-grid span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.process-demo-promotion-record-heading strong,
+.process-demo-promotion-record-grid strong {
+  color: oklch(0.25 0.025 250);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-promotion-record-heading small {
+  background: white;
+  border-radius: 999px;
+  color: oklch(0.36 0.035 250);
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 850;
+  padding: 4px 6px;
+}
+
+.process-demo-promotion-record p {
+  color: oklch(0.36 0.035 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-promotion-record-grid {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.process-demo-promotion-record-grid > div {
+  background: oklch(0.985 0.004 245);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 7px;
+}
+
+.process-demo-promotion-record-grid small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 540px) {
   .process-demo-input-editor-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1533,6 +1619,10 @@
   }
 
   .process-demo-promotion-plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .process-demo-promotion-record-grid {
     grid-template-columns: 1fr;
   }
 }

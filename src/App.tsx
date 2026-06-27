@@ -118,6 +118,7 @@ import {
   listNonCncInputEditAdapters,
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
+import { createLocalNonCncQuotePromotionPersistence } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
@@ -4229,12 +4230,22 @@ export function ProcessQuotePreviewCard({
   wireEdmEditor?: WireEdmPreviewEditorControl
 }) {
   const demo = preview.selected
-  const promotionPlan = buildNonCncQuotePromotionPlan({
-    preview,
-    requestedAt: "2026-06-27T13:30:00.000Z",
-    requestedBy: "FactoryBid Operator",
-    targetRfqId: "registry-demo",
-  })
+  const promotionPlan = useMemo(
+    () =>
+      buildNonCncQuotePromotionPlan({
+        preview,
+        requestedAt: "2026-06-27T13:30:00.000Z",
+        requestedBy: "FactoryBid Operator",
+        targetRfqId: "registry-demo",
+      }),
+    [preview],
+  )
+  const promotionSnapshot = useMemo(() => {
+    const adapter = createLocalNonCncQuotePromotionPersistence()
+    void adapter.recordPlan(promotionPlan)
+    return adapter.snapshot()
+  }, [promotionPlan])
+  const promotionRecord = promotionSnapshot.records[0]
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4442,6 +4453,42 @@ export function ProcessQuotePreviewCard({
           </div>
         </div>
       </div>
+      {promotionRecord ? (
+        <div
+          className="process-demo-promotion-record"
+          aria-label="Non-CNC promotion persistence snapshot"
+          data-disposition={promotionRecord.disposition}
+        >
+          <div className="process-demo-promotion-record-heading">
+            <div>
+              <span>Persistence snapshot</span>
+              <strong>{humanizeKey(promotionRecord.disposition)}</strong>
+            </div>
+            <small>{promotionRecord.persistenceVersion}</small>
+          </div>
+          <p>
+            Local review record only: {promotionSnapshot.recordCount} record, {promotionSnapshot.blockedPlanIds.length} blocked,{" "}
+            {promotionSnapshot.candidatePlanIds.length} candidate.
+          </p>
+          <div className="process-demo-promotion-record-grid">
+            <div>
+              <span>Recorded by</span>
+              <strong>{promotionRecord.recordedBy}</strong>
+              <small>{promotionRecord.recordedAt}</small>
+            </div>
+            <div>
+              <span>Disposition</span>
+              <strong>{humanizeKey(promotionRecord.status)}</strong>
+              <small>{promotionRecord.planId}</small>
+            </div>
+            <div>
+              <span>Snapshot ids</span>
+              <small>Blocked: {promotionSnapshot.blockedPlanIds.join(", ") || "None"}</small>
+              <small>Candidate: {promotionSnapshot.candidatePlanIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
