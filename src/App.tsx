@@ -118,8 +118,11 @@ import {
   listNonCncInputEditAdapters,
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
-import { createLocalNonCncQuotePromotionPersistence } from "./domain/quoting/nonCncQuotePromotionPersistence"
-import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
+import {
+  createLocalNonCncQuotePromotionPersistence,
+  type NonCncQuotePromotionPersistenceSnapshot,
+} from "./domain/quoting/nonCncQuotePromotionPersistence"
+import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -3982,8 +3985,33 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     [demos, fabricationEdits, plasticEdits, sheetMetalEdits, wireEdmEdits],
   )
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
+  const promotionPersistence = useMemo(() => createLocalNonCncQuotePromotionPersistence(), [])
+  const [promotionSnapshot, setPromotionSnapshot] = useState<NonCncQuotePromotionPersistenceSnapshot>(() => promotionPersistence.snapshot())
+  const promotionPlan = useMemo(
+    () =>
+      buildNonCncQuotePromotionPlan({
+        preview,
+        requestedAt: "2026-06-27T13:30:00.000Z",
+        requestedBy: "FactoryBid Operator",
+        targetRfqId: "registry-demo",
+      }),
+    [preview],
+  )
   const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
   const selectedInputEditAdapter = inputEditAdapters.find((adapter) => adapter.process === preview.selected.process)
+
+  useEffect(() => {
+    let isCurrent = true
+    void promotionPersistence.recordPlan(promotionPlan).then((snapshot) => {
+      if (isCurrent) {
+        setPromotionSnapshot(snapshot)
+      }
+    })
+    return () => {
+      isCurrent = false
+    }
+  }, [promotionPersistence, promotionPlan])
+
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
   }
@@ -4018,6 +4046,8 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
         preview={preview}
+        promotionPlan={promotionPlan}
+        promotionSnapshot={promotionSnapshot}
         sheetMetalEditor={
           preview.selected.process === "sheet_metal"
             ? {
@@ -4215,6 +4245,8 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
+  promotionPlan,
+  promotionSnapshot,
   sheetMetalEditor,
   wireEdmEditor,
 }: {
@@ -4222,6 +4254,8 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
+  promotionPlan: NonCncQuotePromotionPlan
+  promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
   sheetMetalEditor?: {
     error?: string
     onChange: (field: keyof SheetMetalInputEditPatch, value: number) => void
@@ -4230,22 +4264,8 @@ export function ProcessQuotePreviewCard({
   wireEdmEditor?: WireEdmPreviewEditorControl
 }) {
   const demo = preview.selected
-  const promotionPlan = useMemo(
-    () =>
-      buildNonCncQuotePromotionPlan({
-        preview,
-        requestedAt: "2026-06-27T13:30:00.000Z",
-        requestedBy: "FactoryBid Operator",
-        targetRfqId: "registry-demo",
-      }),
-    [preview],
-  )
-  const promotionSnapshot = useMemo(() => {
-    const adapter = createLocalNonCncQuotePromotionPersistence()
-    void adapter.recordPlan(promotionPlan)
-    return adapter.snapshot()
-  }, [promotionPlan])
-  const promotionRecord = promotionSnapshot.records[0]
+  const promotionRecord =
+    promotionSnapshot.records.find((record) => record.planId === promotionPlan.planId) ?? promotionSnapshot.records[0]
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4467,8 +4487,9 @@ export function ProcessQuotePreviewCard({
             <small>{promotionRecord.persistenceVersion}</small>
           </div>
           <p>
-            Local review record only: {promotionSnapshot.recordCount} record, {promotionSnapshot.blockedPlanIds.length} blocked,{" "}
-            {promotionSnapshot.candidatePlanIds.length} candidate.
+            Local review record only: {formatCount(promotionSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionSnapshot.blockedPlanIds.length, "blocked", "blocked")},{" "}
+            {formatCount(promotionSnapshot.candidatePlanIds.length, "candidate", "candidates")}.
           </p>
           <div className="process-demo-promotion-record-grid">
             <div>
@@ -4477,7 +4498,7 @@ export function ProcessQuotePreviewCard({
               <small>{promotionRecord.recordedAt}</small>
             </div>
             <div>
-              <span>Disposition</span>
+              <span>Status</span>
               <strong>{humanizeKey(promotionRecord.status)}</strong>
               <small>{promotionRecord.planId}</small>
             </div>
@@ -4803,6 +4824,10 @@ function NumberEditInput({
 
 function formatFieldCount(count: number, label: string): string {
   return `${count} ${label} field${count === 1 ? "" : "s"}`
+}
+
+function formatCount(count: number, label: string, pluralLabel = `${label}s`): string {
+  return `${count} ${count === 1 ? label : pluralLabel}`
 }
 
 function buildProcessPreviewCopySummary(
