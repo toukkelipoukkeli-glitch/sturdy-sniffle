@@ -1,7 +1,7 @@
 import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuotes"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
-export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v1"
+export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v2"
 
 export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
@@ -88,8 +88,10 @@ function buildComparisonSummary(
   lowestTotalCents: number,
   shortestLeadTimeDays: number,
 ): ProcessQuotePreviewComparison {
-  const cheapest = demos.find((demo) => demo.quote.totalCents === lowestTotalCents) ?? selected
-  const fastest = demos.find((demo) => demo.quote.leadTimeDays === shortestLeadTimeDays) ?? selected
+  const cheapestCandidates = demos.filter((demo) => demo.quote.totalCents === lowestTotalCents)
+  const fastestCandidates = demos.filter((demo) => demo.quote.leadTimeDays === shortestLeadTimeDays)
+  const cheapest = cheapestCandidates.find((demo) => demo.process === selected.process) ?? cheapestCandidates[0] ?? selected
+  const fastest = fastestCandidates.find((demo) => demo.process === selected.process) ?? fastestCandidates[0] ?? selected
   return {
     cheapestLabel: cheapest.label,
     cheapestTotalCents: lowestTotalCents,

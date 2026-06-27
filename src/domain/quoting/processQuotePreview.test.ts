@@ -88,6 +88,30 @@ describe("process quote preview", () => {
     ).toThrow("Process demo quotes must share a currency before computing comparison badges")
   })
 
+  it("prefers the selected process label for tied cheapest and fastest comparisons", () => {
+    const [sheetMetalDemo, plasticDemo] = buildProcessDemoQuotes()
+    const tiedPlasticDemo = {
+      ...plasticDemo,
+      quote: {
+        ...plasticDemo.quote,
+        leadTimeDays: sheetMetalDemo.quote.leadTimeDays,
+        totalCents: sheetMetalDemo.quote.totalCents,
+      },
+    }
+
+    const preview = buildProcessQuotePreview([sheetMetalDemo, tiedPlasticDemo], "plastic")
+
+    expect(preview.comparison).toEqual({
+      cheapestLabel: "Plastic machining",
+      cheapestTotalCents: sheetMetalDemo.quote.totalCents,
+      currency: "EUR",
+      fastestLabel: "Plastic machining",
+      fastestLeadTimeDays: sheetMetalDemo.quote.leadTimeDays,
+      selectedLeadTimeDeltaDays: 0,
+      selectedPriceDeltaCents: 0,
+    })
+  })
+
   it("marks calculator flags for warning-bearing process previews", () => {
     const [baseDemo] = buildProcessDemoQuotes()
     const preview = buildProcessQuotePreview([
