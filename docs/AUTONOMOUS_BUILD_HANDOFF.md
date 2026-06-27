@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `18ac9a1` (`Add non-CNC preview operator checklist (#145)`).
-- Open PRs at this checkpoint: `#146` (`codex/non-cnc-preview-summary`) while this branch is under review.
-- In-flight PR at this checkpoint: `#146` adds a copyable read-only non-CNC preview summary with clipboard feedback.
+- Main branch checkpoint: `912f319` (`Add copyable non-CNC preview summary (#146)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the next Slice E preview selector badge PR.
+- In-flight PR at this checkpoint: `codex/non-cnc-preview-badges` adds deterministic best-price/fastest-lead selector badges.
 - Latest merged sequence:
+  - `#146` non-CNC preview cards now expose a copyable read-only estimator review summary with clipboard feedback.
   - `#145` non-CNC preview cards now show an operator checklist that distinguishes calculator-ready, read-only-input, offer-wiring, and calculator-flag states.
   - `#144` selected non-CNC registry previews now show top quote assumptions and calculator review flags.
   - `#143` guarded read-only selector for sheet metal, plastics, wire/EDM, and fabrication registry quote previews.
@@ -114,7 +115,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, quote breakdowns, assumptions, review flags, and operator checklist; after this, non-CNC engines need editable process-specific inputs and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, quote breakdowns, assumptions, review flags, operator checklist, and copyable summary; after this, non-CNC engines need editable process-specific inputs and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.

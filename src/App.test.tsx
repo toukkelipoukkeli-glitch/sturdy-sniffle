@@ -46,6 +46,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(processDemos).toHaveTextContent("v1")
     expect(processDemos).toHaveTextContent("Sheet metal")
     expect(processDemos).toHaveTextContent("sheet-metal.v1")
+    expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("Best price")
+    expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("Fastest lead")
     expect(processDemos).toHaveTextContent("Wire EDM")
     expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toBeInTheDocument()
     expect(processDemos).toHaveTextContent("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")

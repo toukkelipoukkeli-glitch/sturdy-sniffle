@@ -11,11 +11,11 @@ describe("process quote preview", () => {
     expect(preview.selected.process).toBe("wire_edm")
     expect(preview.editable).toBe(false)
     expect(preview.guardrailCopy).toBe("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")
-    expect(preview.options.map((option) => [option.process, option.selected])).toEqual([
-      ["sheet_metal", false],
-      ["plastic", false],
-      ["wire_edm", true],
-      ["fabrication", false],
+    expect(preview.options.map((option) => [option.process, option.selected, option.badges])).toEqual([
+      ["sheet_metal", false, ["Best price", "Fastest lead"]],
+      ["plastic", false, []],
+      ["wire_edm", true, []],
+      ["fabrication", false, []],
     ])
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
@@ -62,6 +62,23 @@ describe("process quote preview", () => {
     expect(fallback.selected.process).toBe("sheet_metal")
   })
 
+  it("rejects mixed currencies before assigning price comparison badges", () => {
+    const [sheetMetalDemo, plasticDemo] = buildProcessDemoQuotes()
+
+    expect(() =>
+      buildProcessQuotePreview([
+        sheetMetalDemo,
+        {
+          ...plasticDemo,
+          quote: {
+            ...plasticDemo.quote,
+            currency: "USD",
+          },
+        },
+      ]),
+    ).toThrow("Process demo quotes must share a currency before computing comparison badges")
+  })
+
   it("marks calculator flags for warning-bearing process previews", () => {
     const [baseDemo] = buildProcessDemoQuotes()
     const preview = buildProcessQuotePreview([
@@ -82,5 +99,6 @@ describe("process quote preview", () => {
     })
     expect(preview.summaryText).toContain("- Minimum order adjustment applied.")
     expect(preview.summaryText).toContain("- Calculator flags [review]: 1 calculator flag requires review.")
+    expect(preview.options[0]?.badges).toEqual(["Best price", "Fastest lead", "Review flags"])
   })
 })
