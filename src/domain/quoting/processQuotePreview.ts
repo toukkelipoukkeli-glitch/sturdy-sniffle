@@ -1,8 +1,9 @@
 import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuotes"
+import { buildProcessInputDraft, type ProcessInputDraft } from "./processInputDraft"
 import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
-export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v3"
+export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v4"
 
 export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
@@ -37,6 +38,7 @@ export interface ProcessQuotePreview {
   previewVersion: typeof PROCESS_QUOTE_PREVIEW_VERSION
   selected: ProcessDemoQuote
   comparison: ProcessQuotePreviewComparison
+  inputDraft: ProcessInputDraft
   inputReadiness: ProcessInputReadiness
   options: ProcessQuotePreviewOption[]
   editable: false
@@ -61,12 +63,14 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
   const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
   const comparison = buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays)
+  const inputDraft = buildProcessInputDraft(selected.process)
   const inputReadiness = buildProcessInputReadiness(selected.process)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
     comparison,
+    inputDraft,
     inputReadiness,
     options: demos.map((demo) => ({
       process: demo.process,
@@ -81,7 +85,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
     reviewFlags: selected.quote.warnings,
-    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness),
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness, inputDraft),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
@@ -157,6 +161,7 @@ function buildPreviewSummaryText(
   operatorChecklist: ProcessQuotePreviewChecklistItem[],
   comparison: ProcessQuotePreviewComparison,
   inputReadiness: ProcessInputReadiness,
+  inputDraft: ProcessInputDraft,
 ): string {
   const quote = selected.quote
   return [
@@ -179,6 +184,8 @@ function buildPreviewSummaryText(
     `- Status: ${inputReadiness.status}`,
     `- Required groups: ${inputReadiness.requiredGroups.join(", ")}`,
     `- Planned fields: ${inputReadiness.fieldPlans.map((field) => field.label).join(", ")}`,
+    `- Draft coverage: ${inputDraft.populatedRequiredCount}/${inputDraft.requiredCount} required fields populated from ${inputDraft.source}`,
+    ...inputDraft.values.map((field) => `- ${field.label}: ${field.value}`),
     `- Next step: ${inputReadiness.nextStep}`,
     "",
     "Top assumptions:",

@@ -4106,6 +4106,19 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
             ))}
           </ul>
         </div>
+        <div className="process-demo-input-draft" aria-label="Read-only process input draft">
+          <span>
+            Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
+          </span>
+          <dl>
+            {preview.inputDraft.values.map((field) => (
+              <div data-status={field.status} key={field.key}>
+                <dt>{field.label}</dt>
+                <dd>{field.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
