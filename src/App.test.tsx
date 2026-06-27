@@ -244,6 +244,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Use 316L")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("passivation supplier")
     expect(screen.getByText("cad review dimensions")).toBeInTheDocument()
+    expect(screen.getByText("cad review material")).toBeInTheDocument()
+    expect(screen.getByText("cad review process")).toBeInTheDocument()
 
     const restoredOverride = screen.getByLabelText("CAD review override")
     fireEvent.change(within(restoredOverride).getByLabelText("Dimension correction note"), { target: { value: "" } })
