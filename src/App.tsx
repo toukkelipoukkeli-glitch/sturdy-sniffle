@@ -4041,13 +4041,16 @@ export function ProcessQuotePreviewCard({
     kind: "idle" | "copied" | "error"
     summaryText: string
   }>({ kind: "idle", summaryText: preview.summaryText })
-  const activeSummaryFeedback = summaryFeedback.summaryText === preview.summaryText ? summaryFeedback.kind : "idle"
+  const copyableSummaryText = inputEditAdapter
+    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter)
+    : preview.summaryText
+  const activeSummaryFeedback = summaryFeedback.summaryText === copyableSummaryText ? summaryFeedback.kind : "idle"
 
   const handleCopySummary = async () => {
-    const copied = await copyTextToClipboard(preview.summaryText)
+    const copied = await copyTextToClipboard(copyableSummaryText)
     setSummaryFeedback({
       kind: copied ? "copied" : "error",
-      summaryText: preview.summaryText,
+      summaryText: copyableSummaryText,
     })
   }
 
@@ -4167,6 +4170,18 @@ export function ProcessQuotePreviewCard({
 
 function formatFieldCount(count: number, label: string): string {
   return `${count} ${label} field${count === 1 ? "" : "s"}`
+}
+
+function buildProcessPreviewCopySummary(summaryText: string, adapter: NonCncInputEditAdapterSummary): string {
+  return [
+    summaryText,
+    "",
+    "Input edit adapter:",
+    `- Version: ${adapter.editVersion}`,
+    `- Editable fields mapped: ${adapter.editableFieldKeys.join(", ") || "None"}`,
+    `- Read-only fields guarded: ${adapter.readOnlyFieldKeys.join(", ") || "None"}`,
+    "- UI controls: guarded until process forms are enabled",
+  ].join("\n")
 }
 
 function processPreviewSummaryFeedback(feedback: "idle" | "copied" | "error"): string {
