@@ -82,7 +82,7 @@ function buildOperatorChecklist(selected: ProcessDemoQuote): ProcessQuotePreview
     {
       detail:
         selected.quote.warnings.length > 0
-          ? `${selected.quote.warnings.length} calculator flag${selected.quote.warnings.length === 1 ? "" : "s"} require review.`
+          ? `${selected.quote.warnings.length} calculator flag${selected.quote.warnings.length === 1 ? " requires" : "s require"} review.`
           : "No calculator flags on this fixture.",
       key: "calculator-flags",
       label: "Calculator flags",

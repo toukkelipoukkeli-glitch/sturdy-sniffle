@@ -56,4 +56,24 @@ describe("process quote preview", () => {
     expect(preview.selected.process).toBe("fabrication")
     expect(fallback.selected.process).toBe("sheet_metal")
   })
+
+  it("marks calculator flags for warning-bearing process previews", () => {
+    const [baseDemo] = buildProcessDemoQuotes()
+    const preview = buildProcessQuotePreview([
+      {
+        ...baseDemo,
+        quote: {
+          ...baseDemo.quote,
+          warnings: ["Minimum order adjustment applied."],
+        },
+      },
+    ])
+
+    expect(preview.operatorChecklist.find((item) => item.key === "calculator-flags")).toEqual({
+      detail: "1 calculator flag requires review.",
+      key: "calculator-flags",
+      label: "Calculator flags",
+      level: "review",
+    })
+  })
 })
