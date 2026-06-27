@@ -16,10 +16,7 @@ export interface PlasticsInputEditState {
 }
 
 export type PlasticsInputEditPatch = Partial<
-  Pick<
-    PlasticsInputEditState,
-    "stockLengthMm" | "stockWidthMm" | "stockHeightMm" | "materialFamily" | "operationCount" | "surfaceFinish"
-  >
+  Pick<PlasticsInputEditState, "stockLengthMm" | "stockWidthMm" | "stockHeightMm" | "materialFamily" | "surfaceFinish">
 >
 
 export interface EditedPlasticsQuote {
@@ -45,6 +42,9 @@ export function applyPlasticsInputEdits(
   patch: PlasticsInputEditPatch,
   input: PlasticsQuoteInput = pomGuideFixture,
 ): PlasticsQuoteInput {
+  if ("operationCount" in patch) {
+    throw new Error("operationCount is read-only until plastics operation editing is supported")
+  }
   const editState = {
     ...buildPlasticsInputEditState(input),
     ...patch,
@@ -52,7 +52,6 @@ export function applyPlasticsInputEdits(
   assertPositiveFinite("stockLengthMm", editState.stockLengthMm)
   assertPositiveFinite("stockWidthMm", editState.stockWidthMm)
   assertPositiveFinite("stockHeightMm", editState.stockHeightMm)
-  assertNonNegativeInteger("operationCount", editState.operationCount)
   const materialFamily = normalizeRequiredText("materialFamily", editState.materialFamily)
   const surfaceFinish = normalizeOptionalText(editState.surfaceFinish)
 
@@ -97,12 +96,6 @@ function plannedOperationCount(input: PlasticsQuoteInput): number {
 function assertPositiveFinite(field: keyof PlasticsInputEditPatch, value: number): void {
   if (!Number.isFinite(value) || value <= 0) {
     throw new Error(`${field} must be a positive finite number`)
-  }
-}
-
-function assertNonNegativeInteger(field: keyof PlasticsInputEditPatch, value: number): void {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${field} must be a non-negative integer`)
   }
 }
 

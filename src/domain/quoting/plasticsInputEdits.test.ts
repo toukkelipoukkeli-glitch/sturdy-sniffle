@@ -53,7 +53,6 @@ describe("plastics input edits", () => {
   it("calculates edited plastics quotes through the shared registry", () => {
     const result = calculateEditedPlasticsQuote({
       materialFamily: " POM-C black ",
-      operationCount: 5,
       stockHeightMm: 14,
       stockLengthMm: 90,
       stockWidthMm: 45,
@@ -89,7 +88,13 @@ describe("plastics input edits", () => {
       "stockLengthMm must be a positive finite number",
     )
     expect(() => applyPlasticsInputEdits({ stockHeightMm: 0 })).toThrow("stockHeightMm must be a positive finite number")
-    expect(() => applyPlasticsInputEdits({ operationCount: 1.5 })).toThrow("operationCount must be a non-negative integer")
     expect(() => applyPlasticsInputEdits({ materialFamily: "   " })).toThrow("materialFamily must be a non-empty string")
+  })
+
+  it("keeps operation count read-only until plastics operation editing is supported", () => {
+    expect(() => applyPlasticsInputEdits({ operationCount: 7 } as never)).toThrow(
+      "operationCount is read-only until plastics operation editing is supported",
+    )
+    expect(buildPlasticsInputEditState().operationCount).toBe(5)
   })
 })
