@@ -65,9 +65,9 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
   const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
   const comparison = buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays)
-  const inputDraft = buildProcessInputDraft(selected.process)
   const inputReadiness = buildProcessInputReadiness(selected.process)
   const inputDraftsByProcess = new Map(demos.map((demo) => [demo.process, buildProcessInputDraft(demo.process)]))
+  const inputDraft = inputDraftsByProcess.get(selected.process) ?? buildProcessInputDraft(selected.process)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
