@@ -26,6 +26,12 @@ describe("process quote preview", () => {
       selectedLeadTimeDeltaDays: 9,
       selectedPriceDeltaCents: 526069,
     })
+    expect(preview.inputReadiness).toMatchObject({
+      editable: false,
+      process: "wire_edm",
+      requiredGroups: ["stock dimensions", "cut length", "wire settings", "inspection scope"],
+      status: "blocked",
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
@@ -35,6 +41,8 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("Comparison:\n- Best price: Sheet metal (EUR 549.05)")
     expect(preview.summaryText).toContain("- Fastest lead: Sheet metal (7 days)")
     expect(preview.summaryText).toContain("- Selected delta: +EUR 5260.69, +9 days lead")
+    expect(preview.summaryText).toContain("Editable input readiness:\n- Status: blocked")
+    expect(preview.summaryText).toContain("- Required groups: stock dimensions, cut length, wire settings, inspection scope")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
