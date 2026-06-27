@@ -80,42 +80,61 @@ export interface NonCncInputEditAdapterSummary {
 export function listNonCncInputEditAdapters(): NonCncInputEditAdapterSummary[] {
   return [
     {
-      editableFieldKeys: ["blankLengthMm", "blankWidthMm", "materialThicknessMm", "cuttingLengthMm", "bendCount"],
+      editableFieldKeys: editableKeys<SheetMetalInputEditPatch>([
+        "blankLengthMm",
+        "blankWidthMm",
+        "materialThicknessMm",
+        "cuttingLengthMm",
+        "bendCount",
+      ]),
       editVersion: SHEET_METAL_INPUT_EDITS_VERSION,
       label: "Sheet metal",
       process: "sheet_metal",
-      readOnlyFieldKeys: [],
+      readOnlyFieldKeys: readOnlyKeys<SheetMetalInputEditState>([]),
       status: "domain_ready",
     },
     {
-      editableFieldKeys: ["stockLengthMm", "stockWidthMm", "stockHeightMm", "materialFamily", "surfaceFinish"],
+      editableFieldKeys: editableKeys<PlasticsInputEditPatch>([
+        "stockLengthMm",
+        "stockWidthMm",
+        "stockHeightMm",
+        "materialFamily",
+        "surfaceFinish",
+      ]),
       editVersion: PLASTICS_INPUT_EDITS_VERSION,
       label: "Plastic machining",
       process: "plastic",
-      readOnlyFieldKeys: ["operationCount"],
+      readOnlyFieldKeys: readOnlyKeys<PlasticsInputEditState>(["operationCount"]),
       status: "domain_ready",
     },
     {
-      editableFieldKeys: ["stockLengthMm", "stockWidthMm", "stockHeightMm", "contourLengthMm", "skimPasses", "inspectionLevel"],
+      editableFieldKeys: editableKeys<WireEdmInputEditPatch>([
+        "stockLengthMm",
+        "stockWidthMm",
+        "stockHeightMm",
+        "contourLengthMm",
+        "skimPasses",
+        "inspectionLevel",
+      ]),
       editVersion: WIRE_EDM_INPUT_EDITS_VERSION,
       label: "Wire EDM",
       process: "wire_edm",
-      readOnlyFieldKeys: [],
+      readOnlyFieldKeys: readOnlyKeys<WireEdmInputEditState>([]),
       status: "domain_ready",
     },
     {
-      editableFieldKeys: [
+      editableFieldKeys: editableKeys<FabricationInputEditPatch>([
         "fabricationMinutesPerPart",
         "weldingMinutesPerPart",
         "assemblyMinutesPerPart",
         "inspectionMinutesPerPart",
         "complexityMultiplier",
         "finishRequirement",
-      ],
+      ]),
       editVersion: FABRICATION_INPUT_EDITS_VERSION,
       label: "Fabrication",
       process: "fabrication",
-      readOnlyFieldKeys: [],
+      readOnlyFieldKeys: readOnlyKeys<FabricationInputEditState>([]),
       status: "domain_ready",
     },
   ]
@@ -131,6 +150,8 @@ export function buildNonCncInputEditState(request: NonCncInputEditStateRequest):
       return buildSheetMetalInputEditState(request.input)
     case "wire_edm":
       return buildWireEdmInputEditState(request.input)
+    default:
+      return assertUnsupportedNonCncProcess(request)
   }
 }
 
@@ -144,6 +165,8 @@ export function applyNonCncInputEdits(request: NonCncInputEditRequest): NonCncEd
       return applySheetMetalInputEdits(request.patch, request.input)
     case "wire_edm":
       return applyWireEdmInputEdits(request.patch, request.input)
+    default:
+      return assertUnsupportedNonCncProcess(request)
   }
 }
 
@@ -157,5 +180,19 @@ export function calculateEditedNonCncQuote(request: NonCncInputEditRequest): Non
       return calculateEditedSheetMetalQuote(request.patch, request.input)
     case "wire_edm":
       return calculateEditedWireEdmQuote(request.patch, request.input)
+    default:
+      return assertUnsupportedNonCncProcess(request)
   }
+}
+
+function editableKeys<TPatch extends object>(keys: Array<Extract<keyof TPatch, string>>): string[] {
+  return keys
+}
+
+function readOnlyKeys<TState extends object>(keys: Array<Extract<keyof TState, string>>): string[] {
+  return keys
+}
+
+function assertUnsupportedNonCncProcess(value: never): never {
+  throw new Error(`Unsupported non-CNC input edit process: ${JSON.stringify(value)}`)
 }
