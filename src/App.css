@@ -1138,6 +1138,24 @@
   grid-column: 1 / -1;
 }
 
+.process-demo-input-adapter {
+  background: oklch(0.965 0.018 155);
+  border: 1px solid oklch(0.86 0.055 155);
+  border-radius: 8px;
+  grid-column: 1 / -1;
+  padding: 8px;
+}
+
+.process-demo-input-adapter strong {
+  color: oklch(0.31 0.05 155);
+  font-size: 0.72rem;
+}
+
+.process-demo-input-adapter li {
+  background: oklch(0.94 0.028 155);
+  color: oklch(0.34 0.045 155);
+}
+
 .process-demo-input-draft {
   border-top: 1px solid oklch(0.9 0.055 70);
   grid-column: 1 / -1;

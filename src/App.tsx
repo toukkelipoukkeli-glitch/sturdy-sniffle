@@ -111,6 +111,10 @@ import {
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
+import {
+  listNonCncInputEditAdapters,
+  type NonCncInputEditAdapterSummary,
+} from "./domain/quoting/nonCncInputEditRegistry"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -3954,6 +3958,8 @@ function ProcessCapabilityPanel({
 function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [selectedProcess, setSelectedProcess] = useState(demos[0]?.process)
   const preview = useMemo(() => buildProcessQuotePreview(demos, selectedProcess), [demos, selectedProcess])
+  const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
+  const selectedInputEditAdapter = inputEditAdapters.find((adapter) => adapter.process === preview.selected.process)
 
   return (
     <section className="process-demo-panel" aria-label="Non-CNC registry demos">
@@ -3973,7 +3979,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         ))}
       </div>
       <ProcessQuotePreviewComparisonPanel preview={preview} />
-      <ProcessQuotePreviewCard preview={preview} />
+      <ProcessQuotePreviewCard inputEditAdapter={selectedInputEditAdapter} preview={preview} />
     </section>
   )
 }
@@ -4023,7 +4029,13 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
   )
 }
 
-export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
+export function ProcessQuotePreviewCard({
+  inputEditAdapter,
+  preview,
+}: {
+  inputEditAdapter?: NonCncInputEditAdapterSummary
+  preview: ProcessQuotePreview
+}) {
   const demo = preview.selected
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
@@ -4107,6 +4119,17 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
             ))}
           </ul>
         </div>
+        {inputEditAdapter ? (
+          <div className="process-demo-input-adapter" aria-label="Non-CNC input edit adapter status">
+            <span>Domain adapter ready</span>
+            <strong>{inputEditAdapter.editVersion}</strong>
+            <ul>
+              <li>{formatFieldCount(inputEditAdapter.editableFieldKeys.length, "editable")} mapped</li>
+              <li>{formatFieldCount(inputEditAdapter.readOnlyFieldKeys.length, "read-only")} guarded</li>
+              <li>UI controls guarded until process forms are enabled</li>
+            </ul>
+          </div>
+        ) : null}
         <div className="process-demo-input-draft" aria-label="Read-only process input draft">
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
@@ -4140,6 +4163,10 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
       <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
     </article>
   )
+}
+
+function formatFieldCount(count: number, label: string): string {
+  return `${count} ${label} field${count === 1 ? "" : "s"}`
 }
 
 function processPreviewSummaryFeedback(feedback: "idle" | "copied" | "error"): string {
