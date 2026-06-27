@@ -81,7 +81,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionRecord).toHaveTextContent("Blocked: non-cnc-promotion:registry-demo:sheet-metal:sm-120-bracket:sheet-metal-v1")
     const promotionActions = within(processDemos).getByLabelText("Non-CNC promotion actions")
     expect(promotionActions).toHaveTextContent("Promotion actions")
-    expect(promotionActions).toHaveTextContent("blocked")
+    expect(promotionActions.querySelector(".process-demo-promotion-actions-heading strong")).toHaveTextContent("blocked")
     expect(promotionActions).toHaveTextContent("non-cnc-quote-promotion-actions.v1")
     expect(promotionActions).toHaveTextContent("Quote promotion guarded")
     expect(promotionActions).toHaveTextContent("Clear promotion blockers before updating the active RFQ quote")
