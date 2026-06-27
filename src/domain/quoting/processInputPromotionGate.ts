@@ -18,7 +18,7 @@ export function evaluateProcessInputPromotionGate(
   readiness: ProcessInputReadiness,
   draft: ProcessInputDraft,
 ): ProcessInputPromotionGate {
-  const missingRequiredCount = draft.requiredCount - draft.populatedRequiredCount
+  const missingRequiredCount = Math.max(0, draft.requiredCount - draft.populatedRequiredCount)
   const blockers: ProcessInputPromotionBlocker[] = ["editable_controls_missing"]
   if (missingRequiredCount > 0) {
     blockers.push("missing_required_values")

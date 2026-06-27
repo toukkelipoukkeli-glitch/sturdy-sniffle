@@ -26,4 +26,18 @@ describe("process input promotion gate", () => {
       status: "blocked",
     })
   })
+
+  it("clamps inconsistent over-populated draft counts to zero missing values", () => {
+    const draft = {
+      ...buildProcessInputDraft("sheet_metal"),
+      populatedRequiredCount: 6,
+      requiredCount: 4,
+    }
+
+    expect(evaluateProcessInputPromotionGate(buildProcessInputReadiness("sheet_metal"), draft)).toMatchObject({
+      blockerLabels: ["Editable controls missing"],
+      blockers: ["editable_controls_missing"],
+      missingRequiredCount: 0,
+    })
+  })
 })

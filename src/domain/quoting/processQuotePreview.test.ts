@@ -111,6 +111,8 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("- Wire diameter: Missing fixture value")
     expect(preview.summaryText).toContain("- Promotion gate: blocked")
     expect(preview.summaryText).toContain("- Blockers: Editable controls missing, Missing required values")
+    expect(preview.summaryText).toContain("- Next step: Populate every required process draft value, then add editable controls before promotion.")
+    expect(preview.summaryText).not.toContain("- Promotion next step:")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
