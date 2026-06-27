@@ -120,6 +120,7 @@ import {
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
+import type { PlasticsInputEditPatch, PlasticsInputEditState } from "./domain/quoting/plasticsInputEdits"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { SheetMetalInputEditPatch, SheetMetalInputEditState } from "./domain/quoting/sheetMetalInputEdits"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
@@ -3963,12 +3964,18 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [sheetMetalEdits, setSheetMetalEdits] = useState<SheetMetalInputEditState>(
     () => buildNonCncInputEditState({ process: "sheet_metal" }) as SheetMetalInputEditState,
   )
-  const editedDemoState = useMemo(() => buildSheetMetalEditedDemos(demos, sheetMetalEdits), [demos, sheetMetalEdits])
+  const [plasticEdits, setPlasticEdits] = useState<PlasticsInputEditState>(
+    () => buildNonCncInputEditState({ process: "plastic" }) as PlasticsInputEditState,
+  )
+  const editedDemoState = useMemo(() => buildEditedNonCncDemos(demos, sheetMetalEdits, plasticEdits), [demos, plasticEdits, sheetMetalEdits])
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
   const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
   const selectedInputEditAdapter = inputEditAdapters.find((adapter) => adapter.process === preview.selected.process)
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
+  }
+  const updatePlasticEdit = <K extends keyof PlasticsInputEditPatch>(field: K, value: PlasticsInputEditPatch[K]) => {
+    setPlasticEdits((current) => ({ ...current, [field]: value }))
   }
 
   return (
@@ -4001,15 +4008,29 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
               }
             : undefined
         }
+        plasticEditor={
+          preview.selected.process === "plastic"
+            ? {
+                error: editedDemoState.plasticError,
+                onChange: updatePlasticEdit,
+                state: plasticEdits,
+              }
+            : undefined
+        }
       />
     </section>
   )
 }
 
-function buildSheetMetalEditedDemos(
+function buildEditedNonCncDemos(
   demos: ProcessDemoQuote[],
   sheetMetalEdits: SheetMetalInputEditState,
-): { demos: ProcessDemoQuote[]; sheetMetalError?: string } {
+  plasticEdits: PlasticsInputEditState,
+): { demos: ProcessDemoQuote[]; plasticError?: string; sheetMetalError?: string } {
+  let editedDemos = demos
+  let sheetMetalError: string | undefined
+  let plasticError: string | undefined
+
   try {
     const edited = calculateEditedNonCncQuote({
       patch: {
@@ -4021,14 +4042,31 @@ function buildSheetMetalEditedDemos(
       },
       process: "sheet_metal",
     })
-    return {
-      demos: demos.map((demo) => (demo.process === "sheet_metal" ? { ...demo, quote: edited.quote } : demo)),
-    }
+    editedDemos = editedDemos.map((demo) => (demo.process === "sheet_metal" ? { ...demo, quote: edited.quote } : demo))
   } catch (error) {
-    return {
-      demos,
-      sheetMetalError: error instanceof Error ? error.message : "Sheet metal preview edits are invalid",
-    }
+    sheetMetalError = error instanceof Error ? error.message : "Sheet metal preview edits are invalid"
+  }
+
+  try {
+    const edited = calculateEditedNonCncQuote({
+      patch: {
+        materialFamily: plasticEdits.materialFamily,
+        stockHeightMm: plasticEdits.stockHeightMm,
+        stockLengthMm: plasticEdits.stockLengthMm,
+        stockWidthMm: plasticEdits.stockWidthMm,
+        surfaceFinish: plasticEdits.surfaceFinish,
+      },
+      process: "plastic",
+    })
+    editedDemos = editedDemos.map((demo) => (demo.process === "plastic" ? { ...demo, quote: edited.quote } : demo))
+  } catch (error) {
+    plasticError = error instanceof Error ? error.message : "Plastic preview edits are invalid"
+  }
+
+  return {
+    demos: editedDemos,
+    plasticError,
+    sheetMetalError,
   }
 }
 
@@ -4077,12 +4115,20 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
   )
 }
 
+type PlasticPreviewEditorControl = {
+  error?: string
+  onChange: <K extends keyof PlasticsInputEditPatch>(field: K, value: PlasticsInputEditPatch[K]) => void
+  state: PlasticsInputEditState
+}
+
 export function ProcessQuotePreviewCard({
   inputEditAdapter,
+  plasticEditor,
   preview,
   sheetMetalEditor,
 }: {
   inputEditAdapter?: NonCncInputEditAdapterSummary
+  plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
   sheetMetalEditor?: {
     error?: string
@@ -4096,9 +4142,10 @@ export function ProcessQuotePreviewCard({
     summaryText: string
   }>({ kind: "idle", summaryText: preview.summaryText })
   const copyableSummaryText = inputEditAdapter
-    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter)
+    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter, Boolean(plasticEditor ?? sheetMetalEditor))
     : preview.summaryText
   const activeSummaryFeedback = summaryFeedback.summaryText === copyableSummaryText ? summaryFeedback.kind : "idle"
+  const hasPreviewEditor = Boolean(plasticEditor ?? sheetMetalEditor)
 
   const handleCopySummary = async () => {
     const copied = await copyTextToClipboard(copyableSummaryText)
@@ -4183,11 +4230,12 @@ export function ProcessQuotePreviewCard({
             <ul>
               <li>{formatFieldCount(inputEditAdapter.editableFieldKeys.length, "editable")} mapped</li>
               <li>{formatFieldCount(inputEditAdapter.readOnlyFieldKeys.length, "read-only")} guarded</li>
-              <li>UI controls guarded until process forms are enabled</li>
+              <li>{plasticEditor || sheetMetalEditor ? "Preview controls enabled for supported fields" : "UI controls guarded until process forms are enabled"}</li>
             </ul>
           </div>
         ) : null}
         {sheetMetalEditor ? <SheetMetalPreviewEditor editor={sheetMetalEditor} /> : null}
+        {plasticEditor ? <PlasticPreviewEditor editor={plasticEditor} /> : null}
         <div className="process-demo-input-draft" aria-label="Read-only process input draft">
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
@@ -4218,8 +4266,69 @@ export function ProcessQuotePreviewCard({
           {processPreviewSummaryFeedback(activeSummaryFeedback)}
         </p>
       </div>
-      <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
+      <p className="process-demo-guardrail">
+        {hasPreviewEditor
+          ? "Preview-only registry edits are enabled for this process; active RFQ quote, offer, and release paths stay unchanged."
+          : preview.guardrailCopy}
+      </p>
     </article>
+  )
+}
+
+function PlasticPreviewEditor({
+  editor,
+}: {
+  editor: PlasticPreviewEditorControl
+}) {
+  return (
+    <div className="process-demo-input-editor" aria-label="Plastic preview edit controls">
+      <div>
+        <span>Preview editor</span>
+        <strong>Plastic machining only</strong>
+        <small>Updates this registry preview only; RFQ quote, offer, and release paths stay unchanged.</small>
+      </div>
+      <div className="process-demo-input-editor-grid">
+        <TextEditInput
+          label="Material family"
+          onChange={(value) => editor.onChange("materialFamily", value)}
+          value={editor.state.materialFamily}
+        />
+        <NumberEditInput
+          label="Stock length"
+          min={1}
+          onChange={(value) => editor.onChange("stockLengthMm", value)}
+          suffix="mm"
+          value={editor.state.stockLengthMm}
+        />
+        <NumberEditInput
+          label="Stock width"
+          min={1}
+          onChange={(value) => editor.onChange("stockWidthMm", value)}
+          suffix="mm"
+          value={editor.state.stockWidthMm}
+        />
+        <NumberEditInput
+          label="Stock height"
+          min={1}
+          onChange={(value) => editor.onChange("stockHeightMm", value)}
+          suffix="mm"
+          value={editor.state.stockHeightMm}
+        />
+        <TextEditInput
+          label="Surface finish"
+          onChange={(value) => editor.onChange("surfaceFinish", value)}
+          value={editor.state.surfaceFinish}
+        />
+      </div>
+      <div className="process-demo-read-only-field" aria-label="Plastic guarded operation count">
+        <span>Operation count</span>
+        <strong>{editor.state.operationCount}</strong>
+        <small>Derived and read-only until operation-level editing is supported.</small>
+      </div>
+      <p aria-live="polite" role="status">
+        {editor.error ?? "Plastic preview quote recalculated through the non-CNC edit registry."}
+      </p>
+    </div>
   )
 }
 
@@ -4284,6 +4393,23 @@ function SheetMetalPreviewEditor({
   )
 }
 
+function TextEditInput({
+  label,
+  onChange,
+  value,
+}: {
+  label: string
+  onChange: (value: string) => void
+  value: string
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input onChange={(event) => onChange(event.currentTarget.value)} type="text" value={value} />
+    </label>
+  )
+}
+
 function NumberEditInput({
   label,
   min,
@@ -4321,7 +4447,11 @@ function formatFieldCount(count: number, label: string): string {
   return `${count} ${label} field${count === 1 ? "" : "s"}`
 }
 
-function buildProcessPreviewCopySummary(summaryText: string, adapter: NonCncInputEditAdapterSummary): string {
+function buildProcessPreviewCopySummary(
+  summaryText: string,
+  adapter: NonCncInputEditAdapterSummary,
+  hasPreviewEditor: boolean,
+): string {
   return [
     summaryText,
     "",
@@ -4329,7 +4459,7 @@ function buildProcessPreviewCopySummary(summaryText: string, adapter: NonCncInpu
     `- Version: ${adapter.editVersion}`,
     `- Editable fields mapped: ${adapter.editableFieldKeys.join(", ") || "None"}`,
     `- Read-only fields guarded: ${adapter.readOnlyFieldKeys.join(", ") || "None"}`,
-    "- UI controls: guarded until process forms are enabled",
+    `- UI controls: ${hasPreviewEditor ? "preview controls enabled for supported fields" : "guarded until process forms are enabled"}`,
   ].join("\n")
 }
 

@@ -53,7 +53,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(processDemos).toHaveTextContent("Wire EDM")
     expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toHaveTextContent("Draft gaps")
     expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toHaveTextContent("4/5 inputs")
-    expect(processDemos).toHaveTextContent("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")
+    expect(processDemos).toHaveTextContent(
+      "Preview-only registry edits are enabled for this process; active RFQ quote, offer, and release paths stay unchanged.",
+    )
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -152,16 +154,39 @@ describe("FactoryBid workspace (component)", () => {
     expect(plasticAdapterStatus).toHaveTextContent("plastics-input-edits.v1")
     expect(plasticAdapterStatus).toHaveTextContent("5 editable fields mapped")
     expect(plasticAdapterStatus).toHaveTextContent("1 read-only field guarded")
+    expect(plasticAdapterStatus).toHaveTextContent("Preview controls enabled for supported fields")
+    const plasticEditor = within(plasticPreview).getByLabelText("Plastic preview edit controls")
+    expect(plasticEditor).toHaveTextContent("Plastic machining only")
+    expect(plasticEditor).toHaveTextContent("Derived and read-only until operation-level editing is supported.")
+    expect(within(plasticEditor).getByLabelText("Plastic guarded operation count")).toHaveTextContent("5")
+    fireEvent.change(within(plasticEditor).getByLabelText("Material family"), { target: { value: " POM-C black " } })
+    fireEvent.change(within(plasticEditor).getByLabelText(/Stock length/), { target: { value: "90" } })
+    fireEvent.change(within(plasticEditor).getByLabelText(/Stock width/), { target: { value: "45" } })
+    fireEvent.change(within(plasticEditor).getByLabelText(/Stock height/), { target: { value: "14" } })
+    fireEvent.change(within(plasticEditor).getByLabelText("Surface finish"), { target: { value: " Fine deburr " } })
+    expect(plasticEditor).toHaveTextContent("Plastic preview quote recalculated through the non-CNC edit registry.")
+    expect(plasticPreview).toHaveTextContent("€981.68")
+    expect(within(selector).getByRole("button", { name: /Plastic machining/ })).toHaveTextContent("€981.68")
+    fireEvent.change(within(plasticEditor).getByLabelText("Material family"), { target: { value: "   " } })
+    expect(plasticEditor).toHaveTextContent("materialFamily must be a non-empty string")
+    expect(plasticPreview).toHaveTextContent("€970.96")
+    fireEvent.change(within(plasticEditor).getByLabelText("Material family"), { target: { value: "POM-C black" } })
+    expect(plasticEditor).toHaveTextContent("Plastic preview quote recalculated through the non-CNC edit registry.")
+    expect(plasticPreview).toHaveTextContent("€981.68")
+    expect(within(plasticEditor).getByLabelText("Plastic guarded operation count")).toHaveTextContent("5")
+    const plasticActions = within(plasticPreview).getByLabelText("Process quote preview actions")
     expect(within(plasticPreview).getByRole("button", { name: "Copy summary" })).toBeInTheDocument()
-    expect(within(plasticPreview).getByRole("status")).toHaveTextContent("Copy a read-only summary for estimator review.")
+    expect(within(plasticActions).getByRole("status")).toHaveTextContent("Copy a read-only summary for estimator review.")
+    expect(plasticPreview).toHaveTextContent("Updates this registry preview only")
     expect(plasticPreview).toHaveTextContent(
-      "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
+      "Preview-only registry edits are enabled for this process; active RFQ quote, offer, and release paths stay unchanged.",
     )
     await user.click(within(plasticPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
     const [plasticCopiedText] = writeText.mock.calls[1] ?? [""]
     expect(plasticCopiedText).toContain("Version: plastics-input-edits.v1")
     expect(plasticCopiedText).toContain("Read-only fields guarded: operationCount")
+    expect(plasticCopiedText).toContain("UI controls: preview controls enabled for supported fields")
   })
 
   it("surfaces non-empty non-CNC preview review flags", () => {
