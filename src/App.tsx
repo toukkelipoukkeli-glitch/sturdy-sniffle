@@ -123,6 +123,7 @@ import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./do
 import type { PlasticsInputEditPatch, PlasticsInputEditState } from "./domain/quoting/plasticsInputEdits"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { SheetMetalInputEditPatch, SheetMetalInputEditState } from "./domain/quoting/sheetMetalInputEdits"
+import type { WireEdmInputEditPatch, WireEdmInputEditState } from "./domain/quoting/wireEdmInputEdits"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
 import {
   evaluateRfqIntakeReadiness,
@@ -3967,7 +3968,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [plasticEdits, setPlasticEdits] = useState<PlasticsInputEditState>(
     () => buildNonCncInputEditState({ process: "plastic" }) as PlasticsInputEditState,
   )
-  const editedDemoState = useMemo(() => buildEditedNonCncDemos(demos, sheetMetalEdits, plasticEdits), [demos, plasticEdits, sheetMetalEdits])
+  const [wireEdmEdits, setWireEdmEdits] = useState<WireEdmInputEditState>(
+    () => buildNonCncInputEditState({ process: "wire_edm" }) as WireEdmInputEditState,
+  )
+  const editedDemoState = useMemo(
+    () => buildEditedNonCncDemos(demos, sheetMetalEdits, plasticEdits, wireEdmEdits),
+    [demos, plasticEdits, sheetMetalEdits, wireEdmEdits],
+  )
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
   const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
   const selectedInputEditAdapter = inputEditAdapters.find((adapter) => adapter.process === preview.selected.process)
@@ -3976,6 +3983,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   }
   const updatePlasticEdit = <K extends keyof PlasticsInputEditPatch>(field: K, value: PlasticsInputEditPatch[K]) => {
     setPlasticEdits((current) => ({ ...current, [field]: value }))
+  }
+  const updateWireEdmEdit = <K extends keyof WireEdmInputEditPatch>(field: K, value: WireEdmInputEditPatch[K]) => {
+    setWireEdmEdits((current) => ({ ...current, [field]: value }))
   }
 
   return (
@@ -4017,6 +4027,15 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
               }
             : undefined
         }
+        wireEdmEditor={
+          preview.selected.process === "wire_edm"
+            ? {
+                error: editedDemoState.wireEdmError,
+                onChange: updateWireEdmEdit,
+                state: wireEdmEdits,
+              }
+            : undefined
+        }
       />
     </section>
   )
@@ -4026,10 +4045,12 @@ function buildEditedNonCncDemos(
   demos: ProcessDemoQuote[],
   sheetMetalEdits: SheetMetalInputEditState,
   plasticEdits: PlasticsInputEditState,
-): { demos: ProcessDemoQuote[]; plasticError?: string; sheetMetalError?: string } {
+  wireEdmEdits: WireEdmInputEditState,
+): { demos: ProcessDemoQuote[]; plasticError?: string; sheetMetalError?: string; wireEdmError?: string } {
   let editedDemos = demos
   let sheetMetalError: string | undefined
   let plasticError: string | undefined
+  let wireEdmError: string | undefined
 
   try {
     const edited = calculateEditedNonCncQuote({
@@ -4063,10 +4084,28 @@ function buildEditedNonCncDemos(
     plasticError = error instanceof Error ? error.message : "Plastic preview edits are invalid"
   }
 
+  try {
+    const edited = calculateEditedNonCncQuote({
+      patch: {
+        contourLengthMm: wireEdmEdits.contourLengthMm,
+        inspectionLevel: wireEdmEdits.inspectionLevel,
+        skimPasses: wireEdmEdits.skimPasses,
+        stockHeightMm: wireEdmEdits.stockHeightMm,
+        stockLengthMm: wireEdmEdits.stockLengthMm,
+        stockWidthMm: wireEdmEdits.stockWidthMm,
+      },
+      process: "wire_edm",
+    })
+    editedDemos = editedDemos.map((demo) => (demo.process === "wire_edm" ? { ...demo, quote: edited.quote } : demo))
+  } catch (error) {
+    wireEdmError = error instanceof Error ? error.message : "Wire EDM preview edits are invalid"
+  }
+
   return {
     demos: editedDemos,
     plasticError,
     sheetMetalError,
+    wireEdmError,
   }
 }
 
@@ -4121,11 +4160,18 @@ type PlasticPreviewEditorControl = {
   state: PlasticsInputEditState
 }
 
+type WireEdmPreviewEditorControl = {
+  error?: string
+  onChange: <K extends keyof WireEdmInputEditPatch>(field: K, value: WireEdmInputEditPatch[K]) => void
+  state: WireEdmInputEditState
+}
+
 export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
   sheetMetalEditor,
+  wireEdmEditor,
 }: {
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
@@ -4135,6 +4181,7 @@ export function ProcessQuotePreviewCard({
     onChange: (field: keyof SheetMetalInputEditPatch, value: number) => void
     state: SheetMetalInputEditState
   }
+  wireEdmEditor?: WireEdmPreviewEditorControl
 }) {
   const demo = preview.selected
   const [summaryFeedback, setSummaryFeedback] = useState<{
@@ -4142,10 +4189,10 @@ export function ProcessQuotePreviewCard({
     summaryText: string
   }>({ kind: "idle", summaryText: preview.summaryText })
   const copyableSummaryText = inputEditAdapter
-    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter, Boolean(plasticEditor ?? sheetMetalEditor))
+    ? buildProcessPreviewCopySummary(preview.summaryText, inputEditAdapter, Boolean(plasticEditor ?? sheetMetalEditor ?? wireEdmEditor))
     : preview.summaryText
   const activeSummaryFeedback = summaryFeedback.summaryText === copyableSummaryText ? summaryFeedback.kind : "idle"
-  const hasPreviewEditor = Boolean(plasticEditor ?? sheetMetalEditor)
+  const hasPreviewEditor = Boolean(plasticEditor ?? sheetMetalEditor ?? wireEdmEditor)
 
   const handleCopySummary = async () => {
     const copied = await copyTextToClipboard(copyableSummaryText)
@@ -4230,12 +4277,17 @@ export function ProcessQuotePreviewCard({
             <ul>
               <li>{formatFieldCount(inputEditAdapter.editableFieldKeys.length, "editable")} mapped</li>
               <li>{formatFieldCount(inputEditAdapter.readOnlyFieldKeys.length, "read-only")} guarded</li>
-              <li>{plasticEditor || sheetMetalEditor ? "Preview controls enabled for supported fields" : "UI controls guarded until process forms are enabled"}</li>
+              <li>
+                {plasticEditor || sheetMetalEditor || wireEdmEditor
+                  ? "Preview controls enabled for supported fields"
+                  : "UI controls guarded until process forms are enabled"}
+              </li>
             </ul>
           </div>
         ) : null}
         {sheetMetalEditor ? <SheetMetalPreviewEditor editor={sheetMetalEditor} /> : null}
         {plasticEditor ? <PlasticPreviewEditor editor={plasticEditor} /> : null}
+        {wireEdmEditor ? <WireEdmPreviewEditor editor={wireEdmEditor} /> : null}
         <div className="process-demo-input-draft" aria-label="Read-only process input draft">
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
@@ -4327,6 +4379,67 @@ function PlasticPreviewEditor({
       </div>
       <p aria-live="polite" role="status">
         {editor.error ?? "Plastic preview quote recalculated through the non-CNC edit registry."}
+      </p>
+    </div>
+  )
+}
+
+function WireEdmPreviewEditor({
+  editor,
+}: {
+  editor: WireEdmPreviewEditorControl
+}) {
+  return (
+    <div className="process-demo-input-editor" aria-label="Wire EDM preview edit controls">
+      <div>
+        <span>Preview editor</span>
+        <strong>Wire EDM only</strong>
+        <small>Updates this registry preview only; RFQ quote, offer, and release paths stay unchanged.</small>
+      </div>
+      <div className="process-demo-input-editor-grid">
+        <NumberEditInput
+          label="Stock length"
+          min={1}
+          onChange={(value) => editor.onChange("stockLengthMm", value)}
+          suffix="mm"
+          value={editor.state.stockLengthMm}
+        />
+        <NumberEditInput
+          label="Stock width"
+          min={1}
+          onChange={(value) => editor.onChange("stockWidthMm", value)}
+          suffix="mm"
+          value={editor.state.stockWidthMm}
+        />
+        <NumberEditInput
+          label="Stock height"
+          min={1}
+          onChange={(value) => editor.onChange("stockHeightMm", value)}
+          suffix="mm"
+          value={editor.state.stockHeightMm}
+        />
+        <NumberEditInput
+          label="Contour length"
+          min={1}
+          onChange={(value) => editor.onChange("contourLengthMm", value)}
+          suffix="mm"
+          value={editor.state.contourLengthMm}
+        />
+        <NumberEditInput
+          label="Skim passes"
+          min={0}
+          onChange={(value) => editor.onChange("skimPasses", value)}
+          step={1}
+          value={editor.state.skimPasses}
+        />
+        <TextEditInput
+          label="Inspection level"
+          onChange={(value) => editor.onChange("inspectionLevel", value)}
+          value={editor.state.inspectionLevel}
+        />
+      </div>
+      <p aria-live="polite" role="status">
+        {editor.error ?? "Wire EDM preview quote recalculated through the non-CNC edit registry."}
       </p>
     </div>
   )
