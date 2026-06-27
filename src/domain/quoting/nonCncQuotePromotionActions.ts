@@ -76,13 +76,11 @@ function buildAction(command: NonCncQuotePromotionCommandRecord, record: NonCncQ
 }
 
 function buildActionBlockers(command: NonCncQuotePromotionCommandRecord, record: NonCncQuotePromotionRecord): string[] {
-  if (command.status === "blocked") {
-    return [...record.blockers]
-  }
+  const blockerLabels = command.status === "blocked" ? [...record.blockers] : []
   if (record.disposition === "review_only") {
-    return ["Review-only promotion records cannot update active RFQ quote state."]
+    blockerLabels.push("Review-only promotion records cannot update active RFQ quote state.")
   }
-  return []
+  return blockerLabels
 }
 
 function buildMissingRecordActions(): NonCncQuotePromotionAction[] {

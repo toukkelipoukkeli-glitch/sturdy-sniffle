@@ -43,6 +43,7 @@ describe("non-CNC quote promotion actions", () => {
       "Editable controls missing",
       "Missing required values",
       "Persisted non-CNC quote promotion is not wired to workspace state yet",
+      "Review-only promotion records cannot update active RFQ quote state.",
     ])
   })
 
