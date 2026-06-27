@@ -950,8 +950,12 @@ function App() {
     )
   }
 
+  const selectedCadReviewOverride = cadReviewOverridesById[selectedId]
   const quoteInput = useMemo<CncQuoteInput>(() => applyQuoteEdit(selectedItem, selectedEdit), [selectedEdit, selectedItem])
-  const quote = useMemo(() => calculateWorkspaceCncQuote(quoteInput), [quoteInput])
+  const quote = useMemo(
+    () => applyCadReviewCorrectionAssumptions(calculateWorkspaceCncQuote(quoteInput), selectedCadReviewOverride?.correctionNotes),
+    [quoteInput, selectedCadReviewOverride?.correctionNotes],
+  )
   const rankedQueue = useMemo(() => {
     const queueInputs = workItems.map((item) => {
       const itemQuoteInput = applyQuoteEdit(item, editStateForItem(item, editsById[item.id]))
@@ -1098,7 +1102,6 @@ function App() {
       }),
     [primaryAttachmentById, quoteInput, selectedId, selectedItem],
   )
-  const selectedCadReviewOverride = cadReviewOverridesById[selectedId]
   const selectedCadReviewDraft = cadReviewDraftById[selectedId] ?? ""
   const selectedCadCorrectionDraft = {
     ...selectedCadReviewOverride?.correctionNotes,
@@ -2324,6 +2327,23 @@ function cadReviewCorrectionNotesEqual(left: CadReviewCorrectionNotes | undefine
     (left?.material ?? "") === (right?.material ?? "") &&
     (left?.process ?? "") === (right?.process ?? "")
   )
+}
+
+function applyCadReviewCorrectionAssumptions(quote: CncQuoteResult, correctionNotes: CadReviewCorrectionNotes | undefined): CncQuoteResult {
+  const normalized = correctionNotes ? normalizeCadReviewCorrectionNotes(correctionNotes) : undefined
+  if (!normalized) {
+    return quote
+  }
+
+  return {
+    ...quote,
+    assumptions: [
+      ...quote.assumptions,
+      ...(normalized.dimensions ? [{ key: "cad_review_dimensions", value: normalized.dimensions }] : []),
+      ...(normalized.material ? [{ key: "cad_review_material", value: normalized.material }] : []),
+      ...(normalized.process ? [{ key: "cad_review_process", value: normalized.process }] : []),
+    ],
+  }
 }
 
 function isOfferReleaseExecutionRun(value: unknown): value is OfferReleaseExecutionRun {
