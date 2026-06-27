@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
+import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -29,7 +30,7 @@ describe("FactoryBid workspace (component)", () => {
     })
   })
 
-  it("renders the dense operator workspace with the first RFQ selected and a computed quote", () => {
+  it("renders the dense operator workspace with the first RFQ selected and a computed quote", async () => {
     const { container } = render(<App />)
     expect(screen.getByRole("heading", { name: "FactoryBid OS" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeInTheDocument()
@@ -68,6 +69,16 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionPlan).toHaveTextContent("non-cnc-promotion:registry-demo:sheet-metal:sm-120-bracket:sheet-metal-v1")
     expect(promotionPlan).toHaveTextContent("Persisted non-CNC quote promotion is not wired to workspace state yet")
     expect(promotionPlan).toHaveTextContent("Offer builder remains guarded until the promoted quote is persisted.")
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promotion persistence snapshot")).toHaveTextContent(
+        "Local promotion history: 1 record, 1 blocked, 0 candidates.",
+      )
+    })
+    const promotionRecord = within(processDemos).getByLabelText("Non-CNC promotion persistence snapshot")
+    expect(promotionRecord).toHaveTextContent("Persistence snapshot")
+    expect(promotionRecord).toHaveTextContent("review only")
+    expect(promotionRecord).toHaveTextContent("non-cnc-quote-promotion-persistence.v1")
+    expect(promotionRecord).toHaveTextContent("Blocked: non-cnc-promotion:registry-demo:sheet-metal:sm-120-bracket:sheet-metal-v1")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -169,6 +180,17 @@ describe("FactoryBid workspace (component)", () => {
     expect(wirePromotionPlan).toHaveTextContent("Persist quote snapshot")
     expect(wirePromotionPlan).toHaveTextContent("Wait until promotion blockers are cleared before storing a non-CNC quote snapshot.")
     expect(wirePromotionPlan).toHaveTextContent("Review 1 calculator warning")
+    await waitFor(() => {
+      expect(within(selectedPreview).getByLabelText("Non-CNC promotion persistence snapshot")).toHaveTextContent(
+        "Local promotion history: 2 records, 2 blocked, 0 candidates.",
+      )
+    })
+    const wirePromotionRecord = within(selectedPreview).getByLabelText("Non-CNC promotion persistence snapshot")
+    expect(wirePromotionRecord).toHaveTextContent("review only")
+    expect(wirePromotionRecord).toHaveTextContent("FactoryBid Operator")
+    expect(wirePromotionRecord).toHaveTextContent("Blocked: non-cnc-promotion:registry-demo:sheet-metal:sm-120-bracket:sheet-metal-v1")
+    expect(wirePromotionRecord).toHaveTextContent("non-cnc-promotion:registry-demo:wire-edm:edm-key-077:wire-edm-v1")
+    expect(wirePromotionRecord).toHaveTextContent("Candidate: None")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]
@@ -265,7 +287,23 @@ describe("FactoryBid workspace (component)", () => {
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
-    render(<ProcessQuotePreviewCard preview={{ ...preview, reviewFlags: ["Requires operator review before release"] }} />)
+    const previewWithFlags = {
+      ...preview,
+      reviewFlags: ["Requires operator review before release"],
+    }
+    const promotionPlan = buildNonCncQuotePromotionPlan({
+      preview: previewWithFlags,
+      requestedAt: "2026-06-27T13:30:00.000Z",
+      requestedBy: "FactoryBid Operator",
+      targetRfqId: "registry-demo",
+    })
+    render(
+      <ProcessQuotePreviewCard
+        preview={previewWithFlags}
+        promotionPlan={promotionPlan}
+        promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
+      />,
+    )
 
     const selectedPreview = screen.getByLabelText("Selected non-CNC quote preview")
     expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent(
