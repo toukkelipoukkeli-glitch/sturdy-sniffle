@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `49ae2ef` (`Add wire EDM input edit adapter (#157)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the next Slice E fabrication edit adapter PR.
-- In-flight PR at this checkpoint: `codex/fabrication-input-edits` adds deterministic fabrication planned-field edits behind the registry calculator path without UI or offer wiring changes.
+- Main branch checkpoint: `26f6dd4` (`Add fabrication input edit adapter (#158)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the next Slice E non-CNC edit registry PR.
+- In-flight PR at this checkpoint: `codex/non-cnc-edit-registry` adds one deterministic domain registry for the sheet-metal, plastics, wire/EDM, and fabrication input edit adapters without UI or offer wiring changes.
 - Latest merged sequence:
+  - `#158` fabrication planned fields can now be applied to calculator inputs and recalculated through the shared registry path.
   - `#157` wire/EDM planned fields can now be applied to calculator inputs and recalculated through the shared registry path.
   - `#156` plastics planned fields can now be applied to calculator inputs and recalculated through the shared registry path; derived operation count remains read-only until operation-level edits exist.
   - `#155` sheet-metal planned fields can now be applied to calculator inputs and recalculated through the shared registry path.
@@ -126,7 +127,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, and copyable summary. Sheet-metal, plastics, and wire/EDM planned fields now have deterministic edit adapters; this branch adds the same foundation for fabrication before UI controls. After this, non-CNC engines need editable process-specific UI and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, and copyable summary. Sheet-metal, plastics, wire/EDM, and fabrication planned fields now have deterministic edit adapters; this branch adds a shared domain registry for those adapters before UI controls. After this, non-CNC engines need editable process-specific UI and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
