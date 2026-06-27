@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `2e0817e` (`Show non-CNC preview assumptions (#144)`).
+- Main branch checkpoint: `18ac9a1` (`Add non-CNC preview operator checklist (#145)`).
 - Open PRs at this checkpoint: none.
 - In-flight PR at this checkpoint: none.
 - Latest merged sequence:
+  - `#145` non-CNC preview cards now show an operator checklist that distinguishes calculator-ready, read-only-input, offer-wiring, and calculator-flag states.
   - `#144` selected non-CNC registry previews now show top quote assumptions and calculator review flags.
   - `#143` guarded read-only selector for sheet metal, plastics, wire/EDM, and fabrication registry quote previews.
   - `#142` attachment preview output descriptors expose deterministic real-preview-ready states for CAD/drawing/image/metadata attachments.
@@ -113,7 +114,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, quote breakdowns, assumptions, and review flags; after this, non-CNC engines need editable process-specific inputs and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, quote breakdowns, assumptions, review flags, and operator checklist; after this, non-CNC engines need editable process-specific inputs and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
@@ -14,9 +14,19 @@ function totalText(container: HTMLElement): string {
   return container.querySelector(".total-box span")?.textContent ?? ""
 }
 
+const originalClipboard = navigator.clipboard
+
 describe("FactoryBid workspace (component)", () => {
   beforeEach(() => {
     window.localStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: originalClipboard,
+    })
   })
 
   it("renders the dense operator workspace with the first RFQ selected and a computed quote", () => {
@@ -43,7 +53,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(totalText(container)).toMatch(/€\d/)
   })
 
-  it("previews non-CNC registry process quotes without enabling fake edits", () => {
+  it("previews non-CNC registry process quotes without enabling fake edits", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     render(<App />)
 
     const processDemos = screen.getByLabelText("Non-CNC registry demos")
@@ -63,6 +79,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(checklist).toHaveTextContent("Input model read-only")
     expect(checklist).toHaveTextContent("Offer wiring pending")
     expect(checklist).toHaveTextContent("No calculator flags on this fixture.")
+    await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Process: Wire EDM"))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Part: EDM-KEY-077"))
+    expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     expect(selectedPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     )

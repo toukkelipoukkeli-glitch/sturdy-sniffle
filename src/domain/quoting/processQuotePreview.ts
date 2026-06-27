@@ -29,6 +29,7 @@ export interface ProcessQuotePreview {
   guardrailCopy: string
   operatorChecklist: ProcessQuotePreviewChecklistItem[]
   reviewFlags: string[]
+  summaryText: string
   topAssumptions: QuoteEngineAssumption[]
   topBreakdown: QuoteEngineBreakdownLine[]
 }
@@ -38,6 +39,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     throw new Error("At least one process demo quote is required")
   }
   const selected = demos.find((demo) => demo.process === selectedProcess) ?? demos[0]
+  const operatorChecklist = buildOperatorChecklist(selected)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
@@ -52,8 +54,9 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     })),
     editable: false,
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
-    operatorChecklist: buildOperatorChecklist(selected),
+    operatorChecklist,
     reviewFlags: selected.quote.warnings,
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
@@ -89,4 +92,35 @@ function buildOperatorChecklist(selected: ProcessDemoQuote): ProcessQuotePreview
       level: selected.quote.warnings.length > 0 ? "review" : "ready",
     },
   ]
+}
+
+function buildPreviewSummaryText(
+  selected: ProcessDemoQuote,
+  operatorChecklist: ProcessQuotePreviewChecklistItem[],
+): string {
+  const quote = selected.quote
+  return [
+    "Non-CNC quote preview",
+    `Process: ${selected.label}`,
+    `Part: ${quote.partNumber}`,
+    `Quantity: ${quote.quantity}`,
+    `Lead time: ${quote.leadTimeDays} days`,
+    `Total: ${formatPreviewCurrency(quote.totalCents, quote.currency)}`,
+    `Unit: ${formatPreviewCurrency(quote.unitPriceCents, quote.currency)}`,
+    `Calculator: ${quote.calculatorVersion}`,
+    "Mode: Read-only registry fixture; process-specific editable inputs are not enabled yet.",
+    "",
+    "Top assumptions:",
+    ...quote.assumptions.slice(0, 4).map((assumption) => `- ${assumption.key}: ${assumption.value}`),
+    "",
+    "Operator checklist:",
+    ...operatorChecklist.map((item) => `- ${item.label} [${item.level}]: ${item.detail}`),
+    "",
+    "Review flags:",
+    ...(quote.warnings.length > 0 ? quote.warnings.map((warning) => `- ${warning}`) : ["- No calculator flags"]),
+  ].join("\n")
+}
+
+function formatPreviewCurrency(cents: number, currency: QuoteEngineResult["currency"]): string {
+  return `${currency} ${(cents / 100).toFixed(2)}`
 }
