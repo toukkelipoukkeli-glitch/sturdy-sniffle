@@ -153,6 +153,8 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(nonCncDemos.getByRole("button", { name: /Sheet metal/ })).toContainText("Fastest lead")
   await nonCncDemos.getByRole("button", { name: /Wire EDM/ }).click()
   await expect(nonCncDemos.getByLabel("Selected non-CNC quote preview")).toContainText("EDM-KEY-077")
+  await expect(nonCncDemos.getByLabel("Process quote comparison summary")).toContainText("+€5,260.69")
+  await expect(nonCncDemos.getByLabel("Process quote comparison summary")).toContainText("+9d lead")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Input model read-only")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Offer wiring pending")
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()

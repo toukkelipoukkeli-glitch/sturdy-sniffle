@@ -72,6 +72,11 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.click(within(selector).getByRole("button", { name: /Wire EDM/ }))
 
     expect(within(selector).getByRole("button", { name: /Wire EDM/ })).toHaveAttribute("aria-pressed", "true")
+    const comparison = within(processDemos).getByLabelText("Process quote comparison summary")
+    expect(comparison).toHaveTextContent("Best price")
+    expect(comparison).toHaveTextContent("Sheet metal")
+    expect(comparison).toHaveTextContent("+€5,260.69")
+    expect(comparison).toHaveTextContent("+9d lead")
     const selectedPreview = within(processDemos).getByLabelText("Selected non-CNC quote preview")
     expect(selectedPreview).toHaveTextContent("EDM-KEY-077")
     expect(within(selectedPreview).getByLabelText("Process quote assumptions")).toHaveTextContent("stock weight kg per part")

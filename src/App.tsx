@@ -3972,8 +3972,36 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
           <ProcessQuotePreviewButton key={option.process} onSelect={() => setSelectedProcess(option.process)} option={option} />
         ))}
       </div>
+      <ProcessQuotePreviewComparisonPanel preview={preview} />
       <ProcessQuotePreviewCard preview={preview} />
     </section>
+  )
+}
+
+function ProcessQuotePreviewComparisonPanel({ preview }: { preview: ProcessQuotePreview }) {
+  const comparison = preview.comparison
+  return (
+    <div className="process-demo-comparison" aria-label="Process quote comparison summary">
+      <div>
+        <span>Best price</span>
+        <strong>{comparison.cheapestLabel}</strong>
+        <small>{formatCurrency(comparison.cheapestTotalCents, comparison.currency)}</small>
+      </div>
+      <div>
+        <span>Fastest lead</span>
+        <strong>{comparison.fastestLabel}</strong>
+        <small>{comparison.fastestLeadTimeDays}d</small>
+      </div>
+      <div>
+        <span>Selected delta</span>
+        <strong>
+          {comparison.selectedPriceDeltaCents === 0
+            ? "Best price"
+            : `+${formatCurrency(comparison.selectedPriceDeltaCents, comparison.currency)}`}
+        </strong>
+        <small>{comparison.selectedLeadTimeDeltaDays === 0 ? "Fastest lead" : `+${comparison.selectedLeadTimeDeltaDays}d lead`}</small>
+      </div>
+    </div>
   )
 }
 

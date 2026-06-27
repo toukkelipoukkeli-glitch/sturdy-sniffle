@@ -17,6 +17,15 @@ describe("process quote preview", () => {
       ["wire_edm", true, []],
       ["fabrication", false, []],
     ])
+    expect(preview.comparison).toEqual({
+      cheapestLabel: "Sheet metal",
+      cheapestTotalCents: 54905,
+      currency: "EUR",
+      fastestLabel: "Sheet metal",
+      fastestLeadTimeDays: 7,
+      selectedLeadTimeDeltaDays: 9,
+      selectedPriceDeltaCents: 526069,
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
@@ -77,6 +86,30 @@ describe("process quote preview", () => {
         },
       ]),
     ).toThrow("Process demo quotes must share a currency before computing comparison badges")
+  })
+
+  it("prefers the selected process label for tied cheapest and fastest comparisons", () => {
+    const [sheetMetalDemo, plasticDemo] = buildProcessDemoQuotes()
+    const tiedPlasticDemo = {
+      ...plasticDemo,
+      quote: {
+        ...plasticDemo.quote,
+        leadTimeDays: sheetMetalDemo.quote.leadTimeDays,
+        totalCents: sheetMetalDemo.quote.totalCents,
+      },
+    }
+
+    const preview = buildProcessQuotePreview([sheetMetalDemo, tiedPlasticDemo], "plastic")
+
+    expect(preview.comparison).toEqual({
+      cheapestLabel: "Plastic machining",
+      cheapestTotalCents: sheetMetalDemo.quote.totalCents,
+      currency: "EUR",
+      fastestLabel: "Plastic machining",
+      fastestLeadTimeDays: sheetMetalDemo.quote.leadTimeDays,
+      selectedLeadTimeDeltaDays: 0,
+      selectedPriceDeltaCents: 0,
+    })
   })
 
   it("marks calculator flags for warning-bearing process previews", () => {

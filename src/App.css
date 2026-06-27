@@ -415,6 +415,7 @@
 
 @media (max-width: 540px) {
   .process-demo-checklist,
+  .process-demo-comparison,
   .process-demo-details,
   .process-demo-selector,
   .rfq-dialog-grid {
@@ -934,6 +935,35 @@
   font-weight: 850;
   line-height: 1;
   padding: 4px 6px;
+}
+
+.process-demo-comparison {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.process-demo-comparison div {
+  background: oklch(0.97 0.008 230);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.process-demo-comparison span,
+.process-demo-comparison small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.process-demo-comparison strong {
+  color: oklch(0.25 0.025 250);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 .process-demo-card {
