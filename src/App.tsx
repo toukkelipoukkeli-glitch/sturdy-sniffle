@@ -118,6 +118,7 @@ import {
   listNonCncInputEditAdapters,
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
+import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -4228,6 +4229,12 @@ export function ProcessQuotePreviewCard({
   wireEdmEditor?: WireEdmPreviewEditorControl
 }) {
   const demo = preview.selected
+  const promotionPlan = buildNonCncQuotePromotionPlan({
+    preview,
+    requestedAt: "2026-06-27T13:30:00.000Z",
+    requestedBy: "FactoryBid Operator",
+    targetRfqId: "registry-demo",
+  })
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4385,6 +4392,51 @@ export function ProcessQuotePreviewCard({
             <ul>
               {preview.offerHandoff.nextSteps.map((step) => (
                 <li key={step}>{step}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div className="process-demo-promotion-plan" aria-label="Non-CNC quote promotion plan" data-status={promotionPlan.status}>
+        <div className="process-demo-promotion-plan-heading">
+          <div>
+            <span>Promotion plan</span>
+            <strong>{humanizeKey(promotionPlan.status)}</strong>
+          </div>
+          <small>{promotionPlan.planVersion}</small>
+        </div>
+        <p>{promotionPlan.releaseBoundary}</p>
+        <div className="process-demo-promotion-plan-summary">
+          <span>{promotionPlan.planId}</span>
+          <span>
+            {promotionPlan.quoteSnapshot.processLabel} · {formatCurrency(promotionPlan.quoteSnapshot.totalCents, promotionPlan.quoteSnapshot.currency)}
+          </span>
+        </div>
+        <div className="process-demo-promotion-plan-grid">
+          <div>
+            <span>Blockers</span>
+            <ul>
+              {promotionPlan.blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span>Commands</span>
+            <ul>
+              {promotionPlan.commands.map((command) => (
+                <li data-status={command.status} key={command.key}>
+                  <strong>{command.label}</strong>
+                  <small>{command.detail}</small>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span>Next actions</span>
+            <ul>
+              {promotionPlan.nextActions.map((action) => (
+                <li key={action}>{action}</li>
               ))}
             </ul>
           </div>

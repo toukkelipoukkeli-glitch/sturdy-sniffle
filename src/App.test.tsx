@@ -62,6 +62,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(processDemos).getByLabelText("Non-CNC offer handoff readiness")).toHaveTextContent(
       "Offer builder and release execution still use the active workspace quote.",
     )
+    const promotionPlan = within(processDemos).getByLabelText("Non-CNC quote promotion plan")
+    expect(promotionPlan).toHaveTextContent("Promotion plan")
+    expect(promotionPlan).toHaveTextContent("blocked")
+    expect(promotionPlan).toHaveTextContent("non-cnc-promotion:registry-demo:sheet-metal:sm-120-bracket:sheet-metal-v1")
+    expect(promotionPlan).toHaveTextContent("Persisted non-CNC quote promotion is not wired to workspace state yet")
+    expect(promotionPlan).toHaveTextContent("Offer builder remains guarded until the promoted quote is persisted.")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -157,6 +163,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(offerHandoff).toHaveTextContent("Non-CNC preview is not promoted into active RFQ quote state.")
     expect(offerHandoff).toHaveTextContent("1 calculator flag must be reviewed before customer offer use.")
     expect(offerHandoff).toHaveTextContent("Persist the selected process quote before enabling offer release.")
+    const wirePromotionPlan = within(selectedPreview).getByLabelText("Non-CNC quote promotion plan")
+    expect(wirePromotionPlan).toHaveTextContent("blocked")
+    expect(wirePromotionPlan).toHaveTextContent("Wire EDM · €9,338.91")
+    expect(wirePromotionPlan).toHaveTextContent("Persist quote snapshot")
+    expect(wirePromotionPlan).toHaveTextContent("Wait until promotion blockers are cleared before storing a non-CNC quote snapshot.")
+    expect(wirePromotionPlan).toHaveTextContent("Review 1 calculator warning")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]
