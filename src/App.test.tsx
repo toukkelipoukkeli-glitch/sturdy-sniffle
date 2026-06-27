@@ -35,9 +35,27 @@ describe("FactoryBid workspace (component)", () => {
     expect(processDemos).toHaveTextContent("Sheet metal")
     expect(processDemos).toHaveTextContent("sheet-metal.v1")
     expect(processDemos).toHaveTextContent("Wire EDM")
-    expect(processDemos).toHaveTextContent("EDM-KEY-077")
+    expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toBeInTheDocument()
+    expect(processDemos).toHaveTextContent("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
+  })
+
+  it("previews non-CNC registry process quotes without enabling fake edits", () => {
+    render(<App />)
+
+    const processDemos = screen.getByLabelText("Non-CNC registry demos")
+    const selector = within(processDemos).getByLabelText("Process quote preview selector")
+    expect(within(selector).getByRole("button", { name: /Sheet metal/ })).toHaveAttribute("aria-pressed", "true")
+    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent("SM-120-BRACKET")
+
+    fireEvent.click(within(selector).getByRole("button", { name: /Wire EDM/ }))
+
+    expect(within(selector).getByRole("button", { name: /Wire EDM/ })).toHaveAttribute("aria-pressed", "true")
+    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent("EDM-KEY-077")
+    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent(
+      "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
+    )
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {
