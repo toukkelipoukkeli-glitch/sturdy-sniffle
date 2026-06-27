@@ -4,7 +4,7 @@ import { evaluateProcessInputPromotionGate, type ProcessInputPromotionGate } fro
 import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
-export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v5"
+export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v6"
 
 export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
@@ -37,11 +37,24 @@ export interface ProcessQuotePreviewComparison {
   currency: QuoteEngineResult["currency"]
 }
 
+export type ProcessQuoteOfferHandoffStatus = "preview_only" | "needs_review"
+
+export interface ProcessQuoteOfferHandoff {
+  handoffVersion: "process-quote-offer-handoff.v1"
+  status: ProcessQuoteOfferHandoffStatus
+  statusLabel: string
+  summary: string
+  candidateLines: string[]
+  blockers: string[]
+  nextSteps: string[]
+}
+
 export interface ProcessQuotePreview {
   previewVersion: typeof PROCESS_QUOTE_PREVIEW_VERSION
   selected: ProcessDemoQuote
   comparison: ProcessQuotePreviewComparison
   inputDraft: ProcessInputDraft
+  offerHandoff: ProcessQuoteOfferHandoff
   inputPromotionGate: ProcessInputPromotionGate
   inputReadiness: ProcessInputReadiness
   options: ProcessQuotePreviewOption[]
@@ -71,12 +84,14 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const inputDraftsByProcess = new Map(demos.map((demo) => [demo.process, buildProcessInputDraft(demo.process)]))
   const inputDraft = inputDraftsByProcess.get(selected.process) ?? buildProcessInputDraft(selected.process)
   const inputPromotionGate = evaluateProcessInputPromotionGate(inputReadiness, inputDraft)
+  const offerHandoff = buildOfferHandoff(selected, inputPromotionGate)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
     comparison,
     inputDraft,
+    offerHandoff,
     inputPromotionGate,
     inputReadiness,
     options: demos.map((demo) => {
@@ -100,9 +115,46 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
     reviewFlags: selected.quote.warnings,
-    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness, inputDraft, inputPromotionGate),
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness, inputDraft, inputPromotionGate, offerHandoff),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
+  }
+}
+
+function buildOfferHandoff(
+  selected: ProcessDemoQuote,
+  inputPromotionGate: ProcessInputPromotionGate,
+): ProcessQuoteOfferHandoff {
+  const quote = selected.quote
+  const hasReviewFlags = quote.warnings.length > 0
+  const promotionBlockers =
+    inputPromotionGate.blockerLabels.length > 0
+      ? `Promotion gate ${inputPromotionGate.status}: ${inputPromotionGate.blockerLabels.join(", ")}.`
+      : `Promotion gate ${inputPromotionGate.status}.`
+
+  return {
+    handoffVersion: "process-quote-offer-handoff.v1",
+    status: hasReviewFlags ? "needs_review" : "preview_only",
+    statusLabel: hasReviewFlags ? "Estimator review" : "Preview only",
+    summary: `${selected.label} can be reviewed as a non-CNC offer candidate, but it is not connected to the active RFQ offer or release path.`,
+    candidateLines: [
+      `Process quote: ${selected.label} for ${quote.partNumber}`,
+      `Preview total: ${formatPreviewCurrency(quote.totalCents, quote.currency)} at ${quote.leadTimeDays} days`,
+      `Calculator: ${quote.calculatorVersion}`,
+    ],
+    blockers: [
+      "Non-CNC preview is not promoted into active RFQ quote state.",
+      "Offer builder and release execution still use the active workspace quote.",
+      promotionBlockers,
+      ...(hasReviewFlags
+        ? [`${quote.warnings.length} calculator flag${quote.warnings.length === 1 ? "" : "s"} must be reviewed before customer offer use.`]
+        : []),
+    ],
+    nextSteps: [
+      "Map a validated non-CNC input draft into the RFQ quote path.",
+      "Persist the selected process quote before enabling offer release.",
+      "Run offer readiness on the promoted quote after customer-facing terms are confirmed.",
+    ],
   }
 }
 
@@ -180,6 +232,7 @@ function buildPreviewSummaryText(
   inputReadiness: ProcessInputReadiness,
   inputDraft: ProcessInputDraft,
   inputPromotionGate: ProcessInputPromotionGate,
+  offerHandoff: ProcessQuoteOfferHandoff,
 ): string {
   const quote = selected.quote
   return [
@@ -207,6 +260,12 @@ function buildPreviewSummaryText(
     `- Promotion gate: ${inputPromotionGate.status}`,
     `- Blockers: ${inputPromotionGate.blockerLabels.join(", ")}`,
     `- Next step: ${inputPromotionGate.nextStep}`,
+    "",
+    "Offer handoff:",
+    `- Status: ${offerHandoff.statusLabel}`,
+    ...offerHandoff.candidateLines.map((line) => `- ${line}`),
+    ...offerHandoff.blockers.map((blocker) => `- Blocker: ${blocker}`),
+    ...offerHandoff.nextSteps.map((step) => `- Next: ${step}`),
     "",
     "Top assumptions:",
     ...quote.assumptions.slice(0, 4).map((assumption) => `- ${assumption.key}: ${assumption.value}`),

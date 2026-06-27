@@ -95,6 +95,28 @@ describe("process quote preview", () => {
       nextStep: "Populate every required process draft value, then add editable controls before promotion.",
       status: "blocked",
     })
+    expect(preview.offerHandoff).toEqual({
+      blockers: [
+        "Non-CNC preview is not promoted into active RFQ quote state.",
+        "Offer builder and release execution still use the active workspace quote.",
+        "Promotion gate blocked: Editable controls missing, Missing required values.",
+      ],
+      candidateLines: [
+        "Process quote: Wire EDM for EDM-KEY-077",
+        "Preview total: EUR 5809.74 at 16 days",
+        "Calculator: wire-edm.v1",
+      ],
+      handoffVersion: "process-quote-offer-handoff.v1",
+      nextSteps: [
+        "Map a validated non-CNC input draft into the RFQ quote path.",
+        "Persist the selected process quote before enabling offer release.",
+        "Run offer readiness on the promoted quote after customer-facing terms are confirmed.",
+      ],
+      status: "preview_only",
+      statusLabel: "Preview only",
+      summary:
+        "Wire EDM can be reviewed as a non-CNC offer candidate, but it is not connected to the active RFQ offer or release path.",
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
@@ -113,6 +135,10 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("- Blockers: Editable controls missing, Missing required values")
     expect(preview.summaryText).toContain("- Next step: Populate every required process draft value, then add editable controls before promotion.")
     expect(preview.summaryText).not.toContain("- Promotion next step:")
+    expect(preview.summaryText).toContain("Offer handoff:\n- Status: Preview only")
+    expect(preview.summaryText).toContain("- Process quote: Wire EDM for EDM-KEY-077")
+    expect(preview.summaryText).toContain("- Blocker: Non-CNC preview is not promoted into active RFQ quote state.")
+    expect(preview.summaryText).toContain("- Next: Persist the selected process quote before enabling offer release.")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
@@ -217,5 +243,10 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("- Minimum order adjustment applied.")
     expect(preview.summaryText).toContain("- Calculator flags [review]: 1 calculator flag requires review.")
     expect(preview.options[0]?.badges).toEqual(["Best price", "Fastest lead", "Review flags", "Draft complete"])
+    expect(preview.offerHandoff).toMatchObject({
+      status: "needs_review",
+      statusLabel: "Estimator review",
+    })
+    expect(preview.offerHandoff.blockers).toContain("1 calculator flag must be reviewed before customer offer use.")
   })
 })

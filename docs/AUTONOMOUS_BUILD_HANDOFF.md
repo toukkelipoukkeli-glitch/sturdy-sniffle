@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0eb15a4` (`Add Wire EDM preview edit controls (#164)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E fabrication preview edit PR.
-- In-flight PR at this checkpoint: `codex/fabrication-preview-edits` adds preview-only fabrication input controls that recalculate the non-CNC registry demo through the shared edit registry without touching RFQ, offer, or release paths.
+- Main branch checkpoint: `aa9d06c` (`Add fabrication preview edit controls (#165)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E non-CNC offer handoff PR.
+- In-flight PR at this checkpoint: `codex/non-cnc-preview-offer-handoff` adds a deterministic non-CNC offer handoff/readiness summary that keeps preview quote candidates separate from active RFQ offer and release paths.
 - Latest merged sequence:
+  - `#165` fabrication registry previews now have preview-only editable controls for fabrication, welding, assembly, inspection, complexity, and finish inputs.
   - `#164` Wire EDM registry previews now have preview-only editable controls for stock dimensions, contour length, skim passes, and inspection level.
   - `#163` plastic machining registry previews now have preview-only editable controls for material family, stock dimensions, and surface finish; derived operation count remains read-only.
   - `#162` sheet-metal registry previews now have preview-only editable controls that recalculate through the non-CNC edit registry while RFQ, offer, and release paths remain guarded.
@@ -133,7 +134,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, and copyable summary. Sheet-metal, plastics, wire/EDM, and fabrication planned fields now have deterministic edit adapters behind a shared domain registry; sheet-metal, plastic, and Wire EDM preview-only editing are merged, and this branch starts preview-only fabrication editing while keeping RFQ/offer/release paths guarded. After this, all non-CNC engines need offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, and copyable summary. This branch adds an explicit offer handoff/readiness summary so operators can review non-CNC offer candidates without mutating the active RFQ quote, offer, or release paths. After this, all non-CNC engines need persisted quote promotion and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.

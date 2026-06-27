@@ -56,6 +56,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(processDemos).toHaveTextContent(
       "Preview-only registry edits are enabled for this process; active RFQ quote, offer, and release paths stay unchanged.",
     )
+    expect(within(processDemos).getByLabelText("Non-CNC offer handoff readiness")).toHaveTextContent(
+      "Sheet metal can be reviewed as a non-CNC offer candidate",
+    )
+    expect(within(processDemos).getByLabelText("Non-CNC offer handoff readiness")).toHaveTextContent(
+      "Offer builder and release execution still use the active workspace quote.",
+    )
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -142,6 +148,15 @@ describe("FactoryBid workspace (component)", () => {
     expect(checklist).toHaveTextContent("Input model read-only")
     expect(checklist).toHaveTextContent("Offer wiring pending")
     expect(checklist).toHaveTextContent("1 calculator flag requires review.")
+    const offerHandoff = within(selectedPreview).getByLabelText("Non-CNC offer handoff readiness")
+    expect(offerHandoff).toHaveTextContent("Offer candidate")
+    expect(offerHandoff).toHaveTextContent("Estimator review")
+    expect(offerHandoff).toHaveTextContent("Wire EDM can be reviewed as a non-CNC offer candidate")
+    expect(offerHandoff).toHaveTextContent("Process quote: Wire EDM for EDM-KEY-077")
+    expect(offerHandoff).toHaveTextContent("Preview total: EUR 9338.91 at 20 days")
+    expect(offerHandoff).toHaveTextContent("Non-CNC preview is not promoted into active RFQ quote state.")
+    expect(offerHandoff).toHaveTextContent("1 calculator flag must be reviewed before customer offer use.")
+    expect(offerHandoff).toHaveTextContent("Persist the selected process quote before enabling offer release.")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]
@@ -155,6 +170,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(copiedText).toContain("Wire diameter: Missing fixture value")
     expect(copiedText).toContain("Promotion gate: blocked")
     expect(copiedText).toContain("Blockers: Editable controls missing, Missing required values")
+    expect(copiedText).toContain("Offer handoff:")
+    expect(copiedText).toContain("Process quote: Wire EDM for EDM-KEY-077")
+    expect(copiedText).toContain("Blocker: Offer builder and release execution still use the active workspace quote.")
+    expect(copiedText).toContain("Next: Run offer readiness on the promoted quote after customer-facing terms are confirmed.")
     expect(copiedText).toContain("Input edit adapter:")
     expect(copiedText).toContain("Version: wire-edm-input-edits.v1")
     expect(copiedText).toContain(
