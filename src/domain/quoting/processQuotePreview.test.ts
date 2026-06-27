@@ -12,10 +12,16 @@ describe("process quote preview", () => {
     expect(preview.editable).toBe(false)
     expect(preview.guardrailCopy).toBe("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")
     expect(preview.options.map((option) => [option.process, option.selected, option.badges])).toEqual([
-      ["sheet_metal", false, ["Best price", "Fastest lead"]],
-      ["plastic", false, []],
-      ["wire_edm", true, []],
-      ["fabrication", false, []],
+      ["sheet_metal", false, ["Best price", "Fastest lead", "Draft complete"]],
+      ["plastic", false, ["Draft gaps"]],
+      ["wire_edm", true, ["Draft gaps"]],
+      ["fabrication", false, ["Draft gaps"]],
+    ])
+    expect(preview.options.map((option) => [option.process, option.draftCoverageLabel, option.draftStatus])).toEqual([
+      ["sheet_metal", "4/4 inputs", "ready_for_read_only_review"],
+      ["plastic", "3/4 inputs", "missing_fixture_values"],
+      ["wire_edm", "4/5 inputs", "missing_fixture_values"],
+      ["fabrication", "1/5 inputs", "missing_fixture_values"],
     ])
     expect(preview.comparison).toEqual({
       cheapestLabel: "Sheet metal",
@@ -198,6 +204,6 @@ describe("process quote preview", () => {
     })
     expect(preview.summaryText).toContain("- Minimum order adjustment applied.")
     expect(preview.summaryText).toContain("- Calculator flags [review]: 1 calculator flag requires review.")
-    expect(preview.options[0]?.badges).toEqual(["Best price", "Fastest lead", "Review flags"])
+    expect(preview.options[0]?.badges).toEqual(["Best price", "Fastest lead", "Review flags", "Draft complete"])
   })
 })
