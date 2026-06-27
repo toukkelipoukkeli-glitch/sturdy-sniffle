@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { buildNonCncQuotePromotionActionSummary } from "./nonCncQuotePromotionActions"
 import { buildNonCncQuotePromotionCommandPackage, NON_CNC_QUOTE_PROMOTION_COMMAND_PACKAGE_VERSION } from "./nonCncQuotePromotionCommandPackage"
-import { buildNonCncQuotePromotionDraft } from "./nonCncQuotePromotionDraft"
+import { buildNonCncQuotePromotionDraft, type NonCncQuotePromotionDraft } from "./nonCncQuotePromotionDraft"
 import { createLocalNonCncQuotePromotionPersistence } from "./nonCncQuotePromotionPersistence"
 import { buildNonCncQuotePromotionPlan } from "./nonCncQuotePromotionPlan"
 import { buildProcessDemoQuotes } from "./processDemoQuotes"
@@ -115,7 +115,7 @@ describe("non-CNC quote promotion command package", () => {
   })
 
   it("dedupes duplicate draft action keys before packaging commands", () => {
-    const commandPackage = buildNonCncQuotePromotionCommandPackage({
+    const draft: NonCncQuotePromotionDraft = {
       actionKeys: ["persist_quote_snapshot", "persist_quote_snapshot", "enable_offer_builder"],
       blockerLabels: [],
       draftVersion: "non-cnc-quote-promotion-draft.v1",
@@ -123,6 +123,11 @@ describe("non-CNC quote promotion command package", () => {
       reviewWarnings: [],
       selectedPlanId: "non-cnc-promotion:rfq-demo-204:plastic:demo:plastics-v1",
       status: "blocked",
+    }
+    const commandPackage = buildNonCncQuotePromotionCommandPackage(draft)
+    const permutedPackage = buildNonCncQuotePromotionCommandPackage({
+      ...draft,
+      actionKeys: ["enable_offer_builder", "persist_quote_snapshot", "persist_quote_snapshot"],
     })
 
     expect(commandPackage.commandCount).toBe(2)
@@ -136,5 +141,7 @@ describe("non-CNC quote promotion command package", () => {
     )
     expect(commandPackage.commands.map((command) => command.key)).toEqual(["persist_quote_snapshot", "enable_offer_builder"])
     expect(commandPackage.blockerLabels).toEqual(["Promotion draft is not ready to package for workspace commands."])
+    expect(permutedPackage.packageId).toBe(commandPackage.packageId)
+    expect(permutedPackage.commands.map((command) => command.key)).toEqual(commandPackage.commands.map((command) => command.key))
   })
 })

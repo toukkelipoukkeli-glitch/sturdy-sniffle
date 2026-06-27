@@ -4,6 +4,12 @@ import type { NonCncQuotePromotionQuoteSnapshot } from "./nonCncQuotePromotionPl
 
 export const NON_CNC_QUOTE_PROMOTION_COMMAND_PACKAGE_VERSION = "non-cnc-quote-promotion-command-package.v1"
 
+const ACTION_KEY_ORDER: Record<NonCncQuotePromotionActionKey, number> = {
+  persist_quote_snapshot: 0,
+  refresh_offer_readiness: 1,
+  enable_offer_builder: 2,
+}
+
 export type NonCncQuotePromotionCommandPackageStatus = "blocked" | "ready"
 export type NonCncQuotePromotionCommandPackageCommandStatus = "blocked" | "ready"
 
@@ -107,32 +113,32 @@ function buildPayload(
   if (!draft.quoteSnapshot || !draft.targetRfqId) {
     return undefined
   }
-  if (key === "persist_quote_snapshot") {
-    return {
-      kind: "quote_snapshot",
-      quoteSnapshot: { ...draft.quoteSnapshot },
-      targetRfqId: draft.targetRfqId,
-    }
+  switch (key) {
+    case "persist_quote_snapshot":
+      return {
+        kind: "quote_snapshot",
+        quoteSnapshot: { ...draft.quoteSnapshot },
+        targetRfqId: draft.targetRfqId,
+      }
+    case "refresh_offer_readiness":
+      return {
+        currency: draft.quoteSnapshot.currency,
+        kind: "offer_readiness_refresh",
+        promotedProcess: draft.quoteSnapshot.process,
+        reviewWarningCount: draft.reviewWarnings.length,
+        targetRfqId: draft.targetRfqId,
+        totalCents: draft.quoteSnapshot.totalCents,
+      }
+    case "enable_offer_builder":
+      return {
+        kind: "offer_builder_enablement",
+        offerBuilderState: "eligible",
+        sourcePlanId: draft.selectedPlanId,
+        targetRfqId: draft.targetRfqId,
+      }
+    default:
+      return assertNever(key)
   }
-  if (key === "refresh_offer_readiness") {
-    return {
-      currency: draft.quoteSnapshot.currency,
-      kind: "offer_readiness_refresh",
-      promotedProcess: draft.quoteSnapshot.process,
-      reviewWarningCount: draft.reviewWarnings.length,
-      targetRfqId: draft.targetRfqId,
-      totalCents: draft.quoteSnapshot.totalCents,
-    }
-  }
-  if (key === "enable_offer_builder") {
-    return {
-      kind: "offer_builder_enablement",
-      offerBuilderState: "eligible",
-      sourcePlanId: draft.selectedPlanId,
-      targetRfqId: draft.targetRfqId,
-    }
-  }
-  return undefined
 }
 
 function buildBlockedLabels(draft: NonCncQuotePromotionDraft): string[] {
@@ -152,26 +158,26 @@ function buildPackageId(draft: NonCncQuotePromotionDraft, actionKeys: NonCncQuot
 }
 
 function commandLabel(key: NonCncQuotePromotionActionKey): string {
-  if (key === "persist_quote_snapshot") {
-    return "Persist quote snapshot"
+  switch (key) {
+    case "persist_quote_snapshot":
+      return "Persist quote snapshot"
+    case "refresh_offer_readiness":
+      return "Refresh offer readiness"
+    case "enable_offer_builder":
+      return "Enable offer builder"
+    default:
+      return assertNever(key)
   }
-  if (key === "refresh_offer_readiness") {
-    return "Refresh offer readiness"
-  }
-  if (key === "enable_offer_builder") {
-    return "Enable offer builder"
-  }
-  return key
-    .split("_")
-    .filter(Boolean)
-    .map((part) => part[0]!.toUpperCase() + part.slice(1))
-    .join(" ")
 }
 
 function uniqueActionKeys(actionKeys: NonCncQuotePromotionActionKey[]): NonCncQuotePromotionActionKey[] {
-  return [...new Set(actionKeys)]
+  return [...new Set(actionKeys)].sort((left, right) => ACTION_KEY_ORDER[left] - ACTION_KEY_ORDER[right])
 }
 
 function uniqueLabels(labels: string[]): string[] {
   return [...new Set(labels)]
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unsupported non-CNC promotion action key: ${JSON.stringify(value)}`)
 }

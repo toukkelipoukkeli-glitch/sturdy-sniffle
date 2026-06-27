@@ -1,4 +1,8 @@
-import type { NonCncQuotePromotionPlan, NonCncQuotePromotionQuoteSnapshot } from "./nonCncQuotePromotionPlan"
+import type {
+  NonCncQuotePromotionCommand,
+  NonCncQuotePromotionPlan,
+  NonCncQuotePromotionQuoteSnapshot,
+} from "./nonCncQuotePromotionPlan"
 
 export const NON_CNC_QUOTE_PROMOTION_PERSISTENCE_VERSION = "non-cnc-quote-promotion-persistence.v1"
 
@@ -6,7 +10,7 @@ export type NonCncQuotePromotionDisposition = "candidate" | "review_only"
 
 export interface NonCncQuotePromotionCommandRecord {
   detail: string
-  key: string
+  key: NonCncQuotePromotionCommand["key"]
   label: string
   status: "blocked" | "ready"
 }
