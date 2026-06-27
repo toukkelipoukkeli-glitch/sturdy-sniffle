@@ -3985,7 +3985,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     [demos, fabricationEdits, plasticEdits, sheetMetalEdits, wireEdmEdits],
   )
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
-  const promotionPersistence = useMemo(() => createLocalNonCncQuotePromotionPersistence(), [])
+  const [promotionPersistence] = useState(() => createLocalNonCncQuotePromotionPersistence())
   const [promotionSnapshot, setPromotionSnapshot] = useState<NonCncQuotePromotionPersistenceSnapshot>(() => promotionPersistence.snapshot())
   const promotionPlan = useMemo(
     () =>
@@ -4264,8 +4264,7 @@ export function ProcessQuotePreviewCard({
   wireEdmEditor?: WireEdmPreviewEditorControl
 }) {
   const demo = preview.selected
-  const promotionRecord =
-    promotionSnapshot.records.find((record) => record.planId === promotionPlan.planId) ?? promotionSnapshot.records[0]
+  const promotionRecord = promotionSnapshot.records.find((record) => record.planId === promotionPlan.planId)
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4487,7 +4486,7 @@ export function ProcessQuotePreviewCard({
             <small>{promotionRecord.persistenceVersion}</small>
           </div>
           <p>
-            Local review record only: {formatCount(promotionSnapshot.recordCount, "record")},{" "}
+            Local promotion history: {formatCount(promotionSnapshot.recordCount, "record")},{" "}
             {formatCount(promotionSnapshot.blockedPlanIds.length, "blocked", "blocked")},{" "}
             {formatCount(promotionSnapshot.candidatePlanIds.length, "candidate", "candidates")}.
           </p>

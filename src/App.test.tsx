@@ -71,7 +71,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionPlan).toHaveTextContent("Offer builder remains guarded until the promoted quote is persisted.")
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promotion persistence snapshot")).toHaveTextContent(
-        "Local review record only: 1 record, 1 blocked, 0 candidates.",
+        "Local promotion history: 1 record, 1 blocked, 0 candidates.",
       )
     })
     const promotionRecord = within(processDemos).getByLabelText("Non-CNC promotion persistence snapshot")
@@ -182,7 +182,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(wirePromotionPlan).toHaveTextContent("Review 1 calculator warning")
     await waitFor(() => {
       expect(within(selectedPreview).getByLabelText("Non-CNC promotion persistence snapshot")).toHaveTextContent(
-        "Local review record only: 2 records, 2 blocked, 0 candidates.",
+        "Local promotion history: 2 records, 2 blocked, 0 candidates.",
       )
     })
     const wirePromotionRecord = within(selectedPreview).getByLabelText("Non-CNC promotion persistence snapshot")
@@ -287,15 +287,19 @@ describe("FactoryBid workspace (component)", () => {
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
+    const previewWithFlags = {
+      ...preview,
+      reviewFlags: ["Requires operator review before release"],
+    }
     const promotionPlan = buildNonCncQuotePromotionPlan({
-      preview,
+      preview: previewWithFlags,
       requestedAt: "2026-06-27T13:30:00.000Z",
       requestedBy: "FactoryBid Operator",
       targetRfqId: "registry-demo",
     })
     render(
       <ProcessQuotePreviewCard
-        preview={{ ...preview, reviewFlags: ["Requires operator review before release"] }}
+        preview={previewWithFlags}
         promotionPlan={promotionPlan}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
       />,
