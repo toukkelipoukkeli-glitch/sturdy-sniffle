@@ -2,7 +2,7 @@ import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuote
 import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
-export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v2"
+export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v3"
 
 export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
@@ -178,6 +178,7 @@ function buildPreviewSummaryText(
     "Editable input readiness:",
     `- Status: ${inputReadiness.status}`,
     `- Required groups: ${inputReadiness.requiredGroups.join(", ")}`,
+    `- Planned fields: ${inputReadiness.fieldPlans.map((field) => field.label).join(", ")}`,
     `- Next step: ${inputReadiness.nextStep}`,
     "",
     "Top assumptions:",
