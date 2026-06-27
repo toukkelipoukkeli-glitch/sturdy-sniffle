@@ -52,8 +52,11 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.click(within(selector).getByRole("button", { name: /Wire EDM/ }))
 
     expect(within(selector).getByRole("button", { name: /Wire EDM/ })).toHaveAttribute("aria-pressed", "true")
-    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent("EDM-KEY-077")
-    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent(
+    const selectedPreview = within(processDemos).getByLabelText("Selected non-CNC quote preview")
+    expect(selectedPreview).toHaveTextContent("EDM-KEY-077")
+    expect(within(selectedPreview).getByLabelText("Process quote assumptions")).toHaveTextContent("stock weight kg per part")
+    expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent("No calculator flags")
+    expect(selectedPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     )
   })

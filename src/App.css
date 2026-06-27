@@ -414,6 +414,7 @@
 }
 
 @media (max-width: 540px) {
+  .process-demo-details,
   .process-demo-selector,
   .rfq-dialog-grid {
     grid-template-columns: 1fr;
@@ -952,6 +953,34 @@
 
 .process-demo-breakdown dd {
   margin: 0;
+}
+
+.process-demo-details {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.process-demo-details > div {
+  background: oklch(0.97 0.008 230);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.process-demo-details strong {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.process-demo-details span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .process-demo-footer {

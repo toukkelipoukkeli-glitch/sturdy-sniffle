@@ -19,6 +19,9 @@ describe("process quote preview", () => {
     ])
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
+    expect(preview.topAssumptions.length).toBeGreaterThan(0)
+    expect(preview.topAssumptions.length).toBeLessThanOrEqual(4)
+    expect(preview.reviewFlags).toEqual(preview.selected.quote.warnings)
   })
 
   it("falls back to the first demo for stale selections", () => {

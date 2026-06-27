@@ -4011,6 +4011,20 @@ function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) 
           </div>
         ))}
       </dl>
+      <div className="process-demo-details">
+        <div aria-label="Process quote assumptions">
+          <strong>Assumptions</strong>
+          {preview.topAssumptions.map((assumption) => (
+            <span key={assumption.key}>
+              {humanizeKey(assumption.key)}: {assumption.value}
+            </span>
+          ))}
+        </div>
+        <div aria-label="Process quote review flags">
+          <strong>Review flags</strong>
+          {preview.reviewFlags.length > 0 ? preview.reviewFlags.map((flag) => <span key={flag}>{flag}</span>) : <span>No calculator flags</span>}
+        </div>
+      </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
