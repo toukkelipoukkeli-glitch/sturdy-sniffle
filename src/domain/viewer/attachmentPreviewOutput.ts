@@ -29,7 +29,58 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   const normalizedFileName = fileName.toLowerCase()
   const contentType = attachment.contentType?.toLowerCase()
 
-  if (attachment.kind === "cad" || /\.(step|stp)$/.test(normalizedFileName) || contentType?.includes("step")) {
+  if (attachment.kind === "cad") {
+    return fallbackOutput({
+      fileName,
+      kind: "step_model",
+      label: "3D CAD preview",
+      renderer: "step-viewer",
+      summary: "STEP model preview descriptor",
+      thumbnailLabel: "3D CAD model",
+      warning: "STEP geometry renderer unavailable; using deterministic CAD model placeholder.",
+    })
+  }
+
+  if (attachment.kind === "drawing") {
+    if (/\.dxf$/.test(normalizedFileName) || contentType?.includes("dxf")) {
+      return fallbackOutput({
+        fileName,
+        kind: "dxf_drawing",
+        label: "DXF drawing preview",
+        renderer: "dxf-viewer",
+        summary: "DXF drawing preview descriptor",
+        thumbnailLabel: "DXF drawing",
+        warning: "DXF renderer unavailable; using deterministic drawing placeholder.",
+      })
+    }
+    return fallbackOutput({
+      fileName,
+      kind: "pdf_page",
+      label: "PDF drawing preview",
+      renderer: "pdf-page",
+      summary: "PDF page preview descriptor",
+      thumbnailLabel: "PDF drawing",
+      warning: "PDF renderer unavailable; using deterministic drawing placeholder.",
+    })
+  }
+
+  if (attachment.kind === "photo") {
+    return imageOutput(fileName)
+  }
+
+  if (attachment.kind === "spreadsheet") {
+    return fallbackOutput({
+      fileName,
+      kind: "spreadsheet_table",
+      label: "Spreadsheet preview",
+      renderer: "spreadsheet-grid",
+      summary: "Spreadsheet grid preview descriptor",
+      thumbnailLabel: "Spreadsheet grid",
+      warning: "Spreadsheet renderer unavailable; using deterministic table placeholder.",
+    })
+  }
+
+  if (/\.(step|stp)$/.test(normalizedFileName) || contentType?.includes("step")) {
     return fallbackOutput({
       fileName,
       kind: "step_model",
@@ -53,7 +104,7 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
     })
   }
 
-  if (attachment.kind === "drawing" || /\.pdf$/.test(normalizedFileName) || contentType === "application/pdf") {
+  if (/\.pdf$/.test(normalizedFileName) || contentType?.includes("pdf")) {
     return fallbackOutput({
       fileName,
       kind: "pdf_page",
@@ -65,21 +116,11 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
     })
   }
 
-  if (attachment.kind === "photo" || contentType?.startsWith("image/")) {
-    return {
-      outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
-      fileName,
-      kind: "image_thumbnail",
-      status: "ready",
-      label: "Image preview",
-      renderer: "browser-image",
-      summary: "Image thumbnail preview descriptor",
-      thumbnailLabel: "Image thumbnail",
-      warnings: [],
-    }
+  if (contentType?.startsWith("image/")) {
+    return imageOutput(fileName)
   }
 
-  if (attachment.kind === "spreadsheet" || /\.(csv|xlsx?|ods)$/.test(normalizedFileName)) {
+  if (/\.(csv|xlsx?|ods)$/.test(normalizedFileName)) {
     return fallbackOutput({
       fileName,
       kind: "spreadsheet_table",
@@ -101,6 +142,20 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
     summary: "Attachment metadata preview descriptor",
     thumbnailLabel: "Metadata card",
     warnings: ["Attachment cannot be previewed directly; showing metadata only."],
+  }
+}
+
+function imageOutput(fileName: string): AttachmentPreviewOutput {
+  return {
+    outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
+    fileName,
+    kind: "image_thumbnail",
+    status: "ready",
+    label: "Image preview",
+    renderer: "browser-image",
+    summary: "Image thumbnail preview descriptor",
+    thumbnailLabel: "Image thumbnail",
+    warnings: [],
   }
 }
 

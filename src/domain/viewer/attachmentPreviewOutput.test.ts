@@ -94,4 +94,34 @@ describe("attachment preview output", () => {
       warnings: ["Attachment cannot be previewed directly; showing metadata only."],
     })
   })
+
+  it("accepts PDF content types with parameters", () => {
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "drawing",
+        kind: "other",
+        contentType: "application/pdf; charset=binary",
+      }),
+    ).toMatchObject({
+      kind: "pdf_page",
+      label: "PDF drawing preview",
+      renderer: "pdf-page",
+      status: "fallback",
+    })
+  })
+
+  it("uses attachment kind before filename hints to stay aligned with preview modes", () => {
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "supplier-misnamed.step",
+        kind: "drawing",
+        contentType: "application/pdf",
+      }),
+    ).toMatchObject({
+      kind: "pdf_page",
+      label: "PDF drawing preview",
+      renderer: "pdf-page",
+      thumbnailLabel: "PDF drawing",
+    })
+  })
 })
