@@ -91,4 +91,43 @@ describe("non-CNC quote promotion persistence", () => {
     ])
     expect(adapter.snapshot().records[0]?.blockers).not.toContain("mutated outside adapter")
   })
+
+  it("deduplicates seeded initial records by plan id", async () => {
+    const adapter = createLocalNonCncQuotePromotionPersistence()
+    const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "sheet_metal")
+    const plan = buildNonCncQuotePromotionPlan({ ...request, preview })
+    const seededRecord = (await adapter.recordPlan(plan)).records[0]
+    if (!seededRecord) {
+      throw new Error("Expected seeded promotion record")
+    }
+
+    const seededAdapter = createLocalNonCncQuotePromotionPersistence({
+      initialSnapshot: {
+        records: [
+          seededRecord,
+          {
+            ...seededRecord,
+            blockers: [],
+            disposition: "candidate",
+            recordedBy: "Replacement Operator",
+            reviewWarnings: ["Material certificate required."],
+            status: "needs_review",
+          },
+        ],
+      },
+    })
+
+    const snapshot = seededAdapter.snapshot()
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.blockedPlanIds).toEqual([])
+    expect(snapshot.candidatePlanIds).toEqual([seededRecord.planId])
+    expect(snapshot.records[0]).toMatchObject({
+      blockers: [],
+      disposition: "candidate",
+      recordedBy: "Replacement Operator",
+      reviewWarnings: ["Material certificate required."],
+      status: "needs_review",
+    })
+  })
 })

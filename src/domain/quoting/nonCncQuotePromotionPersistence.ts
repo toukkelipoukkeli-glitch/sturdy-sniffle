@@ -83,7 +83,11 @@ function buildPromotionRecord(plan: NonCncQuotePromotionPlan): NonCncQuotePromot
 function normalizeSnapshot(
   snapshot: Partial<NonCncQuotePromotionPersistenceSnapshot> | undefined,
 ): NonCncQuotePromotionPersistenceSnapshot {
-  const records = (snapshot?.records ?? []).map(cloneRecord).sort((left, right) => left.planId.localeCompare(right.planId))
+  const recordsByPlanId = new Map<string, NonCncQuotePromotionRecord>()
+  for (const record of snapshot?.records ?? []) {
+    recordsByPlanId.set(record.planId, cloneRecord(record))
+  }
+  const records = [...recordsByPlanId.values()].sort((left, right) => left.planId.localeCompare(right.planId))
   return {
     blockedPlanIds: records.filter((record) => record.disposition === "review_only").map((record) => record.planId),
     candidatePlanIds: records.filter((record) => record.disposition === "candidate").map((record) => record.planId),
