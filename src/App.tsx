@@ -4304,7 +4304,10 @@ function NumberEditInput({
       <span>{label}</span>
       <input
         min={min}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
+        onChange={(event) => {
+          const rawValue = event.currentTarget.value
+          onChange(rawValue === "" ? Number.NaN : Number(rawValue))
+        }}
         step={step}
         type="number"
         value={Number.isFinite(value) ? value : ""}

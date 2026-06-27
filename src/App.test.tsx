@@ -78,6 +78,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(sheetMetalEditor).toHaveTextContent("Sheet metal preview quote recalculated through the non-CNC edit registry.")
     expect(sheetMetalPreview).toHaveTextContent("€636.41")
     expect(within(selector).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("€636.41")
+    const [blankLengthInput] = within(sheetMetalEditor).getAllByRole("spinbutton")
+    fireEvent.change(blankLengthInput, { target: { value: "" } })
+    expect(blankLengthInput).toHaveValue(null)
+    expect(sheetMetalEditor).toHaveTextContent("blankLengthMm must be a positive finite number")
+    fireEvent.change(blankLengthInput, { target: { value: "250" } })
+    expect(blankLengthInput).toHaveValue(250)
+    expect(sheetMetalEditor).toHaveTextContent("Sheet metal preview quote recalculated through the non-CNC edit registry.")
 
     fireEvent.click(within(selector).getByRole("button", { name: /Wire EDM/ }))
 
