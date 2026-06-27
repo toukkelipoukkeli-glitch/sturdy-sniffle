@@ -1191,6 +1191,22 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.process-demo-read-only-field {
+  align-items: center;
+  background: oklch(0.945 0.018 230);
+  border: 1px solid oklch(0.84 0.035 225);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: max-content max-content minmax(0, 1fr);
+  padding: 6px;
+}
+
+.process-demo-read-only-field span,
+.process-demo-read-only-field strong {
+  font-size: 0.7rem;
+}
+
 .process-demo-input-editor label {
   display: grid;
   gap: 3px;
