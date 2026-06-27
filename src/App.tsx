@@ -112,6 +112,8 @@ import {
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
 import {
+  buildNonCncInputEditState,
+  calculateEditedNonCncQuote,
   listNonCncInputEditAdapters,
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
@@ -119,6 +121,7 @@ import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQu
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
+import type { SheetMetalInputEditPatch, SheetMetalInputEditState } from "./domain/quoting/sheetMetalInputEdits"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
 import {
   evaluateRfqIntakeReadiness,
@@ -3957,9 +3960,16 @@ function ProcessCapabilityPanel({
 
 function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [selectedProcess, setSelectedProcess] = useState(demos[0]?.process)
-  const preview = useMemo(() => buildProcessQuotePreview(demos, selectedProcess), [demos, selectedProcess])
+  const [sheetMetalEdits, setSheetMetalEdits] = useState<SheetMetalInputEditState>(
+    () => buildNonCncInputEditState({ process: "sheet_metal" }) as SheetMetalInputEditState,
+  )
+  const editedDemoState = useMemo(() => buildSheetMetalEditedDemos(demos, sheetMetalEdits), [demos, sheetMetalEdits])
+  const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
   const inputEditAdapters = useMemo(() => listNonCncInputEditAdapters(), [])
   const selectedInputEditAdapter = inputEditAdapters.find((adapter) => adapter.process === preview.selected.process)
+  const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
+    setSheetMetalEdits((current) => ({ ...current, [field]: value }))
+  }
 
   return (
     <section className="process-demo-panel" aria-label="Non-CNC registry demos">
@@ -3979,9 +3989,47 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         ))}
       </div>
       <ProcessQuotePreviewComparisonPanel preview={preview} />
-      <ProcessQuotePreviewCard inputEditAdapter={selectedInputEditAdapter} preview={preview} />
+      <ProcessQuotePreviewCard
+        inputEditAdapter={selectedInputEditAdapter}
+        preview={preview}
+        sheetMetalEditor={
+          preview.selected.process === "sheet_metal"
+            ? {
+                error: editedDemoState.sheetMetalError,
+                onChange: updateSheetMetalEdit,
+                state: sheetMetalEdits,
+              }
+            : undefined
+        }
+      />
     </section>
   )
+}
+
+function buildSheetMetalEditedDemos(
+  demos: ProcessDemoQuote[],
+  sheetMetalEdits: SheetMetalInputEditState,
+): { demos: ProcessDemoQuote[]; sheetMetalError?: string } {
+  try {
+    const edited = calculateEditedNonCncQuote({
+      patch: {
+        bendCount: sheetMetalEdits.bendCount,
+        blankLengthMm: sheetMetalEdits.blankLengthMm,
+        blankWidthMm: sheetMetalEdits.blankWidthMm,
+        cuttingLengthMm: sheetMetalEdits.cuttingLengthMm,
+        materialThicknessMm: sheetMetalEdits.materialThicknessMm,
+      },
+      process: "sheet_metal",
+    })
+    return {
+      demos: demos.map((demo) => (demo.process === "sheet_metal" ? { ...demo, quote: edited.quote } : demo)),
+    }
+  } catch (error) {
+    return {
+      demos,
+      sheetMetalError: error instanceof Error ? error.message : "Sheet metal preview edits are invalid",
+    }
+  }
 }
 
 function ProcessQuotePreviewComparisonPanel({ preview }: { preview: ProcessQuotePreview }) {
@@ -4032,9 +4080,15 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
 export function ProcessQuotePreviewCard({
   inputEditAdapter,
   preview,
+  sheetMetalEditor,
 }: {
   inputEditAdapter?: NonCncInputEditAdapterSummary
   preview: ProcessQuotePreview
+  sheetMetalEditor?: {
+    error?: string
+    onChange: (field: keyof SheetMetalInputEditPatch, value: number) => void
+    state: SheetMetalInputEditState
+  }
 }) {
   const demo = preview.selected
   const [summaryFeedback, setSummaryFeedback] = useState<{
@@ -4133,6 +4187,7 @@ export function ProcessQuotePreviewCard({
             </ul>
           </div>
         ) : null}
+        {sheetMetalEditor ? <SheetMetalPreviewEditor editor={sheetMetalEditor} /> : null}
         <div className="process-demo-input-draft" aria-label="Read-only process input draft">
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
@@ -4165,6 +4220,100 @@ export function ProcessQuotePreviewCard({
       </div>
       <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
     </article>
+  )
+}
+
+function SheetMetalPreviewEditor({
+  editor,
+}: {
+  editor: {
+    error?: string
+    onChange: (field: keyof SheetMetalInputEditPatch, value: number) => void
+    state: SheetMetalInputEditState
+  }
+}) {
+  return (
+    <div className="process-demo-input-editor" aria-label="Sheet metal preview edit controls">
+      <div>
+        <span>Preview editor</span>
+        <strong>Sheet metal only</strong>
+        <small>Updates this registry preview only; RFQ quote, offer, and release paths stay unchanged.</small>
+      </div>
+      <div className="process-demo-input-editor-grid">
+        <NumberEditInput
+          label="Blank length"
+          min={1}
+          onChange={(value) => editor.onChange("blankLengthMm", value)}
+          suffix="mm"
+          value={editor.state.blankLengthMm}
+        />
+        <NumberEditInput
+          label="Blank width"
+          min={1}
+          onChange={(value) => editor.onChange("blankWidthMm", value)}
+          suffix="mm"
+          value={editor.state.blankWidthMm}
+        />
+        <NumberEditInput
+          label="Thickness"
+          min={0.1}
+          onChange={(value) => editor.onChange("materialThicknessMm", value)}
+          step={0.1}
+          suffix="mm"
+          value={editor.state.materialThicknessMm}
+        />
+        <NumberEditInput
+          label="Cut length"
+          min={1}
+          onChange={(value) => editor.onChange("cuttingLengthMm", value)}
+          suffix="mm"
+          value={editor.state.cuttingLengthMm}
+        />
+        <NumberEditInput
+          label="Bends"
+          min={0}
+          onChange={(value) => editor.onChange("bendCount", value)}
+          step={1}
+          value={editor.state.bendCount}
+        />
+      </div>
+      <p aria-live="polite" role="status">
+        {editor.error ?? "Sheet metal preview quote recalculated through the non-CNC edit registry."}
+      </p>
+    </div>
+  )
+}
+
+function NumberEditInput({
+  label,
+  min,
+  onChange,
+  step = 1,
+  suffix,
+  value,
+}: {
+  label: string
+  min: number
+  onChange: (value: number) => void
+  step?: number
+  suffix?: string
+  value: number
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input
+        min={min}
+        onChange={(event) => {
+          const rawValue = event.currentTarget.value
+          onChange(rawValue === "" ? Number.NaN : Number(rawValue))
+        }}
+        step={step}
+        type="number"
+        value={Number.isFinite(value) ? value : ""}
+      />
+      {suffix ? <small>{suffix}</small> : null}
+    </label>
   )
 }
 
