@@ -32,6 +32,9 @@ describe("process quote preview", () => {
     expect(preview.reviewFlags).toEqual(preview.selected.quote.warnings)
     expect(preview.summaryText).toContain("Non-CNC quote preview\nProcess: Wire EDM\nPart: EDM-KEY-077")
     expect(preview.summaryText).toContain("Total: EUR 5809.74")
+    expect(preview.summaryText).toContain("Comparison:\n- Best price: Sheet metal (EUR 549.05)")
+    expect(preview.summaryText).toContain("- Fastest lead: Sheet metal (7 days)")
+    expect(preview.summaryText).toContain("- Selected delta: +EUR 5260.69, +9 days lead")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
@@ -110,6 +113,9 @@ describe("process quote preview", () => {
       selectedLeadTimeDeltaDays: 0,
       selectedPriceDeltaCents: 0,
     })
+    expect(preview.summaryText).toContain("Comparison:\n- Best price: Plastic machining (EUR 549.05)")
+    expect(preview.summaryText).toContain("- Fastest lead: Plastic machining (7 days)")
+    expect(preview.summaryText).toContain("- Selected delta: best price, fastest lead")
   })
 
   it("marks calculator flags for warning-bearing process previews", () => {

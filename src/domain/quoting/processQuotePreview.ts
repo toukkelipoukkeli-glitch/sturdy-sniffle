@@ -58,11 +58,12 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const operatorChecklist = buildOperatorChecklist(selected)
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
   const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
+  const comparison = buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
-    comparison: buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays),
+    comparison,
     options: demos.map((demo) => ({
       process: demo.process,
       label: demo.label,
@@ -76,7 +77,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
     reviewFlags: selected.quote.warnings,
-    summaryText: buildPreviewSummaryText(selected, operatorChecklist),
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
@@ -150,6 +151,7 @@ function buildOperatorChecklist(selected: ProcessDemoQuote): ProcessQuotePreview
 function buildPreviewSummaryText(
   selected: ProcessDemoQuote,
   operatorChecklist: ProcessQuotePreviewChecklistItem[],
+  comparison: ProcessQuotePreviewComparison,
 ): string {
   const quote = selected.quote
   return [
@@ -162,6 +164,11 @@ function buildPreviewSummaryText(
     `Unit: ${formatPreviewCurrency(quote.unitPriceCents, quote.currency)}`,
     `Calculator: ${quote.calculatorVersion}`,
     "Mode: Read-only registry fixture; process-specific editable inputs are not enabled yet.",
+    "",
+    "Comparison:",
+    `- Best price: ${comparison.cheapestLabel} (${formatPreviewCurrency(comparison.cheapestTotalCents, comparison.currency)})`,
+    `- Fastest lead: ${comparison.fastestLabel} (${comparison.fastestLeadTimeDays} days)`,
+    `- Selected delta: ${formatPreviewDelta(comparison.selectedPriceDeltaCents, comparison.currency)}, ${formatLeadDelta(comparison.selectedLeadTimeDeltaDays)}`,
     "",
     "Top assumptions:",
     ...quote.assumptions.slice(0, 4).map((assumption) => `- ${assumption.key}: ${assumption.value}`),
@@ -176,4 +183,12 @@ function buildPreviewSummaryText(
 
 function formatPreviewCurrency(cents: number, currency: QuoteEngineResult["currency"]): string {
   return `${currency} ${(cents / 100).toFixed(2)}`
+}
+
+function formatPreviewDelta(cents: number, currency: QuoteEngineResult["currency"]): string {
+  return cents === 0 ? "best price" : `+${formatPreviewCurrency(cents, currency)}`
+}
+
+function formatLeadDelta(days: number): string {
+  return days === 0 ? "fastest lead" : `+${days} days lead`
 }
