@@ -1398,6 +1398,12 @@
   border-left-color: oklch(0.58 0.12 35);
 }
 
+.process-demo-promotion-plan[data-status="needs_review"] {
+  background: oklch(0.98 0.018 82);
+  border-color: oklch(0.84 0.07 82);
+  border-left-color: oklch(0.62 0.11 80);
+}
+
 .process-demo-promotion-plan-heading {
   align-items: center;
   display: flex;
@@ -1500,6 +1506,10 @@
 
 .process-demo-promotion-plan-grid li[data-status="ready"] strong {
   color: oklch(0.31 0.08 155);
+}
+
+.process-demo-promotion-plan-grid li[data-status="needs_review"] strong {
+  color: oklch(0.46 0.11 80);
 }
 
 .process-demo-promotion-plan-grid small {
