@@ -91,6 +91,8 @@ describe("FactoryBid workspace (component)", () => {
     const [copiedText] = writeText.mock.calls[0] ?? [""]
     expect(copiedText).toContain("Process: Wire EDM")
     expect(copiedText).toContain("Part: EDM-KEY-077")
+    expect(copiedText).toContain("Best price: Sheet metal (EUR 549.05)")
+    expect(copiedText).toContain("Selected delta: +EUR 5260.69, +9 days lead")
     await waitFor(() => {
       expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     })
