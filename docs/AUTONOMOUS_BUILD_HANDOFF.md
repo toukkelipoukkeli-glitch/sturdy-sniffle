@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d2d3685` (`Surface non-CNC draft coverage badges (#153)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the next Slice E promotion-gate PR.
-- In-flight PR at this checkpoint: `codex/non-cnc-promotion-gate` surfaces deterministic quote-path blockers for non-CNC drafts without enabling writable inputs.
+- Main branch checkpoint: `d8ee1da` (`Add non-CNC quote path promotion gate (#154)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the next Slice E sheet-metal edit adapter PR.
+- In-flight PR at this checkpoint: `codex/sheet-metal-input-edits` adds deterministic sheet-metal planned-field edits behind the registry calculator path without UI or offer wiring changes.
 - Latest merged sequence:
+  - `#154` non-CNC previews now show deterministic quote-path promotion blockers before writable controls exist.
   - `#153` non-CNC process selector options now show deterministic draft-complete/draft-gap coverage badges.
   - `#152` non-CNC planned fields now hydrate read-only fixture draft values and explicit missing-value coverage.
   - `#151` non-CNC readiness now includes field-level planned inputs for future editable process forms.
@@ -122,7 +123,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, and copyable summary; this branch adds quote-path promotion blockers before editable non-CNC controls. After this, non-CNC engines need editable process-specific inputs and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, and copyable summary; this branch adds the first deterministic sheet-metal planned-field edit adapter before UI controls. After this, non-CNC engines need editable process-specific UI and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
