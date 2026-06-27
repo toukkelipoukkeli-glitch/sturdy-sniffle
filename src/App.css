@@ -414,6 +414,7 @@
 }
 
 @media (max-width: 540px) {
+  .process-demo-checklist,
   .process-demo-details,
   .process-demo-selector,
   .rfq-dialog-grid {
@@ -979,6 +980,44 @@
 .process-demo-details span {
   color: oklch(0.43 0.025 250);
   font-size: 0.72rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-checklist {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.process-demo-checklist div {
+  border: 1px solid oklch(0.9 0.016 235);
+  border-left: 4px solid oklch(0.58 0.11 150);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+}
+
+.process-demo-checklist div[data-level="blocked"] {
+  border-left-color: oklch(0.58 0.12 35);
+}
+
+.process-demo-checklist div[data-level="review"] {
+  border-left-color: oklch(0.62 0.11 80);
+}
+
+.process-demo-checklist span {
+  color: oklch(0.25 0.025 250);
+  font-size: 0.73rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-checklist small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.7rem;
   font-weight: 700;
   overflow-wrap: anywhere;
 }

@@ -21,6 +21,32 @@ describe("process quote preview", () => {
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
     expect(preview.reviewFlags).toEqual(preview.selected.quote.warnings)
+    expect(preview.operatorChecklist).toEqual([
+      {
+        detail: "Wire EDM totals came from wire-edm.v1.",
+        key: "calculator-ready",
+        label: "Calculator ready",
+        level: "ready",
+      },
+      {
+        detail: "Editable process-specific inputs are not enabled yet.",
+        key: "editable-inputs",
+        label: "Input model read-only",
+        level: "blocked",
+      },
+      {
+        detail: "Use this preview for operator comparison only; releases still use the active RFQ quote.",
+        key: "offer-wiring",
+        label: "Offer wiring pending",
+        level: "review",
+      },
+      {
+        detail: "No calculator flags on this fixture.",
+        key: "calculator-flags",
+        label: "Calculator flags",
+        level: "ready",
+      },
+    ])
   })
 
   it("falls back to the first demo for stale selections", () => {
