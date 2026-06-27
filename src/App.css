@@ -1162,6 +1162,17 @@
   margin: 0;
 }
 
+.process-demo-input-gate {
+  background: oklch(0.965 0.035 45);
+  border-radius: 8px;
+  color: oklch(0.38 0.08 45);
+  font-size: 0.7rem;
+  font-weight: 850;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 6px;
+}
+
 .process-demo-input-draft div {
   background: oklch(0.965 0.018 75);
   border-radius: 8px;

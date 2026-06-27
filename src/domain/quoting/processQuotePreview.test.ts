@@ -87,6 +87,14 @@ describe("process quote preview", () => {
       status: "missing",
       value: "Missing fixture value",
     })
+    expect(preview.inputPromotionGate).toEqual({
+      blockerLabels: ["Editable controls missing", "Missing required values"],
+      blockers: ["editable_controls_missing", "missing_required_values"],
+      gateVersion: "process-input-promotion-gate.v1",
+      missingRequiredCount: 1,
+      nextStep: "Populate every required process draft value, then add editable controls before promotion.",
+      status: "blocked",
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
@@ -101,6 +109,10 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("- Planned fields: Stock size, Cut length, Wire diameter, Finish passes, Inspection level")
     expect(preview.summaryText).toContain("- Draft coverage: 4/5 required fields populated from registry_fixture")
     expect(preview.summaryText).toContain("- Wire diameter: Missing fixture value")
+    expect(preview.summaryText).toContain("- Promotion gate: blocked")
+    expect(preview.summaryText).toContain("- Blockers: Editable controls missing, Missing required values")
+    expect(preview.summaryText).toContain("- Next step: Populate every required process draft value, then add editable controls before promotion.")
+    expect(preview.summaryText).not.toContain("- Promotion next step:")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
