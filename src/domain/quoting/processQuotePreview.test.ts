@@ -28,6 +28,43 @@ describe("process quote preview", () => {
     })
     expect(preview.inputReadiness).toMatchObject({
       editable: false,
+      fieldPlans: [
+        {
+          group: "stock dimensions",
+          key: "stockSizeMm",
+          label: "Stock size",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "cut length",
+          key: "cutLengthMm",
+          label: "Cut length",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "wire settings",
+          key: "wireDiameterMm",
+          label: "Wire diameter",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "wire settings",
+          key: "finishPasses",
+          label: "Finish passes",
+          required: true,
+          valueKind: "quantity",
+        },
+        {
+          group: "inspection scope",
+          key: "inspectionLevel",
+          label: "Inspection level",
+          required: true,
+          valueKind: "text",
+        },
+      ],
       process: "wire_edm",
       requiredGroups: ["stock dimensions", "cut length", "wire settings", "inspection scope"],
       status: "blocked",
@@ -43,6 +80,7 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("- Selected delta: +EUR 5260.69, +9 days lead")
     expect(preview.summaryText).toContain("Editable input readiness:\n- Status: blocked")
     expect(preview.summaryText).toContain("- Required groups: stock dimensions, cut length, wire settings, inspection scope")
+    expect(preview.summaryText).toContain("- Planned fields: Stock size, Cut length, Wire diameter, Finish passes, Inspection level")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")

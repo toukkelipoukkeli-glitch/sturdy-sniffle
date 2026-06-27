@@ -84,6 +84,9 @@ describe("FactoryBid workspace (component)", () => {
     const inputReadiness = within(selectedPreview).getByLabelText("Process input readiness")
     expect(inputReadiness).toHaveTextContent("Editable inputs blocked")
     expect(inputReadiness).toHaveTextContent("wire settings")
+    const plannedFields = within(inputReadiness).getByLabelText("Planned process input fields")
+    expect(plannedFields).toHaveTextContent("Wire diameter")
+    expect(plannedFields).toHaveTextContent("Finish passes")
     const checklist = within(selectedPreview).getByLabelText("Process quote operator checklist")
     expect(checklist).toHaveTextContent("Calculator ready")
     expect(checklist).toHaveTextContent("Input model read-only")
@@ -97,6 +100,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(copiedText).toContain("Best price: Sheet metal (EUR 549.05)")
     expect(copiedText).toContain("Selected delta: +EUR 5260.69, +9 days lead")
     expect(copiedText).toContain("Required groups: stock dimensions, cut length, wire settings, inspection scope")
+    expect(copiedText).toContain("Planned fields: Stock size, Cut length, Wire diameter, Finish passes, Inspection level")
     await waitFor(() => {
       expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     })

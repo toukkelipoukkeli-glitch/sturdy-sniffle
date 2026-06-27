@@ -6,6 +6,36 @@ describe("process input readiness", () => {
   it("describes blocked editable-input requirements for each non-CNC process", () => {
     expect(buildProcessInputReadiness("sheet_metal")).toEqual({
       editable: false,
+      fieldPlans: [
+        {
+          group: "blank dimensions",
+          key: "blankSizeMm",
+          label: "Blank size",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "material and thickness",
+          key: "materialThicknessMm",
+          label: "Material thickness",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "cutting route",
+          key: "cutLengthMm",
+          label: "Cut length",
+          required: true,
+          valueKind: "dimension",
+        },
+        {
+          group: "bend operations",
+          key: "bendCount",
+          label: "Bend count",
+          required: true,
+          valueKind: "quantity",
+        },
+      ],
       nextStep: "Add process-specific editable input controls before this preview can become an RFQ quote path.",
       process: "sheet_metal",
       readinessVersion: PROCESS_INPUT_READINESS_VERSION,
@@ -15,5 +45,24 @@ describe("process input readiness", () => {
     expect(buildProcessInputReadiness("wire_edm").requiredGroups).toContain("wire settings")
     expect(buildProcessInputReadiness("fabrication").requiredGroups).toContain("weld length")
     expect(buildProcessInputReadiness("plastic").requiredGroups).toContain("machining operations")
+  })
+
+  it("returns defensive copies of readiness arrays", () => {
+    const readiness = buildProcessInputReadiness("wire_edm")
+    readiness.requiredGroups.push("mutated group")
+    const firstField = readiness.fieldPlans[0]
+    if (!firstField) {
+      throw new Error("Expected wire EDM field plans")
+    }
+    firstField.label = "Mutated"
+
+    expect(buildProcessInputReadiness("wire_edm").requiredGroups).not.toContain("mutated group")
+    expect(buildProcessInputReadiness("wire_edm").fieldPlans[0]).toEqual({
+      group: "stock dimensions",
+      key: "stockSizeMm",
+      label: "Stock size",
+      required: true,
+      valueKind: "dimension",
+    })
   })
 })

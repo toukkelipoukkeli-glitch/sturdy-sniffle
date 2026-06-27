@@ -4087,11 +4087,25 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
           <strong>Editable inputs blocked</strong>
           <span>{preview.inputReadiness.nextStep}</span>
         </div>
-        <ul>
-          {preview.inputReadiness.requiredGroups.map((group) => (
-            <li key={group}>{group}</li>
-          ))}
-        </ul>
+        <div>
+          <span>Required groups</span>
+          <ul>
+            {preview.inputReadiness.requiredGroups.map((group) => (
+              <li key={group}>{group}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="process-demo-input-fields" aria-label="Planned process input fields">
+          <span>Planned fields</span>
+          <ul>
+            {preview.inputReadiness.fieldPlans.map((field) => (
+              <li key={field.key}>
+                <span>{field.label}</span>
+                <small>({field.valueKind})</small>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
