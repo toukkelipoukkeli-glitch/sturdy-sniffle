@@ -69,6 +69,72 @@ describe("part preview model", () => {
     ])
   })
 
+  it("restores an exact preferred filename before normalized sibling matches", () => {
+    const model = buildPartPreviewModel({
+      part: {
+        partNumber: "FB-204-A",
+        attachmentNames: ["FB-204-A.step", "FB_204_A.step"],
+      },
+      attachments: [
+        {
+          fileName: "FB-204-A.step",
+          kind: "cad",
+        },
+        {
+          fileName: "FB_204_A.step",
+          kind: "cad",
+        },
+      ],
+      preferredPrimaryAttachmentName: "FB_204_A.step",
+    })
+
+    expect(model.primaryMode).toBe("cad")
+    expect(model.primaryAttachmentName).toBe("FB_204_A.step")
+    expect(model.attachments).toMatchObject([
+      {
+        fileName: "FB-204-A.step",
+        primary: false,
+      },
+      {
+        fileName: "FB_204_A.step",
+        primary: true,
+      },
+    ])
+  })
+
+  it("ignores stale and metadata-only preferred attachments", () => {
+    const previewableInput = {
+      part: {
+        partNumber: "FB-204-A",
+        attachmentNames: ["FB-204-A.step", "notes.txt"],
+      },
+      attachments: [
+        {
+          fileName: "FB-204-A.step",
+          kind: "cad" as const,
+        },
+        {
+          fileName: "notes.txt",
+          kind: "other" as const,
+        },
+      ],
+    }
+
+    const stalePreference = buildPartPreviewModel({
+      ...previewableInput,
+      preferredPrimaryAttachmentName: "missing.step",
+    })
+    const metadataPreference = buildPartPreviewModel({
+      ...previewableInput,
+      preferredPrimaryAttachmentName: "notes.txt",
+    })
+
+    expect(stalePreference.primaryMode).toBe("cad")
+    expect(stalePreference.primaryAttachmentName).toBe("FB-204-A.step")
+    expect(metadataPreference.primaryMode).toBe("cad")
+    expect(metadataPreference.primaryAttachmentName).toBe("FB-204-A.step")
+  })
+
   it("falls back to drawing previews when CAD geometry is unavailable", () => {
     const model = buildPartPreviewModel({
       subject: "RFQ: laser bracket",

@@ -92,8 +92,15 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames))
     .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
   const preferredPrimaryToken = input.preferredPrimaryAttachmentName ? normalizeToken(input.preferredPrimaryAttachmentName) : undefined
-  const preferredPrimaryAttachment = preferredPrimaryToken
-    ? rankedAttachments.find((attachment) => normalizeToken(attachment.fileName) === preferredPrimaryToken && attachment.modes[0] !== "metadata")
+  const preferredPrimaryAttachment = input.preferredPrimaryAttachmentName
+    ? rankedAttachments.find(
+        (attachment) => attachment.fileName === input.preferredPrimaryAttachmentName && attachment.modes[0] !== "metadata",
+      ) ??
+      (preferredPrimaryToken
+        ? rankedAttachments.find(
+            (attachment) => normalizeToken(attachment.fileName) === preferredPrimaryToken && attachment.modes[0] !== "metadata",
+          )
+        : undefined)
     : undefined
   const primaryAttachment = preferredPrimaryAttachment ?? rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
