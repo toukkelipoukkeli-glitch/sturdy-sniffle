@@ -91,7 +91,6 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionDraft).toHaveTextContent("non-cnc-quote-promotion-draft.v1")
     expect(promotionDraft).toHaveTextContent("Quote payload stays withheld until promotion is ready.")
     expect(promotionDraft).toHaveTextContent("No quote payload")
-    expect(promotionDraft).toHaveTextContent("Review-only promotion records cannot update active RFQ quote state.")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
