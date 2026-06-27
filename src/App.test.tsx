@@ -122,6 +122,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(copiedText).toContain("Wire diameter: Missing fixture value")
     expect(copiedText).toContain("Promotion gate: blocked")
     expect(copiedText).toContain("Blockers: Editable controls missing, Missing required values")
+    expect(copiedText).toContain("Input edit adapter:")
+    expect(copiedText).toContain("Version: wire-edm-input-edits.v1")
+    expect(copiedText).toContain(
+      "Editable fields mapped: stockLengthMm, stockWidthMm, stockHeightMm, contourLengthMm, skimPasses, inspectionLevel",
+    )
+    expect(copiedText).toContain("Read-only fields guarded: None")
+    expect(copiedText).toContain("UI controls: guarded until process forms are enabled")
     await waitFor(() => {
       expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     })
@@ -136,6 +143,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(plasticPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     )
+    await user.click(within(plasticPreview).getByRole("button", { name: "Copy summary" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    const [plasticCopiedText] = writeText.mock.calls[1] ?? [""]
+    expect(plasticCopiedText).toContain("Version: plastics-input-edits.v1")
+    expect(plasticCopiedText).toContain("Read-only fields guarded: operationCount")
   })
 
   it("surfaces non-empty non-CNC preview review flags", () => {
