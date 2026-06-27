@@ -1,6 +1,7 @@
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqAttachmentKind, RfqPartDraft } from "../rfq/intake"
 import { compareLex } from "../shared/deterministic"
 import type { CadMetadataResult } from "../integrations/cadMetadata"
+import { buildAttachmentPreviewOutput, type AttachmentPreviewOutput } from "./attachmentPreviewOutput"
 
 export const PART_PREVIEW_MODEL_VERSION = "part-preview.v1"
 
@@ -19,6 +20,7 @@ export interface PartPreviewAttachment {
   contentType?: string
   sizeBytes?: number
   previewLabel: string
+  previewOutput: AttachmentPreviewOutput
   score: number
   thumbnailLabel: string
   modes: PartPreviewMode[]
@@ -129,8 +131,8 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     title: input.part.description?.trim() || partNumber,
     primaryMode,
     primaryAttachmentName: primaryAttachment?.fileName,
-    primaryPreviewLabel: primaryAttachment?.previewLabel ?? previewLabelForMode("metadata"),
-    primaryThumbnailLabel: primaryAttachment?.thumbnailLabel ?? thumbnailLabelForMode("metadata"),
+    primaryPreviewLabel: primaryAttachment?.previewLabel ?? "Metadata preview",
+    primaryThumbnailLabel: primaryAttachment?.thumbnailLabel ?? "Metadata card",
     availableModes: collectAvailableModes(rankedAttachments),
     attachments: rankedAttachments.map((attachment) => ({
       ...attachment,
@@ -212,6 +214,7 @@ function rankAttachment(
   attachmentNames: Set<string>,
 ): RankedPartPreviewAttachment {
   const modes = modesForAttachment(attachment.kind)
+  const previewOutput = buildAttachmentPreviewOutput(attachment)
   const score =
     modePriority[modes[0]] +
     (normalizeToken(attachment.fileName).includes(normalizeToken(partNumber)) ? 20 : 0) +
@@ -222,9 +225,10 @@ function rankAttachment(
     kind: attachment.kind,
     contentType: attachment.contentType,
     sizeBytes: attachment.sizeBytes,
-    previewLabel: previewLabelForMode(modes[0]),
+    previewLabel: previewOutput.label,
+    previewOutput,
     score,
-    thumbnailLabel: thumbnailLabelForMode(modes[0]),
+    thumbnailLabel: previewOutput.thumbnailLabel,
     modes,
   }
 }
@@ -242,36 +246,6 @@ function modesForAttachment(kind: RfqAttachmentKind): PartPreviewMode[] {
     case "email_body":
     case "other":
       return ["metadata"]
-  }
-}
-
-function previewLabelForMode(mode: PartPreviewMode): string {
-  switch (mode) {
-    case "cad":
-      return "3D CAD preview"
-    case "drawing":
-      return "Drawing preview"
-    case "photo":
-      return "Photo preview"
-    case "spreadsheet":
-      return "Spreadsheet preview"
-    case "metadata":
-      return "Metadata preview"
-  }
-}
-
-function thumbnailLabelForMode(mode: PartPreviewMode): string {
-  switch (mode) {
-    case "cad":
-      return "3D CAD model"
-    case "drawing":
-      return "Drawing sheet"
-    case "photo":
-      return "Photo thumbnail"
-    case "spreadsheet":
-      return "Spreadsheet grid"
-    case "metadata":
-      return "Metadata card"
   }
 }
 

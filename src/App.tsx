@@ -4608,7 +4608,8 @@ function PartPreviewPanel({
               <span>
                 <strong>{attachment.fileName}</strong>
                 <small>
-                  {attachment.thumbnailLabel}
+                  {attachment.thumbnailLabel} · {humanizeKey(attachment.previewOutput.status)}
+                  {attachment.previewOutput.warnings.length > 0 ? ` · ${attachment.previewOutput.warnings.join(" ")}` : ""}
                   {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
                 </small>
               </span>

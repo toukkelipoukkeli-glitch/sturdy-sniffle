@@ -23,7 +23,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByRole("heading", { name: "CNC bracket FB-204-A" })).toBeInTheDocument()
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("3D CAD preview")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("3D CAD model")
-    expect(screen.getByLabelText("Attachments")).toHaveTextContent("Drawing sheet")
+    expect(screen.getByLabelText("Attachments")).toHaveTextContent("PDF drawing")
     const calendarPlan = screen.getByLabelText("RFQ calendar plan preview")
     expect(calendarPlan).toHaveTextContent("2 drafts")
     expect(calendarPlan).toHaveTextContent("Quote work: CNC bracket FB-204-A")
