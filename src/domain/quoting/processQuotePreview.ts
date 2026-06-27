@@ -10,6 +10,8 @@ export interface ProcessQuotePreviewOption {
   label: string
   selected: boolean
   badges: string[]
+  draftCoverageLabel: string
+  draftStatus: ProcessInputDraft["status"]
   totalCents: number
   leadTimeDays: number
   currency: QuoteEngineResult["currency"]
@@ -63,8 +65,9 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
   const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
   const comparison = buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays)
-  const inputDraft = buildProcessInputDraft(selected.process)
   const inputReadiness = buildProcessInputReadiness(selected.process)
+  const inputDraftsByProcess = new Map(demos.map((demo) => [demo.process, buildProcessInputDraft(demo.process)]))
+  const inputDraft = inputDraftsByProcess.get(selected.process) ?? buildProcessInputDraft(selected.process)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
@@ -72,15 +75,23 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     comparison,
     inputDraft,
     inputReadiness,
-    options: demos.map((demo) => ({
-      process: demo.process,
-      label: demo.label,
-      selected: demo.process === selected.process,
-      badges: buildOptionBadges(demo, lowestTotalCents, shortestLeadTimeDays),
-      totalCents: demo.quote.totalCents,
-      leadTimeDays: demo.quote.leadTimeDays,
-      currency: demo.quote.currency,
-    })),
+    options: demos.map((demo) => {
+      const optionDraft = inputDraftsByProcess.get(demo.process)
+      if (!optionDraft) {
+        throw new Error(`Missing input draft for ${demo.process}`)
+      }
+      return {
+        process: demo.process,
+        label: demo.label,
+        selected: demo.process === selected.process,
+        badges: buildOptionBadges(demo, lowestTotalCents, shortestLeadTimeDays, optionDraft),
+        draftCoverageLabel: `${optionDraft.populatedRequiredCount}/${optionDraft.requiredCount} inputs`,
+        draftStatus: optionDraft.status,
+        totalCents: demo.quote.totalCents,
+        leadTimeDays: demo.quote.leadTimeDays,
+        currency: demo.quote.currency,
+      }
+    }),
     editable: false,
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
@@ -116,11 +127,13 @@ function buildOptionBadges(
   demo: ProcessDemoQuote,
   lowestTotalCents: number,
   shortestLeadTimeDays: number,
+  inputDraft: ProcessInputDraft,
 ): string[] {
   return [
     demo.quote.totalCents === lowestTotalCents ? "Best price" : undefined,
     demo.quote.leadTimeDays === shortestLeadTimeDays ? "Fastest lead" : undefined,
     demo.quote.warnings.length > 0 ? "Review flags" : undefined,
+    inputDraft.status === "ready_for_read_only_review" ? "Draft complete" : "Draft gaps",
   ].filter((badge): badge is string => Boolean(badge))
 }
 

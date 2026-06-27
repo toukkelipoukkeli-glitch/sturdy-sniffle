@@ -48,8 +48,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(processDemos).toHaveTextContent("sheet-metal.v1")
     expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("Best price")
     expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("Fastest lead")
+    expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("Draft complete")
+    expect(within(processDemos).getByRole("button", { name: /Sheet metal/ })).toHaveTextContent("4/4 inputs")
     expect(processDemos).toHaveTextContent("Wire EDM")
-    expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toBeInTheDocument()
+    expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toHaveTextContent("Draft gaps")
+    expect(within(processDemos).getByRole("button", { name: /Wire EDM/ })).toHaveTextContent("4/5 inputs")
     expect(processDemos).toHaveTextContent("Read-only registry fixture. Process-specific editable inputs are not enabled yet.")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)

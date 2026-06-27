@@ -920,6 +920,14 @@
   font-weight: 800;
 }
 
+.process-demo-option small[data-status="missing_fixture_values"] {
+  color: oklch(0.46 0.09 45);
+}
+
+.process-demo-option small[data-status="ready_for_read_only_review"] {
+  color: oklch(0.34 0.08 145);
+}
+
 .process-demo-option .process-demo-option-badges {
   display: flex;
   flex-wrap: wrap;

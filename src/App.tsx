@@ -4011,6 +4011,7 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
       <span>{option.label}</span>
       <strong>{formatCurrency(option.totalCents, option.currency)}</strong>
       <small>{option.leadTimeDays}d</small>
+      <small data-status={option.draftStatus}>{option.draftCoverageLabel}</small>
       {option.badges.length > 0 ? (
         <span className="process-demo-option-badges">
           {option.badges.map((badge) => (
