@@ -3972,7 +3972,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
           <ProcessQuotePreviewButton key={option.process} onSelect={() => setSelectedProcess(option.process)} option={option} />
         ))}
       </div>
-      <ProcessQuotePreviewCard key={preview.selected.process} preview={preview} />
+      <ProcessQuotePreviewCard preview={preview} />
     </section>
   )
 }
@@ -3989,11 +3989,18 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
 
 export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
   const demo = preview.selected
-  const [summaryFeedback, setSummaryFeedback] = useState<"idle" | "copied" | "error">("idle")
+  const [summaryFeedback, setSummaryFeedback] = useState<{
+    kind: "idle" | "copied" | "error"
+    summaryText: string
+  }>({ kind: "idle", summaryText: preview.summaryText })
+  const activeSummaryFeedback = summaryFeedback.summaryText === preview.summaryText ? summaryFeedback.kind : "idle"
 
   const handleCopySummary = async () => {
     const copied = await copyTextToClipboard(preview.summaryText)
-    setSummaryFeedback(copied ? "copied" : "error")
+    setSummaryFeedback({
+      kind: copied ? "copied" : "error",
+      summaryText: preview.summaryText,
+    })
   }
 
   return (
@@ -4047,10 +4054,10 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
       <div className="process-demo-actions" aria-label="Process quote preview actions">
         <Button onClick={() => void handleCopySummary()} size="sm" type="button" variant="outline">
           <Copy aria-hidden="true" />
-          {summaryFeedback === "copied" ? "Copied" : "Copy summary"}
+          {activeSummaryFeedback === "copied" ? "Copied" : "Copy summary"}
         </Button>
-        <p aria-live="polite" className={summaryFeedback === "error" ? "is-error" : ""} role="status">
-          {processPreviewSummaryFeedback(summaryFeedback)}
+        <p aria-live="polite" className={activeSummaryFeedback === "error" ? "is-error" : ""} role="status">
+          {processPreviewSummaryFeedback(activeSummaryFeedback)}
         </p>
       </div>
       <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
