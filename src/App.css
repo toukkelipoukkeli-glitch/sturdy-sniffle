@@ -1130,6 +1130,12 @@
   grid-column: 1 / -1;
 }
 
+.process-demo-input-draft {
+  border-top: 1px solid oklch(0.9 0.055 70);
+  grid-column: 1 / -1;
+  padding-top: 8px;
+}
+
 .process-demo-input-fields li {
   display: inline-flex;
   gap: 4px;
@@ -1139,6 +1145,47 @@
   color: oklch(0.5 0.028 250);
   font-size: 0.66rem;
   font-weight: 800;
+}
+
+.process-demo-input-draft dl {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.process-demo-input-draft div {
+  background: oklch(0.965 0.018 75);
+  border-radius: 8px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px;
+}
+
+.process-demo-input-draft div[data-status="missing"] {
+  background: oklch(0.97 0.035 45);
+}
+
+.process-demo-input-draft dt {
+  color: oklch(0.32 0.025 250);
+  font-size: 0.68rem;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-input-draft dd {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.68rem;
+  font-weight: 750;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 540px) {
+  .process-demo-input-draft dl {
+    grid-template-columns: 1fr;
+  }
 }
 
 .process-demo-footer {

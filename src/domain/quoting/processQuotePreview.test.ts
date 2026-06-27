@@ -69,6 +69,18 @@ describe("process quote preview", () => {
       requiredGroups: ["stock dimensions", "cut length", "wire settings", "inspection scope"],
       status: "blocked",
     })
+    expect(preview.inputDraft).toMatchObject({
+      editable: false,
+      populatedRequiredCount: 4,
+      process: "wire_edm",
+      requiredCount: 5,
+      source: "registry_fixture",
+      status: "missing_fixture_values",
+    })
+    expect(preview.inputDraft.values.find((value) => value.key === "wireDiameterMm")).toMatchObject({
+      status: "missing",
+      value: "Missing fixture value",
+    })
     expect(preview.topBreakdown.length).toBeGreaterThan(0)
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
@@ -81,6 +93,8 @@ describe("process quote preview", () => {
     expect(preview.summaryText).toContain("Editable input readiness:\n- Status: blocked")
     expect(preview.summaryText).toContain("- Required groups: stock dimensions, cut length, wire settings, inspection scope")
     expect(preview.summaryText).toContain("- Planned fields: Stock size, Cut length, Wire diameter, Finish passes, Inspection level")
+    expect(preview.summaryText).toContain("- Draft coverage: 4/5 required fields populated from registry_fixture")
+    expect(preview.summaryText).toContain("- Wire diameter: Missing fixture value")
     expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
     expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
     expect(preview.summaryText).toContain("- No calculator flags")
