@@ -81,6 +81,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(selectedPreview).toHaveTextContent("EDM-KEY-077")
     expect(within(selectedPreview).getByLabelText("Process quote assumptions")).toHaveTextContent("stock weight kg per part")
     expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent("No calculator flags")
+    const inputReadiness = within(selectedPreview).getByLabelText("Process input readiness")
+    expect(inputReadiness).toHaveTextContent("Editable inputs blocked")
+    expect(inputReadiness).toHaveTextContent("wire settings")
     const checklist = within(selectedPreview).getByLabelText("Process quote operator checklist")
     expect(checklist).toHaveTextContent("Calculator ready")
     expect(checklist).toHaveTextContent("Input model read-only")
@@ -93,6 +96,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(copiedText).toContain("Part: EDM-KEY-077")
     expect(copiedText).toContain("Best price: Sheet metal (EUR 549.05)")
     expect(copiedText).toContain("Selected delta: +EUR 5260.69, +9 days lead")
+    expect(copiedText).toContain("Required groups: stock dimensions, cut length, wire settings, inspection scope")
     await waitFor(() => {
       expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     })

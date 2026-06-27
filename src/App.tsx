@@ -4082,6 +4082,17 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
           </div>
         ))}
       </div>
+      <div className="process-demo-input-readiness" aria-label="Process input readiness">
+        <div>
+          <strong>Editable inputs blocked</strong>
+          <span>{preview.inputReadiness.nextStep}</span>
+        </div>
+        <ul>
+          {preview.inputReadiness.requiredGroups.map((group) => (
+            <li key={group}>{group}</li>
+          ))}
+        </ul>
+      </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>

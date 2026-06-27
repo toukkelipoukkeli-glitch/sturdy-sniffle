@@ -1,4 +1,5 @@
 import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuotes"
+import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
 export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v2"
@@ -36,6 +37,7 @@ export interface ProcessQuotePreview {
   previewVersion: typeof PROCESS_QUOTE_PREVIEW_VERSION
   selected: ProcessDemoQuote
   comparison: ProcessQuotePreviewComparison
+  inputReadiness: ProcessInputReadiness
   options: ProcessQuotePreviewOption[]
   editable: false
   guardrailCopy: string
@@ -59,11 +61,13 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
   const shortestLeadTimeDays = Math.min(...demos.map((demo) => demo.quote.leadTimeDays))
   const comparison = buildComparisonSummary(selected, demos, lowestTotalCents, shortestLeadTimeDays)
+  const inputReadiness = buildProcessInputReadiness(selected.process)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
     comparison,
+    inputReadiness,
     options: demos.map((demo) => ({
       process: demo.process,
       label: demo.label,
@@ -77,7 +81,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
     reviewFlags: selected.quote.warnings,
-    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison),
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
@@ -152,6 +156,7 @@ function buildPreviewSummaryText(
   selected: ProcessDemoQuote,
   operatorChecklist: ProcessQuotePreviewChecklistItem[],
   comparison: ProcessQuotePreviewComparison,
+  inputReadiness: ProcessInputReadiness,
 ): string {
   const quote = selected.quote
   return [
@@ -169,6 +174,11 @@ function buildPreviewSummaryText(
     `- Best price: ${comparison.cheapestLabel} (${formatPreviewCurrency(comparison.cheapestTotalCents, comparison.currency)})`,
     `- Fastest lead: ${comparison.fastestLabel} (${comparison.fastestLeadTimeDays} days)`,
     `- Selected delta: ${formatPreviewDelta(comparison.selectedPriceDeltaCents, comparison.currency)}, ${formatLeadDelta(comparison.selectedLeadTimeDeltaDays)}`,
+    "",
+    "Editable input readiness:",
+    `- Status: ${inputReadiness.status}`,
+    `- Required groups: ${inputReadiness.requiredGroups.join(", ")}`,
+    `- Next step: ${inputReadiness.nextStep}`,
     "",
     "Top assumptions:",
     ...quote.assumptions.slice(0, 4).map((assumption) => `- ${assumption.key}: ${assumption.value}`),
