@@ -58,11 +58,12 @@ export function buildNonCncQuotePromotionPlan(input: BuildNonCncQuotePromotionPl
       : ["Persisted non-CNC quote promotion is not wired to workspace state yet"]),
   ]
   const reviewWarnings = [...input.preview.reviewFlags]
-  const status = blockers.length > 0 ? "blocked" : reviewWarnings.length > 0 ? "needs_review" : "ready"
+  const hasExecutionBlockers = blockers.length > 0
+  const status = hasExecutionBlockers ? "blocked" : reviewWarnings.length > 0 ? "needs_review" : "ready"
 
   return {
     blockers,
-    commands: buildPromotionCommands(status),
+    commands: buildPromotionCommands(hasExecutionBlockers),
     nextActions: buildNextActions(status, blockers, reviewWarnings),
     planId: buildPromotionPlanId(input.targetRfqId, input.preview.selected.process, quote.partNumber, quote.calculatorVersion),
     planVersion: NON_CNC_QUOTE_PROMOTION_PLAN_VERSION,
@@ -86,8 +87,8 @@ export function buildNonCncQuotePromotionPlan(input: BuildNonCncQuotePromotionPl
   }
 }
 
-function buildPromotionCommands(status: NonCncQuotePromotionPlanStatus): NonCncQuotePromotionCommand[] {
-  const commandStatus: NonCncQuotePromotionCommandStatus = status === "ready" ? "ready" : "blocked"
+function buildPromotionCommands(hasExecutionBlockers: boolean): NonCncQuotePromotionCommand[] {
+  const commandStatus: NonCncQuotePromotionCommandStatus = hasExecutionBlockers ? "blocked" : "ready"
   return [
     {
       detail:

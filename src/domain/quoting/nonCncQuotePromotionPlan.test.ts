@@ -90,6 +90,33 @@ describe("non-CNC quote promotion plan", () => {
     expect(plan.blockers).toEqual(["Editable controls missing"])
   })
 
+  it("allows promotion commands when only calculator warnings need review", () => {
+    const preview = {
+      ...buildProcessQuotePreview(buildProcessDemoQuotes(), "sheet_metal"),
+      inputPromotionGate: {
+        blockerLabels: [],
+        blockers: [],
+        gateVersion: "process-input-promotion-gate.v1",
+        missingRequiredCount: 0,
+        nextStep: "Persist the quote snapshot.",
+        status: "blocked",
+      },
+      reviewFlags: ["Material certificate required."],
+    } as ProcessQuotePreview
+
+    const plan = buildNonCncQuotePromotionPlan({ ...request, preview, workspacePromotionPersistence: "configured" })
+
+    expect(plan.status).toBe("needs_review")
+    expect(plan.blockers).toEqual([])
+    expect(plan.reviewWarnings).toEqual(["Material certificate required."])
+    expect(plan.nextActions).toEqual(["Review 1 calculator warning"])
+    expect(plan.commands.map((command) => [command.key, command.status])).toEqual([
+      ["persist_quote_snapshot", "ready"],
+      ["refresh_offer_readiness", "ready"],
+      ["enable_offer_builder", "ready"],
+    ])
+  })
+
   it("marks commands ready only when the gate and persistence boundary are clear", () => {
     const preview = {
       ...buildProcessQuotePreview(buildProcessDemoQuotes(), "sheet_metal"),
