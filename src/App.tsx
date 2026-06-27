@@ -3974,7 +3974,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
   }
-  const updatePlasticEdit = (field: keyof PlasticsInputEditPatch, value: number | string) => {
+  const updatePlasticEdit = <K extends keyof PlasticsInputEditPatch>(field: K, value: PlasticsInputEditPatch[K]) => {
     setPlasticEdits((current) => ({ ...current, [field]: value }))
   }
 
@@ -4115,6 +4115,12 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
   )
 }
 
+type PlasticPreviewEditorControl = {
+  error?: string
+  onChange: <K extends keyof PlasticsInputEditPatch>(field: K, value: PlasticsInputEditPatch[K]) => void
+  state: PlasticsInputEditState
+}
+
 export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
@@ -4122,11 +4128,7 @@ export function ProcessQuotePreviewCard({
   sheetMetalEditor,
 }: {
   inputEditAdapter?: NonCncInputEditAdapterSummary
-  plasticEditor?: {
-    error?: string
-    onChange: (field: keyof PlasticsInputEditPatch, value: number | string) => void
-    state: PlasticsInputEditState
-  }
+  plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
   sheetMetalEditor?: {
     error?: string
@@ -4276,11 +4278,7 @@ export function ProcessQuotePreviewCard({
 function PlasticPreviewEditor({
   editor,
 }: {
-  editor: {
-    error?: string
-    onChange: (field: keyof PlasticsInputEditPatch, value: number | string) => void
-    state: PlasticsInputEditState
-  }
+  editor: PlasticPreviewEditorControl
 }) {
   return (
     <div className="process-demo-input-editor" aria-label="Plastic preview edit controls">
