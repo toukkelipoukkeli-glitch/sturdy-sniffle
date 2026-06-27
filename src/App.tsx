@@ -118,6 +118,7 @@ import {
   listNonCncInputEditAdapters,
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
+import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
 import {
   createLocalNonCncQuotePromotionPersistence,
   type NonCncQuotePromotionPersistenceSnapshot,
@@ -4265,6 +4266,14 @@ export function ProcessQuotePreviewCard({
 }) {
   const demo = preview.selected
   const promotionRecord = promotionSnapshot.records.find((record) => record.planId === promotionPlan.planId)
+  const promotionActionSummary = useMemo(
+    () =>
+      buildNonCncQuotePromotionActionSummary({
+        selectedPlanId: promotionPlan.planId,
+        snapshot: promotionSnapshot,
+      }),
+    [promotionPlan.planId, promotionSnapshot],
+  )
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4509,6 +4518,40 @@ export function ProcessQuotePreviewCard({
           </div>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-actions"
+        aria-label="Non-CNC promotion actions"
+        data-status={promotionActionSummary.status}
+      >
+        <div className="process-demo-promotion-actions-heading">
+          <div>
+            <span>Promotion actions</span>
+            <strong>{humanizeKey(promotionActionSummary.status)}</strong>
+          </div>
+          <small>{promotionActionSummary.actionVersion}</small>
+        </div>
+        <p>{promotionActionSummary.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-actions-summary">
+          <span>{promotionActionSummary.canPromoteQuote ? "Quote promotion ready" : "Quote promotion guarded"}</span>
+          <span>{promotionActionSummary.selectedPlanId}</span>
+        </div>
+        <ul className="process-demo-promotion-actions-list">
+          {promotionActionSummary.actions.map((action) => (
+            <li data-status={action.state} key={action.key}>
+              <div>
+                <strong>{action.label}</strong>
+                <span>{humanizeKey(action.state)}</span>
+              </div>
+              <small>{action.detail}</small>
+              {action.blockerLabels.length > 0 ? (
+                <small>Blockers: {action.blockerLabels.join(", ")}</small>
+              ) : (
+                <small>Blockers: None</small>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
