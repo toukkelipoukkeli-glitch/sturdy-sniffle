@@ -92,7 +92,8 @@ describe("plastics input edits", () => {
   })
 
   it("keeps operation count read-only until plastics operation editing is supported", () => {
-    expect(() => applyPlasticsInputEdits({ operationCount: 7 } as never)).toThrow(
+    // @ts-expect-error operationCount is derived state until operation-level edits are supported.
+    expect(() => applyPlasticsInputEdits({ operationCount: 7 })).toThrow(
       "operationCount is read-only until plastics operation editing is supported",
     )
     expect(buildPlasticsInputEditState().operationCount).toBe(5)
