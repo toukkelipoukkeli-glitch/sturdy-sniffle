@@ -1289,12 +1289,109 @@
   overflow-wrap: anywhere;
 }
 
+.process-demo-offer-handoff {
+  background: oklch(0.965 0.014 245);
+  border: 1px solid oklch(0.86 0.035 245);
+  border-left: 4px solid oklch(0.54 0.095 245);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+
+.process-demo-offer-handoff[data-status="needs_review"] {
+  background: oklch(0.98 0.018 82);
+  border-color: oklch(0.84 0.07 82);
+  border-left-color: oklch(0.62 0.11 80);
+}
+
+.process-demo-offer-handoff-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.process-demo-offer-handoff-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.process-demo-offer-handoff-heading span,
+.process-demo-offer-handoff-grid span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.process-demo-offer-handoff-heading strong {
+  color: oklch(0.25 0.025 250);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-offer-handoff-heading small {
+  background: white;
+  border-radius: 999px;
+  color: oklch(0.36 0.035 250);
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 850;
+  padding: 4px 6px;
+}
+
+.process-demo-offer-handoff p {
+  color: oklch(0.36 0.035 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.process-demo-offer-handoff-grid {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.process-demo-offer-handoff-grid > div {
+  background: oklch(0.985 0.004 245);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px;
+}
+
+.process-demo-offer-handoff-grid ul {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.process-demo-offer-handoff-grid li {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 540px) {
   .process-demo-input-editor-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .process-demo-input-draft dl {
+    grid-template-columns: 1fr;
+  }
+
+  .process-demo-offer-handoff-grid {
     grid-template-columns: 1fr;
   }
 }

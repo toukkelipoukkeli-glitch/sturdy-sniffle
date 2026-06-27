@@ -4354,6 +4354,42 @@ export function ProcessQuotePreviewCard({
           </dl>
         </div>
       </div>
+      <div className="process-demo-offer-handoff" aria-label="Non-CNC offer handoff readiness" data-status={preview.offerHandoff.status}>
+        <div className="process-demo-offer-handoff-heading">
+          <div>
+            <span>Offer candidate</span>
+            <strong>{preview.offerHandoff.statusLabel}</strong>
+          </div>
+          <small>{preview.offerHandoff.handoffVersion}</small>
+        </div>
+        <p>{preview.offerHandoff.summary}</p>
+        <div className="process-demo-offer-handoff-grid">
+          <div>
+            <span>Candidate facts</span>
+            <ul>
+              {preview.offerHandoff.candidateLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span>Release blockers</span>
+            <ul>
+              {preview.offerHandoff.blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span>Next gates</span>
+            <ul>
+              {preview.offerHandoff.nextSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
