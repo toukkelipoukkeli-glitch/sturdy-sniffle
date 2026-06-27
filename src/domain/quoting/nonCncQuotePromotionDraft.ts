@@ -37,7 +37,7 @@ export function buildNonCncQuotePromotionDraft(summary: NonCncQuotePromotionActi
     draftVersion: NON_CNC_QUOTE_PROMOTION_DRAFT_VERSION,
     nextOperatorMessage: summary.nextOperatorMessage,
     quoteSnapshot: { ...summary.record.quoteSnapshot },
-    reviewWarnings: [...summary.record.reviewWarnings],
+    reviewWarnings: uniqueLabels(summary.actions.flatMap((action) => action.reviewWarnings)),
     selectedPlanId: summary.selectedPlanId,
     status: "ready",
     targetRfqId: summary.record.targetRfqId,

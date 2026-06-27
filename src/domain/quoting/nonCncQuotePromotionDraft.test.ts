@@ -31,6 +31,7 @@ describe("non-CNC quote promotion draft", () => {
     const plan = buildNonCncQuotePromotionPlan({ ...request, preview, workspacePromotionPersistence: "configured" })
     const snapshot = await adapter.recordPlan(plan)
     const summary = buildNonCncQuotePromotionActionSummary({ selectedPlanId: plan.planId, snapshot })
+    summary.actions[0]!.reviewWarnings = ["Action-level warning."]
 
     const draft = buildNonCncQuotePromotionDraft(summary)
     draft.quoteSnapshot!.partNumber = "MUTATED"
@@ -39,7 +40,7 @@ describe("non-CNC quote promotion draft", () => {
       actionKeys: ["persist_quote_snapshot", "refresh_offer_readiness", "enable_offer_builder"],
       blockerLabels: [],
       draftVersion: NON_CNC_QUOTE_PROMOTION_DRAFT_VERSION,
-      reviewWarnings: ["Material certificate required."],
+      reviewWarnings: ["Action-level warning.", "Material certificate required."],
       selectedPlanId: plan.planId,
       status: "ready",
       targetRfqId: request.targetRfqId,
