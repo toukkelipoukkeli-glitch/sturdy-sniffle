@@ -215,42 +215,48 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Drawing is enough for turning setup.")
   })
 
-  it("stores CAD dimension material and process correction notes", async () => {
-    const user = userEvent.setup()
+  it("stores CAD dimension material and process correction notes", () => {
     const { unmount } = render(<App />)
 
     const queue = screen.getByRole("complementary", { name: "RFQ queue" })
-    await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    fireEvent.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
 
     const override = screen.getByLabelText("CAD review override")
     fireEvent.change(within(override).getByLabelText("Dimension correction note"), { target: { value: "Spacer length is 78 mm on revised drawing." } })
     fireEvent.change(within(override).getByLabelText("Material correction note"), { target: { value: "Use 316L certificate batch from customer note." } })
     fireEvent.change(within(override).getByLabelText("Process correction note"), { target: { value: "Review turning setup with passivation supplier." } })
-    await user.click(within(override).getByRole("button", { name: "Save corrections" }))
+    fireEvent.click(within(override).getByRole("button", { name: "Save corrections" }))
 
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Spacer length is 78 mm")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Use 316L")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("passivation supplier")
     expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Saved CAD corrections")
     expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Acknowledged 0 flags")
+    expect(screen.getByText("cad review dimensions")).toBeInTheDocument()
+    expect(screen.getByText("cad review material")).toBeInTheDocument()
+    expect(screen.getByText("cad review process")).toBeInTheDocument()
 
     unmount()
     render(<App />)
     const restoredQueue = screen.getByRole("complementary", { name: "RFQ queue" })
-    await user.click(within(restoredQueue).getByRole("button", { name: /Baltic Hydraulics/ }))
+    fireEvent.click(within(restoredQueue).getByRole("button", { name: /Baltic Hydraulics/ }))
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Spacer length is 78 mm")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Use 316L")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("passivation supplier")
+    expect(screen.getByText("cad review dimensions")).toBeInTheDocument()
 
     const restoredOverride = screen.getByLabelText("CAD review override")
-    await user.clear(within(restoredOverride).getByLabelText("Dimension correction note"))
-    await user.clear(within(restoredOverride).getByLabelText("Material correction note"))
-    await user.clear(within(restoredOverride).getByLabelText("Process correction note"))
-    await user.click(within(restoredOverride).getByRole("button", { name: "Save corrections" }))
+    fireEvent.change(within(restoredOverride).getByLabelText("Dimension correction note"), { target: { value: "" } })
+    fireEvent.change(within(restoredOverride).getByLabelText("Material correction note"), { target: { value: "" } })
+    fireEvent.change(within(restoredOverride).getByLabelText("Process correction note"), { target: { value: "" } })
+    fireEvent.click(within(restoredOverride).getByRole("button", { name: "Save corrections" }))
 
     expect(screen.queryByLabelText("CAD correction notes")).toBeNull()
     expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Cleared CAD corrections")
     expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Acknowledged 0 flags")
+    expect(screen.queryByText("cad review dimensions")).toBeNull()
+    expect(screen.queryByText("cad review material")).toBeNull()
+    expect(screen.queryByText("cad review process")).toBeNull()
   })
 
   it("persists an operator-selected primary attachment for part preview", async () => {
