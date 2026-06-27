@@ -253,6 +253,7 @@ interface WorkspaceLocalState {
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  primaryAttachmentById: Record<string, string>
   releaseExecutionRunsById: Record<string, OfferReleaseExecutionRun[]>
   releaseReviewsById: Record<string, ReleaseReviewState>
   selectedId: string
@@ -791,6 +792,7 @@ function App() {
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
   )
+  const [primaryAttachmentById, setPrimaryAttachmentById] = useState<Record<string, string>>(workspaceLocalState?.primaryAttachmentById ?? {})
   const [releaseExecutionRunsById, setReleaseExecutionRunsById] = useState<Record<string, OfferReleaseExecutionRun[]>>(
     workspaceLocalState?.releaseExecutionRunsById ?? {},
   )
@@ -823,6 +825,7 @@ function App() {
       offerDraftEditsById,
       offerExportEventsById,
       offerLifecycleEventsById,
+      primaryAttachmentById,
       releaseExecutionRunsById,
       releaseReviewsById,
       selectedId,
@@ -838,6 +841,7 @@ function App() {
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    primaryAttachmentById,
     releaseExecutionRunsById,
     releaseReviewsById,
     selectedId,
@@ -1081,9 +1085,10 @@ function App() {
         attachments: selectedItem.attachments,
         cadMetadata: selectedItem.cadMetadata,
         part: partDraftForQuoteInput(quoteInput, selectedItem.attachments),
+        preferredPrimaryAttachmentName: primaryAttachmentById[selectedId],
         subject: selectedItem.subject,
       }),
-    [quoteInput, selectedItem],
+    [primaryAttachmentById, quoteInput, selectedId, selectedItem],
   )
   const selectedCadReviewOverride = cadReviewOverridesById[selectedId]
   const selectedCadReviewDraft = cadReviewDraftById[selectedId] ?? ""
@@ -1823,6 +1828,7 @@ function App() {
               selectedItem={selectedItem}
               onAcknowledgeCadFlags={acknowledgeSelectedCadFlags}
               onCadReviewDraftChange={(value) => setCadReviewDraftById((current) => ({ ...current, [selectedId]: value }))}
+              onPrimaryAttachmentChange={(fileName) => setPrimaryAttachmentById((current) => ({ ...current, [selectedId]: fileName }))}
               onResetCadReview={resetSelectedCadReview}
               setCycleMinutes={(value) => updateSelectedEdit({ cycleMinutes: value })}
               setMachineHourlyRateCents={(value) => updateSelectedEdit({ machineHourlyRateCents: value })}
@@ -1976,6 +1982,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const primaryAttachmentById = value.primaryAttachmentById === undefined ? {} : isRecordOfStrings(value.primaryAttachmentById) ? value.primaryAttachmentById : undefined
   const releaseExecutionRunsById = optionalRecordOfArrays(value.releaseExecutionRunsById, isOfferReleaseExecutionRun)
   const releaseReviewsById = optionalRecordOfValues(value.releaseReviewsById, isReleaseReviewState)
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
@@ -1986,6 +1993,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !offerDraftEditsById ||
     !offerExportEventsById ||
     !offerLifecycleEventsById ||
+    !primaryAttachmentById ||
     !releaseReviewsById ||
     !statusById
   ) {
@@ -2007,6 +2015,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    primaryAttachmentById,
     releaseExecutionRunsById: releaseExecutionRunsById ?? {},
     releaseReviewsById,
     selectedId,
@@ -4154,6 +4163,7 @@ function CostingView({
   selectedItem,
   onAcknowledgeCadFlags,
   onCadReviewDraftChange,
+  onPrimaryAttachmentChange,
   onResetCadReview,
   setCycleMinutes,
   setMachineHourlyRateCents,
@@ -4178,6 +4188,7 @@ function CostingView({
   selectedItem: QuoteWorkItem
   onAcknowledgeCadFlags: () => void
   onCadReviewDraftChange: (value: string) => void
+  onPrimaryAttachmentChange: (fileName: string) => void
   onResetCadReview: () => void
   setCycleMinutes: (value: number) => void
   setMachineHourlyRateCents: (value: number) => void
@@ -4204,6 +4215,7 @@ function CostingView({
         cadReviewDraft={cadReviewDraft}
         onAcknowledgeCadFlags={onAcknowledgeCadFlags}
         onCadReviewDraftChange={onCadReviewDraftChange}
+        onPrimaryAttachmentChange={onPrimaryAttachmentChange}
         onResetCadReview={onResetCadReview}
         override={cadReviewOverride}
         preview={partPreview}
@@ -4337,6 +4349,7 @@ function PartPreviewPanel({
   cadReviewDraft,
   onAcknowledgeCadFlags,
   onCadReviewDraftChange,
+  onPrimaryAttachmentChange,
   onResetCadReview,
   override,
   preview,
@@ -4344,6 +4357,7 @@ function PartPreviewPanel({
   cadReviewDraft: string
   onAcknowledgeCadFlags: () => void
   onCadReviewDraftChange: (value: string) => void
+  onPrimaryAttachmentChange: (fileName: string) => void
   onResetCadReview: () => void
   override: CadReviewOverrideState | undefined
   preview: PartPreviewModel
@@ -4427,7 +4441,16 @@ function PartPreviewPanel({
                 <strong>{attachment.fileName}</strong>
                 {attachment.reviewReasons.length > 0 ? <small>{attachment.reviewReasons.join(" ")}</small> : null}
               </span>
-              <strong>{humanizeKey(attachment.reviewState)}</strong>
+              <div className="attachment-actions">
+                <strong>{attachment.primary ? `Primary · ${humanizeKey(attachment.reviewState)}` : humanizeKey(attachment.reviewState)}</strong>
+                <button
+                  disabled={attachment.primary || attachment.modes[0] === "metadata"}
+                  onClick={() => onPrimaryAttachmentChange(attachment.fileName)}
+                  type="button"
+                >
+                  Set primary
+                </button>
+              </div>
             </div>
           ))}
         </div>

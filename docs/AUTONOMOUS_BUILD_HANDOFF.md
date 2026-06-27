@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `20ae11f` (`Add CAD review flag acknowledgements (#135)`).
+- Main branch checkpoint: `e65ce7a` (`Add workspace runtime context (#136)`).
 - Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: local workspace runtime context for operator identity and clock.
+- In-flight PR at this checkpoint: CAD primary attachment selection.
 - Latest merged sequence:
+  - `#136` app actions now use a local workspace runtime context for deterministic operator/timezone/clock values.
   - `#135` CAD manufacturability flags can be acknowledged and reopened with a persistent operator note.
   - `#130` healthy deterministic RFQ connector sync path.
   - `#132` Gmail RFQ sync materializes duplicate-safe imported queue items for operator review.
@@ -110,7 +111,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 2. Add CAD review operator overrides.
    - Manufacturability flags can now be acknowledged and reopened with a persistent note.
-   - Next steps: correct dimensions/material/process notes and choose the primary attachment.
+   - Current in-flight slice lets operators choose the primary preview attachment and persist that choice.
+   - Next steps: correct dimensions/material/process notes and add richer per-type thumbnails/previews.
    - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 

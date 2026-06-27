@@ -55,7 +55,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §4 CAD-like part review
 
 - ✅ Preview states (ready/metadata-only/needs-review/unsupported), metadata, manufacturability flags computed and shown; model never blank (`partPreview.ts`, `cadMetadata.ts`).
-- 🟡 **Operator override UI** — manufacturability flags can now be acknowledged with a persistent operator note; dimension/material/process correction and primary attachment selection remain pending. → **Slice F**
+- 🟡 **Operator override UI** — manufacturability flags can now be acknowledged with a persistent operator note, and primary preview attachment selection is in progress; dimension/material/process correction remains pending. → **Slice F**
 - 🔴 **Thumbnails / real previews** — every part shows the same generic cuboid icon; no `<img>`/canvas. → **Slice F**
 - 🟡 **Real STEP/DXF/PDF adapter wired** — adapter interface exists; no real parser, app uses fixtures. → **Slice F (deferred; keep behind adapter)**
 
