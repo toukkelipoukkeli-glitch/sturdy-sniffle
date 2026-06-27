@@ -3987,7 +3987,7 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
   )
 }
 
-function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
+export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
   const demo = preview.selected
   return (
     <article className="process-demo-card" aria-label="Selected non-CNC quote preview">
