@@ -420,6 +420,15 @@
   .rfq-dialog-grid {
     grid-template-columns: 1fr;
   }
+
+  .process-demo-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .process-demo-actions p {
+    text-align: left;
+  }
 }
 
 .queue-item {
@@ -1039,6 +1048,26 @@
   color: oklch(0.32 0.045 250);
   flex: 0 0 auto;
   padding: 4px 7px;
+}
+
+.process-demo-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.process-demo-actions p {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.process-demo-actions p.is-error {
+  color: oklch(0.48 0.14 32);
 }
 
 .process-demo-guardrail {

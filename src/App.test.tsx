@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
@@ -14,9 +14,19 @@ function totalText(container: HTMLElement): string {
   return container.querySelector(".total-box span")?.textContent ?? ""
 }
 
+const originalClipboard = navigator.clipboard
+
 describe("FactoryBid workspace (component)", () => {
   beforeEach(() => {
     window.localStorage.clear()
+    vi.restoreAllMocks()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: originalClipboard,
+    })
   })
 
   it("renders the dense operator workspace with the first RFQ selected and a computed quote", () => {
@@ -43,7 +53,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(totalText(container)).toMatch(/€\d/)
   })
 
-  it("previews non-CNC registry process quotes without enabling fake edits", () => {
+  it("previews non-CNC registry process quotes without enabling fake edits", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     render(<App />)
 
     const processDemos = screen.getByLabelText("Non-CNC registry demos")
@@ -63,7 +79,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(checklist).toHaveTextContent("Input model read-only")
     expect(checklist).toHaveTextContent("Offer wiring pending")
     expect(checklist).toHaveTextContent("No calculator flags on this fixture.")
-    expect(selectedPreview).toHaveTextContent(
+    await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const [copiedText] = writeText.mock.calls[0] ?? [""]
+    expect(copiedText).toContain("Process: Wire EDM")
+    expect(copiedText).toContain("Part: EDM-KEY-077")
+    await waitFor(() => {
+      expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
+    })
+    await user.click(within(selector).getByRole("button", { name: /Plastic machining/ }))
+    const plasticPreview = within(processDemos).getByLabelText("Selected non-CNC quote preview")
+    expect(within(plasticPreview).getByRole("button", { name: "Copy summary" })).toBeInTheDocument()
+    expect(within(plasticPreview).getByRole("status")).toHaveTextContent("Copy a read-only summary for estimator review.")
+    expect(plasticPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     )
   })

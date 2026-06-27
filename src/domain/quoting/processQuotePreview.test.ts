@@ -21,6 +21,11 @@ describe("process quote preview", () => {
     expect(preview.topBreakdown.length).toBeLessThanOrEqual(5)
     expect(preview.topAssumptions).toEqual(preview.selected.quote.assumptions.slice(0, 4))
     expect(preview.reviewFlags).toEqual(preview.selected.quote.warnings)
+    expect(preview.summaryText).toContain("Non-CNC quote preview\nProcess: Wire EDM\nPart: EDM-KEY-077")
+    expect(preview.summaryText).toContain("Total: EUR 5809.74")
+    expect(preview.summaryText).toContain("- stock_size_mm: 100 x 60 x 20")
+    expect(preview.summaryText).toContain("- Input model read-only [blocked]: Editable process-specific inputs are not enabled yet.")
+    expect(preview.summaryText).toContain("- No calculator flags")
     expect(preview.operatorChecklist).toEqual([
       {
         detail: "Wire EDM totals came from wire-edm.v1.",
@@ -75,5 +80,7 @@ describe("process quote preview", () => {
       label: "Calculator flags",
       level: "review",
     })
+    expect(preview.summaryText).toContain("- Minimum order adjustment applied.")
+    expect(preview.summaryText).toContain("- Calculator flags [review]: 1 calculator flag requires review.")
   })
 })

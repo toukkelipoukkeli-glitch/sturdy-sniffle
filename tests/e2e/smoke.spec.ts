@@ -153,6 +153,8 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(nonCncDemos.getByLabel("Selected non-CNC quote preview")).toContainText("EDM-KEY-077")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Input model read-only")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Offer wiring pending")
+  await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
+  await expect(nonCncDemos.getByRole("status")).toContainText("Process preview summary copied.")
   await expect(page.getByLabel("Capacity commitment plan")).toContainText("5-day plan")
   await expect(page.getByLabel("Capacity commitment plan")).toContainText("CNC milling")
   await expect(page.getByLabel("Capacity commitment plan")).toContainText("Selected RFQ")

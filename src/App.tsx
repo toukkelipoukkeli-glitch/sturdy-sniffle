@@ -3989,6 +3989,20 @@ function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void;
 
 export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
   const demo = preview.selected
+  const [summaryFeedback, setSummaryFeedback] = useState<{
+    kind: "idle" | "copied" | "error"
+    summaryText: string
+  }>({ kind: "idle", summaryText: preview.summaryText })
+  const activeSummaryFeedback = summaryFeedback.summaryText === preview.summaryText ? summaryFeedback.kind : "idle"
+
+  const handleCopySummary = async () => {
+    const copied = await copyTextToClipboard(preview.summaryText)
+    setSummaryFeedback({
+      kind: copied ? "copied" : "error",
+      summaryText: preview.summaryText,
+    })
+  }
+
   return (
     <article className="process-demo-card" aria-label="Selected non-CNC quote preview">
       <div className="process-demo-card-heading">
@@ -4037,9 +4051,29 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
       </div>
+      <div className="process-demo-actions" aria-label="Process quote preview actions">
+        <Button onClick={() => void handleCopySummary()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {activeSummaryFeedback === "copied" ? "Copied" : "Copy summary"}
+        </Button>
+        <p aria-live="polite" className={activeSummaryFeedback === "error" ? "is-error" : ""} role="status">
+          {processPreviewSummaryFeedback(activeSummaryFeedback)}
+        </p>
+      </div>
       <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
     </article>
   )
+}
+
+function processPreviewSummaryFeedback(feedback: "idle" | "copied" | "error"): string {
+  switch (feedback) {
+    case "copied":
+      return "Process preview summary copied."
+    case "error":
+      return "Copy unavailable; select the preview details manually."
+    default:
+      return "Copy a read-only summary for estimator review."
+  }
 }
 
 function CapacityCommitmentPanel({ plan, selectedItem }: { plan: CapacityCommitmentPlan; selectedItem: QuoteWorkItem }) {
