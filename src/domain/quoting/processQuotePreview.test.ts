@@ -62,6 +62,23 @@ describe("process quote preview", () => {
     expect(fallback.selected.process).toBe("sheet_metal")
   })
 
+  it("rejects mixed currencies before assigning price comparison badges", () => {
+    const [sheetMetalDemo, plasticDemo] = buildProcessDemoQuotes()
+
+    expect(() =>
+      buildProcessQuotePreview([
+        sheetMetalDemo,
+        {
+          ...plasticDemo,
+          quote: {
+            ...plasticDemo.quote,
+            currency: "USD",
+          },
+        },
+      ]),
+    ).toThrow("Process demo quotes must share a currency before computing comparison badges")
+  })
+
   it("marks calculator flags for warning-bearing process previews", () => {
     const [baseDemo] = buildProcessDemoQuotes()
     const preview = buildProcessQuotePreview([

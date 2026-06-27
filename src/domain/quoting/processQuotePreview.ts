@@ -39,6 +39,10 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   if (demos.length === 0) {
     throw new Error("At least one process demo quote is required")
   }
+  const currencies = new Set(demos.map((demo) => demo.quote.currency))
+  if (currencies.size !== 1) {
+    throw new Error("Process demo quotes must share a currency before computing comparison badges")
+  }
   const selected = demos.find((demo) => demo.process === selectedProcess) ?? demos[0]
   const operatorChecklist = buildOperatorChecklist(selected)
   const lowestTotalCents = Math.min(...demos.map((demo) => demo.quote.totalCents))
