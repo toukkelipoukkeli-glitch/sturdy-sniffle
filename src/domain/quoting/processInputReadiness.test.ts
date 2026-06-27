@@ -50,13 +50,11 @@ describe("process input readiness", () => {
   it("returns defensive copies of readiness arrays", () => {
     const readiness = buildProcessInputReadiness("wire_edm")
     readiness.requiredGroups.push("mutated group")
-    readiness.fieldPlans[0] = {
-      group: "mutated",
-      key: "mutated",
-      label: "Mutated",
-      required: false,
-      valueKind: "text",
+    const firstField = readiness.fieldPlans[0]
+    if (!firstField) {
+      throw new Error("Expected wire EDM field plans")
     }
+    firstField.label = "Mutated"
 
     expect(buildProcessInputReadiness("wire_edm").requiredGroups).not.toContain("mutated group")
     expect(buildProcessInputReadiness("wire_edm").fieldPlans[0]).toEqual({

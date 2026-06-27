@@ -4100,8 +4100,8 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
           <ul>
             {preview.inputReadiness.fieldPlans.map((field) => (
               <li key={field.key}>
-                {field.label}
-                <small>{field.valueKind}</small>
+                <span>{field.label}</span>
+                <small>({field.valueKind})</small>
               </li>
             ))}
           </ul>

@@ -22,13 +22,6 @@ export interface ProcessInputReadiness {
   nextStep: string
 }
 
-const requiredGroupsByProcess: Record<NonCncQuoteProcessKey, readonly string[]> = {
-  fabrication: ["frame geometry", "weld length", "cutting operations", "finish and inspection"],
-  plastic: ["stock dimensions", "material family", "machining operations", "surface finish"],
-  sheet_metal: ["blank dimensions", "material and thickness", "cutting route", "bend operations"],
-  wire_edm: ["stock dimensions", "cut length", "wire settings", "inspection scope"],
-}
-
 const fieldPlansByProcess: Record<NonCncQuoteProcessKey, readonly ProcessInputFieldPlan[]> = {
   fabrication: [
     requiredField("frameLengthMm", "Frame length", "frame geometry", "dimension"),
@@ -59,15 +52,25 @@ const fieldPlansByProcess: Record<NonCncQuoteProcessKey, readonly ProcessInputFi
 }
 
 export function buildProcessInputReadiness(process: NonCncQuoteProcessKey): ProcessInputReadiness {
+  const fieldPlans = fieldPlansByProcess[process].map((field) => ({ ...field }))
   return {
     editable: false,
-    fieldPlans: fieldPlansByProcess[process].map((field) => ({ ...field })),
+    fieldPlans,
     nextStep: "Add process-specific editable input controls before this preview can become an RFQ quote path.",
     process,
     readinessVersion: PROCESS_INPUT_READINESS_VERSION,
-    requiredGroups: [...requiredGroupsByProcess[process]],
+    requiredGroups: uniqueFieldGroups(fieldPlans),
     status: "blocked",
   }
+}
+
+function uniqueFieldGroups(fieldPlans: ProcessInputFieldPlan[]): string[] {
+  return fieldPlans.reduce<string[]>((groups, field) => {
+    if (!groups.includes(field.group)) {
+      groups.push(field.group)
+    }
+    return groups
+  }, [])
 }
 
 function requiredField(
