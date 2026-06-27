@@ -86,6 +86,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionActions).toHaveTextContent("Quote promotion guarded")
     expect(promotionActions).toHaveTextContent("Clear promotion blockers before updating the active RFQ quote")
     expect(promotionActions).toHaveTextContent("Review-only promotion records cannot update active RFQ quote state.")
+    const promotionDraft = within(processDemos).getByLabelText("Non-CNC promotion draft payload")
+    expect(promotionDraft).toHaveTextContent("Promotion draft")
+    expect(promotionDraft).toHaveTextContent("non-cnc-quote-promotion-draft.v1")
+    expect(promotionDraft).toHaveTextContent("Quote payload stays withheld until promotion is ready.")
+    expect(promotionDraft).toHaveTextContent("No quote payload")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -204,6 +209,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(wirePromotionActions).toHaveTextContent("Refresh offer readiness")
     expect(wirePromotionActions).toHaveTextContent("Enable offer builder")
     expect(wirePromotionActions).toHaveTextContent("Review-only promotion records cannot update active RFQ quote state.")
+    const wirePromotionDraft = within(selectedPreview).getByLabelText("Non-CNC promotion draft payload")
+    expect(wirePromotionDraft).toHaveTextContent("No quote payload")
+    expect(wirePromotionDraft).toHaveTextContent("3 commands")
+    expect(wirePromotionDraft).toHaveTextContent("1 warning")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]

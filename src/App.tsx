@@ -119,6 +119,7 @@ import {
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
+import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
 import {
   createLocalNonCncQuotePromotionPersistence,
   type NonCncQuotePromotionPersistenceSnapshot,
@@ -4274,6 +4275,7 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionPlan.planId, promotionSnapshot],
   )
+  const promotionDraft = useMemo(() => buildNonCncQuotePromotionDraft(promotionActionSummary), [promotionActionSummary])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4551,6 +4553,45 @@ export function ProcessQuotePreviewCard({
             </li>
           ))}
         </ul>
+      </div>
+      <div className="process-demo-promotion-draft" aria-label="Non-CNC promotion draft payload" data-status={promotionDraft.status}>
+        <div className="process-demo-promotion-draft-heading">
+          <div>
+            <span>Promotion draft</span>
+            <strong>{humanizeKey(promotionDraft.status)}</strong>
+          </div>
+          <small>{promotionDraft.draftVersion}</small>
+        </div>
+        <p>{promotionDraft.status === "ready" ? "Ready-only quote payload preview is available." : "Quote payload stays withheld until promotion is ready."}</p>
+        <div className="process-demo-promotion-draft-grid">
+          <div>
+            <span>Payload</span>
+            {promotionDraft.quoteSnapshot ? (
+              <>
+                <strong>{promotionDraft.quoteSnapshot.partNumber}</strong>
+                <small>
+                  {promotionDraft.quoteSnapshot.processLabel} ·{" "}
+                  {formatCurrency(promotionDraft.quoteSnapshot.totalCents, promotionDraft.quoteSnapshot.currency)}
+                </small>
+              </>
+            ) : (
+              <>
+                <strong>No quote payload</strong>
+                <small>{promotionDraft.blockerLabels.join(", ") || "No blockers"}</small>
+              </>
+            )}
+          </div>
+          <div>
+            <span>Commands</span>
+            <strong>{formatCount(promotionDraft.actionKeys.length, "command")}</strong>
+            <small>{promotionDraft.actionKeys.join(", ")}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionDraft.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionDraft.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
       </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
