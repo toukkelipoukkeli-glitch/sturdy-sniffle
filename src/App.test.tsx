@@ -223,9 +223,9 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(within(queue).getByRole("button", { name: /Baltic Hydraulics/ }))
 
     const override = screen.getByLabelText("CAD review override")
-    await user.type(within(override).getByLabelText("Dimension correction note"), "Spacer length is 78 mm on revised drawing.")
-    await user.type(within(override).getByLabelText("Material correction note"), "Use 316L certificate batch from customer note.")
-    await user.type(within(override).getByLabelText("Process correction note"), "Review turning setup with passivation supplier.")
+    fireEvent.change(within(override).getByLabelText("Dimension correction note"), { target: { value: "Spacer length is 78 mm on revised drawing." } })
+    fireEvent.change(within(override).getByLabelText("Material correction note"), { target: { value: "Use 316L certificate batch from customer note." } })
+    fireEvent.change(within(override).getByLabelText("Process correction note"), { target: { value: "Review turning setup with passivation supplier." } })
     await user.click(within(override).getByRole("button", { name: "Save corrections" }))
 
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Spacer length is 78 mm")
