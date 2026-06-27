@@ -2,9 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it } from "vitest"
 
-import App from "./App"
+import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
+import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
+import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
 import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
 
@@ -52,9 +54,22 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.click(within(selector).getByRole("button", { name: /Wire EDM/ }))
 
     expect(within(selector).getByRole("button", { name: /Wire EDM/ })).toHaveAttribute("aria-pressed", "true")
-    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent("EDM-KEY-077")
-    expect(within(processDemos).getByLabelText("Selected non-CNC quote preview")).toHaveTextContent(
+    const selectedPreview = within(processDemos).getByLabelText("Selected non-CNC quote preview")
+    expect(selectedPreview).toHaveTextContent("EDM-KEY-077")
+    expect(within(selectedPreview).getByLabelText("Process quote assumptions")).toHaveTextContent("stock weight kg per part")
+    expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent("No calculator flags")
+    expect(selectedPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
+    )
+  })
+
+  it("surfaces non-empty non-CNC preview review flags", () => {
+    const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
+    render(<ProcessQuotePreviewCard preview={{ ...preview, reviewFlags: ["Requires operator review before release"] }} />)
+
+    const selectedPreview = screen.getByLabelText("Selected non-CNC quote preview")
+    expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent(
+      "Requires operator review before release",
     )
   })
 

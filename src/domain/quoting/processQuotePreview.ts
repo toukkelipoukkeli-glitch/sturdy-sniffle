@@ -1,5 +1,5 @@
 import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuotes"
-import type { QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
+import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
 export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v1"
 
@@ -18,6 +18,8 @@ export interface ProcessQuotePreview {
   options: ProcessQuotePreviewOption[]
   editable: false
   guardrailCopy: string
+  reviewFlags: string[]
+  topAssumptions: QuoteEngineAssumption[]
   topBreakdown: QuoteEngineBreakdownLine[]
 }
 
@@ -40,6 +42,8 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     })),
     editable: false,
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
+    reviewFlags: selected.quote.warnings,
+    topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
 }
