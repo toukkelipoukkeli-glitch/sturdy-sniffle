@@ -110,10 +110,25 @@ describe("non-CNC quote promotion plan", () => {
     expect(plan.blockers).toEqual([])
     expect(plan.reviewWarnings).toEqual(["Material certificate required."])
     expect(plan.nextActions).toEqual(["Review 1 calculator warning"])
-    expect(plan.commands.map((command) => [command.key, command.status])).toEqual([
-      ["persist_quote_snapshot", "ready"],
-      ["refresh_offer_readiness", "ready"],
-      ["enable_offer_builder", "ready"],
+    expect(plan.commands).toEqual([
+      {
+        detail: "Store the selected non-CNC quote snapshot against the RFQ.",
+        key: "persist_quote_snapshot",
+        label: "Persist quote snapshot",
+        status: "ready",
+      },
+      {
+        detail: "Recompute customer-facing offer readiness from the promoted quote.",
+        key: "refresh_offer_readiness",
+        label: "Refresh offer readiness",
+        status: "ready",
+      },
+      {
+        detail: "Allow offer drafting from the promoted non-CNC quote.",
+        key: "enable_offer_builder",
+        label: "Enable offer builder",
+        status: "ready",
+      },
     ])
   })
 
