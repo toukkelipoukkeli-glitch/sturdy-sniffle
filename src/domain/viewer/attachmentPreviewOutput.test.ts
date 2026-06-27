@@ -107,6 +107,8 @@ describe("attachment preview output", () => {
       label: "PDF drawing preview",
       renderer: "pdf-page",
       status: "fallback",
+      thumbnailLabel: "PDF drawing",
+      warnings: ["PDF renderer unavailable; using deterministic drawing placeholder."],
     })
   })
 
@@ -121,7 +123,9 @@ describe("attachment preview output", () => {
       kind: "pdf_page",
       label: "PDF drawing preview",
       renderer: "pdf-page",
+      status: "fallback",
       thumbnailLabel: "PDF drawing",
+      warnings: ["PDF renderer unavailable; using deterministic drawing placeholder."],
     })
   })
 })
