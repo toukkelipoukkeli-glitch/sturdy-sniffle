@@ -414,6 +414,7 @@
 }
 
 @media (max-width: 540px) {
+  .process-demo-selector,
   .rfq-dialog-grid {
     grid-template-columns: 1fr;
   }
@@ -857,9 +858,53 @@
   padding: 5px 8px;
 }
 
-.process-demo-grid {
+.process-demo-selector {
   display: grid;
   gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.process-demo-option {
+  align-items: start;
+  background: oklch(0.985 0.006 225);
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  color: inherit;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-height: 74px;
+  padding: 9px;
+  text-align: left;
+}
+
+.process-demo-option[aria-pressed="true"] {
+  background: oklch(0.96 0.024 205);
+  border-color: oklch(0.72 0.08 205);
+}
+
+.process-demo-option span,
+.process-demo-option strong,
+.process-demo-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.process-demo-option span {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.process-demo-option strong {
+  font-size: 0.86rem;
+}
+
+.process-demo-option small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .process-demo-card {
@@ -926,6 +971,14 @@
   color: oklch(0.32 0.045 250);
   flex: 0 0 auto;
   padding: 4px 7px;
+}
+
+.process-demo-guardrail {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .capacity-commitment-panel {

@@ -112,6 +112,7 @@ import {
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
+import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
 import type { QuoteProcessKey } from "./domain/quoting/registry"
 import type { ParsedRfqIntake, RfqAttachmentDraft, RfqExtractedField, RfqIntakeSource, RfqPartDraft } from "./domain/rfq/intake"
@@ -3951,6 +3952,9 @@ function ProcessCapabilityPanel({
 }
 
 function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
+  const [selectedProcess, setSelectedProcess] = useState(demos[0]?.process)
+  const preview = useMemo(() => buildProcessQuotePreview(demos, selectedProcess), [demos, selectedProcess])
+
   return (
     <section className="process-demo-panel" aria-label="Non-CNC registry demos">
       <div className="process-demo-heading">
@@ -3963,37 +3967,56 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         </div>
         <span title={PROCESS_DEMO_QUOTES_VERSION}>{shortProcessDemoVersion(PROCESS_DEMO_QUOTES_VERSION)}</span>
       </div>
-      <div className="process-demo-grid">
-        {demos.map((demo) => (
-          <article className="process-demo-card" key={demo.process}>
-            <div className="process-demo-card-heading">
-              <div>
-                <strong>{demo.label}</strong>
-                <span>{demo.quote.partNumber}</span>
-              </div>
-              <span>{formatCurrency(demo.quote.totalCents, demo.quote.currency)}</span>
-            </div>
-            <div className="process-demo-metrics">
-              <Metric label="Qty" value={String(demo.quote.quantity)} />
-              <Metric label="Lead" value={`${demo.quote.leadTimeDays}d`} />
-              <Metric label="Unit" value={formatCurrency(demo.quote.unitPriceCents, demo.quote.currency)} />
-            </div>
-            <dl className="process-demo-breakdown">
-              {demo.quote.breakdown.slice(0, 3).map((line) => (
-                <div key={line.key}>
-                  <dt>{line.label}</dt>
-                  <dd>{formatCurrency(line.amountCents, demo.quote.currency)}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="process-demo-footer">
-              <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
-              <span>{demo.quote.calculatorVersion}</span>
-            </div>
-          </article>
+      <div className="process-demo-selector" aria-label="Process quote preview selector">
+        {preview.options.map((option) => (
+          <ProcessQuotePreviewButton key={option.process} onSelect={() => setSelectedProcess(option.process)} option={option} />
         ))}
       </div>
+      <ProcessQuotePreviewCard preview={preview} />
     </section>
+  )
+}
+
+function ProcessQuotePreviewButton({ onSelect, option }: { onSelect: () => void; option: ProcessQuotePreviewOption }) {
+  return (
+    <button aria-pressed={option.selected} className="process-demo-option" onClick={onSelect} type="button">
+      <span>{option.label}</span>
+      <strong>{formatCurrency(option.totalCents, option.currency)}</strong>
+      <small>{option.leadTimeDays}d</small>
+    </button>
+  )
+}
+
+function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePreview }) {
+  const demo = preview.selected
+  return (
+    <article className="process-demo-card" aria-label="Selected non-CNC quote preview">
+      <div className="process-demo-card-heading">
+        <div>
+          <strong>{demo.label}</strong>
+          <span>{demo.quote.partNumber}</span>
+        </div>
+        <span>{formatCurrency(demo.quote.totalCents, demo.quote.currency)}</span>
+      </div>
+      <div className="process-demo-metrics">
+        <Metric label="Qty" value={String(demo.quote.quantity)} />
+        <Metric label="Lead" value={`${demo.quote.leadTimeDays}d`} />
+        <Metric label="Unit" value={formatCurrency(demo.quote.unitPriceCents, demo.quote.currency)} />
+      </div>
+      <dl className="process-demo-breakdown">
+        {preview.topBreakdown.map((line) => (
+          <div key={line.key}>
+            <dt>{line.label}</dt>
+            <dd>{formatCurrency(line.amountCents, demo.quote.currency)}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="process-demo-footer">
+        <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
+        <span>{demo.quote.calculatorVersion}</span>
+      </div>
+      <p className="process-demo-guardrail">{preview.guardrailCopy}</p>
+    </article>
   )
 }
 
