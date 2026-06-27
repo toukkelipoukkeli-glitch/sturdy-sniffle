@@ -7,10 +7,13 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5fca5ff` (`Add attachment preview state labels (#140)`).
+- Main branch checkpoint: `2e0817e` (`Show non-CNC preview assumptions (#144)`).
 - Open PRs at this checkpoint: none.
 - In-flight PR at this checkpoint: none.
 - Latest merged sequence:
+  - `#144` selected non-CNC registry previews now show top quote assumptions and calculator review flags.
+  - `#143` guarded read-only selector for sheet metal, plastics, wire/EDM, and fabrication registry quote previews.
+  - `#142` attachment preview output descriptors expose deterministic real-preview-ready states for CAD/drawing/image/metadata attachments.
   - `#140` part preview attachments now expose deterministic per-type preview and thumbnail labels in the workspace.
   - `#139` reviewed CAD correction notes surface as explicit quote assumptions without changing deterministic totals or raw RFQ inputs.
   - `#138` durable CAD dimension/material/process correction notes can be saved, restored, and cleared.
@@ -110,7 +113,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - PR `#134` is adding read-only non-CNC registry demos; after it lands, non-CNC engines need guarded editable process selection/inputs and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, quote breakdowns, assumptions, and review flags; after this, non-CNC engines need editable process-specific inputs and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.

@@ -4025,6 +4025,14 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
           {preview.reviewFlags.length > 0 ? preview.reviewFlags.map((flag) => <span key={flag}>{flag}</span>) : <span>No calculator flags</span>}
         </div>
       </div>
+      <div className="process-demo-checklist" aria-label="Process quote operator checklist">
+        {preview.operatorChecklist.map((item) => (
+          <div data-level={item.level} key={item.key}>
+            <span>{item.label}</span>
+            <small>{item.detail}</small>
+          </div>
+        ))}
+      </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
