@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e65ce7a` (`Add workspace runtime context (#136)`).
+- Main branch checkpoint: `1be5fcd` (`Add CAD primary attachment selection (#137)`).
 - Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: CAD primary attachment selection.
+- In-flight PR at this checkpoint: CAD correction notes.
 - Latest merged sequence:
+  - `#137` operators can choose and persist the primary part preview attachment.
   - `#136` app actions now use a local workspace runtime context for deterministic operator/timezone/clock values.
   - `#135` CAD manufacturability flags can be acknowledged and reopened with a persistent operator note.
   - `#130` healthy deterministic RFQ connector sync path.
@@ -111,8 +112,9 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 2. Add CAD review operator overrides.
    - Manufacturability flags can now be acknowledged and reopened with a persistent note.
-   - Current in-flight slice lets operators choose the primary preview attachment and persist that choice.
-   - Next steps: correct dimensions/material/process notes and add richer per-type thumbnails/previews.
+   - Operators can choose the primary preview attachment and persist that choice.
+   - Current in-flight slice adds durable dimension/material/process correction notes without changing quote math.
+   - Next steps: apply reviewed corrections to quote inputs and add richer per-type thumbnails/previews.
    - Keep real geometry parsing behind adapter boundaries and use deterministic thumbnail/placeholder states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 

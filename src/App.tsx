@@ -217,9 +217,16 @@ interface ReleaseReviewState {
 
 interface CadReviewOverrideState {
   acknowledgedFlags: string[]
+  correctionNotes?: CadReviewCorrectionNotes
   note: string
   reviewedAt: string
   reviewedBy: string
+}
+
+interface CadReviewCorrectionNotes {
+  dimensions?: string
+  material?: string
+  process?: string
 }
 
 interface WorkspaceRuntimeContext {
@@ -777,6 +784,7 @@ function App() {
     workspaceLocalState?.cadReviewOverridesById ?? {},
   )
   const [cadReviewDraftById, setCadReviewDraftById] = useState<Record<string, string>>({})
+  const [cadCorrectionDraftById, setCadCorrectionDraftById] = useState<Record<string, CadReviewCorrectionNotes>>({})
   const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
   const [editsById, setEditsById] = useState<Record<string, Partial<QuoteEditState>>>(workspaceLocalState?.editsById ?? {})
@@ -1092,6 +1100,35 @@ function App() {
   )
   const selectedCadReviewOverride = cadReviewOverridesById[selectedId]
   const selectedCadReviewDraft = cadReviewDraftById[selectedId] ?? ""
+  const selectedCadCorrectionDraft = {
+    ...selectedCadReviewOverride?.correctionNotes,
+    ...cadCorrectionDraftById[selectedId],
+  }
+  const setSelectedCadCorrectionDraft = (field: keyof CadReviewCorrectionNotes, value: string) => {
+    setCadCorrectionDraftById((current) => ({
+      ...current,
+      [selectedId]: {
+        ...current[selectedId],
+        [field]: value,
+      },
+    }))
+  }
+  const saveSelectedCadCorrections = () => {
+    const correctionNotes = normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft)
+    if (!correctionNotes) {
+      return
+    }
+    setCadReviewOverridesById((current) => ({
+      ...current,
+      [selectedId]: {
+        acknowledgedFlags: current[selectedId]?.acknowledgedFlags ?? [],
+        correctionNotes,
+        note: current[selectedId]?.note ?? "",
+        reviewedAt: workspaceNow,
+        reviewedBy: workspaceOperatorName,
+      },
+    }))
+  }
   const acknowledgeSelectedCadFlags = () => {
     if (partPreview.manufacturabilityFlags.length === 0) {
       return
@@ -1100,6 +1137,7 @@ function App() {
       ...current,
       [selectedId]: {
         acknowledgedFlags: [...partPreview.manufacturabilityFlags],
+        correctionNotes: normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft) ?? current[selectedId]?.correctionNotes,
         note:
           selectedCadReviewDraft.trim() ||
           `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
@@ -1815,6 +1853,7 @@ function App() {
           {activeView === "costing" ? (
             <CostingView
               cadReviewDraft={selectedCadReviewDraft}
+              cadCorrectionDraft={selectedCadCorrectionDraft}
               cadReviewOverride={selectedCadReviewOverride}
               cycleMinutes={cycleMinutes}
               partPreview={partPreview}
@@ -1828,8 +1867,10 @@ function App() {
               selectedItem={selectedItem}
               onAcknowledgeCadFlags={acknowledgeSelectedCadFlags}
               onCadReviewDraftChange={(value) => setCadReviewDraftById((current) => ({ ...current, [selectedId]: value }))}
+              onCadCorrectionDraftChange={setSelectedCadCorrectionDraft}
               onPrimaryAttachmentChange={(fileName) => setPrimaryAttachmentById((current) => ({ ...current, [selectedId]: fileName }))}
               onResetCadReview={resetSelectedCadReview}
+              onSaveCadCorrections={saveSelectedCadCorrections}
               setCycleMinutes={(value) => updateSelectedEdit({ cycleMinutes: value })}
               setMachineHourlyRateCents={(value) => updateSelectedEdit({ machineHourlyRateCents: value })}
               setMarginPercent={(value) => updateSelectedEdit({ marginPercent: value })}
@@ -2252,10 +2293,29 @@ function isCadReviewOverrideState(value: unknown): value is CadReviewOverrideSta
     isObjectRecord(value) &&
     Array.isArray(value.acknowledgedFlags) &&
     value.acknowledgedFlags.every((flag) => typeof flag === "string") &&
+    (value.correctionNotes === undefined || isCadReviewCorrectionNotes(value.correctionNotes)) &&
     typeof value.note === "string" &&
     typeof value.reviewedAt === "string" &&
     typeof value.reviewedBy === "string"
   )
+}
+
+function isCadReviewCorrectionNotes(value: unknown): value is CadReviewCorrectionNotes {
+  return (
+    isObjectRecord(value) &&
+    (value.dimensions === undefined || typeof value.dimensions === "string") &&
+    (value.material === undefined || typeof value.material === "string") &&
+    (value.process === undefined || typeof value.process === "string")
+  )
+}
+
+function normalizeCadReviewCorrectionNotes(notes: CadReviewCorrectionNotes): CadReviewCorrectionNotes | undefined {
+  const normalized = {
+    dimensions: notes.dimensions?.trim() || undefined,
+    material: notes.material?.trim() || undefined,
+    process: notes.process?.trim() || undefined,
+  }
+  return normalized.dimensions || normalized.material || normalized.process ? normalized : undefined
 }
 
 function isOfferReleaseExecutionRun(value: unknown): value is OfferReleaseExecutionRun {
@@ -4149,6 +4209,7 @@ function CapacityProcessRow({
 }
 
 function CostingView({
+  cadCorrectionDraft,
   cadReviewDraft,
   cadReviewOverride,
   cycleMinutes,
@@ -4162,9 +4223,11 @@ function CostingView({
   scenarioComparison,
   selectedItem,
   onAcknowledgeCadFlags,
+  onCadCorrectionDraftChange,
   onCadReviewDraftChange,
   onPrimaryAttachmentChange,
   onResetCadReview,
+  onSaveCadCorrections,
   setCycleMinutes,
   setMachineHourlyRateCents,
   setMarginPercent,
@@ -4174,6 +4237,7 @@ function CostingView({
   setSetupMinutes,
   setupMinutes,
 }: {
+  cadCorrectionDraft: CadReviewCorrectionNotes
   cadReviewDraft: string
   cadReviewOverride: CadReviewOverrideState | undefined
   cycleMinutes: number
@@ -4187,9 +4251,11 @@ function CostingView({
   scenarioComparison: QuoteComparisonResult
   selectedItem: QuoteWorkItem
   onAcknowledgeCadFlags: () => void
+  onCadCorrectionDraftChange: (field: keyof CadReviewCorrectionNotes, value: string) => void
   onCadReviewDraftChange: (value: string) => void
   onPrimaryAttachmentChange: (fileName: string) => void
   onResetCadReview: () => void
+  onSaveCadCorrections: () => void
   setCycleMinutes: (value: number) => void
   setMachineHourlyRateCents: (value: number) => void
   setMarginPercent: (value: number) => void
@@ -4212,11 +4278,14 @@ function CostingView({
         <Metric label="Machine" value={selectedItem.quoteInput.machine.name} />
       </div>
       <PartPreviewPanel
+        cadCorrectionDraft={cadCorrectionDraft}
         cadReviewDraft={cadReviewDraft}
         onAcknowledgeCadFlags={onAcknowledgeCadFlags}
+        onCadCorrectionDraftChange={onCadCorrectionDraftChange}
         onCadReviewDraftChange={onCadReviewDraftChange}
         onPrimaryAttachmentChange={onPrimaryAttachmentChange}
         onResetCadReview={onResetCadReview}
+        onSaveCadCorrections={onSaveCadCorrections}
         override={cadReviewOverride}
         preview={partPreview}
       />
@@ -4346,24 +4415,33 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
 }
 
 function PartPreviewPanel({
+  cadCorrectionDraft,
   cadReviewDraft,
   onAcknowledgeCadFlags,
+  onCadCorrectionDraftChange,
   onCadReviewDraftChange,
   onPrimaryAttachmentChange,
   onResetCadReview,
+  onSaveCadCorrections,
   override,
   preview,
 }: {
+  cadCorrectionDraft: CadReviewCorrectionNotes
   cadReviewDraft: string
   onAcknowledgeCadFlags: () => void
+  onCadCorrectionDraftChange: (field: keyof CadReviewCorrectionNotes, value: string) => void
   onCadReviewDraftChange: (value: string) => void
   onPrimaryAttachmentChange: (fileName: string) => void
   onResetCadReview: () => void
+  onSaveCadCorrections: () => void
   override: CadReviewOverrideState | undefined
   preview: PartPreviewModel
 }) {
   const acknowledgedFlags = new Set(override?.acknowledgedFlags ?? [])
   const visibleManufacturabilityFlags = preview.manufacturabilityFlags.filter((flag) => !acknowledgedFlags.has(flag))
+  const hasCorrectionDraft = Boolean(
+    cadCorrectionDraft.dimensions?.trim() || cadCorrectionDraft.material?.trim() || cadCorrectionDraft.process?.trim(),
+  )
   return (
     <section className="part-preview" aria-label="Part preview">
       <div className="preview-viewport" data-mode={preview.primaryMode}>
@@ -4415,6 +4493,57 @@ function PartPreviewPanel({
               </div>
             ) : null}
             {override?.note ? <p>{override.note}</p> : null}
+            {override?.correctionNotes ? (
+              <dl className="cad-correction-summary" aria-label="CAD correction notes">
+                {override.correctionNotes.dimensions ? (
+                  <>
+                    <dt>Dimensions</dt>
+                    <dd>{override.correctionNotes.dimensions}</dd>
+                  </>
+                ) : null}
+                {override.correctionNotes.material ? (
+                  <>
+                    <dt>Material</dt>
+                    <dd>{override.correctionNotes.material}</dd>
+                  </>
+                ) : null}
+                {override.correctionNotes.process ? (
+                  <>
+                    <dt>Process</dt>
+                    <dd>{override.correctionNotes.process}</dd>
+                  </>
+                ) : null}
+              </dl>
+            ) : null}
+            <div className="cad-correction-grid">
+              <label className="field">
+                <span>Dimension correction</span>
+                <input
+                  aria-label="Dimension correction note"
+                  onChange={(event) => onCadCorrectionDraftChange("dimensions", event.target.value)}
+                  placeholder="e.g. drawing says 118 mm length"
+                  value={cadCorrectionDraft.dimensions ?? ""}
+                />
+              </label>
+              <label className="field">
+                <span>Material correction</span>
+                <input
+                  aria-label="Material correction note"
+                  onChange={(event) => onCadCorrectionDraftChange("material", event.target.value)}
+                  placeholder="e.g. use 316L per drawing"
+                  value={cadCorrectionDraft.material ?? ""}
+                />
+              </label>
+              <label className="field">
+                <span>Process correction</span>
+                <input
+                  aria-label="Process correction note"
+                  onChange={(event) => onCadCorrectionDraftChange("process", event.target.value)}
+                  placeholder="e.g. review turning setup"
+                  value={cadCorrectionDraft.process ?? ""}
+                />
+              </label>
+            </div>
             <label className="field">
               <span>CAD review note</span>
               <input
@@ -4424,6 +4553,9 @@ function PartPreviewPanel({
               />
             </label>
             <div className="cad-review-actions">
+              <button disabled={!hasCorrectionDraft} onClick={onSaveCadCorrections} type="button">
+                Save corrections
+              </button>
               <button disabled={visibleManufacturabilityFlags.length === 0} onClick={onAcknowledgeCadFlags} type="button">
                 Acknowledge flags
               </button>
