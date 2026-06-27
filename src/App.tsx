@@ -1115,7 +1115,7 @@ function App() {
   }
   const saveSelectedCadCorrections = () => {
     const correctionNotes = normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft)
-    if (!correctionNotes) {
+    if (!correctionNotes && !selectedCadReviewOverride) {
       return
     }
     setCadReviewOverridesById((current) => ({
@@ -2316,6 +2316,14 @@ function normalizeCadReviewCorrectionNotes(notes: CadReviewCorrectionNotes): Cad
     process: notes.process?.trim() || undefined,
   }
   return normalized.dimensions || normalized.material || normalized.process ? normalized : undefined
+}
+
+function cadReviewCorrectionNotesEqual(left: CadReviewCorrectionNotes | undefined, right: CadReviewCorrectionNotes | undefined): boolean {
+  return (
+    (left?.dimensions ?? "") === (right?.dimensions ?? "") &&
+    (left?.material ?? "") === (right?.material ?? "") &&
+    (left?.process ?? "") === (right?.process ?? "")
+  )
 }
 
 function isOfferReleaseExecutionRun(value: unknown): value is OfferReleaseExecutionRun {
@@ -4439,9 +4447,8 @@ function PartPreviewPanel({
 }) {
   const acknowledgedFlags = new Set(override?.acknowledgedFlags ?? [])
   const visibleManufacturabilityFlags = preview.manufacturabilityFlags.filter((flag) => !acknowledgedFlags.has(flag))
-  const hasCorrectionDraft = Boolean(
-    cadCorrectionDraft.dimensions?.trim() || cadCorrectionDraft.material?.trim() || cadCorrectionDraft.process?.trim(),
-  )
+  const normalizedCorrectionDraft = normalizeCadReviewCorrectionNotes(cadCorrectionDraft)
+  const canSaveCadCorrections = !cadReviewCorrectionNotesEqual(normalizedCorrectionDraft, override?.correctionNotes)
   return (
     <section className="part-preview" aria-label="Part preview">
       <div className="preview-viewport" data-mode={preview.primaryMode}>
@@ -4487,8 +4494,16 @@ function PartPreviewPanel({
               <div className="cad-review-summary">
                 <CheckCircle2 aria-hidden="true" />
                 <span>
-                  Acknowledged {override.acknowledgedFlags.length} flag{override.acknowledgedFlags.length === 1 ? "" : "s"} by {override.reviewedBy} at{" "}
-                  {formatShortDateTime(override.reviewedAt)}.
+                  {override.acknowledgedFlags.length > 0 ? (
+                    <>
+                      Acknowledged {override.acknowledgedFlags.length} flag{override.acknowledgedFlags.length === 1 ? "" : "s"} by {override.reviewedBy} at{" "}
+                      {formatShortDateTime(override.reviewedAt)}.
+                    </>
+                  ) : override.correctionNotes ? (
+                    <>Saved CAD corrections by {override.reviewedBy} at {formatShortDateTime(override.reviewedAt)}.</>
+                  ) : (
+                    <>Cleared CAD corrections by {override.reviewedBy} at {formatShortDateTime(override.reviewedAt)}.</>
+                  )}
                 </span>
               </div>
             ) : null}
@@ -4553,7 +4568,7 @@ function PartPreviewPanel({
               />
             </label>
             <div className="cad-review-actions">
-              <button disabled={!hasCorrectionDraft} onClick={onSaveCadCorrections} type="button">
+              <button disabled={!canSaveCadCorrections} onClick={onSaveCadCorrections} type="button">
                 Save corrections
               </button>
               <button disabled={visibleManufacturabilityFlags.length === 0} onClick={onAcknowledgeCadFlags} type="button">

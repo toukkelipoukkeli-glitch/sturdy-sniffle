@@ -231,6 +231,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Spacer length is 78 mm")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Use 316L")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("passivation supplier")
+    expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Saved CAD corrections")
+    expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Acknowledged 0 flags")
 
     unmount()
     render(<App />)
@@ -239,6 +241,16 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Spacer length is 78 mm")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("Use 316L")
     expect(screen.getByLabelText("CAD correction notes")).toHaveTextContent("passivation supplier")
+
+    const restoredOverride = screen.getByLabelText("CAD review override")
+    await user.clear(within(restoredOverride).getByLabelText("Dimension correction note"))
+    await user.clear(within(restoredOverride).getByLabelText("Material correction note"))
+    await user.clear(within(restoredOverride).getByLabelText("Process correction note"))
+    await user.click(within(restoredOverride).getByRole("button", { name: "Save corrections" }))
+
+    expect(screen.queryByLabelText("CAD correction notes")).toBeNull()
+    expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Cleared CAD corrections")
+    expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Acknowledged 0 flags")
   })
 
   it("persists an operator-selected primary attachment for part preview", async () => {
