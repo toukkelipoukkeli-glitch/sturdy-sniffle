@@ -4478,6 +4478,7 @@ function PartPreviewPanel({
         <div>
           <span>{formatPreviewMode(preview.primaryMode)}</span>
           <strong>{preview.primaryAttachmentName ?? preview.partNumber}</strong>
+          <small>{preview.primaryPreviewLabel}</small>
         </div>
       </div>
       <div className="preview-side">
@@ -4606,7 +4607,10 @@ function PartPreviewPanel({
               <FileText aria-hidden="true" />
               <span>
                 <strong>{attachment.fileName}</strong>
-                {attachment.reviewReasons.length > 0 ? <small>{attachment.reviewReasons.join(" ")}</small> : null}
+                <small>
+                  {attachment.thumbnailLabel}
+                  {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
+                </small>
               </span>
               <div className="attachment-actions">
                 <strong>{attachment.primary ? `Primary · ${humanizeKey(attachment.reviewState)}` : humanizeKey(attachment.reviewState)}</strong>

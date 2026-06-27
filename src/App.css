@@ -1989,6 +1989,14 @@
   overflow-wrap: anywhere;
 }
 
+.preview-viewport small {
+  color: oklch(0.46 0.035 250);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
 .preview-side {
   min-width: 0;
 }

@@ -15,6 +15,8 @@ describe("part preview model", () => {
       title: "FB-204-A",
       primaryMode: "cad",
       primaryAttachmentName: "FB-204-A.step",
+      primaryPreviewLabel: "3D CAD preview",
+      primaryThumbnailLabel: "3D CAD model",
       availableModes: ["cad", "drawing", "metadata"],
       manufacturabilityFlags: [],
       metadata: {
@@ -35,13 +37,17 @@ describe("part preview model", () => {
         fileName: "FB-204-A.step",
         kind: "cad",
         primary: true,
+        previewLabel: "3D CAD preview",
         reviewState: "ready",
+        thumbnailLabel: "3D CAD model",
       },
       {
         fileName: "FB-204-A.pdf",
         kind: "drawing",
         primary: false,
+        previewLabel: "Drawing preview",
         reviewState: "ready",
+        thumbnailLabel: "Drawing sheet",
       },
     ])
   })
@@ -57,6 +63,8 @@ describe("part preview model", () => {
 
     expect(model.primaryMode).toBe("drawing")
     expect(model.primaryAttachmentName).toBe("FB-204-A.pdf")
+    expect(model.primaryPreviewLabel).toBe("Drawing preview")
+    expect(model.primaryThumbnailLabel).toBe("Drawing sheet")
     expect(model.attachments).toMatchObject([
       {
         fileName: "FB-204-A.step",
@@ -161,6 +169,7 @@ describe("part preview model", () => {
 
     expect(model.primaryMode).toBe("drawing")
     expect(model.primaryAttachmentName).toBe("LASER-42.pdf")
+    expect(model.primaryThumbnailLabel).toBe("Drawing sheet")
     expect(model.availableModes).toEqual(["drawing", "metadata"])
     expect(model.measurementOverlays).toEqual([
       { key: "length", label: "Length", valueMm: 250 },

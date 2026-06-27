@@ -18,7 +18,9 @@ export interface PartPreviewAttachment {
   kind: RfqAttachmentKind
   contentType?: string
   sizeBytes?: number
+  previewLabel: string
   score: number
+  thumbnailLabel: string
   modes: PartPreviewMode[]
   primary: boolean
   reviewReasons: string[]
@@ -31,6 +33,8 @@ export interface PartPreviewModel {
   title: string
   primaryMode: PartPreviewMode
   primaryAttachmentName?: string
+  primaryPreviewLabel: string
+  primaryThumbnailLabel: string
   availableModes: PartPreviewMode[]
   attachments: PartPreviewAttachment[]
   measurementOverlays: PartMeasurementOverlay[]
@@ -125,6 +129,8 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     title: input.part.description?.trim() || partNumber,
     primaryMode,
     primaryAttachmentName: primaryAttachment?.fileName,
+    primaryPreviewLabel: primaryAttachment?.previewLabel ?? previewLabelForMode("metadata"),
+    primaryThumbnailLabel: primaryAttachment?.thumbnailLabel ?? thumbnailLabelForMode("metadata"),
     availableModes: collectAvailableModes(rankedAttachments),
     attachments: rankedAttachments.map((attachment) => ({
       ...attachment,
@@ -216,7 +222,9 @@ function rankAttachment(
     kind: attachment.kind,
     contentType: attachment.contentType,
     sizeBytes: attachment.sizeBytes,
+    previewLabel: previewLabelForMode(modes[0]),
     score,
+    thumbnailLabel: thumbnailLabelForMode(modes[0]),
     modes,
   }
 }
@@ -234,6 +242,36 @@ function modesForAttachment(kind: RfqAttachmentKind): PartPreviewMode[] {
     case "email_body":
     case "other":
       return ["metadata"]
+  }
+}
+
+function previewLabelForMode(mode: PartPreviewMode): string {
+  switch (mode) {
+    case "cad":
+      return "3D CAD preview"
+    case "drawing":
+      return "Drawing preview"
+    case "photo":
+      return "Photo preview"
+    case "spreadsheet":
+      return "Spreadsheet preview"
+    case "metadata":
+      return "Metadata preview"
+  }
+}
+
+function thumbnailLabelForMode(mode: PartPreviewMode): string {
+  switch (mode) {
+    case "cad":
+      return "3D CAD model"
+    case "drawing":
+      return "Drawing sheet"
+    case "photo":
+      return "Photo thumbnail"
+    case "spreadsheet":
+      return "Spreadsheet grid"
+    case "metadata":
+      return "Metadata card"
   }
 }
 
