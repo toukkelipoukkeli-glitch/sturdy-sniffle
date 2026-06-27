@@ -8,8 +8,8 @@ This file is the durable continuation note for Codex threads or a human working 
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `18ac9a1` (`Add non-CNC preview operator checklist (#145)`).
-- Open PRs at this checkpoint: none.
-- In-flight PR at this checkpoint: none.
+- Open PRs at this checkpoint: `#146` (`codex/non-cnc-preview-summary`) while this branch is under review.
+- In-flight PR at this checkpoint: `#146` adds a copyable read-only non-CNC preview summary with clipboard feedback.
 - Latest merged sequence:
   - `#145` non-CNC preview cards now show an operator checklist that distinguishes calculator-ready, read-only-input, offer-wiring, and calculator-flag states.
   - `#144` selected non-CNC registry previews now show top quote assumptions and calculator review flags.

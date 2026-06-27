@@ -3972,7 +3972,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
           <ProcessQuotePreviewButton key={option.process} onSelect={() => setSelectedProcess(option.process)} option={option} />
         ))}
       </div>
-      <ProcessQuotePreviewCard preview={preview} />
+      <ProcessQuotePreviewCard key={preview.selected.process} preview={preview} />
     </section>
   )
 }

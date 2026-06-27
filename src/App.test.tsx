@@ -80,10 +80,18 @@ describe("FactoryBid workspace (component)", () => {
     expect(checklist).toHaveTextContent("Offer wiring pending")
     expect(checklist).toHaveTextContent("No calculator flags on this fixture.")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Process: Wire EDM"))
-    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("Part: EDM-KEY-077"))
-    expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
-    expect(selectedPreview).toHaveTextContent(
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const [copiedText] = writeText.mock.calls[0] ?? [""]
+    expect(copiedText).toContain("Process: Wire EDM")
+    expect(copiedText).toContain("Part: EDM-KEY-077")
+    await waitFor(() => {
+      expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
+    })
+    await user.click(within(selector).getByRole("button", { name: /Plastic machining/ }))
+    const plasticPreview = within(processDemos).getByLabelText("Selected non-CNC quote preview")
+    expect(within(plasticPreview).getByRole("button", { name: "Copy summary" })).toBeInTheDocument()
+    expect(within(plasticPreview).getByRole("status")).toHaveTextContent("Copy a read-only summary for estimator review.")
+    expect(plasticPreview).toHaveTextContent(
       "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     )
   })
