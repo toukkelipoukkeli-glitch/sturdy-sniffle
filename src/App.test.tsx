@@ -95,6 +95,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(inputDraft).toHaveTextContent("Wire diameter")
     expect(inputDraft).toHaveTextContent("Missing fixture value")
     expect(inputDraft).toHaveTextContent("2 skim passes")
+    expect(within(inputDraft).getByLabelText("Non-CNC quote path gate")).toHaveTextContent(
+      "Quote path blocked: Editable controls missing, Missing required values",
+    )
     const checklist = within(selectedPreview).getByLabelText("Process quote operator checklist")
     expect(checklist).toHaveTextContent("Calculator ready")
     expect(checklist).toHaveTextContent("Input model read-only")
@@ -111,6 +114,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(copiedText).toContain("Planned fields: Stock size, Cut length, Wire diameter, Finish passes, Inspection level")
     expect(copiedText).toContain("Draft coverage: 4/5 required fields populated from registry_fixture")
     expect(copiedText).toContain("Wire diameter: Missing fixture value")
+    expect(copiedText).toContain("Promotion gate: blocked")
+    expect(copiedText).toContain("Blockers: Editable controls missing, Missing required values")
     await waitFor(() => {
       expect(within(selectedPreview).getByRole("status")).toHaveTextContent("Process preview summary copied.")
     })

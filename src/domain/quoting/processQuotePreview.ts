@@ -1,9 +1,10 @@
 import type { NonCncQuoteProcessKey, ProcessDemoQuote } from "./processDemoQuotes"
 import { buildProcessInputDraft, type ProcessInputDraft } from "./processInputDraft"
+import { evaluateProcessInputPromotionGate, type ProcessInputPromotionGate } from "./processInputPromotionGate"
 import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 import type { QuoteEngineAssumption, QuoteEngineBreakdownLine, QuoteEngineResult } from "./registry"
 
-export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v4"
+export const PROCESS_QUOTE_PREVIEW_VERSION = "process-quote-preview.v5"
 
 export interface ProcessQuotePreviewOption {
   process: NonCncQuoteProcessKey
@@ -41,6 +42,7 @@ export interface ProcessQuotePreview {
   selected: ProcessDemoQuote
   comparison: ProcessQuotePreviewComparison
   inputDraft: ProcessInputDraft
+  inputPromotionGate: ProcessInputPromotionGate
   inputReadiness: ProcessInputReadiness
   options: ProcessQuotePreviewOption[]
   editable: false
@@ -68,12 +70,14 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
   const inputReadiness = buildProcessInputReadiness(selected.process)
   const inputDraftsByProcess = new Map(demos.map((demo) => [demo.process, buildProcessInputDraft(demo.process)]))
   const inputDraft = inputDraftsByProcess.get(selected.process) ?? buildProcessInputDraft(selected.process)
+  const inputPromotionGate = evaluateProcessInputPromotionGate(inputReadiness, inputDraft)
 
   return {
     previewVersion: PROCESS_QUOTE_PREVIEW_VERSION,
     selected,
     comparison,
     inputDraft,
+    inputPromotionGate,
     inputReadiness,
     options: demos.map((demo) => {
       const optionDraft = inputDraftsByProcess.get(demo.process)
@@ -96,7 +100,7 @@ export function buildProcessQuotePreview(demos: ProcessDemoQuote[], selectedProc
     guardrailCopy: "Read-only registry fixture. Process-specific editable inputs are not enabled yet.",
     operatorChecklist,
     reviewFlags: selected.quote.warnings,
-    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness, inputDraft),
+    summaryText: buildPreviewSummaryText(selected, operatorChecklist, comparison, inputReadiness, inputDraft, inputPromotionGate),
     topAssumptions: selected.quote.assumptions.slice(0, 4),
     topBreakdown: selected.quote.breakdown.slice(0, 5),
   }
@@ -175,6 +179,7 @@ function buildPreviewSummaryText(
   comparison: ProcessQuotePreviewComparison,
   inputReadiness: ProcessInputReadiness,
   inputDraft: ProcessInputDraft,
+  inputPromotionGate: ProcessInputPromotionGate,
 ): string {
   const quote = selected.quote
   return [
@@ -199,6 +204,9 @@ function buildPreviewSummaryText(
     `- Planned fields: ${inputReadiness.fieldPlans.map((field) => field.label).join(", ")}`,
     `- Draft coverage: ${inputDraft.populatedRequiredCount}/${inputDraft.requiredCount} required fields populated from ${inputDraft.source}`,
     ...inputDraft.values.map((field) => `- ${field.label}: ${field.value}`),
+    `- Promotion gate: ${inputPromotionGate.status}`,
+    `- Blockers: ${inputPromotionGate.blockerLabels.join(", ")}`,
+    `- Promotion next step: ${inputPromotionGate.nextStep}`,
     `- Next step: ${inputReadiness.nextStep}`,
     "",
     "Top assumptions:",

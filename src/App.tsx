@@ -4111,6 +4111,9 @@ export function ProcessQuotePreviewCard({ preview }: { preview: ProcessQuotePrev
           <span>
             Fixture draft {preview.inputDraft.populatedRequiredCount}/{preview.inputDraft.requiredCount}
           </span>
+          <p className="process-demo-input-gate" aria-label="Non-CNC quote path gate">
+            Quote path {preview.inputPromotionGate.status}: {preview.inputPromotionGate.blockerLabels.join(", ")}
+          </p>
           <dl>
             {preview.inputDraft.values.map((field) => (
               <div data-status={field.status} key={field.key}>
