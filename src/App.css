@@ -2074,6 +2074,38 @@
   margin-top: 8px;
 }
 
+.cad-correction-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 8px;
+}
+
+.cad-correction-summary {
+  background: oklch(0.97 0.012 160);
+  border: 1px solid oklch(0.88 0.035 160);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px 8px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  margin: 8px 0 0;
+  padding: 8px;
+}
+
+.cad-correction-summary dt {
+  color: oklch(0.34 0.07 155);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.cad-correction-summary dd {
+  color: oklch(0.32 0.035 250);
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .cad-review-actions {
   display: flex;
   flex-wrap: wrap;
