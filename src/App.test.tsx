@@ -721,6 +721,17 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationExecution).toHaveTextContent("prepared, prepared, prepared")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("non-cnc-application-execution")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("Execution id withheld")
+    const promotedQuoteApplicationOutcomeDraft = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application outcome draft",
+    )
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("non-cnc-promoted-quote-application-execution-outcome-draft.v1")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("Review and commit 3 non-CNC application outcomes.")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("3 ready outcomes")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("0 blocked outcomes")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("Prepared active RFQ quote replacement from promoted non-CNC quote.")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    expect(promotedQuoteApplicationOutcomeDraft).toHaveTextContent("active RFQ quote, offer, and release state stay unchanged")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {

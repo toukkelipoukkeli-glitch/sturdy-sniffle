@@ -2249,6 +2249,7 @@
 .process-demo-promotion-read-model,
 .process-demo-promotion-application-plan,
 .process-demo-promotion-application-record,
+.process-demo-promotion-application-outcome-draft,
 .process-demo-promotion-application-execution {
   background: oklch(0.97 0.013 205);
   border: 1px solid oklch(0.82 0.045 205);
@@ -2262,6 +2263,7 @@
 .process-demo-promotion-read-model[data-status="blocked"],
 .process-demo-promotion-application-plan[data-status="blocked"],
 .process-demo-promotion-application-record[data-status="blocked"],
+.process-demo-promotion-application-outcome-draft[data-status="blocked"],
 .process-demo-promotion-application-execution[data-status="blocked"] {
   background: oklch(0.985 0.018 35);
   border-color: oklch(0.84 0.065 35);
@@ -2271,6 +2273,7 @@
 .process-demo-promotion-read-model[data-status="promoted"],
 .process-demo-promotion-application-plan[data-status="ready"],
 .process-demo-promotion-application-record[data-status="ready"],
+.process-demo-promotion-application-outcome-draft[data-status="ready"],
 .process-demo-promotion-application-execution[data-status="prepared"],
 .process-demo-promotion-application-execution[data-status="succeeded"] {
   background: oklch(0.976 0.018 158);
@@ -2281,6 +2284,7 @@
 .process-demo-promotion-read-model-heading,
 .process-demo-promotion-application-plan-heading,
 .process-demo-promotion-application-record-heading,
+.process-demo-promotion-application-outcome-draft-heading,
 .process-demo-promotion-application-execution-heading {
   align-items: center;
   display: flex;
@@ -2291,6 +2295,7 @@
 .process-demo-promotion-read-model-heading > div,
 .process-demo-promotion-application-plan-heading > div,
 .process-demo-promotion-application-record-heading > div,
+.process-demo-promotion-application-outcome-draft-heading > div,
 .process-demo-promotion-application-execution-heading > div {
   display: grid;
   gap: 2px;
@@ -2303,6 +2308,8 @@
 .process-demo-promotion-application-plan-grid span,
 .process-demo-promotion-application-record-heading span,
 .process-demo-promotion-application-record-grid span,
+.process-demo-promotion-application-outcome-draft-heading span,
+.process-demo-promotion-application-outcome-draft-grid span,
 .process-demo-promotion-application-execution-heading span,
 .process-demo-promotion-application-execution-grid span {
   color: oklch(0.43 0.025 250);
@@ -2317,6 +2324,8 @@
 .process-demo-promotion-application-plan-grid strong,
 .process-demo-promotion-application-record-heading strong,
 .process-demo-promotion-application-record-grid strong,
+.process-demo-promotion-application-outcome-draft-heading strong,
+.process-demo-promotion-application-outcome-draft-grid strong,
 .process-demo-promotion-application-execution-heading strong,
 .process-demo-promotion-application-execution-grid strong {
   color: oklch(0.25 0.025 250);
@@ -2327,6 +2336,7 @@
 .process-demo-promotion-read-model-heading small,
 .process-demo-promotion-application-plan-heading small,
 .process-demo-promotion-application-record-heading small,
+.process-demo-promotion-application-outcome-draft-heading small,
 .process-demo-promotion-application-execution-heading small {
   background: white;
   border-radius: 999px;
@@ -2341,6 +2351,7 @@
 .process-demo-promotion-read-model p,
 .process-demo-promotion-application-plan p,
 .process-demo-promotion-application-record p,
+.process-demo-promotion-application-outcome-draft p,
 .process-demo-promotion-application-execution p {
   color: oklch(0.36 0.035 250);
   font-size: 0.72rem;
@@ -2353,6 +2364,8 @@
 .process-demo-promotion-application-plan-grid,
 .process-demo-promotion-application-plan-list,
 .process-demo-promotion-application-record-grid,
+.process-demo-promotion-application-outcome-draft-grid,
+.process-demo-promotion-application-outcome-draft-list,
 .process-demo-promotion-application-execution-grid,
 .process-demo-promotion-application-execution-list {
   display: grid;
@@ -2361,6 +2374,7 @@
 }
 
 .process-demo-promotion-application-plan-list,
+.process-demo-promotion-application-outcome-draft-list,
 .process-demo-promotion-application-execution-list {
   list-style: none;
   margin: 0;
@@ -2371,6 +2385,8 @@
 .process-demo-promotion-application-plan-grid > div,
 .process-demo-promotion-application-plan-list li,
 .process-demo-promotion-application-record-grid > div,
+.process-demo-promotion-application-outcome-draft-grid > div,
+.process-demo-promotion-application-outcome-draft-list li,
 .process-demo-promotion-application-execution-grid > div,
 .process-demo-promotion-application-execution-list li {
   background: oklch(0.985 0.004 245);
@@ -2383,11 +2399,16 @@
 }
 
 .process-demo-promotion-application-plan-list li > div,
+.process-demo-promotion-application-outcome-draft-list li > div,
 .process-demo-promotion-application-execution-list li > div {
   align-items: center;
   display: flex;
   gap: 6px;
   justify-content: space-between;
+}
+
+.process-demo-promotion-application-outcome-draft-list li > div span {
+  flex: 0 0 auto;
 }
 
 .process-demo-promotion-application-plan-list li[data-status="blocked"] strong {
@@ -2398,7 +2419,12 @@
   color: oklch(0.44 0.12 35);
 }
 
+.process-demo-promotion-application-outcome-draft-list li[data-status="blocked"] strong {
+  color: oklch(0.44 0.12 35);
+}
+
 .process-demo-promotion-application-plan-list li[data-status="ready"] strong,
+.process-demo-promotion-application-outcome-draft-list li[data-status="ready"] strong,
 .process-demo-promotion-application-execution-list li[data-status="prepared"] strong,
 .process-demo-promotion-application-execution-list li[data-status="applied"] strong {
   color: oklch(0.31 0.08 155);
@@ -2410,6 +2436,9 @@
 .process-demo-promotion-application-plan-list small,
 .process-demo-promotion-application-record-grid small,
 .process-demo-promotion-application-record-status,
+.process-demo-promotion-application-outcome-draft-grid small,
+.process-demo-promotion-application-outcome-draft-list span,
+.process-demo-promotion-application-outcome-draft-list small,
 .process-demo-promotion-application-execution-grid small,
 .process-demo-promotion-application-execution-list span,
 .process-demo-promotion-application-execution-list small {
@@ -2632,6 +2661,8 @@
   .process-demo-promotion-application-plan-grid,
   .process-demo-promotion-application-plan-list,
   .process-demo-promotion-application-record-grid,
+  .process-demo-promotion-application-outcome-draft-grid,
+  .process-demo-promotion-application-outcome-draft-list,
   .process-demo-promotion-application-execution-grid,
   .process-demo-promotion-application-execution-history-grid,
   .process-demo-promotion-application-execution-list {
@@ -2641,6 +2672,7 @@
   .process-demo-promotion-read-model-heading,
   .process-demo-promotion-application-plan-heading,
   .process-demo-promotion-application-record-heading,
+  .process-demo-promotion-application-outcome-draft-heading,
   .process-demo-promotion-application-execution-heading,
   .process-demo-promotion-application-execution-history-heading {
     align-items: flex-start;

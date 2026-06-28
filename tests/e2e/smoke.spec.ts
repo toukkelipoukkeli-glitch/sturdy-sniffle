@@ -182,6 +182,13 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
     "non-cnc-quote-promotion-outcome-commit-persistence.v1",
   )
   await expect(nonCncDemos.getByLabel("Non-CNC promotion commit history")).toContainText("Local outcome commit history:")
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application outcome draft")).toContainText(
+    "non-cnc-promoted-quote-application-execution-outcome-draft.v1",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application outcome draft")).toContainText(
+    "Promoted quote read model is not ready.",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application outcome draft")).toContainText("Outcome withheld")
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
   await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
     "Process preview summary copied.",
