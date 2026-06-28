@@ -170,6 +170,10 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(nonCncDemos.getByLabel("Non-CNC promotion execution history")).toContainText(
     "non-cnc-quote-promotion-execution-persistence.v1",
   )
+  await expect(nonCncDemos.getByLabel("Non-CNC promotion outcome draft")).toContainText(
+    "non-cnc-quote-promotion-execution-outcome-draft.v1",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promotion outcome draft")).toContainText("Outcome withheld")
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
   await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
     "Process preview summary copied.",

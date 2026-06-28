@@ -7,7 +7,7 @@ export type ProcessInputPromotionBlocker = "editable_controls_missing" | "missin
 
 export interface ProcessInputPromotionGate {
   gateVersion: typeof PROCESS_INPUT_PROMOTION_GATE_VERSION
-  status: "blocked"
+  status: "blocked" | "ready"
   blockers: ProcessInputPromotionBlocker[]
   blockerLabels: string[]
   missingRequiredCount: number
@@ -19,7 +19,7 @@ export function evaluateProcessInputPromotionGate(
   draft: ProcessInputDraft,
 ): ProcessInputPromotionGate {
   const missingRequiredCount = Math.max(0, draft.requiredCount - draft.populatedRequiredCount)
-  const blockers: ProcessInputPromotionBlocker[] = ["editable_controls_missing"]
+  const blockers: ProcessInputPromotionBlocker[] = readiness.editable ? [] : ["editable_controls_missing"]
   if (missingRequiredCount > 0) {
     blockers.push("missing_required_values")
   }
@@ -31,9 +31,13 @@ export function evaluateProcessInputPromotionGate(
     missingRequiredCount,
     nextStep:
       missingRequiredCount > 0
-        ? "Populate every required process draft value, then add editable controls before promotion."
-        : readiness.nextStep,
-    status: "blocked",
+        ? blockers.includes("editable_controls_missing")
+          ? "Populate every required process draft value, then add editable controls before promotion."
+          : "Populate every required process draft value before promotion."
+        : blockers.length > 0
+          ? readiness.nextStep
+          : "Process input draft is ready for quote promotion.",
+    status: blockers.length > 0 ? "blocked" : "ready",
   }
 }
 
