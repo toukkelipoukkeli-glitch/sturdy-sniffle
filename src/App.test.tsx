@@ -167,6 +167,16 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteReadModel).toHaveTextContent("0 ids")
     expect(promotedQuoteReadModel).toHaveTextContent("Withheld until promoted")
     expect(promotedQuoteReadModel).toHaveTextContent("No committed execution fingerprint")
+    const promotedQuoteApplicationPlan = within(processDemos).getByLabelText("Non-CNC promoted quote application plan")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Application plan")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("blocked")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Resolve promoted quote blockers before applying a non-CNC quote to the active RFQ.")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("No application payload")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Promoted quote read model is not ready.")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("External id withheld")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent(
+      "Application plan is deterministic review data only; it must not mutate active RFQ quote, offer, or release state until an operator commits it.",
+    )
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -586,6 +596,18 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteReadModel).toHaveTextContent("offer-builder:rfq-demo-204:non-cnc-promotion-rfq-demo-204-sheet-metal")
     expect(promotedQuoteReadModel).toHaveTextContent("commit ready")
     expect(promotedQuoteReadModel).toHaveTextContent("non-cnc-quote-promotion-execution-")
+    const promotedQuoteApplicationPlan = within(selectedPreview).getByLabelText("Non-CNC promoted quote application plan")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("ready")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent(
+      "Promoted non-CNC quote is ready for an operator-reviewed active RFQ quote application.",
+    )
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("SM-120-BRACKET")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Sheet metal · €549.05")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Apply promoted quote")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Replace the active RFQ quote with the promoted non-CNC quote snapshot.")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("Open offer builder")
+    expect(promotedQuoteApplicationPlan).toHaveTextContent("non-cnc-promoted-quote-application:rfq-demo-204")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {

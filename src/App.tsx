@@ -139,6 +139,7 @@ import {
 } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
+import { buildNonCncPromotedQuoteApplicationPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationPlan"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -4361,6 +4362,16 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionCommandPackage, promotionOutcomeCommit.executionRun],
   )
+  const promotionApplicationPlan = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationPlan({
+        readModel: promotionReadModel,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+        targetRfqId: promotionPlan.targetRfqId,
+      }),
+    [promotionPlan.requestedAt, promotionPlan.requestedBy, promotionPlan.targetRfqId, promotionReadModel],
+  )
   const promotionExecutionRun = useMemo(
     () =>
       buildNonCncQuotePromotionExecutionRun({
@@ -4960,6 +4971,61 @@ export function ProcessQuotePreviewCard({
             <small>{promotionReadModel.executionFingerprint ?? "No committed execution fingerprint"}</small>
           </div>
         </div>
+      </div>
+      <div
+        className="process-demo-promotion-application-plan"
+        aria-label="Non-CNC promoted quote application plan"
+        data-status={promotionApplicationPlan.status}
+      >
+        <div className="process-demo-promotion-application-plan-heading">
+          <div>
+            <span>Application plan</span>
+            <strong>{humanizeKey(promotionApplicationPlan.status)}</strong>
+          </div>
+          <small>{promotionApplicationPlan.planVersion}</small>
+        </div>
+        <p>{promotionApplicationPlan.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-application-plan-grid">
+          <div>
+            <span>Boundary</span>
+            <strong>{promotionApplicationPlan.applicationId}</strong>
+            <small>{promotionApplicationPlan.mutationBoundary}</small>
+          </div>
+          <div>
+            <span>Quote payload</span>
+            {promotionApplicationPlan.quoteSnapshot ? (
+              <>
+                <strong>{promotionApplicationPlan.quoteSnapshot.partNumber}</strong>
+                <small>
+                  {promotionApplicationPlan.quoteSnapshot.processLabel} ·{" "}
+                  {formatCurrency(promotionApplicationPlan.quoteSnapshot.totalCents, promotionApplicationPlan.quoteSnapshot.currency)}
+                </small>
+              </>
+            ) : (
+              <>
+                <strong>No application payload</strong>
+                <small>{promotionApplicationPlan.blockerLabels.join(", ") || "No blockers"}</small>
+              </>
+            )}
+          </div>
+          <div>
+            <span>Source</span>
+            <strong>{promotionApplicationPlan.targetRfqId}</strong>
+            <small>{promotionApplicationPlan.sourceExecutionFingerprint ?? "No committed execution fingerprint"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-application-plan-list">
+          {promotionApplicationPlan.commands.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)}</span>
+              </div>
+              <small>{command.detail}</small>
+              <small>{command.externalId ?? "External id withheld"}</small>
+            </li>
+          ))}
+        </ul>
       </div>
       <div
         className="process-demo-promotion-execution"
