@@ -412,7 +412,7 @@ describe("FactoryBid workspace (component)", () => {
         gateVersion: "process-input-promotion-gate.v1",
         missingRequiredCount: 0,
         nextStep: "Persist the quote snapshot.",
-        status: "blocked",
+        status: "ready",
       },
       reviewFlags: ["Material certificate required."],
     } satisfies ReturnType<typeof buildProcessQuotePreview>

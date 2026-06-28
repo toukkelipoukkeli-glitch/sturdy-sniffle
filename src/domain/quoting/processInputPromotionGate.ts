@@ -7,7 +7,7 @@ export type ProcessInputPromotionBlocker = "editable_controls_missing" | "missin
 
 export interface ProcessInputPromotionGate {
   gateVersion: typeof PROCESS_INPUT_PROMOTION_GATE_VERSION
-  status: "blocked"
+  status: "blocked" | "ready"
   blockers: ProcessInputPromotionBlocker[]
   blockerLabels: string[]
   missingRequiredCount: number
