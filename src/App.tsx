@@ -138,6 +138,7 @@ import {
   type NonCncQuotePromotionPersistenceSnapshot,
 } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
+import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -4352,6 +4353,14 @@ export function ProcessQuotePreviewCard({
     [promotionCommandPackage, promotionOutcomeDraft, promotionPlan.requestedAt],
   )
   const promotionOutcomeCommitPlan = promotionOutcomeCommit.commitPlan
+  const promotionReadModel = useMemo(
+    () =>
+      buildNonCncQuotePromotionReadModel({
+        commandPackage: promotionCommandPackage,
+        executionRun: promotionOutcomeCommit.executionRun,
+      }),
+    [promotionCommandPackage, promotionOutcomeCommit.executionRun],
+  )
   const promotionExecutionRun = useMemo(
     () =>
       buildNonCncQuotePromotionExecutionRun({
@@ -4896,6 +4905,62 @@ export function ProcessQuotePreviewCard({
           </small>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-read-model"
+        aria-label="Non-CNC promoted quote read model"
+        data-status={promotionReadModel.status}
+      >
+        <div className="process-demo-promotion-read-model-heading">
+          <div>
+            <span>Promoted quote</span>
+            <strong>{humanizeKey(promotionReadModel.status)}</strong>
+          </div>
+          <small>{promotionReadModel.readModelVersion}</small>
+        </div>
+        <p>{promotionReadModel.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-read-model-grid">
+          <div>
+            <span>Candidate</span>
+            {promotionReadModel.quoteSnapshot ? (
+              <>
+                <strong>{promotionReadModel.quoteSnapshot.partNumber}</strong>
+                <small>
+                  {promotionReadModel.quoteSnapshot.processLabel} ·{" "}
+                  {formatCurrency(promotionReadModel.quoteSnapshot.totalCents, promotionReadModel.quoteSnapshot.currency)}
+                </small>
+              </>
+            ) : (
+              <>
+                <strong>No promoted quote</strong>
+                <small>{promotionReadModel.blockerLabels.join(", ") || "No blockers"}</small>
+              </>
+            )}
+          </div>
+          <div>
+            <span>External ids</span>
+            <strong>
+              {formatCount(
+                [
+                  promotionReadModel.quoteExternalId,
+                  promotionReadModel.offerReadinessExternalId,
+                  promotionReadModel.offerBuilderExternalId,
+                ].filter(Boolean).length,
+                "id",
+              )}
+            </strong>
+            <small>
+              {[promotionReadModel.quoteExternalId, promotionReadModel.offerReadinessExternalId, promotionReadModel.offerBuilderExternalId]
+                .filter(Boolean)
+                .join(", ") || "Withheld until promoted"}
+            </small>
+          </div>
+          <div>
+            <span>Commit source</span>
+            <strong>{promotionOutcomeCommitRecord ? humanizeKey(promotionOutcomeCommitRecord.disposition) : "No local record"}</strong>
+            <small>{promotionReadModel.executionFingerprint ?? "No committed execution fingerprint"}</small>
+          </div>
+        </div>
+      </div>
       <div
         className="process-demo-promotion-execution"
         aria-label="Non-CNC promotion execution audit"
