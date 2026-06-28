@@ -140,6 +140,11 @@ import {
 import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
 import { buildNonCncPromotedQuoteApplicationPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationPlan"
+import {
+  createLocalNonCncPromotedQuoteApplicationPersistence,
+  type NonCncPromotedQuoteApplicationPersistenceSnapshot,
+  type RecordNonCncPromotedQuoteApplicationInput,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationPersistence"
 import { buildProcessDemoQuotes, PROCESS_DEMO_QUOTES_VERSION, type ProcessDemoQuote } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview, type ProcessQuotePreview, type ProcessQuotePreviewOption } from "./domain/quoting/processQuotePreview"
 import { buildProcessCapabilityMatrix, type ProcessCapabilityMatrix } from "./domain/quoting/processCapability"
@@ -4011,6 +4016,10 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [promotionOutcomeCommitPersistence] = useState(() => createLocalNonCncQuotePromotionOutcomeCommitPersistence())
   const [promotionOutcomeCommitSnapshot, setPromotionOutcomeCommitSnapshot] =
     useState<NonCncQuotePromotionOutcomeCommitPersistenceSnapshot>(() => promotionOutcomeCommitPersistence.snapshot())
+  const [promotionApplicationPersistence] = useState(() => createLocalNonCncPromotedQuoteApplicationPersistence())
+  const [promotionApplicationSnapshot, setPromotionApplicationSnapshot] = useState<NonCncPromotedQuoteApplicationPersistenceSnapshot>(() =>
+    promotionApplicationPersistence.snapshot(),
+  )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4063,6 +4072,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionOutcomeCommitPersistence],
   )
+  const recordPromotionApplication = useCallback(
+    (input: RecordNonCncPromotedQuoteApplicationInput) => {
+      let isCurrent = true
+      void promotionApplicationPersistence.recordApplication(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4099,8 +4122,10 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         inputEditAdapter={selectedInputEditAdapter}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
+        promotionApplicationSnapshot={promotionApplicationSnapshot}
         promotionExecutionSnapshot={promotionExecutionSnapshot}
         promotionPlan={promotionPlan}
+        recordPromotionApplication={recordPromotionApplication}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
@@ -4301,9 +4326,11 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
+  promotionApplicationSnapshot,
   promotionExecutionSnapshot,
   promotionOutcomeCommitSnapshot,
   promotionPlan,
+  recordPromotionApplication,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
   promotionSnapshot,
@@ -4314,9 +4341,11 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
+  promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
   promotionOutcomeCommitSnapshot: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot
   promotionPlan: NonCncQuotePromotionPlan
+  recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
@@ -4388,11 +4417,18 @@ export function ProcessQuotePreviewCard({
   const promotionOutcomeCommitRecord = promotionOutcomeCommitSnapshot.records
     .filter((record) => record.packageId === promotionOutcomeCommitPlan.packageId)
     .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+  const promotionApplicationRecord = promotionApplicationSnapshot.records.find(
+    (record) => record.applicationId === promotionApplicationPlan.applicationId,
+  )
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
   const promotionOutcomeCommitStatusSummary = Object.entries(promotionOutcomeCommitSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  const promotionApplicationStatusSummary = Object.entries(promotionApplicationSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
@@ -4413,6 +4449,13 @@ export function ProcessQuotePreviewCard({
       recordedBy: "FactoryBid Operator",
     })
   }, [promotionOutcomeCommit.executionRun, promotionOutcomeCommitPlan, promotionPlan.requestedAt, promotionRecord, recordPromotionOutcomeCommit])
+  useEffect(() => {
+    return recordPromotionApplication({
+      applicationPlan: promotionApplicationPlan,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "FactoryBid Operator",
+    })
+  }, [promotionApplicationPlan, promotionPlan.requestedAt, recordPromotionApplication])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5027,6 +5070,52 @@ export function ProcessQuotePreviewCard({
           ))}
         </ul>
       </div>
+      {promotionApplicationRecord ? (
+        <div
+          className="process-demo-promotion-application-record"
+          aria-label="Non-CNC promoted quote application history"
+          data-status={promotionApplicationRecord.status}
+        >
+          <div className="process-demo-promotion-application-record-heading">
+            <div>
+              <span>Application history</span>
+              <strong>{humanizeKey(promotionApplicationRecord.disposition)}</strong>
+            </div>
+            <small>{promotionApplicationSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local application history: {formatCount(promotionApplicationSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionApplicationSnapshot.applicationReadyIds.length, "ready", "ready")},{" "}
+            {formatCount(promotionApplicationSnapshot.blockedApplicationIds.length, "blocked", "blocked")}.
+          </p>
+          <div className="process-demo-promotion-application-record-grid">
+            <div>
+              <span>Recorded</span>
+              <strong>{promotionApplicationRecord.recordedBy}</strong>
+              <small>{promotionApplicationRecord.recordedAt}</small>
+            </div>
+            <div>
+              <span>Commands</span>
+              <strong>
+                {promotionApplicationRecord.readyCommandCount}/{promotionApplicationRecord.commandCount} ready
+              </strong>
+              <small>
+                {formatCount(promotionApplicationRecord.blockerCount, "blocker")},{" "}
+                {formatCount(promotionApplicationRecord.warningCount, "warning")}
+              </small>
+            </div>
+            <div>
+              <span>Application ids</span>
+              <strong>{promotionApplicationRecord.applicationId}</strong>
+              <small>Ready: {promotionApplicationSnapshot.applicationReadyIds.join(", ") || "None"}</small>
+              <small>Blocked: {promotionApplicationSnapshot.blockedApplicationIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-record-status">
+            Status counts: {promotionApplicationStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       <div
         className="process-demo-promotion-execution"
         aria-label="Non-CNC promotion execution audit"

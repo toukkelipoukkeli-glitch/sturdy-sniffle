@@ -2247,7 +2247,8 @@
 }
 
 .process-demo-promotion-read-model,
-.process-demo-promotion-application-plan {
+.process-demo-promotion-application-plan,
+.process-demo-promotion-application-record {
   background: oklch(0.97 0.013 205);
   border: 1px solid oklch(0.82 0.045 205);
   border-left: 4px solid oklch(0.47 0.085 205);
@@ -2258,21 +2259,24 @@
 }
 
 .process-demo-promotion-read-model[data-status="blocked"],
-.process-demo-promotion-application-plan[data-status="blocked"] {
+.process-demo-promotion-application-plan[data-status="blocked"],
+.process-demo-promotion-application-record[data-status="blocked"] {
   background: oklch(0.985 0.018 35);
   border-color: oklch(0.84 0.065 35);
   border-left-color: oklch(0.58 0.11 35);
 }
 
 .process-demo-promotion-read-model[data-status="promoted"],
-.process-demo-promotion-application-plan[data-status="ready"] {
+.process-demo-promotion-application-plan[data-status="ready"],
+.process-demo-promotion-application-record[data-status="ready"] {
   background: oklch(0.976 0.018 158);
   border-color: oklch(0.82 0.07 158);
   border-left-color: oklch(0.52 0.12 158);
 }
 
 .process-demo-promotion-read-model-heading,
-.process-demo-promotion-application-plan-heading {
+.process-demo-promotion-application-plan-heading,
+.process-demo-promotion-application-record-heading {
   align-items: center;
   display: flex;
   gap: 8px;
@@ -2280,7 +2284,8 @@
 }
 
 .process-demo-promotion-read-model-heading > div,
-.process-demo-promotion-application-plan-heading > div {
+.process-demo-promotion-application-plan-heading > div,
+.process-demo-promotion-application-record-heading > div {
   display: grid;
   gap: 2px;
   min-width: 0;
@@ -2289,7 +2294,9 @@
 .process-demo-promotion-read-model-heading span,
 .process-demo-promotion-read-model-grid span,
 .process-demo-promotion-application-plan-heading span,
-.process-demo-promotion-application-plan-grid span {
+.process-demo-promotion-application-plan-grid span,
+.process-demo-promotion-application-record-heading span,
+.process-demo-promotion-application-record-grid span {
   color: oklch(0.43 0.025 250);
   font-size: 0.7rem;
   font-weight: 850;
@@ -2299,14 +2306,17 @@
 .process-demo-promotion-read-model-heading strong,
 .process-demo-promotion-read-model-grid strong,
 .process-demo-promotion-application-plan-heading strong,
-.process-demo-promotion-application-plan-grid strong {
+.process-demo-promotion-application-plan-grid strong,
+.process-demo-promotion-application-record-heading strong,
+.process-demo-promotion-application-record-grid strong {
   color: oklch(0.25 0.025 250);
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
 
 .process-demo-promotion-read-model-heading small,
-.process-demo-promotion-application-plan-heading small {
+.process-demo-promotion-application-plan-heading small,
+.process-demo-promotion-application-record-heading small {
   background: white;
   border-radius: 999px;
   color: oklch(0.36 0.035 250);
@@ -2318,7 +2328,8 @@
 }
 
 .process-demo-promotion-read-model p,
-.process-demo-promotion-application-plan p {
+.process-demo-promotion-application-plan p,
+.process-demo-promotion-application-record p {
   color: oklch(0.36 0.035 250);
   font-size: 0.72rem;
   font-weight: 750;
@@ -2328,7 +2339,8 @@
 
 .process-demo-promotion-read-model-grid,
 .process-demo-promotion-application-plan-grid,
-.process-demo-promotion-application-plan-list {
+.process-demo-promotion-application-plan-list,
+.process-demo-promotion-application-record-grid {
   display: grid;
   gap: 7px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2342,7 +2354,8 @@
 
 .process-demo-promotion-read-model-grid > div,
 .process-demo-promotion-application-plan-grid > div,
-.process-demo-promotion-application-plan-list li {
+.process-demo-promotion-application-plan-list li,
+.process-demo-promotion-application-record-grid > div {
   background: oklch(0.985 0.004 245);
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
@@ -2370,7 +2383,9 @@
 .process-demo-promotion-read-model-grid small,
 .process-demo-promotion-application-plan-grid small,
 .process-demo-promotion-application-plan-list span,
-.process-demo-promotion-application-plan-list small {
+.process-demo-promotion-application-plan-list small,
+.process-demo-promotion-application-record-grid small,
+.process-demo-promotion-application-record-status {
   color: oklch(0.43 0.025 250);
   font-size: 0.66rem;
   font-weight: 700;
@@ -2572,12 +2587,14 @@
 
   .process-demo-promotion-read-model-grid,
   .process-demo-promotion-application-plan-grid,
-  .process-demo-promotion-application-plan-list {
+  .process-demo-promotion-application-plan-list,
+  .process-demo-promotion-application-record-grid {
     grid-template-columns: 1fr;
   }
 
   .process-demo-promotion-read-model-heading,
-  .process-demo-promotion-application-plan-heading {
+  .process-demo-promotion-application-plan-heading,
+  .process-demo-promotion-application-record-heading {
     align-items: flex-start;
     flex-direction: column;
   }
