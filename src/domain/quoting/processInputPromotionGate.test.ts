@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { buildProcessInputDraft } from "./processInputDraft"
 import { evaluateProcessInputPromotionGate, PROCESS_INPUT_PROMOTION_GATE_VERSION } from "./processInputPromotionGate"
-import { buildProcessInputReadiness } from "./processInputReadiness"
+import { buildProcessInputReadiness, type ProcessInputReadiness } from "./processInputReadiness"
 
 describe("process input promotion gate", () => {
   it("blocks complete fixture drafts until editable controls exist", () => {
@@ -38,6 +38,24 @@ describe("process input promotion gate", () => {
       blockerLabels: ["Editable controls missing"],
       blockers: ["editable_controls_missing"],
       missingRequiredCount: 0,
+    })
+  })
+
+  it("marks editable complete drafts ready for promotion", () => {
+    const readiness = {
+      ...buildProcessInputReadiness("sheet_metal"),
+      editable: true,
+      nextStep: "Persist the quote snapshot.",
+      status: "ready",
+    } satisfies ProcessInputReadiness
+
+    expect(evaluateProcessInputPromotionGate(readiness, buildProcessInputDraft("sheet_metal"))).toEqual({
+      blockerLabels: [],
+      blockers: [],
+      gateVersion: PROCESS_INPUT_PROMOTION_GATE_VERSION,
+      missingRequiredCount: 0,
+      nextStep: "Process input draft is ready for quote promotion.",
+      status: "ready",
     })
   })
 })

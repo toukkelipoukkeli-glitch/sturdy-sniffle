@@ -19,7 +19,7 @@ export function evaluateProcessInputPromotionGate(
   draft: ProcessInputDraft,
 ): ProcessInputPromotionGate {
   const missingRequiredCount = Math.max(0, draft.requiredCount - draft.populatedRequiredCount)
-  const blockers: ProcessInputPromotionBlocker[] = ["editable_controls_missing"]
+  const blockers: ProcessInputPromotionBlocker[] = readiness.editable ? [] : ["editable_controls_missing"]
   if (missingRequiredCount > 0) {
     blockers.push("missing_required_values")
   }
@@ -32,8 +32,10 @@ export function evaluateProcessInputPromotionGate(
     nextStep:
       missingRequiredCount > 0
         ? "Populate every required process draft value, then add editable controls before promotion."
-        : readiness.nextStep,
-    status: "blocked",
+        : blockers.length > 0
+          ? readiness.nextStep
+          : "Process input draft is ready for quote promotion.",
+    status: blockers.length > 0 ? "blocked" : "ready",
   }
 }
 

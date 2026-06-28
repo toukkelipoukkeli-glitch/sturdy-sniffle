@@ -15,8 +15,8 @@ export interface ProcessInputFieldPlan {
 export interface ProcessInputReadiness {
   readinessVersion: typeof PROCESS_INPUT_READINESS_VERSION
   process: NonCncQuoteProcessKey
-  editable: false
-  status: "blocked"
+  editable: boolean
+  status: "blocked" | "ready"
   fieldPlans: ProcessInputFieldPlan[]
   requiredGroups: string[]
   nextStep: string
