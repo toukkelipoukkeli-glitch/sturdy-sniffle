@@ -4365,9 +4365,9 @@ export function ProcessQuotePreviewCard({
   const promotionExecutionRecord = promotionExecutionSnapshot.records.find(
     (record) => record.executionFingerprint === promotionExecutionRun.executionFingerprint,
   )
-  const promotionOutcomeCommitRecord = promotionOutcomeCommitSnapshot.records.find(
-    (record) => record.packageId === promotionOutcomeCommitPlan.packageId,
-  )
+  const promotionOutcomeCommitRecord = promotionOutcomeCommitSnapshot.records
+    .filter((record) => record.packageId === promotionOutcomeCommitPlan.packageId)
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)

@@ -5,6 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
+import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
+import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
+import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
+import { buildNonCncQuotePromotionExecutionOutcomeDraft } from "./domain/quoting/nonCncQuotePromotionExecutionOutcomeDraft"
+import { buildNonCncQuotePromotionOutcomeCommitRun } from "./domain/quoting/nonCncQuotePromotionOutcomeCommit"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import {
@@ -461,6 +466,18 @@ describe("FactoryBid workspace (component)", () => {
       workspacePromotionPersistence: "configured",
     })
     const promotionSnapshot = await adapter.recordPlan(promotionPlan)
+    const promotionActionSummary = buildNonCncQuotePromotionActionSummary({
+      selectedPlanId: promotionPlan.planId,
+      snapshot: promotionSnapshot,
+    })
+    const promotionCommandPackage = buildNonCncQuotePromotionCommandPackage(buildNonCncQuotePromotionDraft(promotionActionSummary))
+    const generatedPromotionOutcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(promotionCommandPackage)
+    const { commitPlan } = buildNonCncQuotePromotionOutcomeCommitRun({
+      actor: "FactoryBid Operator",
+      commandPackage: promotionCommandPackage,
+      executedAt: promotionPlan.requestedAt,
+      outcomeDraft: generatedPromotionOutcomeDraft,
+    })
 
     render(
       <ProcessQuotePreviewCard
@@ -475,7 +492,53 @@ describe("FactoryBid workspace (component)", () => {
           statusCounts: {},
           warningCount: 0,
         }}
-        promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
+        promotionOutcomeCommitSnapshot={{
+          blockedPackageIds: [],
+          commitReadyPackageIds: [commitPlan.packageId],
+          outcomeCount: 6,
+          persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+          recordCount: 2,
+          records: [
+            {
+              blockerCount: 0,
+              blockerLabels: [],
+              commandOutcomeCount: 3,
+              commitRecordId: `non-cnc-outcome-commit:stale:${commitPlan.packageId}`,
+              commitVersion: commitPlan.commitVersion,
+              disposition: "commit_ready",
+              packageId: commitPlan.packageId,
+              packageVersion: commitPlan.packageVersion,
+              persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+              recordedAt: "2026-06-27T13:25:00.000Z",
+              recordedBy: "First Operator",
+              reviewWarnings: ["Material certificate required."],
+              selectedPlanId: commitPlan.selectedPlanId,
+              status: "ready",
+              targetRfqId: commitPlan.targetRfqId,
+              warningCount: 1,
+            },
+            {
+              blockerCount: 0,
+              blockerLabels: [],
+              commandOutcomeCount: 3,
+              commitRecordId: `non-cnc-outcome-commit:newest:${commitPlan.packageId}`,
+              commitVersion: commitPlan.commitVersion,
+              disposition: "commit_ready",
+              packageId: commitPlan.packageId,
+              packageVersion: commitPlan.packageVersion,
+              persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+              recordedAt: "2026-06-27T13:45:00.000Z",
+              recordedBy: "Second Operator",
+              reviewWarnings: ["Material certificate required."],
+              selectedPlanId: commitPlan.selectedPlanId,
+              status: "ready",
+              targetRfqId: commitPlan.targetRfqId,
+              warningCount: 1,
+            },
+          ],
+          statusCounts: { ready: 2 },
+          warningCount: 2,
+        }}
         promotionPlan={promotionPlan}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
@@ -495,6 +558,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionOutcomeCommit).toHaveTextContent("3 outcomes")
     expect(promotionOutcomeCommit).toHaveTextContent("Commit run available")
     expect(promotionOutcomeCommit).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    const promotionOutcomeCommitHistory = within(selectedPreview).getByLabelText("Non-CNC promotion commit history")
+    expect(promotionOutcomeCommitHistory).toHaveTextContent("2026-06-27T13:45:00.000Z")
+    expect(promotionOutcomeCommitHistory).toHaveTextContent("Status counts: ready 2")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {

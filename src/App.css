@@ -2206,9 +2206,10 @@
   background: white;
   border-radius: 999px;
   color: oklch(0.36 0.035 250);
-  flex: 0 0 auto;
   font-size: 0.66rem;
   font-weight: 850;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   padding: 4px 6px;
 }
 
@@ -2430,6 +2431,11 @@
 
   .process-demo-promotion-commit-history-grid {
     grid-template-columns: 1fr;
+  }
+
+  .process-demo-promotion-commit-history-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .process-demo-promotion-execution-grid,
