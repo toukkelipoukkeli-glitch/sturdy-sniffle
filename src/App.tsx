@@ -147,6 +147,11 @@ import {
 import { buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionOutcomeDraft"
 import { buildNonCncPromotedQuoteApplicationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommit"
 import {
+  createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence,
+  type NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot,
+  type RecordNonCncPromotedQuoteApplicationOutcomeCommitInput,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitPersistence"
+import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
   type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionPersistence"
@@ -4033,6 +4038,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [promotionApplicationExecutionPersistence] = useState(() => createLocalNonCncPromotedQuoteApplicationExecutionPersistence())
   const [promotionApplicationExecutionSnapshot, setPromotionApplicationExecutionSnapshot] =
     useState<NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot>(() => promotionApplicationExecutionPersistence.snapshot())
+  const [promotionApplicationOutcomeCommitPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence(),
+  )
+  const [promotionApplicationOutcomeCommitSnapshot, setPromotionApplicationOutcomeCommitSnapshot] =
+    useState<NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot>(() =>
+      promotionApplicationOutcomeCommitPersistence.snapshot(),
+    )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4113,6 +4125,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionApplicationExecutionPersistence],
   )
+  const recordPromotionApplicationOutcomeCommit = useCallback(
+    (input: RecordNonCncPromotedQuoteApplicationOutcomeCommitInput) => {
+      let isCurrent = true
+      void promotionApplicationOutcomeCommitPersistence.recordCommit(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationOutcomeCommitSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationOutcomeCommitPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4147,6 +4173,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewComparisonPanel preview={preview} />
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
+        promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
         promotionApplicationExecutionSnapshot={promotionApplicationExecutionSnapshot}
@@ -4155,6 +4182,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         promotionPlan={promotionPlan}
         recordPromotionApplication={recordPromotionApplication}
         recordPromotionApplicationExecutionRun={recordPromotionApplicationExecutionRun}
+        recordPromotionApplicationOutcomeCommit={recordPromotionApplicationOutcomeCommit}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
@@ -4356,12 +4384,14 @@ export function ProcessQuotePreviewCard({
   plasticEditor,
   preview,
   promotionApplicationExecutionSnapshot,
+  promotionApplicationOutcomeCommitSnapshot,
   promotionApplicationSnapshot,
   promotionExecutionSnapshot,
   promotionOutcomeCommitSnapshot,
   promotionPlan,
   recordPromotionApplication,
   recordPromotionApplicationExecutionRun,
+  recordPromotionApplicationOutcomeCommit,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
   promotionSnapshot,
@@ -4373,12 +4403,14 @@ export function ProcessQuotePreviewCard({
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
   promotionApplicationExecutionSnapshot: NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot
+  promotionApplicationOutcomeCommitSnapshot: NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot
   promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
   promotionOutcomeCommitSnapshot: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot
   promotionPlan: NonCncQuotePromotionPlan
   recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
   recordPromotionApplicationExecutionRun: (run: NonCncPromotedQuoteApplicationExecutionRun) => () => void
+  recordPromotionApplicationOutcomeCommit: (input: RecordNonCncPromotedQuoteApplicationOutcomeCommitInput) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
@@ -4485,6 +4517,14 @@ export function ProcessQuotePreviewCard({
     [promotionApplicationRecord, promotionPlan.requestedAt],
   )
   const promotionApplicationExecutionRecord = promotionApplicationExecutionSnapshot.latestRun
+  const promotionApplicationOutcomeCommitRecord = promotionApplicationOutcomeCommit
+    ? (promotionApplicationOutcomeCommitSnapshot.records.find(
+        (record) => record.applicationRecordId === promotionApplicationOutcomeCommit.commitPlan.applicationRecordId,
+      ) ??
+      promotionApplicationOutcomeCommitSnapshot.records.find(
+        (record) => record.applicationId === promotionApplicationOutcomeCommit.commitPlan.applicationId,
+      ))
+    : undefined
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
@@ -4498,6 +4538,10 @@ export function ProcessQuotePreviewCard({
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
   const promotionApplicationExecutionStatusSummary = Object.entries(promotionApplicationExecutionSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  const promotionApplicationOutcomeCommitStatusSummary = Object.entries(promotionApplicationOutcomeCommitSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
@@ -4531,6 +4575,17 @@ export function ProcessQuotePreviewCard({
     }
     return recordPromotionApplicationExecutionRun(promotionApplicationExecutionRun)
   }, [promotionApplicationExecutionRun, recordPromotionApplicationExecutionRun])
+  useEffect(() => {
+    if (!promotionApplicationOutcomeCommit) {
+      return undefined
+    }
+    return recordPromotionApplicationOutcomeCommit({
+      commitPlan: promotionApplicationOutcomeCommit.commitPlan,
+      executionRun: promotionApplicationOutcomeCommit.executionRun,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "FactoryBid Operator",
+    })
+  }, [promotionApplicationOutcomeCommit, promotionPlan.requestedAt, recordPromotionApplicationOutcomeCommit])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5304,6 +5359,53 @@ export function ProcessQuotePreviewCard({
               </li>
             )}
           </ul>
+        </div>
+      ) : null}
+      {promotionApplicationOutcomeCommitRecord ? (
+        <div
+          className="process-demo-promotion-application-commit-history"
+          aria-label="Non-CNC promoted quote application commit history"
+          data-status={promotionApplicationOutcomeCommitRecord.status}
+        >
+          <div className="process-demo-promotion-application-commit-history-heading">
+            <div>
+              <span>Application commit history</span>
+              <strong>{formatCount(promotionApplicationOutcomeCommitSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionApplicationOutcomeCommitSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local application outcome commit history:{" "}
+            {formatCount(promotionApplicationOutcomeCommitSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionApplicationOutcomeCommitSnapshot.outcomeCount, "outcome")},{" "}
+            {formatCount(promotionApplicationOutcomeCommitSnapshot.warningCount, "warning")}. Active RFQ quote, offer, and release
+            state stay unchanged.
+          </p>
+          <div className="process-demo-promotion-application-commit-history-grid">
+            <div>
+              <span>Latest commit</span>
+              <strong>{humanizeKey(promotionApplicationOutcomeCommitRecord.disposition)}</strong>
+              <small>
+                {promotionApplicationOutcomeCommitRecord.recordedBy} · {promotionApplicationOutcomeCommitRecord.recordedAt}
+              </small>
+            </div>
+            <div>
+              <span>Outcome totals</span>
+              <strong>{formatCount(promotionApplicationOutcomeCommitRecord.commandOutcomeCount, "outcome")}</strong>
+              <small>
+                {formatCount(promotionApplicationOutcomeCommitRecord.blockerCount, "blocker")},{" "}
+                {formatCount(promotionApplicationOutcomeCommitRecord.warningCount, "warning")}
+              </small>
+            </div>
+            <div>
+              <span>Application ids</span>
+              <small>Blocked: {promotionApplicationOutcomeCommitSnapshot.blockedApplicationIds.join(", ") || "None"}</small>
+              <small>Ready: {promotionApplicationOutcomeCommitSnapshot.commitReadyApplicationIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-commit-history-status">
+            Status counts: {promotionApplicationOutcomeCommitStatusSummary || "None"}
+          </small>
         </div>
       ) : null}
       {promotionApplicationExecutionRun ? (
