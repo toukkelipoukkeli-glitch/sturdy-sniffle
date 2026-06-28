@@ -134,7 +134,6 @@ describe("non-CNC promoted quote application execution outcome drafts", () => {
         command.key === "refresh_offer_workspace"
           ? {
               ...command,
-              externalId: undefined,
               status: "blocked",
             }
           : command,
