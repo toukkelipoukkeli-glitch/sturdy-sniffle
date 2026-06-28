@@ -31,7 +31,9 @@ export function evaluateProcessInputPromotionGate(
     missingRequiredCount,
     nextStep:
       missingRequiredCount > 0
-        ? "Populate every required process draft value, then add editable controls before promotion."
+        ? blockers.includes("editable_controls_missing")
+          ? "Populate every required process draft value, then add editable controls before promotion."
+          : "Populate every required process draft value before promotion."
         : blockers.length > 0
           ? readiness.nextStep
           : "Process input draft is ready for quote promotion.",

@@ -58,4 +58,27 @@ describe("process input promotion gate", () => {
       status: "ready",
     })
   })
+
+  it("keeps editable incomplete drafts blocked without editable-control guidance", () => {
+    const readiness = {
+      ...buildProcessInputReadiness("sheet_metal"),
+      editable: true,
+      nextStep: "Persist the quote snapshot.",
+      status: "ready",
+    } satisfies ProcessInputReadiness
+    const draft = {
+      ...buildProcessInputDraft("sheet_metal"),
+      populatedRequiredCount: 3,
+      status: "missing_fixture_values",
+    } satisfies ReturnType<typeof buildProcessInputDraft>
+
+    expect(evaluateProcessInputPromotionGate(readiness, draft)).toEqual({
+      blockerLabels: ["Missing required values"],
+      blockers: ["missing_required_values"],
+      gateVersion: PROCESS_INPUT_PROMOTION_GATE_VERSION,
+      missingRequiredCount: 1,
+      nextStep: "Populate every required process draft value before promotion.",
+      status: "blocked",
+    })
+  })
 })
