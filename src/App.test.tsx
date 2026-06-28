@@ -6,6 +6,7 @@ import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
+import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -106,6 +107,15 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionExecution).toHaveTextContent("non-cnc-quote-promotion-execution-")
     expect(promotionExecution).toHaveTextContent("3 commands")
     expect(promotionExecution).toHaveTextContent("Persisted non-CNC quote promotion is not wired to workspace state yet")
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promotion execution history")).toHaveTextContent(
+        "Local execution history: 1 run, 3 pending actions, 0 warnings.",
+      )
+    })
+    const promotionExecutionHistory = within(processDemos).getByLabelText("Non-CNC promotion execution history")
+    expect(promotionExecutionHistory).toHaveTextContent("Execution history")
+    expect(promotionExecutionHistory).toHaveTextContent("non-cnc-quote-promotion-execution-persistence.v1")
+    expect(promotionExecutionHistory).toHaveTextContent("Status counts: blocked 1")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -239,6 +249,15 @@ describe("FactoryBid workspace (component)", () => {
     expect(wirePromotionExecution).toHaveTextContent("1 warning")
     expect(wirePromotionExecution).toHaveTextContent("non-cnc-quote-promotion-execution.v1")
     expect(wirePromotionExecution).toHaveTextContent("non-cnc-quote-promotion-execution-")
+    await waitFor(() => {
+      expect(within(selectedPreview).getByLabelText("Non-CNC promotion execution history")).toHaveTextContent(
+        "Local execution history: 1 run, 4 pending actions, 1 warning.",
+      )
+    })
+    const wirePromotionExecutionHistory = within(selectedPreview).getByLabelText("Non-CNC promotion execution history")
+    expect(wirePromotionExecutionHistory).toHaveTextContent("1 record")
+    expect(wirePromotionExecutionHistory).toHaveTextContent("Status counts: blocked 1")
+    expect(wirePromotionExecutionHistory).toHaveTextContent("non-cnc-promotion-command-package:non-cnc-promotion:registry-demo:wire-edm")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]
@@ -348,7 +367,18 @@ describe("FactoryBid workspace (component)", () => {
     render(
       <ProcessQuotePreviewCard
         preview={previewWithFlags}
+        promotionExecutionSnapshot={{
+          packageIds: [],
+          pendingActionCount: 0,
+          persistenceVersion: NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION,
+          recordCount: 0,
+          records: [],
+          selectedPlanIds: [],
+          statusCounts: {},
+          warningCount: 0,
+        }}
         promotionPlan={promotionPlan}
+        recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
       />,
     )

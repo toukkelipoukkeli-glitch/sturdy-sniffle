@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
 import {
   AlertTriangle,
   Calculator,
@@ -121,7 +121,11 @@ import {
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
 import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
 import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
-import { buildNonCncQuotePromotionExecutionRun } from "./domain/quoting/nonCncQuotePromotionExecution"
+import { buildNonCncQuotePromotionExecutionRun, type NonCncQuotePromotionExecutionRun } from "./domain/quoting/nonCncQuotePromotionExecution"
+import {
+  createLocalNonCncQuotePromotionExecutionPersistence,
+  type NonCncQuotePromotionExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import {
   createLocalNonCncQuotePromotionPersistence,
   type NonCncQuotePromotionPersistenceSnapshot,
@@ -3991,6 +3995,10 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const preview = useMemo(() => buildProcessQuotePreview(editedDemoState.demos, selectedProcess), [editedDemoState.demos, selectedProcess])
   const [promotionPersistence] = useState(() => createLocalNonCncQuotePromotionPersistence())
   const [promotionSnapshot, setPromotionSnapshot] = useState<NonCncQuotePromotionPersistenceSnapshot>(() => promotionPersistence.snapshot())
+  const [promotionExecutionPersistence] = useState(() => createLocalNonCncQuotePromotionExecutionPersistence())
+  const [promotionExecutionSnapshot, setPromotionExecutionSnapshot] = useState<NonCncQuotePromotionExecutionPersistenceSnapshot>(() =>
+    promotionExecutionPersistence.snapshot(),
+  )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4015,6 +4023,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       isCurrent = false
     }
   }, [promotionPersistence, promotionPlan])
+  const recordPromotionExecutionRun = useCallback(
+    (run: NonCncQuotePromotionExecutionRun) => {
+      let isCurrent = true
+      void promotionExecutionPersistence.recordRun(run).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionExecutionSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionExecutionPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4050,7 +4072,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
         preview={preview}
+        promotionExecutionSnapshot={promotionExecutionSnapshot}
         promotionPlan={promotionPlan}
+        recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
         sheetMetalEditor={
           preview.selected.process === "sheet_metal"
@@ -4249,7 +4273,9 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
+  promotionExecutionSnapshot,
   promotionPlan,
+  recordPromotionExecutionRun,
   promotionSnapshot,
   sheetMetalEditor,
   wireEdmEditor,
@@ -4258,7 +4284,9 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
+  promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
   promotionPlan: NonCncQuotePromotionPlan
+  recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
   sheetMetalEditor?: {
     error?: string
@@ -4289,6 +4317,19 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionCommandPackage, promotionPlan.requestedAt],
   )
+  const promotionExecutionRecord = promotionExecutionSnapshot.records.find(
+    (record) => record.executionFingerprint === promotionExecutionRun.executionFingerprint,
+  )
+  const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  useEffect(() => {
+    if (!promotionRecord) {
+      return undefined
+    }
+    return recordPromotionExecutionRun(promotionExecutionRun)
+  }, [promotionExecutionRun, promotionRecord, recordPromotionExecutionRun])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4700,6 +4741,49 @@ export function ProcessQuotePreviewCard({
           </ul>
         </div>
       </div>
+      {promotionExecutionRecord ? (
+        <div
+          className="process-demo-promotion-execution-history"
+          aria-label="Non-CNC promotion execution history"
+          data-status={promotionExecutionRecord.status}
+        >
+          <div className="process-demo-promotion-execution-history-heading">
+            <div>
+              <span>Execution history</span>
+              <strong>{formatCount(promotionExecutionSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionExecutionSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local execution history: {formatCount(promotionExecutionSnapshot.recordCount, "run")},{" "}
+            {formatCount(promotionExecutionSnapshot.pendingActionCount, "pending action")},{" "}
+            {formatCount(promotionExecutionSnapshot.warningCount, "warning")}.
+          </p>
+          <div className="process-demo-promotion-execution-history-grid">
+            <div>
+              <span>Latest run</span>
+              <strong>{humanizeKey(promotionExecutionRecord.status)}</strong>
+              <small>{promotionExecutionRecord.executedAt}</small>
+            </div>
+            <div>
+              <span>Command totals</span>
+              <strong>{formatCount(promotionExecutionRecord.commandCount, "command")}</strong>
+              <small>
+                Prepared {promotionExecutionRecord.preparedCommandCount}, blocked {promotionExecutionRecord.blockedCommandCount},
+                pending {promotionExecutionRecord.pendingCommandCount}
+              </small>
+            </div>
+            <div>
+              <span>Snapshot ids</span>
+              <small>Packages: {promotionExecutionSnapshot.packageIds.join(", ") || "None"}</small>
+              <small>Plans: {promotionExecutionSnapshot.selectedPlanIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-execution-history-status">
+            Status counts: {promotionExecutionStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
         <span>{demo.quote.calculatorVersion}</span>
