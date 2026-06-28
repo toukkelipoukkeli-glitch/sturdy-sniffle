@@ -41,11 +41,7 @@ describe("non-CNC promoted quote application execution", () => {
 
     expect(run.status).toBe("prepared")
     expect(run.commands.map((command) => command.status)).toEqual(["prepared", "prepared", "prepared"])
-    expect(run.commands.map((command) => command.externalId)).toEqual([
-      "quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1",
-      "offer-readiness:rfq-demo-204:sheet-metal:54905",
-      "offer-builder:rfq-demo-204:non-cnc-promotion-rfq-demo-204-sheet-metal",
-    ])
+    expect(run.commands.every((command) => command.externalId === undefined)).toBe(true)
     expect(run.commands.map((command) => command.idempotencyKey)).toEqual([
       "non-cnc-application-execution:non-cnc-promoted-quote-application-rfq-demo-204-package-ready:replace-active-quote",
       "non-cnc-application-execution:non-cnc-promoted-quote-application-rfq-demo-204-package-ready:refresh-offer-workspace",
@@ -56,9 +52,24 @@ describe("non-CNC promoted quote application execution", () => {
 
   it("builds succeeded commit audits from applied outcomes", () => {
     const outcomes: NonCncPromotedQuoteApplicationCommandOutcomeInput[] = [
-      { key: "replace_active_quote", status: "applied", message: "Quote snapshot applied." },
-      { key: "refresh_offer_workspace", status: "applied", message: "Offer readiness refreshed." },
-      { key: "open_offer_builder", status: "applied", message: "Offer builder opened." },
+      {
+        externalId: "execution:quote-snapshot:123",
+        key: "replace_active_quote",
+        message: "Quote snapshot applied.",
+        status: "applied",
+      },
+      {
+        externalId: "execution:offer-readiness:123",
+        key: "refresh_offer_workspace",
+        message: "Offer readiness refreshed.",
+        status: "applied",
+      },
+      {
+        externalId: "execution:offer-builder:123",
+        key: "open_offer_builder",
+        message: "Offer builder opened.",
+        status: "applied",
+      },
     ]
 
     const run = buildNonCncPromotedQuoteApplicationExecutionRun({
@@ -71,6 +82,11 @@ describe("non-CNC promoted quote application execution", () => {
 
     expect(run.status).toBe("succeeded")
     expect(run.commands.map((command) => command.status)).toEqual(["applied", "applied", "applied"])
+    expect(run.commands.map((command) => command.externalId)).toEqual([
+      "execution:quote-snapshot:123",
+      "execution:offer-readiness:123",
+      "execution:offer-builder:123",
+    ])
     expect(run.nextActions).toEqual(["Non-CNC promoted quote application completed."])
     expect(run.warnings).toEqual(["Material certificate required."])
   })

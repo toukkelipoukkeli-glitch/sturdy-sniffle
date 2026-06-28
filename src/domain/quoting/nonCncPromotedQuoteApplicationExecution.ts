@@ -132,10 +132,10 @@ function buildCommandExecution(input: {
   recordStatus: NonCncPromotedQuoteApplicationRecord["status"]
 }): NonCncPromotedQuoteApplicationCommandExecution {
   const status = commandExecutionStatus(input.command, input.mode, input.outcome, input.recordStatus)
-  const canExposeExternalId = status !== "blocked" && input.command.externalId !== undefined
+  const externalId = status === "applied" || status === "failed" ? input.outcome?.externalId : undefined
   return {
     detail: input.command.detail,
-    externalId: canExposeExternalId ? input.command.externalId : undefined,
+    externalId,
     idempotencyKey: applicationCommandIdempotencyKey(input.applicationId, input.command.key),
     key: input.command.key,
     label: input.command.label,
