@@ -97,12 +97,11 @@ describe("non-CNC promoted quote application persistence", () => {
 
   it("normalizes seeded snapshots with duplicate application records", async () => {
     const applicationPlan = await buildReadyApplicationPlan()
+    const newestRecord = buildSeedRecord(applicationPlan, "2026-06-28T14:15:00.000Z")
+    const staleRecord = buildSeedRecord(applicationPlan, "2026-06-28T14:00:00.000Z")
     const adapter = createLocalNonCncPromotedQuoteApplicationPersistence({
       initialSnapshot: {
-        records: [
-          buildSeedRecord(applicationPlan, "2026-06-28T14:00:00.000Z"),
-          buildSeedRecord(applicationPlan, "2026-06-28T14:15:00.000Z"),
-        ],
+        records: [newestRecord, staleRecord],
       },
     })
 
@@ -152,6 +151,21 @@ describe("non-CNC promoted quote application persistence", () => {
           initialSnapshot: { records: [{ ...record, status: "blocked", disposition: "review_only" }] },
         }),
     ).toThrow("blocked application records must not include a quoteSnapshot")
+    expect(
+      () =>
+        createLocalNonCncPromotedQuoteApplicationPersistence({
+          initialSnapshot: {
+            records: [
+              {
+                ...record,
+                disposition: "review_only",
+                quoteSnapshot: undefined,
+                status: "blocked",
+              },
+            ],
+          },
+        }),
+    ).toThrow("blocked application records must not include command external ids")
   })
 })
 

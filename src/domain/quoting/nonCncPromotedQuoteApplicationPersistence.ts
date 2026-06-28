@@ -103,7 +103,10 @@ function buildApplicationRecord({
     blockerCount: applicationPlan.blockerLabels.length,
     blockerLabels: [...applicationPlan.blockerLabels],
     commandCount: applicationPlan.commands.length,
-    commands: applicationPlan.commands.map((command) => ({ ...command })),
+    commands: applicationPlan.commands.map((command) => {
+      const { externalId, ...commandRecord } = command
+      return applicationPlan.status === "ready" && externalId !== undefined ? { ...commandRecord, externalId } : commandRecord
+    }),
     disposition: applicationPlan.status === "ready" ? "application_ready" : "review_only",
     packageId: applicationPlan.packageId,
     persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_PERSISTENCE_VERSION,
@@ -131,7 +134,10 @@ function normalizeSnapshot(
   const recordsById = new Map<string, NonCncPromotedQuoteApplicationRecord>()
   for (const record of snapshot?.records ?? []) {
     const normalized = normalizeRecord(record)
-    recordsById.set(normalized.applicationRecordId, normalized)
+    const existing = recordsById.get(normalized.applicationRecordId)
+    if (!existing || sortNewestFirst(normalized, existing) < 0) {
+      recordsById.set(normalized.applicationRecordId, normalized)
+    }
   }
   const records = [...recordsById.values()].sort(sortNewestFirst)
 
@@ -206,6 +212,9 @@ function normalizeRecord(record: NonCncPromotedQuoteApplicationRecord): NonCncPr
   }
   if (normalized.status === "blocked" && normalized.quoteSnapshot) {
     throw new Error("blocked application records must not include a quoteSnapshot")
+  }
+  if (normalized.status === "blocked" && normalized.commands.some((command) => command.externalId !== undefined)) {
+    throw new Error("blocked application records must not include command external ids")
   }
 
   return normalized
