@@ -144,6 +144,7 @@ import {
   buildNonCncPromotedQuoteApplicationExecutionRun,
   type NonCncPromotedQuoteApplicationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationExecution"
+import { buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionOutcomeDraft"
 import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
   type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
@@ -4451,6 +4452,13 @@ export function ProcessQuotePreviewCard({
   const promotionApplicationRecord = promotionApplicationSnapshot.records.find(
     (record) => record.applicationId === promotionApplicationPlan.applicationId,
   )
+  const promotionApplicationExecutionOutcomeDraft = useMemo(
+    () =>
+      promotionApplicationRecord
+        ? buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(promotionApplicationRecord)
+        : undefined,
+    [promotionApplicationRecord],
+  )
   const promotionApplicationExecutionRun = useMemo(
     () =>
       promotionApplicationRecord
@@ -5168,6 +5176,59 @@ export function ProcessQuotePreviewCard({
           <small className="process-demo-promotion-application-record-status">
             Status counts: {promotionApplicationStatusSummary || "None"}
           </small>
+        </div>
+      ) : null}
+      {promotionApplicationExecutionOutcomeDraft ? (
+        <div
+          className="process-demo-promotion-application-outcome-draft"
+          aria-label="Non-CNC promoted quote application outcome draft"
+          data-status={promotionApplicationExecutionOutcomeDraft.status}
+        >
+          <div className="process-demo-promotion-application-outcome-draft-heading">
+            <div>
+              <span>Application outcome draft</span>
+              <strong>{humanizeKey(promotionApplicationExecutionOutcomeDraft.status)}</strong>
+            </div>
+            <small>{promotionApplicationExecutionOutcomeDraft.draftVersion}</small>
+          </div>
+          <p>{promotionApplicationExecutionOutcomeDraft.nextOperatorMessage}</p>
+          <div className="process-demo-promotion-application-outcome-draft-grid">
+            <div>
+              <span>Boundary</span>
+              <strong>{promotionApplicationExecutionOutcomeDraft.applicationId}</strong>
+              <small>{promotionApplicationExecutionOutcomeDraft.mutationBoundary}</small>
+            </div>
+            <div>
+              <span>Outcomes</span>
+              <strong>
+                {formatCount(promotionApplicationExecutionOutcomeDraft.readyOutcomeCount, "ready outcome")} ·{" "}
+                {formatCount(promotionApplicationExecutionOutcomeDraft.blockedOutcomeCount, "blocked outcome")}
+              </strong>
+              <small>{promotionApplicationExecutionOutcomeDraft.reviewWarnings.join(", ") || "No review warnings"}</small>
+            </div>
+            <div>
+              <span>Target</span>
+              <strong>{promotionApplicationExecutionOutcomeDraft.targetRfqId}</strong>
+              <small>{promotionApplicationExecutionOutcomeDraft.selectedPlanId}</small>
+            </div>
+          </div>
+          <ul className="process-demo-promotion-application-outcome-draft-list">
+            {promotionApplicationExecutionOutcomeDraft.commandOutcomes.map((outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <div>
+                  <strong>{outcome.label}</strong>
+                  <span>{humanizeKey(outcome.status)}</span>
+                </div>
+                <small>{outcome.idempotencyKey}</small>
+                <small>
+                  {outcome.status === "blocked"
+                    ? `Outcome withheld${outcome.blockerLabels.length > 0 ? `: ${outcome.blockerLabels.join(", ")}` : ""}`
+                    : (outcome.suggestedOutcome?.message ?? "Outcome ready")}
+                </small>
+                <small>{outcome.externalId ?? "External id withheld"}</small>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
       {promotionApplicationExecutionRun ? (
