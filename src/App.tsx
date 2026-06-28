@@ -145,6 +145,7 @@ import {
   type NonCncPromotedQuoteApplicationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationExecution"
 import { buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionOutcomeDraft"
+import { buildNonCncPromotedQuoteApplicationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommit"
 import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
   type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
@@ -4459,6 +4460,18 @@ export function ProcessQuotePreviewCard({
         : undefined,
     [promotionApplicationRecord],
   )
+  const promotionApplicationOutcomeCommit = useMemo(
+    () =>
+      promotionApplicationRecord && promotionApplicationExecutionOutcomeDraft
+        ? buildNonCncPromotedQuoteApplicationOutcomeCommitRun({
+            actor: "FactoryBid Operator",
+            applicationRecord: promotionApplicationRecord,
+            executedAt: promotionPlan.requestedAt,
+            outcomeDraft: promotionApplicationExecutionOutcomeDraft,
+          })
+        : undefined,
+    [promotionApplicationExecutionOutcomeDraft, promotionApplicationRecord, promotionPlan.requestedAt],
+  )
   const promotionApplicationExecutionRun = useMemo(
     () =>
       promotionApplicationRecord
@@ -5228,6 +5241,68 @@ export function ProcessQuotePreviewCard({
                 <small>{outcome.externalId ?? "External id withheld"}</small>
               </li>
             ))}
+          </ul>
+        </div>
+      ) : null}
+      {promotionApplicationOutcomeCommit ? (
+        <div
+          className="process-demo-promotion-application-commit-plan"
+          aria-label="Non-CNC promoted quote application commit plan"
+          data-status={promotionApplicationOutcomeCommit.commitPlan.status}
+        >
+          <div className="process-demo-promotion-application-commit-plan-heading">
+            <div>
+              <span>Application commit plan</span>
+              <strong>{humanizeKey(promotionApplicationOutcomeCommit.commitPlan.status)}</strong>
+            </div>
+            <small>{promotionApplicationOutcomeCommit.commitPlan.commitVersion}</small>
+          </div>
+          <p>
+            {promotionApplicationOutcomeCommit.executionRun
+              ? "Reviewed application outcome commit run is ready for future mutation wiring; active RFQ quote, offer, and release state stay unchanged."
+              : promotionApplicationOutcomeCommit.commitPlan.nextOperatorMessage}
+          </p>
+          <div className="process-demo-promotion-application-commit-plan-grid">
+            <div>
+              <span>Commit outcomes</span>
+              <strong>{formatCount(promotionApplicationOutcomeCommit.commitPlan.commandOutcomeCount, "outcome")}</strong>
+              <small>{promotionApplicationOutcomeCommit.executionRun ? "Commit run available" : "Application commit withheld"}</small>
+            </div>
+            <div>
+              <span>Target</span>
+              <strong>{promotionApplicationOutcomeCommit.commitPlan.targetRfqId}</strong>
+              <small>{promotionApplicationOutcomeCommit.commitPlan.selectedPlanId}</small>
+            </div>
+            <div>
+              <span>Warnings</span>
+              <strong>{formatCount(promotionApplicationOutcomeCommit.commitPlan.reviewWarnings.length, "warning")}</strong>
+              <small>{promotionApplicationOutcomeCommit.commitPlan.reviewWarnings.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <ul className="process-demo-promotion-application-commit-plan-list">
+            {promotionApplicationOutcomeCommit.commitPlan.commandOutcomes.length > 0 ? (
+              promotionApplicationOutcomeCommit.commitPlan.commandOutcomes.map((outcome) => (
+                <li data-status={outcome.status} key={outcome.key}>
+                  <div>
+                    <strong>{humanizeKey(outcome.key)}</strong>
+                    <span>{humanizeKey(outcome.status)}</span>
+                  </div>
+                  <small>{outcome.message ?? "Application outcome ready"}</small>
+                  <small>{outcome.externalId ?? "No external id"}</small>
+                </li>
+              ))
+            ) : (
+              <li data-status="blocked">
+                <div>
+                  <strong>Application commit withheld</strong>
+                  <span>Blocked</span>
+                </div>
+                <small>
+                  {promotionApplicationOutcomeCommit.commitPlan.blockerLabels.join(", ") ||
+                    "No reviewed application outcomes ready for commit."}
+                </small>
+              </li>
+            )}
           </ul>
         </div>
       ) : null}

@@ -189,6 +189,15 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
     "Promoted quote read model is not ready.",
   )
   await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application outcome draft")).toContainText("Outcome withheld")
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application commit plan")).toContainText(
+    "non-cnc-promoted-quote-application-outcome-commit.v1",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application commit plan")).toContainText(
+    "Application commit withheld",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application commit plan")).toContainText(
+    "Application outcome draft must be ready before commit.",
+  )
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
   await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
     "Process preview summary copied.",
