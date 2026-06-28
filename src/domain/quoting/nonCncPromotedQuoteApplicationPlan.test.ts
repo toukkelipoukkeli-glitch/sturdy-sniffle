@@ -164,6 +164,19 @@ describe("non-CNC promoted quote application plan", () => {
         requestedBy: "   ",
       }),
     ).toThrow("requestedBy is required")
+    expect(() =>
+      buildNonCncPromotedQuoteApplicationPlan({
+        ...request,
+        readModel: { ...readModel, packageId: "!!!" },
+      }),
+    ).toThrow("readModel.packageId must contain at least one alphanumeric character")
+    expect(() =>
+      buildNonCncPromotedQuoteApplicationPlan({
+        ...request,
+        readModel,
+        targetRfqId: ":::",
+      }),
+    ).toThrow("targetRfqId must contain at least one alphanumeric character")
   })
 })
 

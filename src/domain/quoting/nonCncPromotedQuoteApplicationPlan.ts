@@ -130,11 +130,15 @@ function buildApplicationCommands(
 }
 
 function buildApplicationId(packageId: string, targetRfqId: string): string {
-  return `non-cnc-promoted-quote-application:${toStableIdToken(targetRfqId)}:${toStableIdToken(packageId)}`
+  return `non-cnc-promoted-quote-application:${toStableIdToken(targetRfqId, "targetRfqId")}:${toStableIdToken(packageId, "readModel.packageId")}`
 }
 
-function toStableIdToken(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown"
+function toStableIdToken(value: string, key: string): string {
+  const token = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+  if (!token) {
+    throw new Error(`${key} must contain at least one alphanumeric character`)
+  }
+  return token
 }
 
 function uniqueLabels(labels: string[]): string[] {
