@@ -7,6 +7,10 @@ import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
+import {
+  NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+  type NonCncQuotePromotionOutcomeCommitPersistenceSnapshot,
+} from "./domain/quoting/nonCncQuotePromotionOutcomeCommitPersistence"
 import { createLocalNonCncQuotePromotionPersistence } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
@@ -18,6 +22,19 @@ function totalText(container: HTMLElement): string {
 }
 
 const originalClipboard = navigator.clipboard
+
+function emptyPromotionOutcomeCommitSnapshot(): NonCncQuotePromotionOutcomeCommitPersistenceSnapshot {
+  return {
+    blockedPackageIds: [],
+    commitReadyPackageIds: [],
+    outcomeCount: 0,
+    persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    statusCounts: {},
+    warningCount: 0,
+  }
+}
 
 describe("FactoryBid workspace (component)", () => {
   beforeEach(() => {
@@ -132,6 +149,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionExecutionHistory).toHaveTextContent("Execution history")
     expect(promotionExecutionHistory).toHaveTextContent("non-cnc-quote-promotion-execution-persistence.v1")
     expect(promotionExecutionHistory).toHaveTextContent("Status counts: blocked 1")
+    const promotionCommitHistory = within(processDemos).getByLabelText("Non-CNC promotion commit history")
+    expect(promotionCommitHistory).toHaveTextContent("Commit history")
+    expect(promotionCommitHistory).toHaveTextContent("non-cnc-quote-promotion-outcome-commit-persistence.v1")
+    expect(promotionCommitHistory).toHaveTextContent("Local outcome commit history: 1 record, 0 outcomes, 0 warnings.")
+    expect(promotionCommitHistory).toHaveTextContent("review only")
+    expect(promotionCommitHistory).toHaveTextContent("Status counts: blocked 1")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -402,7 +425,9 @@ describe("FactoryBid workspace (component)", () => {
           statusCounts: {},
           warningCount: 0,
         }}
+        promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
+        recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
       />,
@@ -450,7 +475,9 @@ describe("FactoryBid workspace (component)", () => {
           statusCounts: {},
           warningCount: 0,
         }}
+        promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
+        recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={promotionSnapshot}
       />,
