@@ -140,6 +140,7 @@ import {
 import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
 import { buildNonCncPromotedQuoteApplicationPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationPlan"
+import { buildNonCncPromotedQuoteApplicationExecutionRun } from "./domain/quoting/nonCncPromotedQuoteApplicationExecution"
 import {
   createLocalNonCncPromotedQuoteApplicationPersistence,
   type NonCncPromotedQuoteApplicationPersistenceSnapshot,
@@ -4420,6 +4421,18 @@ export function ProcessQuotePreviewCard({
   const promotionApplicationRecord = promotionApplicationSnapshot.records.find(
     (record) => record.applicationId === promotionApplicationPlan.applicationId,
   )
+  const promotionApplicationExecutionRun = useMemo(
+    () =>
+      promotionApplicationRecord
+        ? buildNonCncPromotedQuoteApplicationExecutionRun({
+            actor: "FactoryBid Operator",
+            applicationRecord: promotionApplicationRecord,
+            executedAt: promotionPlan.requestedAt,
+            mode: "dry_run",
+          })
+        : undefined,
+    [promotionApplicationRecord, promotionPlan.requestedAt],
+  )
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
@@ -5114,6 +5127,51 @@ export function ProcessQuotePreviewCard({
           <small className="process-demo-promotion-application-record-status">
             Status counts: {promotionApplicationStatusSummary || "None"}
           </small>
+        </div>
+      ) : null}
+      {promotionApplicationExecutionRun ? (
+        <div
+          className="process-demo-promotion-application-execution"
+          aria-label="Non-CNC promoted quote application execution audit"
+          data-status={promotionApplicationExecutionRun.status}
+        >
+          <div className="process-demo-promotion-application-execution-heading">
+            <div>
+              <span>Application audit</span>
+              <strong>{humanizeKey(promotionApplicationExecutionRun.status)}</strong>
+            </div>
+            <small>{promotionApplicationExecutionRun.executionVersion}</small>
+          </div>
+          <p>Dry-run application audit only; active RFQ quote, offer, and release state stay unchanged.</p>
+          <div className="process-demo-promotion-application-execution-grid">
+            <div>
+              <span>Fingerprint</span>
+              <strong>{promotionApplicationExecutionRun.executionFingerprint}</strong>
+              <small>{promotionApplicationExecutionRun.mode}</small>
+            </div>
+            <div>
+              <span>Commands</span>
+              <strong>{formatCount(promotionApplicationExecutionRun.commands.length, "command")}</strong>
+              <small>{promotionApplicationExecutionRun.commands.map((command) => humanizeKey(command.status)).join(", ")}</small>
+            </div>
+            <div>
+              <span>Warnings</span>
+              <strong>{formatCount(promotionApplicationExecutionRun.warnings.length, "warning")}</strong>
+              <small>{promotionApplicationExecutionRun.warnings.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <ul className="process-demo-promotion-application-execution-list">
+            {promotionApplicationExecutionRun.commands.map((command) => (
+              <li data-status={command.status} key={command.key}>
+                <div>
+                  <strong>{command.label}</strong>
+                  <span>{humanizeKey(command.status)}</span>
+                </div>
+                <small>{command.idempotencyKey}</small>
+                <small>{command.externalId ?? "Execution id withheld"}</small>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
       <div
