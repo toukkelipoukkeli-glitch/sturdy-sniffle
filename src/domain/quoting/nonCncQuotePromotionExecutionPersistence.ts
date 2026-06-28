@@ -124,7 +124,7 @@ function normalizeSnapshot(
 }
 
 function normalizeRecord(record: NonCncQuotePromotionExecutionRecord): NonCncQuotePromotionExecutionRecord {
-  return {
+  const normalized = {
     actor: nonBlank(record.actor, "actor"),
     appliedCommandCount: nonNegativeInteger(record.appliedCommandCount, "appliedCommandCount"),
     blockedCommandCount: nonNegativeInteger(record.blockedCommandCount, "blockedCommandCount"),
@@ -141,9 +141,21 @@ function normalizeRecord(record: NonCncQuotePromotionExecutionRecord): NonCncQuo
     preparedCommandCount: nonNegativeInteger(record.preparedCommandCount, "preparedCommandCount"),
     selectedPlanId: nonBlank(record.selectedPlanId, "selectedPlanId"),
     status: normalizeStatus(record.status),
-    targetRfqId: record.targetRfqId ? nonBlank(record.targetRfqId, "targetRfqId") : undefined,
+    targetRfqId: record.targetRfqId === undefined ? undefined : nonBlank(record.targetRfqId, "targetRfqId"),
     warningCount: nonNegativeInteger(record.warningCount, "warningCount"),
   }
+
+  const countedCommands =
+    normalized.appliedCommandCount +
+    normalized.blockedCommandCount +
+    normalized.failedCommandCount +
+    normalized.pendingCommandCount +
+    normalized.preparedCommandCount
+  if (countedCommands !== normalized.commandCount) {
+    throw new Error("commandCount must equal the sum of per-status command counts")
+  }
+
+  return normalized
 }
 
 function cloneSnapshot(

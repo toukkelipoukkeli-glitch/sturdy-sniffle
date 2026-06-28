@@ -178,10 +178,31 @@ describe("non-CNC quote promotion execution persistence", () => {
     expect(() =>
       createLocalNonCncQuotePromotionExecutionPersistence({
         initialSnapshot: {
-          records: [{ ...seededRecord, executedAt: "tomorrow", warningCount: -1 }],
+          records: [{ ...seededRecord, executedAt: "tomorrow" }],
         },
       }),
     ).toThrow("executedAt must be a valid ISO timestamp")
+    expect(() =>
+      createLocalNonCncQuotePromotionExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, warningCount: -1 }],
+        },
+      }),
+    ).toThrow("warningCount must be a non-negative integer")
+    expect(() =>
+      createLocalNonCncQuotePromotionExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, commandCount: 4 }],
+        },
+      }),
+    ).toThrow("commandCount must equal the sum of per-status command counts")
+    expect(() =>
+      createLocalNonCncQuotePromotionExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, targetRfqId: "" }],
+        },
+      }),
+    ).toThrow("targetRfqId is required")
   })
 })
 
