@@ -57,10 +57,11 @@ export function buildNonCncQuotePromotionReadModel({
     nextOperatorMessage: promoted
       ? "Non-CNC quote promotion is available as a read-only promoted quote candidate."
       : "Complete a successful reviewed non-CNC promotion commit before using the promoted quote.",
-    offerBuilderExternalId: offerBuilderCommand?.status === "applied" ? offerBuilderCommand.externalId : undefined,
-    offerReadinessExternalId: offerReadinessCommand?.status === "applied" ? offerReadinessCommand.externalId : undefined,
+    offerBuilderExternalId: promoted && offerBuilderCommand?.status === "applied" ? offerBuilderCommand.externalId : undefined,
+    offerReadinessExternalId:
+      promoted && offerReadinessCommand?.status === "applied" ? offerReadinessCommand.externalId : undefined,
     packageId: commandPackage.packageId,
-    quoteExternalId: quoteCommand?.status === "applied" ? quoteCommand.externalId : undefined,
+    quoteExternalId: promoted && quoteCommand?.status === "applied" ? quoteCommand.externalId : undefined,
     quoteSnapshot: promoted ? quoteSnapshot : undefined,
     readModelVersion: NON_CNC_QUOTE_PROMOTION_READ_MODEL_VERSION,
     reviewWarnings: uniqueLabels([...(executionRun?.warnings ?? []), ...commandPackage.reviewWarnings]),

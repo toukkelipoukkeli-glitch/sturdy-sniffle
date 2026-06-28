@@ -64,6 +64,9 @@ describe("non-CNC quote promotion read model", () => {
     const blockedModel = buildNonCncQuotePromotionReadModel({ commandPackage: blockedPackage })
 
     expect(blockedModel).toMatchObject({
+      offerBuilderExternalId: undefined,
+      offerReadinessExternalId: undefined,
+      quoteExternalId: undefined,
       quoteSnapshot: undefined,
       status: "blocked",
     })
@@ -81,6 +84,9 @@ describe("non-CNC quote promotion read model", () => {
 
     expect(dryRunModel).toMatchObject({
       executionFingerprint: dryRun.executionFingerprint,
+      offerBuilderExternalId: undefined,
+      offerReadinessExternalId: undefined,
+      quoteExternalId: undefined,
       quoteSnapshot: undefined,
       status: "blocked",
     })
@@ -107,6 +113,9 @@ describe("non-CNC quote promotion read model", () => {
     })
 
     expect(readModel).toMatchObject({
+      offerBuilderExternalId: undefined,
+      offerReadinessExternalId: undefined,
+      quoteExternalId: undefined,
       quoteSnapshot: undefined,
       status: "blocked",
     })
