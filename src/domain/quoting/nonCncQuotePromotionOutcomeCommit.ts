@@ -44,6 +44,12 @@ export function buildNonCncQuotePromotionOutcomeCommitPlan({
   outcomeDraft,
 }: BuildNonCncQuotePromotionOutcomeCommitPlanInput): NonCncQuotePromotionOutcomeCommitPlan {
   assertDraftMatchesPackage(commandPackage, outcomeDraft)
+  const commandSetBlockers = commandSetMismatchBlockers(commandPackage, outcomeDraft)
+  const invalidCommandLabels = outcomeDraft.commandOutcomes.flatMap((command) =>
+    command.status === "ready" && command.blockerLabels.length === 0
+      ? []
+      : [`Outcome draft entry for ${command.label} is not ready for commit.`],
+  )
   const commandOutcomes = outcomeDraft.commandOutcomes.flatMap((command) =>
     command.suggestedOutcome ? [cloneOutcome(command.suggestedOutcome)] : [],
   )
@@ -51,12 +57,20 @@ export function buildNonCncQuotePromotionOutcomeCommitPlan({
     .filter((command) => !command.suggestedOutcome)
     .map((command) => `Missing suggested outcome for ${command.label}.`)
   const blockerLabels = uniqueLabels([
+    ...commandSetBlockers,
     ...outcomeDraft.commandOutcomes.flatMap((command) => command.blockerLabels),
+    ...invalidCommandLabels,
     ...missingOutcomeLabels,
     ...(outcomeDraft.status === "ready" ? [] : ["Outcome draft must be ready before commit."]),
   ])
   const status =
-    outcomeDraft.status === "ready" && commandOutcomes.length > 0 && missingOutcomeLabels.length === 0 ? "ready" : "blocked"
+    outcomeDraft.status === "ready" &&
+    commandOutcomes.length > 0 &&
+    commandSetBlockers.length === 0 &&
+    invalidCommandLabels.length === 0 &&
+    missingOutcomeLabels.length === 0
+      ? "ready"
+      : "blocked"
 
   return {
     blockerLabels: status === "ready" ? [] : blockerLabels,
@@ -74,6 +88,18 @@ export function buildNonCncQuotePromotionOutcomeCommitPlan({
     status,
     targetRfqId: outcomeDraft.targetRfqId,
   }
+}
+
+function commandSetMismatchBlockers(
+  commandPackage: NonCncQuotePromotionCommandPackage,
+  outcomeDraft: NonCncQuotePromotionExecutionOutcomeDraft,
+): string[] {
+  const packageKeys = commandPackage.commands.map((command) => command.key)
+  const draftKeys = outcomeDraft.commandOutcomes.map((command) => command.key)
+  if (packageKeys.length !== draftKeys.length || packageKeys.some((key, index) => key !== draftKeys[index])) {
+    return ["Outcome draft command list does not match package commands."]
+  }
+  return []
 }
 
 export function buildNonCncQuotePromotionOutcomeCommitRun(

@@ -109,6 +109,51 @@ describe("non-CNC quote promotion outcome commit adapter", () => {
     expect(commitPlan.blockerLabels).toContain("Missing suggested outcome for Persist quote snapshot.")
   })
 
+  it("blocks ready drafts with missing package commands", async () => {
+    const commandPackage = await buildReadyPackage()
+    const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
+    const staleDraft = {
+      ...outcomeDraft,
+      commandOutcomes: outcomeDraft.commandOutcomes.slice(0, 2),
+    }
+
+    const commitPlan = buildNonCncQuotePromotionOutcomeCommitPlan({ commandPackage, outcomeDraft: staleDraft })
+
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(commitPlan.blockerLabels).toContain("Outcome draft command list does not match package commands.")
+  })
+
+  it("blocks ready drafts with command-level blockers", async () => {
+    const commandPackage = await buildReadyPackage()
+    const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
+    const staleDraft = {
+      ...outcomeDraft,
+      commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
+        index === 0
+          ? {
+              ...command,
+              blockerLabels: ["Operator review required."],
+              status: "blocked" as const,
+            }
+          : command,
+      ),
+    }
+
+    const commitPlan = buildNonCncQuotePromotionOutcomeCommitPlan({ commandPackage, outcomeDraft: staleDraft })
+
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(commitPlan.blockerLabels).toContain("Operator review required.")
+    expect(commitPlan.blockerLabels).toContain("Outcome draft entry for Persist quote snapshot is not ready for commit.")
+  })
+
   it("clones suggested outcomes so later draft mutation cannot change commit inputs", async () => {
     const commandPackage = await buildReadyPackage()
     const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
