@@ -119,6 +119,7 @@ import {
   type NonCncInputEditAdapterSummary,
 } from "./domain/quoting/nonCncInputEditRegistry"
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
+import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
 import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
 import {
   createLocalNonCncQuotePromotionPersistence,
@@ -4276,6 +4277,7 @@ export function ProcessQuotePreviewCard({
     [promotionPlan.planId, promotionSnapshot],
   )
   const promotionDraft = useMemo(() => buildNonCncQuotePromotionDraft(promotionActionSummary), [promotionActionSummary])
+  const promotionCommandPackage = useMemo(() => buildNonCncQuotePromotionCommandPackage(promotionDraft), [promotionDraft])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4592,6 +4594,50 @@ export function ProcessQuotePreviewCard({
             <small>{promotionDraft.reviewWarnings.join(", ") || "None"}</small>
           </div>
         </div>
+      </div>
+      <div
+        className="process-demo-promotion-package"
+        aria-label="Non-CNC promotion command package"
+        data-status={promotionCommandPackage.status}
+      >
+        <div className="process-demo-promotion-package-heading">
+          <div>
+            <span>Command package</span>
+            <strong>{humanizeKey(promotionCommandPackage.status)}</strong>
+          </div>
+          <small>{promotionCommandPackage.packageVersion}</small>
+        </div>
+        <p>{promotionCommandPackage.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-package-grid">
+          <div>
+            <span>Package id</span>
+            <strong>{promotionCommandPackage.packageId}</strong>
+            <small>{promotionCommandPackage.targetRfqId ?? "No target RFQ payload"}</small>
+          </div>
+          <div>
+            <span>Payloads</span>
+            <strong>
+              {formatCount(promotionCommandPackage.commands.filter((command) => command.payload).length, "payload")}
+            </strong>
+            <small>{promotionCommandPackage.blockerLabels.join(", ") || "Package payloads are ready"}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionCommandPackage.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionCommandPackage.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-package-list">
+          {promotionCommandPackage.commands.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{command.payload ? "Payload ready" : "Payload withheld"}</span>
+              </div>
+              <small>{command.blockerLabels.join(", ") || "No blockers"}</small>
+            </li>
+          ))}
+        </ul>
       </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
