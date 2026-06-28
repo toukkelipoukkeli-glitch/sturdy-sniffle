@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a526599` (`Add non-CNC outcome commit adapter (#183)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E non-CNC promotion outcome commit UI PR.
-- In-flight PR at this checkpoint: `codex/non-cnc-outcome-commit-ui` surfaces the reviewed-outcome commit plan in the non-CNC preview while keeping RFQ quote, offer, and release state unchanged.
+- Main branch checkpoint: `f0fc97a` (`Surface non-CNC outcome commit plan (#184)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E non-CNC promotion outcome commit history PR.
+- In-flight PR at this checkpoint: `codex/non-cnc-outcome-commit-history` adds a deterministic local reviewed-outcome commit persistence snapshot while keeping RFQ quote, offer, and release state unchanged.
 - Latest merged sequence:
+  - `#184` non-CNC registry previews now surface reviewed-outcome commit plans in the UI with guarded ready/blocked states before any active RFQ quote, offer, or release mutation.
   - `#183` non-CNC promotion outcome drafts now feed deterministic reviewed-outcome commit plan/run adapters before any active RFQ quote, offer, or release mutation.
   - `#182` non-CNC registry previews now surface deterministic outcome draft review UI and ready-path coverage while keeping active RFQ quote, offer, and release state unchanged.
   - `#181` non-CNC promotion command packages now produce deterministic execution outcome drafts for future reviewed commits.
@@ -152,7 +153,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, execution audit records, copyable execution summary, surfaced execution audit UI, local execution persistence snapshots, execution history UI, deterministic outcome drafts, and outcome draft UI. This branch adds the reviewed-outcome commit adapter so future Convex/UI wiring can commit reviewed runs before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, execution audit records, copyable execution summary, surfaced execution audit UI, local execution persistence snapshots, execution history UI, deterministic outcome drafts, outcome draft UI, and reviewed-outcome commit-plan UI. This branch adds deterministic local outcome commit persistence so future Convex/UI wiring can commit reviewed runs before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
