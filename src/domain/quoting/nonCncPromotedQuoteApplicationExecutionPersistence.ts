@@ -67,7 +67,7 @@ export function createLocalNonCncPromotedQuoteApplicationExecutionPersistence({
       const record = buildExecutionRecord(run)
       snapshotState = normalizeSnapshot({
         records: [
-          ...snapshotState.records.filter((candidate) => candidate.executionFingerprint !== record.executionFingerprint),
+          ...snapshotState.records,
           record,
         ],
       })
@@ -203,7 +203,20 @@ function sortNewestFirst(
     compareLex(left.packageId, right.packageId) ||
     compareLex(left.selectedPlanId, right.selectedPlanId) ||
     compareLex(left.status, right.status) ||
-    compareLex(left.mode, right.mode)
+    compareLex(left.mode, right.mode) ||
+    compareLex(left.applicationRecordId, right.applicationRecordId) ||
+    compareLex(left.targetRfqId, right.targetRfqId) ||
+    compareLex(left.actor, right.actor) ||
+    compareLex(left.executionVersion, right.executionVersion) ||
+    compareLex(left.persistenceVersion, right.persistenceVersion) ||
+    compareNumber(left.commandCount, right.commandCount) ||
+    compareNumber(left.appliedCommandCount, right.appliedCommandCount) ||
+    compareNumber(left.blockedCommandCount, right.blockedCommandCount) ||
+    compareNumber(left.failedCommandCount, right.failedCommandCount) ||
+    compareNumber(left.pendingCommandCount, right.pendingCommandCount) ||
+    compareNumber(left.preparedCommandCount, right.preparedCommandCount) ||
+    compareNumber(left.pendingActionCount, right.pendingActionCount) ||
+    compareNumber(left.warningCount, right.warningCount)
   )
 }
 
@@ -234,6 +247,10 @@ function nonNegativeInteger(value: number, fieldName: string): number {
     throw new Error(`${fieldName} must be a non-negative integer`)
   }
   return value
+}
+
+function compareNumber(left: number, right: number): number {
+  return left - right
 }
 
 function normalizePersistenceVersion(

@@ -137,7 +137,77 @@ describe("non-CNC promoted quote application execution persistence", () => {
     })
   })
 
-  it("replaces records by fingerprint and returns cloned snapshots", async () => {
+  it("keeps a newer seeded execution when an older duplicate run is recorded", async () => {
+    const adapter = createLocalNonCncPromotedQuoteApplicationExecutionPersistence()
+    const run = buildNonCncPromotedQuoteApplicationExecutionRun({
+      actor: "FactoryBid Operator",
+      applicationRecord: readyApplicationRecord(),
+      executedAt: "2026-06-28T09:00:00.000Z",
+      mode: "dry_run",
+    })
+    const seededRecord = (await adapter.recordRun(run)).records[0]
+    if (!seededRecord) {
+      throw new Error("Expected seeded application execution record")
+    }
+    const seededAdapter = createLocalNonCncPromotedQuoteApplicationExecutionPersistence({
+      initialSnapshot: {
+        records: [
+          {
+            ...seededRecord,
+            actor: "Replacement Operator",
+            executedAt: "2026-06-28T09:05:00.000Z",
+            pendingActionCount: 0,
+          },
+        ],
+      },
+    })
+
+    const snapshot = await seededAdapter.recordRun(run)
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.records[0]).toMatchObject({
+      actor: "Replacement Operator",
+      executedAt: "2026-06-28T09:05:00.000Z",
+      executionFingerprint: seededRecord.executionFingerprint,
+      pendingActionCount: 0,
+    })
+  })
+
+  it("uses a total-order tie-breaker for same-fingerprint seeded records", async () => {
+    const adapter = createLocalNonCncPromotedQuoteApplicationExecutionPersistence()
+    const run = buildNonCncPromotedQuoteApplicationExecutionRun({
+      actor: "FactoryBid Operator",
+      applicationRecord: readyApplicationRecord(),
+      executedAt: "2026-06-28T09:00:00.000Z",
+      mode: "dry_run",
+    })
+    const seededRecord = (await adapter.recordRun(run)).records[0]
+    if (!seededRecord) {
+      throw new Error("Expected seeded application execution record")
+    }
+
+    const leftFirst = createLocalNonCncPromotedQuoteApplicationExecutionPersistence({
+      initialSnapshot: {
+        records: [
+          { ...seededRecord, actor: "Zulu Operator" },
+          { ...seededRecord, actor: "Alpha Operator" },
+        ],
+      },
+    }).snapshot()
+    const rightFirst = createLocalNonCncPromotedQuoteApplicationExecutionPersistence({
+      initialSnapshot: {
+        records: [
+          { ...seededRecord, actor: "Alpha Operator" },
+          { ...seededRecord, actor: "Zulu Operator" },
+        ],
+      },
+    }).snapshot()
+
+    expect(leftFirst.records[0]?.actor).toBe("Alpha Operator")
+    expect(rightFirst.records[0]?.actor).toBe("Alpha Operator")
+  })
+
+  it("returns cloned snapshots", async () => {
     const applicationRecord = readyApplicationRecord()
     const run = buildNonCncPromotedQuoteApplicationExecutionRun({
       actor: "FactoryBid Operator",
@@ -151,11 +221,11 @@ describe("non-CNC promoted quote application execution persistence", () => {
     snapshot.records[0]!.actor = "Mutated Operator"
     snapshot.applicationIds.push("mutated-application")
 
-    const repeatedSnapshot = await adapter.recordRun(run)
+    const clonedSnapshot = adapter.snapshot()
 
-    expect(repeatedSnapshot.recordCount).toBe(1)
-    expect(repeatedSnapshot.records[0]?.actor).toBe("FactoryBid Operator")
-    expect(repeatedSnapshot.applicationIds).toEqual([applicationRecord.applicationId])
+    expect(clonedSnapshot.recordCount).toBe(1)
+    expect(clonedSnapshot.records[0]?.actor).toBe("FactoryBid Operator")
+    expect(clonedSnapshot.applicationIds).toEqual([applicationRecord.applicationId])
   })
 
   it("rejects invalid seeded application execution records", async () => {
