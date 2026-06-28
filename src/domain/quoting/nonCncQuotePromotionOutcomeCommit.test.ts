@@ -114,7 +114,7 @@ describe("non-CNC quote promotion outcome commit adapter", () => {
     const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
     const staleDraft = {
       ...outcomeDraft,
-      commandOutcomes: outcomeDraft.commandOutcomes.slice(0, 2),
+      commandOutcomes: outcomeDraft.commandOutcomes.slice(0, -1),
     }
 
     const commitPlan = buildNonCncQuotePromotionOutcomeCommitPlan({ commandPackage, outcomeDraft: staleDraft })
@@ -130,6 +130,10 @@ describe("non-CNC quote promotion outcome commit adapter", () => {
   it("blocks ready drafts with command-level blockers", async () => {
     const commandPackage = await buildReadyPackage()
     const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
+    const targetCommand = outcomeDraft.commandOutcomes[0]
+    if (!targetCommand) {
+      throw new Error("Expected ready outcome command")
+    }
     const staleDraft = {
       ...outcomeDraft,
       commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
@@ -151,7 +155,7 @@ describe("non-CNC quote promotion outcome commit adapter", () => {
       status: "blocked",
     })
     expect(commitPlan.blockerLabels).toContain("Operator review required.")
-    expect(commitPlan.blockerLabels).toContain("Outcome draft entry for Persist quote snapshot is not ready for commit.")
+    expect(commitPlan.blockerLabels).toContain(`Outcome draft entry for ${targetCommand.label} is not ready for commit.`)
   })
 
   it("clones suggested outcomes so later draft mutation cannot change commit inputs", async () => {
