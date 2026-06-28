@@ -166,6 +166,10 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(nonCncDemos.getByLabel("Non-CNC quote path gate")).toContainText("Missing required values")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Input model read-only")
   await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Offer wiring pending")
+  await expect(nonCncDemos.getByLabel("Non-CNC promotion execution history")).toContainText("Local execution history:")
+  await expect(nonCncDemos.getByLabel("Non-CNC promotion execution history")).toContainText(
+    "non-cnc-quote-promotion-execution-persistence.v1",
+  )
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
   await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
     "Process preview summary copied.",
