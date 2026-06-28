@@ -24,6 +24,10 @@ import {
   createLocalNonCncPromotedQuoteApplicationPersistence,
   type NonCncPromotedQuoteApplicationPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationPersistence"
+import {
+  NON_CNC_PROMOTED_QUOTE_APPLICATION_EXECUTION_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -57,6 +61,20 @@ function emptyPromotedQuoteApplicationSnapshot(): NonCncPromotedQuoteApplication
     readyCommandCount: 0,
     recordCount: 0,
     records: [],
+    statusCounts: {},
+    warningCount: 0,
+  }
+}
+
+function emptyPromotedQuoteApplicationExecutionSnapshot(): NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot {
+  return {
+    applicationIds: [],
+    applicationRecordIds: [],
+    pendingActionCount: 0,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_EXECUTION_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    selectedPlanIds: [],
     statusCounts: {},
     warningCount: 0,
   }
@@ -220,6 +238,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationExecution).toHaveTextContent("3 commands")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("blocked, blocked, blocked")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("Execution id withheld")
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promoted quote application execution history")).toHaveTextContent(
+        "Local application execution history:",
+      )
+    })
+    const promotedQuoteApplicationExecutionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application execution history",
+    )
+    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Application execution history")
+    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_EXECUTION_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Status counts: blocked 2")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -492,8 +523,10 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
+        promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
         promotionApplicationSnapshot={emptyPromotedQuoteApplicationSnapshot()}
         recordPromotionApplication={() => () => undefined}
+        recordPromotionApplicationExecutionRun={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
@@ -626,8 +659,10 @@ describe("FactoryBid workspace (component)", () => {
           warningCount: promotionOutcomeCommitRecords.reduce((total, record) => total + record.warningCount, 0),
         }}
         promotionPlan={promotionPlan}
+        promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
+        recordPromotionApplicationExecutionRun={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={promotionSnapshot}

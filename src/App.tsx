@@ -140,7 +140,14 @@ import {
 import { buildNonCncQuotePromotionPlan, type NonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
 import { buildNonCncPromotedQuoteApplicationPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationPlan"
-import { buildNonCncPromotedQuoteApplicationExecutionRun } from "./domain/quoting/nonCncPromotedQuoteApplicationExecution"
+import {
+  buildNonCncPromotedQuoteApplicationExecutionRun,
+  type NonCncPromotedQuoteApplicationExecutionRun,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationExecution"
+import {
+  createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
+  type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionPersistence"
 import {
   createLocalNonCncPromotedQuoteApplicationPersistence,
   type NonCncPromotedQuoteApplicationPersistenceSnapshot,
@@ -4021,6 +4028,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [promotionApplicationSnapshot, setPromotionApplicationSnapshot] = useState<NonCncPromotedQuoteApplicationPersistenceSnapshot>(() =>
     promotionApplicationPersistence.snapshot(),
   )
+  const [promotionApplicationExecutionPersistence] = useState(() => createLocalNonCncPromotedQuoteApplicationExecutionPersistence())
+  const [promotionApplicationExecutionSnapshot, setPromotionApplicationExecutionSnapshot] =
+    useState<NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot>(() => promotionApplicationExecutionPersistence.snapshot())
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4087,6 +4097,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionApplicationPersistence],
   )
+  const recordPromotionApplicationExecutionRun = useCallback(
+    (run: NonCncPromotedQuoteApplicationExecutionRun) => {
+      let isCurrent = true
+      void promotionApplicationExecutionPersistence.recordRun(run).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationExecutionSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationExecutionPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4123,10 +4147,12 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         inputEditAdapter={selectedInputEditAdapter}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
+        promotionApplicationExecutionSnapshot={promotionApplicationExecutionSnapshot}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         promotionExecutionSnapshot={promotionExecutionSnapshot}
         promotionPlan={promotionPlan}
         recordPromotionApplication={recordPromotionApplication}
+        recordPromotionApplicationExecutionRun={recordPromotionApplicationExecutionRun}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
@@ -4327,11 +4353,13 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
+  promotionApplicationExecutionSnapshot,
   promotionApplicationSnapshot,
   promotionExecutionSnapshot,
   promotionOutcomeCommitSnapshot,
   promotionPlan,
   recordPromotionApplication,
+  recordPromotionApplicationExecutionRun,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
   promotionSnapshot,
@@ -4342,11 +4370,13 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
+  promotionApplicationExecutionSnapshot: NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot
   promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
   promotionOutcomeCommitSnapshot: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot
   promotionPlan: NonCncQuotePromotionPlan
   recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
+  recordPromotionApplicationExecutionRun: (run: NonCncPromotedQuoteApplicationExecutionRun) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
@@ -4433,6 +4463,7 @@ export function ProcessQuotePreviewCard({
         : undefined,
     [promotionApplicationRecord, promotionPlan.requestedAt],
   )
+  const promotionApplicationExecutionRecord = promotionApplicationExecutionSnapshot.latestRun
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
@@ -4442,6 +4473,10 @@ export function ProcessQuotePreviewCard({
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
   const promotionApplicationStatusSummary = Object.entries(promotionApplicationSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  const promotionApplicationExecutionStatusSummary = Object.entries(promotionApplicationExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
@@ -4469,6 +4504,12 @@ export function ProcessQuotePreviewCard({
       recordedBy: "FactoryBid Operator",
     })
   }, [promotionApplicationPlan, promotionPlan.requestedAt, recordPromotionApplication])
+  useEffect(() => {
+    if (!promotionApplicationExecutionRun) {
+      return undefined
+    }
+    return recordPromotionApplicationExecutionRun(promotionApplicationExecutionRun)
+  }, [promotionApplicationExecutionRun, recordPromotionApplicationExecutionRun])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5172,6 +5213,50 @@ export function ProcessQuotePreviewCard({
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+      {promotionApplicationExecutionRecord ? (
+        <div
+          className="process-demo-promotion-application-execution-history"
+          aria-label="Non-CNC promoted quote application execution history"
+          data-status={promotionApplicationExecutionRecord.status}
+        >
+          <div className="process-demo-promotion-application-execution-history-heading">
+            <div>
+              <span>Application execution history</span>
+              <strong>{formatCount(promotionApplicationExecutionSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionApplicationExecutionSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local application execution history: {formatCount(promotionApplicationExecutionSnapshot.recordCount, "run")},{" "}
+            {formatCount(promotionApplicationExecutionSnapshot.pendingActionCount, "pending action")},{" "}
+            {formatCount(promotionApplicationExecutionSnapshot.warningCount, "warning")}.
+          </p>
+          <div className="process-demo-promotion-application-execution-history-grid">
+            <div>
+              <span>Latest run</span>
+              <strong>{humanizeKey(promotionApplicationExecutionRecord.status)}</strong>
+              <small>{promotionApplicationExecutionRecord.executedAt}</small>
+            </div>
+            <div>
+              <span>Command totals</span>
+              <strong>{formatCount(promotionApplicationExecutionRecord.commandCount, "command")}</strong>
+              <small>
+                Prepared {promotionApplicationExecutionRecord.preparedCommandCount}, blocked{" "}
+                {promotionApplicationExecutionRecord.blockedCommandCount}, pending{" "}
+                {promotionApplicationExecutionRecord.pendingCommandCount}
+              </small>
+            </div>
+            <div>
+              <span>Snapshot ids</span>
+              <small>Applications: {promotionApplicationExecutionSnapshot.applicationIds.join(", ") || "None"}</small>
+              <small>Plans: {promotionApplicationExecutionSnapshot.selectedPlanIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-execution-history-status">
+            Status counts: {promotionApplicationExecutionStatusSummary || "None"}
+          </small>
         </div>
       ) : null}
       <div

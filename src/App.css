@@ -2421,6 +2421,7 @@
 }
 
 .process-demo-promotion-execution,
+.process-demo-promotion-application-execution-history,
 .process-demo-promotion-execution-history {
   background: oklch(0.968 0.014 285);
   border: 1px solid oklch(0.83 0.045 285);
@@ -2432,6 +2433,7 @@
 }
 
 .process-demo-promotion-execution[data-status="blocked"],
+.process-demo-promotion-application-execution-history[data-status="blocked"],
 .process-demo-promotion-execution-history[data-status="blocked"] {
   background: oklch(0.985 0.018 35);
   border-color: oklch(0.84 0.065 35);
@@ -2440,6 +2442,8 @@
 
 .process-demo-promotion-execution[data-status="prepared"],
 .process-demo-promotion-execution[data-status="succeeded"],
+.process-demo-promotion-application-execution-history[data-status="prepared"],
+.process-demo-promotion-application-execution-history[data-status="succeeded"],
 .process-demo-promotion-execution-history[data-status="prepared"],
 .process-demo-promotion-execution-history[data-status="succeeded"] {
   background: oklch(0.976 0.018 158);
@@ -2448,6 +2452,7 @@
 }
 
 .process-demo-promotion-execution-heading,
+.process-demo-promotion-application-execution-history-heading,
 .process-demo-promotion-execution-history-heading {
   align-items: center;
   display: flex;
@@ -2456,6 +2461,7 @@
 }
 
 .process-demo-promotion-execution-heading > div,
+.process-demo-promotion-application-execution-history-heading > div,
 .process-demo-promotion-execution-history-heading > div {
   display: grid;
   gap: 2px;
@@ -2465,6 +2471,8 @@
 .process-demo-promotion-execution-heading span,
 .process-demo-promotion-execution-grid span,
 .process-demo-promotion-execution-next span,
+.process-demo-promotion-application-execution-history-heading span,
+.process-demo-promotion-application-execution-history-grid span,
 .process-demo-promotion-execution-history-heading span,
 .process-demo-promotion-execution-history-grid span {
   color: oklch(0.43 0.025 250);
@@ -2475,6 +2483,8 @@
 
 .process-demo-promotion-execution-heading strong,
 .process-demo-promotion-execution-grid strong,
+.process-demo-promotion-application-execution-history-heading strong,
+.process-demo-promotion-application-execution-history-grid strong,
 .process-demo-promotion-execution-history-heading strong,
 .process-demo-promotion-execution-history-grid strong {
   color: oklch(0.25 0.025 250);
@@ -2483,6 +2493,7 @@
 }
 
 .process-demo-promotion-execution-heading small,
+.process-demo-promotion-application-execution-history-heading small,
 .process-demo-promotion-execution-history-heading small {
   background: white;
   border-radius: 999px;
@@ -2494,6 +2505,7 @@
 }
 
 .process-demo-promotion-execution p,
+.process-demo-promotion-application-execution-history p,
 .process-demo-promotion-execution-history p {
   color: oklch(0.36 0.035 250);
   font-size: 0.72rem;
@@ -2504,6 +2516,7 @@
 
 .process-demo-promotion-execution-grid,
 .process-demo-promotion-execution-list,
+.process-demo-promotion-application-execution-history-grid,
 .process-demo-promotion-execution-history-grid {
   display: grid;
   gap: 7px;
@@ -2520,6 +2533,7 @@
 .process-demo-promotion-execution-grid > div,
 .process-demo-promotion-execution-list li,
 .process-demo-promotion-execution-next,
+.process-demo-promotion-application-execution-history-grid > div,
 .process-demo-promotion-execution-history-grid > div {
   background: oklch(0.985 0.004 245);
   border: 1px solid oklch(0.9 0.016 235);
@@ -2550,6 +2564,8 @@
 .process-demo-promotion-execution-list span,
 .process-demo-promotion-execution-list small,
 .process-demo-promotion-execution-next li,
+.process-demo-promotion-application-execution-history-grid small,
+.process-demo-promotion-application-execution-history-status,
 .process-demo-promotion-execution-history-grid small,
 .process-demo-promotion-execution-history-status {
   color: oklch(0.43 0.025 250);
@@ -2617,6 +2633,7 @@
   .process-demo-promotion-application-plan-list,
   .process-demo-promotion-application-record-grid,
   .process-demo-promotion-application-execution-grid,
+  .process-demo-promotion-application-execution-history-grid,
   .process-demo-promotion-application-execution-list {
     grid-template-columns: 1fr;
   }
@@ -2624,7 +2641,8 @@
   .process-demo-promotion-read-model-heading,
   .process-demo-promotion-application-plan-heading,
   .process-demo-promotion-application-record-heading,
-  .process-demo-promotion-application-execution-heading {
+  .process-demo-promotion-application-execution-heading,
+  .process-demo-promotion-application-execution-history-heading {
     align-items: flex-start;
     flex-direction: column;
   }
