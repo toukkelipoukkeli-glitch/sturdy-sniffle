@@ -63,7 +63,7 @@ export function buildNonCncQuotePromotionExecutionRun(
   const actor = nonBlank(input.actor, "actor")
   const executedAt = normalizeIsoTimestamp(input.executedAt, "executedAt")
   const mode = normalizeMode(input.mode)
-  const outcomesByKey = normalizeCommandOutcomes(input.commandPackage.commands, input.commandOutcomes ?? [])
+  const outcomesByKey = normalizeCommandOutcomes(input.commandPackage.commands, input.commandOutcomes ?? [], mode)
   const commands = input.commandPackage.commands.map((command) =>
     buildCommandExecution({
       command,
@@ -231,14 +231,23 @@ interface NormalizedCommandOutcome {
 function normalizeCommandOutcomes(
   commands: NonCncQuotePromotionCommandPackageCommand[],
   outcomes: NonCncQuotePromotionCommandOutcomeInput[],
+  mode: NonCncQuotePromotionExecutionMode,
 ): Map<NonCncQuotePromotionCommandPackageCommand["key"], NormalizedCommandOutcome> {
   const commandKeys = new Set(commands.map((command) => command.key))
+  const commandsByKey = new Map(commands.map((command) => [command.key, command]))
   const normalized = new Map<NonCncQuotePromotionCommandPackageCommand["key"], NormalizedCommandOutcome>()
 
   for (const outcome of outcomes) {
     const key = nonBlank(outcome.key, "commandOutcomes.key") as NonCncQuotePromotionCommandPackageCommand["key"]
     if (!commandKeys.has(key)) {
       throw new Error(`command outcome ${key} does not match a non-CNC promotion command`)
+    }
+    if (mode === "dry_run") {
+      throw new Error(`command outcome ${key} cannot be recorded for a dry-run promotion execution`)
+    }
+    const command = commandsByKey.get(key)
+    if (!command || command.status === "blocked" || !command.payload) {
+      throw new Error(`command outcome ${key} cannot be recorded for a blocked non-CNC promotion command`)
     }
     if (normalized.has(key)) {
       throw new Error(`duplicate command outcome ${key}`)

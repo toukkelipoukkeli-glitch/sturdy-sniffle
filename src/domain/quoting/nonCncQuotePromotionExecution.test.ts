@@ -54,19 +54,24 @@ describe("non-CNC quote promotion execution", () => {
       executedAt: "2026-06-27T17:00:00.000Z",
       mode: "dry_run",
     })
+    ;(run.commands[0]!.payload as { quoteSnapshot: { partNumber: string } }).quoteSnapshot.partNumber = "MUTATED"
     const repeatedRun = buildNonCncQuotePromotionExecutionRun({
       actor: "FactoryBid Operator",
       commandPackage,
       executedAt: "2026-06-27T17:00:00.000Z",
       mode: "dry_run",
     })
-    ;(run.commands[0]!.payload as { quoteSnapshot: { partNumber: string } }).quoteSnapshot.partNumber = "MUTATED"
 
     expect(run.status).toBe("prepared")
     expect(run.targetRfqId).toBe(request.targetRfqId)
     expect(run.commands.map((command) => command.status)).toEqual(["prepared", "prepared", "prepared"])
     expect(run.nextActions).toEqual(["Review 3 prepared non-CNC promotion commands before committing."])
     expect(run.executionFingerprint).toBe(repeatedRun.executionFingerprint)
+    const repeatedPayload = repeatedRun.commands[0]!.payload
+    expect(repeatedPayload?.kind).toBe("quote_snapshot")
+    if (repeatedPayload?.kind === "quote_snapshot") {
+      expect(repeatedPayload.quoteSnapshot.partNumber).toBe("SM-120-BRACKET")
+    }
     const originalPayload = commandPackage.commands[0]!.payload
     expect(originalPayload?.kind).toBe("quote_snapshot")
     if (originalPayload?.kind === "quote_snapshot") {
@@ -123,6 +128,30 @@ describe("non-CNC quote promotion execution", () => {
       }),
     ).toThrow("duplicate command outcome persist_quote_snapshot")
   })
+
+  it("rejects outcomes for dry-run and blocked command packages", async () => {
+    const readyPackage = await buildReadyPackage()
+    const blockedPackage = await buildBlockedPackage()
+
+    expect(() =>
+      buildNonCncQuotePromotionExecutionRun({
+        actor: "FactoryBid Operator",
+        commandOutcomes: [{ externalId: "quote-rfq-demo-204", key: "persist_quote_snapshot", status: "applied" }],
+        commandPackage: readyPackage,
+        executedAt: "2026-06-27T17:00:00.000Z",
+        mode: "dry_run",
+      }),
+    ).toThrow("command outcome persist_quote_snapshot cannot be recorded for a dry-run promotion execution")
+    expect(() =>
+      buildNonCncQuotePromotionExecutionRun({
+        actor: "FactoryBid Operator",
+        commandOutcomes: [{ externalId: "quote-rfq-demo-204", key: "persist_quote_snapshot", status: "applied" }],
+        commandPackage: blockedPackage,
+        executedAt: "2026-06-27T17:00:00.000Z",
+        mode: "commit",
+      }),
+    ).toThrow("command outcome persist_quote_snapshot cannot be recorded for a blocked non-CNC promotion command")
+  })
 })
 
 async function buildBlockedPackage(): Promise<NonCncQuotePromotionCommandPackage> {
@@ -147,7 +176,7 @@ async function buildReadyPackage(): Promise<NonCncQuotePromotionCommandPackage> 
       status: "blocked",
     },
     reviewFlags: [],
-  } as ProcessQuotePreview
+  } satisfies ProcessQuotePreview
   const plan = buildNonCncQuotePromotionPlan({ ...request, preview, workspacePromotionPersistence: "configured" })
   const snapshot = await adapter.recordPlan(plan)
   const summary = buildNonCncQuotePromotionActionSummary({ selectedPlanId: plan.planId, snapshot })
