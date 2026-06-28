@@ -237,7 +237,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(wirePromotionExecution).toHaveTextContent("blocked")
     expect(wirePromotionExecution).toHaveTextContent("3 commands")
     expect(wirePromotionExecution).toHaveTextContent("1 warning")
-    expect(wirePromotionExecution).toHaveTextContent("non-cnc-promotion-execution")
+    expect(wirePromotionExecution).toHaveTextContent("non-cnc-quote-promotion-execution.v1")
+    expect(wirePromotionExecution).toHaveTextContent("non-cnc-quote-promotion-execution-")
     await user.click(within(selectedPreview).getByRole("button", { name: "Copy summary" }))
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
     const [copiedText] = writeText.mock.calls[0] ?? [""]
