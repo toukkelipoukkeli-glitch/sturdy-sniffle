@@ -211,6 +211,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationHistory).toHaveTextContent("0/3 ready")
     expect(promotedQuoteApplicationHistory).toHaveTextContent("Status counts: blocked 1")
     const promotedQuoteApplicationExecution = within(processDemos).getByLabelText("Non-CNC promoted quote application execution audit")
+    expect(promotedQuoteApplicationExecution).toHaveAttribute("data-status", "blocked")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("Application audit")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("blocked")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("non-cnc-promoted-quote-application-execution.v1")
