@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `459c2b5` (`Surface non-CNC promotion command packages (#176)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E non-CNC promotion execution audit PR.
-- In-flight PR at this checkpoint: `codex/non-cnc-promotion-execution-audit` adds deterministic dry-run/commit audit records for promotion command packages while keeping RFQ quote, offer, and release state unchanged.
+- Main branch checkpoint: `44b9f50` (`Add non-CNC promotion execution audit (#177)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E non-CNC promotion execution UI PR.
+- In-flight PR at this checkpoint: `codex/non-cnc-promotion-execution-ui` surfaces dry-run promotion execution audit records in the registry preview while keeping RFQ quote, offer, and release state unchanged.
 - Latest merged sequence:
+  - `#177` non-CNC promotion command packages now have deterministic dry-run/commit execution audit records with outcome guards.
   - `#176` non-CNC registry previews now surface deterministic promotion command packages with payload readiness, blockers, and warnings.
   - `#175` ready promotion drafts now package deterministic command descriptors with canonical action ordering before any active RFQ quote or offer mutation.
   - `#174` non-CNC registry previews now surface ready-only quote promotion draft payloads in the UI while blocked paths withhold quote payloads.
@@ -145,7 +146,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, and copyable summary. This branch adds dry-run/commit execution audit records so future Convex/UI wiring can inspect outcomes before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, execution audit records, and copyable summary. This branch surfaces the dry-run execution audit in the UI so future Convex/UI wiring can inspect outcomes before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
