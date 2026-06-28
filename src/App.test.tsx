@@ -13,6 +13,13 @@ import { buildNonCncQuotePromotionOutcomeCommitRun } from "./domain/quoting/nonC
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { buildNonCncQuotePromotionReadModel } from "./domain/quoting/nonCncQuotePromotionReadModel"
 import { buildNonCncPromotedQuoteApplicationPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationPlan"
+import { buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionOutcomeDraft"
+import { buildNonCncPromotedQuoteApplicationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommit"
+import {
+  NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+  createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence,
+  type NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitPersistence"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import {
   NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
@@ -75,6 +82,19 @@ function emptyPromotedQuoteApplicationExecutionSnapshot(): NonCncPromotedQuoteAp
     recordCount: 0,
     records: [],
     selectedPlanIds: [],
+    statusCounts: {},
+    warningCount: 0,
+  }
+}
+
+function emptyPromotedQuoteApplicationOutcomeCommitSnapshot(): NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot {
+  return {
+    blockedApplicationIds: [],
+    commitReadyApplicationIds: [],
+    outcomeCount: 0,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
     statusCounts: {},
     warningCount: 0,
   }
@@ -228,6 +248,28 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationHistory).toHaveTextContent("FactoryBid Operator")
     expect(promotedQuoteApplicationHistory).toHaveTextContent("0/3 ready")
     expect(promotedQuoteApplicationHistory).toHaveTextContent("Status counts: blocked 1")
+    const promotedQuoteApplicationCommitPlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application commit plan",
+    )
+    expect(promotedQuoteApplicationCommitPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("Application commit plan")
+    expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("Application commit withheld")
+    expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("Application outcome draft must be ready before commit.")
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promoted quote application commit history")).toHaveTextContent(
+        "Local application outcome commit history: 1 record, 0 outcomes, 0 warnings.",
+      )
+    })
+    const promotedQuoteApplicationCommitHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application commit history",
+    )
+    expect(promotedQuoteApplicationCommitHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Application commit history")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("review only")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: blocked 1")
     const promotedQuoteApplicationExecution = within(processDemos).getByLabelText("Non-CNC promoted quote application execution audit")
     expect(promotedQuoteApplicationExecution).toHaveAttribute("data-status", "blocked")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("Application audit")
@@ -524,9 +566,11 @@ describe("FactoryBid workspace (component)", () => {
         promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationOutcomeCommitSnapshot()}
         promotionApplicationSnapshot={emptyPromotedQuoteApplicationSnapshot()}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationOutcomeCommit={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
@@ -589,6 +633,25 @@ describe("FactoryBid workspace (component)", () => {
       applicationPlan: promotionApplicationPlan,
       recordedAt: promotionPlan.requestedAt,
       recordedBy: "FactoryBid Operator",
+    })
+    const promotionApplicationRecord = promotionApplicationSnapshot.records[0]
+    if (!promotionApplicationRecord) {
+      throw new Error("Expected promoted quote application record")
+    }
+    const promotionApplicationOutcomeDraft =
+      buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(promotionApplicationRecord)
+    const promotionApplicationOutcomeCommitRun = buildNonCncPromotedQuoteApplicationOutcomeCommitRun({
+      actor: "FactoryBid Operator",
+      applicationRecord: promotionApplicationRecord,
+      executedAt: promotionPlan.requestedAt,
+      outcomeDraft: promotionApplicationOutcomeDraft,
+    })
+    const promotionApplicationOutcomeCommitAdapter = createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence()
+    const promotionApplicationOutcomeCommitSnapshot = await promotionApplicationOutcomeCommitAdapter.recordCommit({
+      commitPlan: promotionApplicationOutcomeCommitRun.commitPlan,
+      executionRun: promotionApplicationOutcomeCommitRun.executionRun,
+      recordedAt: "2026-06-27T13:50:00.000Z",
+      recordedBy: "Application Operator",
     })
     const promotionOutcomeCommitRecords: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["records"] = [
       {
@@ -660,9 +723,11 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationOutcomeCommit={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={promotionSnapshot}
@@ -742,6 +807,20 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("Reviewed application outcome commit run is ready")
     expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("replace active quote")
     expect(promotedQuoteApplicationCommitPlan).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    const promotedQuoteApplicationCommitHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application commit history",
+    )
+    expect(promotedQuoteApplicationCommitHistory).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Application commit history")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent(
+      "Local application outcome commit history: 1 record, 3 outcomes, 4 warnings.",
+    )
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("commit ready")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Application Operator")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: ready 1")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {
