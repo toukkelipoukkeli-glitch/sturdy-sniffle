@@ -1948,6 +1948,7 @@
 }
 
 .process-demo-promotion-execution[data-status="prepared"],
+.process-demo-promotion-execution[data-status="succeeded"],
 .process-demo-promotion-execution-history[data-status="prepared"],
 .process-demo-promotion-execution-history[data-status="succeeded"] {
   background: oklch(0.976 0.018 158);

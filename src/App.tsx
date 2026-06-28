@@ -4321,6 +4321,7 @@ export function ProcessQuotePreviewCard({
     (record) => record.executionFingerprint === promotionExecutionRun.executionFingerprint,
   )
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
   useEffect(() => {
