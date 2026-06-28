@@ -86,6 +86,9 @@ function buildCommitRecord({
   recordedBy,
 }: RecordNonCncQuotePromotionOutcomeCommitInput): NonCncQuotePromotionOutcomeCommitRecord {
   assertExecutionMatchesCommitPlan(commitPlan, executionRun)
+  if (commitPlan.commandOutcomeCount !== commitPlan.commandOutcomes.length) {
+    throw new Error("commandOutcomeCount must equal commandOutcomes length")
+  }
 
   return {
     blockerCount: commitPlan.blockerLabels.length,
@@ -133,8 +136,8 @@ function assertExecutionMatchesCommitPlan(
   }
 }
 
-function buildCommitRecordId(commitPlan: NonCncQuotePromotionOutcomeCommitPlan): string {
-  return `non-cnc-outcome-commit:${commitPlan.packageId}`
+function buildCommitRecordId({ packageId }: { packageId: string }): string {
+  return `non-cnc-outcome-commit:${packageId}`
 }
 
 function normalizeSnapshot(
@@ -182,6 +185,9 @@ function normalizeRecord(record: NonCncQuotePromotionOutcomeCommitRecord): NonCn
     warningCount: nonNegativeInteger(record.warningCount, "warningCount"),
   }
 
+  if (normalized.commitRecordId !== buildCommitRecordId(normalized)) {
+    throw new Error("commitRecordId must match packageId")
+  }
   if (normalized.blockerCount !== normalized.blockerLabels.length) {
     throw new Error("blockerCount must equal blockerLabels length")
   }

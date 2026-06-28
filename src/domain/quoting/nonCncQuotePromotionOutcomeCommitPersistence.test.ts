@@ -122,6 +122,15 @@ describe("non-CNC quote promotion outcome commit persistence", () => {
 
     await expect(
       adapter.recordCommit({
+        commitPlan,
+        executionRun: { ...executionRun, mode: "dry_run" },
+        recordedAt: "2026-06-27T18:20:00.000Z",
+        recordedBy: "FactoryBid Operator",
+      }),
+    ).rejects.toThrow("outcome commit execution run must use commit mode")
+
+    await expect(
+      adapter.recordCommit({
         commitPlan: {
           ...commitPlan,
           status: "blocked",
@@ -131,6 +140,17 @@ describe("non-CNC quote promotion outcome commit persistence", () => {
         recordedBy: "FactoryBid Operator",
       }),
     ).rejects.toThrow("blocked outcome commit plans cannot be recorded with an execution run")
+
+    await expect(
+      adapter.recordCommit({
+        commitPlan: {
+          ...commitPlan,
+          commandOutcomeCount: commitPlan.commandOutcomeCount + 1,
+        },
+        recordedAt: "2026-06-27T18:20:00.000Z",
+        recordedBy: "FactoryBid Operator",
+      }),
+    ).rejects.toThrow("commandOutcomeCount must equal commandOutcomes length")
   })
 
   it("replaces commit records by package and returns cloned snapshots", async () => {
@@ -234,6 +254,19 @@ describe("non-CNC quote promotion outcome commit persistence", () => {
         },
       }),
     ).toThrow("warningCount must equal reviewWarnings length")
+    expect(() =>
+      createLocalNonCncQuotePromotionOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [
+            seededRecord,
+            {
+              ...seededRecord,
+              commitRecordId: "non-cnc-outcome-commit:stale-package-id",
+            },
+          ],
+        },
+      }),
+    ).toThrow("commitRecordId must match packageId")
   })
 })
 
