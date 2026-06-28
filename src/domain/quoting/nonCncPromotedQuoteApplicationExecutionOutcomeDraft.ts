@@ -43,6 +43,11 @@ export function buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(
   const readyOutcomeCount = commandOutcomes.filter((outcome) => outcome.status === "ready").length
   const blockedOutcomeCount = commandOutcomes.length - readyOutcomeCount
   const status = applicationRecord.status === "ready" && blockedOutcomeCount === 0 ? "ready" : "blocked"
+  const blockerLabels = dedupeLabels(
+    applicationRecord.blockerLabels.length > 0
+      ? applicationRecord.blockerLabels
+      : commandOutcomes.flatMap((outcome) => outcome.blockerLabels),
+  )
 
   return {
     applicationId: applicationRecord.applicationId,
@@ -55,7 +60,7 @@ export function buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(
     nextOperatorMessage:
       status === "ready"
         ? `Review and commit ${readyOutcomeCount} non-CNC application outcome${readyOutcomeCount === 1 ? "" : "s"}.`
-        : applicationRecord.blockerLabels.join(" ") || "Application record is review-only and cannot mutate active RFQ quote state.",
+        : blockerLabels.join(" ") || "Application record is review-only and cannot mutate active RFQ quote state.",
     packageId: applicationRecord.packageId,
     readyOutcomeCount,
     reviewWarnings: [...applicationRecord.reviewWarnings],
@@ -70,9 +75,10 @@ function buildCommandOutcomeDraft(
   command: NonCncPromotedQuoteApplicationCommandRecord,
 ): NonCncPromotedQuoteApplicationCommandOutcomeDraft {
   const idempotencyKey = applicationCommandOutcomeIdempotencyKey(applicationRecord.applicationId, command.key)
-  if (applicationRecord.status !== "ready" || command.status !== "ready" || !command.externalId) {
+  const blockerLabels = commandOutcomeBlockerLabels(applicationRecord, command)
+  if (blockerLabels) {
     return {
-      blockerLabels: [...applicationRecord.blockerLabels],
+      blockerLabels,
       idempotencyKey,
       key: command.key,
       label: command.label,
@@ -97,6 +103,25 @@ function buildCommandOutcomeDraft(
   }
 }
 
+function commandOutcomeBlockerLabels(
+  applicationRecord: NonCncPromotedQuoteApplicationRecord,
+  command: NonCncPromotedQuoteApplicationCommandRecord,
+): string[] | null {
+  if (applicationRecord.status !== "ready") {
+    return [...applicationRecord.blockerLabels]
+  }
+
+  if (command.status !== "ready") {
+    return [`${command.label} is not ready.`]
+  }
+
+  if (!command.externalId) {
+    return [`${command.label} is missing its external id.`]
+  }
+
+  return null
+}
+
 function outcomeMessage(command: NonCncPromotedQuoteApplicationCommandRecord): string {
   switch (command.key) {
     case "replace_active_quote":
@@ -108,6 +133,10 @@ function outcomeMessage(command: NonCncPromotedQuoteApplicationCommandRecord): s
     default:
       return assertNever(command.key)
   }
+}
+
+function dedupeLabels(labels: string[]): string[] {
+  return [...new Set(labels)]
 }
 
 function applicationCommandOutcomeIdempotencyKey(applicationId: string, commandKey: string): string {

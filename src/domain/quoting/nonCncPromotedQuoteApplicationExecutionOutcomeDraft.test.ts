@@ -125,6 +125,75 @@ describe("non-CNC promoted quote application execution outcome drafts", () => {
     expect(outcomeDraft.commandOutcomes.every((command) => command.status === "blocked")).toBe(true)
     expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
   })
+
+  it("keeps command-level blocker copy for ready records with a blocked command", () => {
+    const readyRecord = readyApplicationRecord()
+    const applicationRecord: NonCncPromotedQuoteApplicationRecord = {
+      ...readyRecord,
+      commands: readyRecord.commands.map((command) =>
+        command.key === "refresh_offer_workspace"
+          ? {
+              ...command,
+              externalId: undefined,
+              status: "blocked",
+            }
+          : command,
+      ),
+      readyCommandCount: 2,
+    }
+
+    const outcomeDraft = buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(applicationRecord)
+
+    expect(outcomeDraft.status).toBe("blocked")
+    expect(outcomeDraft.readyOutcomeCount).toBe(2)
+    expect(outcomeDraft.blockedOutcomeCount).toBe(1)
+    expect(outcomeDraft.nextOperatorMessage).toBe("Refresh offer workspace is not ready.")
+    expect(outcomeDraft.commandOutcomes.map((command) => command.status)).toEqual(["ready", "blocked", "ready"])
+    expect(outcomeDraft.commandOutcomes.map((command) => command.blockerLabels)).toEqual([
+      [],
+      ["Refresh offer workspace is not ready."],
+      [],
+    ])
+    expect(outcomeDraft.commandOutcomes.map((command) => command.suggestedOutcome?.status)).toEqual([
+      "applied",
+      undefined,
+      "applied",
+    ])
+  })
+
+  it("keeps command-level blocker copy for ready records with a missing external id", () => {
+    const readyRecord = readyApplicationRecord()
+    const applicationRecord: NonCncPromotedQuoteApplicationRecord = {
+      ...readyRecord,
+      commands: readyRecord.commands.map((command) =>
+        command.key === "open_offer_builder"
+          ? {
+              ...command,
+              externalId: undefined,
+            }
+          : command,
+      ),
+      readyCommandCount: 2,
+    }
+
+    const outcomeDraft = buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(applicationRecord)
+
+    expect(outcomeDraft.status).toBe("blocked")
+    expect(outcomeDraft.readyOutcomeCount).toBe(2)
+    expect(outcomeDraft.blockedOutcomeCount).toBe(1)
+    expect(outcomeDraft.nextOperatorMessage).toBe("Open offer builder is missing its external id.")
+    expect(outcomeDraft.commandOutcomes.map((command) => command.status)).toEqual(["ready", "ready", "blocked"])
+    expect(outcomeDraft.commandOutcomes.map((command) => command.blockerLabels)).toEqual([
+      [],
+      [],
+      ["Open offer builder is missing its external id."],
+    ])
+    expect(outcomeDraft.commandOutcomes.map((command) => command.suggestedOutcome?.status)).toEqual([
+      "applied",
+      "applied",
+      undefined,
+    ])
+  })
 })
 
 function blockedApplicationRecord(): NonCncPromotedQuoteApplicationRecord {
