@@ -71,6 +71,7 @@ describe("non-CNC promoted quote application outcome commit adapter", () => {
       status: "blocked",
     })
     expect(result.commitPlan.blockerLabels).toContain("Application outcome draft must be ready before commit.")
+    expect(result.commitPlan.nextOperatorMessage).not.toContain("Commit")
     expect(result.executionRun).toBeUndefined()
   })
 
@@ -131,6 +132,43 @@ describe("non-CNC promoted quote application outcome commit adapter", () => {
       status: "blocked",
     })
     expect(commitPlan.blockerLabels).toContain("Application outcome draft command list does not match application record commands.")
+  })
+
+  it("blocks suggested outcomes whose key diverges from the draft command", () => {
+    const applicationRecord = readyApplicationRecord()
+    const outcomeDraft = buildNonCncPromotedQuoteApplicationExecutionOutcomeDraft(applicationRecord)
+    const malformedDraft = {
+      ...outcomeDraft,
+      commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
+        index === 0 && command.suggestedOutcome
+          ? {
+              ...command,
+              suggestedOutcome: {
+                ...command.suggestedOutcome,
+                key: "refresh_offer_workspace",
+              },
+            }
+          : command,
+      ),
+    }
+
+    const result = buildNonCncPromotedQuoteApplicationOutcomeCommitRun({
+      actor: "FactoryBid Operator",
+      applicationRecord,
+      executedAt: "2026-06-28T10:15:00.000Z",
+      outcomeDraft: malformedDraft,
+    })
+
+    expect(result.commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(result.commitPlan.blockerLabels).toContain(
+      "Suggested application outcome for Apply promoted quote does not match the application record command.",
+    )
+    expect(result.commitPlan.nextOperatorMessage).toContain("Suggested application outcome for Apply promoted quote")
+    expect(result.executionRun).toBeUndefined()
   })
 
   it("clones suggested outcomes so later draft mutation cannot change commit inputs", () => {

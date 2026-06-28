@@ -54,6 +54,11 @@ export function buildNonCncPromotedQuoteApplicationOutcomeCommitPlan({
       ? []
       : [`Application outcome draft entry for ${command.label} is not ready for commit.`],
   )
+  const mismatchedSuggestedOutcomeLabels = outcomeDraft.commandOutcomes.flatMap((command) =>
+    command.suggestedOutcome && command.suggestedOutcome.key !== command.key
+      ? [`Suggested application outcome for ${command.label} does not match the application record command.`]
+      : [],
+  )
   const commandOutcomes = outcomeDraft.commandOutcomes.flatMap((command) =>
     command.suggestedOutcome ? [cloneOutcome(command.suggestedOutcome)] : [],
   )
@@ -62,6 +67,7 @@ export function buildNonCncPromotedQuoteApplicationOutcomeCommitPlan({
     .map((command) => `Missing suggested application outcome for ${command.label}.`)
   const blockerLabels = uniqueLabels([
     ...commandSetBlockers,
+    ...mismatchedSuggestedOutcomeLabels,
     ...outcomeDraft.commandOutcomes.flatMap((command) => command.blockerLabels),
     ...invalidCommandLabels,
     ...missingOutcomeLabels,
@@ -71,6 +77,7 @@ export function buildNonCncPromotedQuoteApplicationOutcomeCommitPlan({
     outcomeDraft.status === "ready" &&
     commandOutcomes.length > 0 &&
     commandSetBlockers.length === 0 &&
+    mismatchedSuggestedOutcomeLabels.length === 0 &&
     invalidCommandLabels.length === 0 &&
     missingOutcomeLabels.length === 0
       ? "ready"
@@ -88,7 +95,8 @@ export function buildNonCncPromotedQuoteApplicationOutcomeCommitPlan({
     nextOperatorMessage:
       status === "ready"
         ? `Commit ${commandOutcomes.length} reviewed non-CNC application outcome${commandOutcomes.length === 1 ? "" : "s"}.`
-        : outcomeDraft.nextOperatorMessage,
+        : blockerLabels.join(" ") ||
+          "Application outcome commit is blocked until the reviewed draft fully matches the application record.",
     packageId: outcomeDraft.packageId,
     reviewWarnings: [...outcomeDraft.reviewWarnings],
     selectedPlanId: outcomeDraft.selectedPlanId,
