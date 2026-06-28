@@ -478,6 +478,50 @@ describe("FactoryBid workspace (component)", () => {
       executedAt: promotionPlan.requestedAt,
       outcomeDraft: generatedPromotionOutcomeDraft,
     })
+    const promotionOutcomeCommitRecords: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["records"] = [
+      {
+        blockerCount: 0,
+        blockerLabels: [],
+        commandOutcomeCount: 3,
+        commitRecordId: `non-cnc-outcome-commit:stale:${commitPlan.packageId}`,
+        commitVersion: commitPlan.commitVersion,
+        disposition: "commit_ready",
+        packageId: commitPlan.packageId,
+        packageVersion: commitPlan.packageVersion,
+        persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+        recordedAt: "2026-06-27T13:25:00.000Z",
+        recordedBy: "First Operator",
+        reviewWarnings: ["Material certificate required."],
+        selectedPlanId: commitPlan.selectedPlanId,
+        status: "ready",
+        targetRfqId: commitPlan.targetRfqId,
+        warningCount: 1,
+      },
+      {
+        blockerCount: 0,
+        blockerLabels: [],
+        commandOutcomeCount: 3,
+        commitRecordId: `non-cnc-outcome-commit:newest:${commitPlan.packageId}`,
+        commitVersion: commitPlan.commitVersion,
+        disposition: "commit_ready",
+        packageId: commitPlan.packageId,
+        packageVersion: commitPlan.packageVersion,
+        persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+        recordedAt: "2026-06-27T13:45:00.000Z",
+        recordedBy: "Second Operator",
+        reviewWarnings: ["Material certificate required."],
+        selectedPlanId: commitPlan.selectedPlanId,
+        status: "ready",
+        targetRfqId: commitPlan.targetRfqId,
+        warningCount: 1,
+      },
+    ]
+    const promotionOutcomeCommitStatusCounts = promotionOutcomeCommitRecords.reduce<
+      NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["statusCounts"]
+    >((counts, record) => {
+      counts[record.status] = (counts[record.status] ?? 0) + 1
+      return counts
+    }, {})
 
     render(
       <ProcessQuotePreviewCard
@@ -495,49 +539,12 @@ describe("FactoryBid workspace (component)", () => {
         promotionOutcomeCommitSnapshot={{
           blockedPackageIds: [],
           commitReadyPackageIds: [commitPlan.packageId],
-          outcomeCount: 6,
+          outcomeCount: promotionOutcomeCommitRecords.reduce((total, record) => total + record.commandOutcomeCount, 0),
           persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
-          recordCount: 2,
-          records: [
-            {
-              blockerCount: 0,
-              blockerLabels: [],
-              commandOutcomeCount: 3,
-              commitRecordId: `non-cnc-outcome-commit:stale:${commitPlan.packageId}`,
-              commitVersion: commitPlan.commitVersion,
-              disposition: "commit_ready",
-              packageId: commitPlan.packageId,
-              packageVersion: commitPlan.packageVersion,
-              persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
-              recordedAt: "2026-06-27T13:25:00.000Z",
-              recordedBy: "First Operator",
-              reviewWarnings: ["Material certificate required."],
-              selectedPlanId: commitPlan.selectedPlanId,
-              status: "ready",
-              targetRfqId: commitPlan.targetRfqId,
-              warningCount: 1,
-            },
-            {
-              blockerCount: 0,
-              blockerLabels: [],
-              commandOutcomeCount: 3,
-              commitRecordId: `non-cnc-outcome-commit:newest:${commitPlan.packageId}`,
-              commitVersion: commitPlan.commitVersion,
-              disposition: "commit_ready",
-              packageId: commitPlan.packageId,
-              packageVersion: commitPlan.packageVersion,
-              persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
-              recordedAt: "2026-06-27T13:45:00.000Z",
-              recordedBy: "Second Operator",
-              reviewWarnings: ["Material certificate required."],
-              selectedPlanId: commitPlan.selectedPlanId,
-              status: "ready",
-              targetRfqId: commitPlan.targetRfqId,
-              warningCount: 1,
-            },
-          ],
-          statusCounts: { ready: 2 },
-          warningCount: 2,
+          recordCount: promotionOutcomeCommitRecords.length,
+          records: promotionOutcomeCommitRecords,
+          statusCounts: promotionOutcomeCommitStatusCounts,
+          warningCount: promotionOutcomeCommitRecords.reduce((total, record) => total + record.warningCount, 0),
         }}
         promotionPlan={promotionPlan}
         recordPromotionOutcomeCommit={() => () => undefined}
