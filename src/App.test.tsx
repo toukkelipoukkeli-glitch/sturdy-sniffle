@@ -653,6 +653,33 @@ describe("FactoryBid workspace (component)", () => {
       recordedAt: "2026-06-27T13:50:00.000Z",
       recordedBy: "Application Operator",
     })
+    const promotionApplicationOutcomeCommitRecord = promotionApplicationOutcomeCommitSnapshot.records[0]
+    if (!promotionApplicationOutcomeCommitRecord) {
+      throw new Error("Expected promoted quote application outcome commit record")
+    }
+    const staleApplicationOutcomeCommitRecord = {
+      ...promotionApplicationOutcomeCommitRecord,
+      applicationRecordId: `${promotionApplicationOutcomeCommitRecord.applicationRecordId}:stale`,
+      blockerCount: 1,
+      blockerLabels: ["Stale blocked application commit record."],
+      commandOutcomeCount: 0,
+      commitRecordId: `${promotionApplicationOutcomeCommitRecord.commitRecordId}:stale`,
+      disposition: "review_only" as const,
+      executionFingerprint: undefined,
+      recordedBy: "Stale Operator",
+      reviewWarnings: [],
+      status: "blocked" as const,
+      warningCount: 0,
+    }
+    const promotionApplicationOutcomeCommitSnapshotWithStaleRecord = {
+      ...promotionApplicationOutcomeCommitSnapshot,
+      blockedApplicationIds: [staleApplicationOutcomeCommitRecord.applicationId],
+      outcomeCount: promotionApplicationOutcomeCommitSnapshot.outcomeCount,
+      recordCount: 2,
+      records: [staleApplicationOutcomeCommitRecord, promotionApplicationOutcomeCommitRecord],
+      statusCounts: { blocked: 1, ready: 1 },
+      warningCount: promotionApplicationOutcomeCommitSnapshot.warningCount,
+    }
     const promotionOutcomeCommitRecords: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["records"] = [
       {
         blockerCount: 0,
@@ -723,7 +750,7 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
-        promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
+        promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshotWithStaleRecord}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
@@ -816,11 +843,12 @@ describe("FactoryBid workspace (component)", () => {
       NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
     )
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent(
-      "Local application outcome commit history: 1 record, 3 outcomes, 4 warnings.",
+      "Local application outcome commit history: 2 records, 3 outcomes, 4 warnings.",
     )
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("commit ready")
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Application Operator")
-    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: ready 1")
+    expect(promotedQuoteApplicationCommitHistory).not.toHaveTextContent("Stale Operator")
+    expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: blocked 1, ready 1")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {

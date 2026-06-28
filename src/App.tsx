@@ -4518,9 +4518,12 @@ export function ProcessQuotePreviewCard({
   )
   const promotionApplicationExecutionRecord = promotionApplicationExecutionSnapshot.latestRun
   const promotionApplicationOutcomeCommitRecord = promotionApplicationOutcomeCommit
-    ? promotionApplicationOutcomeCommitSnapshot.records
-        .filter((record) => record.applicationId === promotionApplicationOutcomeCommit.commitPlan.applicationId)
-        .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+    ? (promotionApplicationOutcomeCommitSnapshot.records.find(
+        (record) => record.applicationRecordId === promotionApplicationOutcomeCommit.commitPlan.applicationRecordId,
+      ) ??
+      promotionApplicationOutcomeCommitSnapshot.records.find(
+        (record) => record.applicationId === promotionApplicationOutcomeCommit.commitPlan.applicationId,
+      ))
     : undefined
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
