@@ -248,10 +248,9 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Application execution history")
     expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent(
-      "non-cnc-promoted-quote-application-execution-persistence.v1",
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_EXECUTION_PERSISTENCE_VERSION,
     )
-    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("blocked")
-    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Status counts: blocked")
+    expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Status counts: blocked 2")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
