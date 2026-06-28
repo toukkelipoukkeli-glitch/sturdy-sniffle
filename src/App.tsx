@@ -122,6 +122,7 @@ import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQ
 import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
 import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
 import { buildNonCncQuotePromotionExecutionRun, type NonCncQuotePromotionExecutionRun } from "./domain/quoting/nonCncQuotePromotionExecution"
+import { buildNonCncQuotePromotionExecutionOutcomeDraft } from "./domain/quoting/nonCncQuotePromotionExecutionOutcomeDraft"
 import {
   createLocalNonCncQuotePromotionExecutionPersistence,
   type NonCncQuotePromotionExecutionPersistenceSnapshot,
@@ -4307,6 +4308,10 @@ export function ProcessQuotePreviewCard({
   )
   const promotionDraft = useMemo(() => buildNonCncQuotePromotionDraft(promotionActionSummary), [promotionActionSummary])
   const promotionCommandPackage = useMemo(() => buildNonCncQuotePromotionCommandPackage(promotionDraft), [promotionDraft])
+  const promotionOutcomeDraft = useMemo(
+    () => buildNonCncQuotePromotionExecutionOutcomeDraft(promotionCommandPackage),
+    [promotionCommandPackage],
+  )
   const promotionExecutionRun = useMemo(
     () =>
       buildNonCncQuotePromotionExecutionRun({
@@ -4687,6 +4692,49 @@ export function ProcessQuotePreviewCard({
                 <span>{command.payload ? "Payload ready" : "Payload withheld"}</span>
               </div>
               <small>{command.blockerLabels.join(", ") || "No blockers"}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div
+        className="process-demo-promotion-outcome-draft"
+        aria-label="Non-CNC promotion outcome draft"
+        data-status={promotionOutcomeDraft.status}
+      >
+        <div className="process-demo-promotion-outcome-draft-heading">
+          <div>
+            <span>Outcome draft</span>
+            <strong>{humanizeKey(promotionOutcomeDraft.status)}</strong>
+          </div>
+          <small>{promotionOutcomeDraft.draftVersion}</small>
+        </div>
+        <p>{promotionOutcomeDraft.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-outcome-draft-grid">
+          <div>
+            <span>Outcomes</span>
+            <strong>{formatCount(promotionOutcomeDraft.readyOutcomeCount, "ready outcome")}</strong>
+            <small>{formatCount(promotionOutcomeDraft.blockedOutcomeCount, "blocked outcome")}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOutcomeDraft.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionOutcomeDraft.selectedPlanId}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionOutcomeDraft.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionOutcomeDraft.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-outcome-draft-list">
+          {promotionOutcomeDraft.commandOutcomes.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{command.suggestedOutcome ? "Outcome ready" : "Outcome withheld"}</span>
+              </div>
+              <small>{command.payloadKind ? humanizeKey(command.payloadKind) : command.blockerLabels.join(", ") || "No payload"}</small>
+              {command.suggestedOutcome ? <small>{command.suggestedOutcome.externalId}</small> : null}
             </li>
           ))}
         </ul>
