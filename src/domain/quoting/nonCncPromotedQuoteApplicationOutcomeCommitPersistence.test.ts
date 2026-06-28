@@ -105,6 +105,23 @@ describe("non-CNC promoted quote application outcome commit persistence", () => 
     await expect(
       adapter.recordCommit({
         commitPlan,
+        recordedAt: "2026-06-28T11:10:00.000Z",
+        recordedBy: "FactoryBid Operator",
+      }),
+    ).rejects.toThrow("ready application outcome commit plans require a commit execution run")
+
+    await expect(
+      adapter.recordCommit({
+        commitPlan,
+        executionRun: { ...executionRun, mode: "dry_run" },
+        recordedAt: "2026-06-28T11:10:00.000Z",
+        recordedBy: "FactoryBid Operator",
+      }),
+    ).rejects.toThrow("application outcome commit execution run must use commit mode")
+
+    await expect(
+      adapter.recordCommit({
+        commitPlan,
         executionRun: { ...executionRun, selectedPlanId: "non-cnc-promotion:other" },
         recordedAt: "2026-06-28T11:10:00.000Z",
         recordedBy: "FactoryBid Operator",
@@ -129,6 +146,7 @@ describe("non-CNC promoted quote application outcome commit persistence", () => 
           ...commitPlan,
           commandOutcomeCount: commitPlan.commandOutcomeCount + 1,
         },
+        executionRun,
         recordedAt: "2026-06-28T11:10:00.000Z",
         recordedBy: "FactoryBid Operator",
       }),
@@ -174,6 +192,20 @@ describe("non-CNC promoted quote application outcome commit persistence", () => 
         ],
       },
     })
+    const reversedSeededAdapter = createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence({
+      initialSnapshot: {
+        records: [
+          {
+            ...seededRecord,
+            recordedAt: "2026-06-28T11:20:00.000Z",
+            recordedBy: "Replacement Operator",
+            reviewWarnings: [],
+            warningCount: 0,
+          },
+          seededRecord,
+        ],
+      },
+    })
     const snapshot = seededAdapter.snapshot()
     snapshot.records[0]?.reviewWarnings.push("mutated outside adapter")
     snapshot.commitReadyApplicationIds.push("mutated-application")
@@ -187,6 +219,23 @@ describe("non-CNC promoted quote application outcome commit persistence", () => 
     expect(seededAdapter.snapshot().latestRecord).toMatchObject({
       recordedBy: "Replacement Operator",
       warningCount: 0,
+    })
+    expect(reversedSeededAdapter.snapshot()).toEqual(seededAdapter.snapshot())
+    await seededAdapter.recordCommit({
+      commitPlan,
+      executionRun,
+      recordedAt: "2026-06-28T11:30:00.000Z",
+      recordedBy: "Live Replacement Operator",
+    })
+    expect(seededAdapter.snapshot()).toMatchObject({
+      commitReadyApplicationIds: [applicationRecord.applicationId],
+      outcomeCount: 3,
+      recordCount: 1,
+      warningCount: 1,
+    })
+    expect(seededAdapter.snapshot().latestRecord).toMatchObject({
+      recordedBy: "Live Replacement Operator",
+      warningCount: 1,
     })
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence({
@@ -202,6 +251,28 @@ describe("non-CNC promoted quote application outcome commit persistence", () => 
         },
       }),
     ).toThrow("warningCount must equal reviewWarnings length")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, executionFingerprint: undefined }],
+        },
+      }),
+    ).toThrow("ready application outcome commit records require an executionFingerprint")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              blockerCount: 1,
+              blockerLabels: ["Manual review required."],
+              disposition: "review_only",
+              status: "blocked",
+            },
+          ],
+        },
+      }),
+    ).toThrow("blocked application outcome commit records cannot include an executionFingerprint")
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence({
         initialSnapshot: {

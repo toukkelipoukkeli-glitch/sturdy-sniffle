@@ -122,6 +122,9 @@ function assertExecutionMatchesCommitPlan(
   executionRun: NonCncPromotedQuoteApplicationExecutionRun | undefined,
 ): void {
   if (!executionRun) {
+    if (commitPlan.status === "ready") {
+      throw new Error("ready application outcome commit plans require a commit execution run")
+    }
     return
   }
   if (commitPlan.status !== "ready") {
@@ -153,7 +156,10 @@ function normalizeSnapshot(
   const recordsById = new Map<string, NonCncPromotedQuoteApplicationOutcomeCommitRecord>()
   for (const record of snapshot?.records ?? []) {
     const normalized = normalizeRecord(record)
-    recordsById.set(normalized.commitRecordId, normalized)
+    const existing = recordsById.get(normalized.commitRecordId)
+    if (!existing || sortNewestFirst(normalized, existing) < 0) {
+      recordsById.set(normalized.commitRecordId, normalized)
+    }
   }
   const records = [...recordsById.values()].sort(sortNewestFirst)
 
@@ -215,6 +221,12 @@ function normalizeRecord(
   }
   if (normalized.status === "blocked" && normalized.disposition !== "review_only") {
     throw new Error("blocked application outcome commit records must use review_only disposition")
+  }
+  if (normalized.status === "ready" && normalized.executionFingerprint === undefined) {
+    throw new Error("ready application outcome commit records require an executionFingerprint")
+  }
+  if (normalized.status === "blocked" && normalized.executionFingerprint !== undefined) {
+    throw new Error("blocked application outcome commit records cannot include an executionFingerprint")
   }
 
   return normalized
