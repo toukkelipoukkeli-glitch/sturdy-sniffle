@@ -5,8 +5,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import App, { ProcessQuotePreviewCard } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
+import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
+import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
+import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
+import { buildNonCncQuotePromotionExecutionOutcomeDraft } from "./domain/quoting/nonCncQuotePromotionExecutionOutcomeDraft"
+import { buildNonCncQuotePromotionOutcomeCommitRun } from "./domain/quoting/nonCncQuotePromotionOutcomeCommit"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
+import {
+  NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+  type NonCncQuotePromotionOutcomeCommitPersistenceSnapshot,
+} from "./domain/quoting/nonCncQuotePromotionOutcomeCommitPersistence"
 import { createLocalNonCncQuotePromotionPersistence } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
@@ -18,6 +27,19 @@ function totalText(container: HTMLElement): string {
 }
 
 const originalClipboard = navigator.clipboard
+
+function emptyPromotionOutcomeCommitSnapshot(): NonCncQuotePromotionOutcomeCommitPersistenceSnapshot {
+  return {
+    blockedPackageIds: [],
+    commitReadyPackageIds: [],
+    outcomeCount: 0,
+    persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    statusCounts: {},
+    warningCount: 0,
+  }
+}
 
 describe("FactoryBid workspace (component)", () => {
   beforeEach(() => {
@@ -132,6 +154,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionExecutionHistory).toHaveTextContent("Execution history")
     expect(promotionExecutionHistory).toHaveTextContent("non-cnc-quote-promotion-execution-persistence.v1")
     expect(promotionExecutionHistory).toHaveTextContent("Status counts: blocked 1")
+    const promotionCommitHistory = within(processDemos).getByLabelText("Non-CNC promotion commit history")
+    expect(promotionCommitHistory).toHaveTextContent("Commit history")
+    expect(promotionCommitHistory).toHaveTextContent("non-cnc-quote-promotion-outcome-commit-persistence.v1")
+    expect(promotionCommitHistory).toHaveTextContent("Local outcome commit history: 1 record, 0 outcomes, 0 warnings.")
+    expect(promotionCommitHistory).toHaveTextContent("review only")
+    expect(promotionCommitHistory).toHaveTextContent("Status counts: blocked 1")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
   })
@@ -402,7 +430,9 @@ describe("FactoryBid workspace (component)", () => {
           statusCounts: {},
           warningCount: 0,
         }}
+        promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
+        recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={{ blockedPlanIds: [], candidatePlanIds: [], recordCount: 0, records: [] }}
       />,
@@ -436,6 +466,62 @@ describe("FactoryBid workspace (component)", () => {
       workspacePromotionPersistence: "configured",
     })
     const promotionSnapshot = await adapter.recordPlan(promotionPlan)
+    const promotionActionSummary = buildNonCncQuotePromotionActionSummary({
+      selectedPlanId: promotionPlan.planId,
+      snapshot: promotionSnapshot,
+    })
+    const promotionCommandPackage = buildNonCncQuotePromotionCommandPackage(buildNonCncQuotePromotionDraft(promotionActionSummary))
+    const generatedPromotionOutcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(promotionCommandPackage)
+    const { commitPlan } = buildNonCncQuotePromotionOutcomeCommitRun({
+      actor: "FactoryBid Operator",
+      commandPackage: promotionCommandPackage,
+      executedAt: promotionPlan.requestedAt,
+      outcomeDraft: generatedPromotionOutcomeDraft,
+    })
+    const promotionOutcomeCommitRecords: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["records"] = [
+      {
+        blockerCount: 0,
+        blockerLabels: [],
+        commandOutcomeCount: 3,
+        commitRecordId: `non-cnc-outcome-commit:stale:${commitPlan.packageId}`,
+        commitVersion: commitPlan.commitVersion,
+        disposition: "commit_ready",
+        packageId: commitPlan.packageId,
+        packageVersion: commitPlan.packageVersion,
+        persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+        recordedAt: "2026-06-27T13:25:00.000Z",
+        recordedBy: "First Operator",
+        reviewWarnings: ["Material certificate required."],
+        selectedPlanId: commitPlan.selectedPlanId,
+        status: "ready",
+        targetRfqId: commitPlan.targetRfqId,
+        warningCount: 1,
+      },
+      {
+        blockerCount: 0,
+        blockerLabels: [],
+        commandOutcomeCount: 3,
+        commitRecordId: `non-cnc-outcome-commit:newest:${commitPlan.packageId}`,
+        commitVersion: commitPlan.commitVersion,
+        disposition: "commit_ready",
+        packageId: commitPlan.packageId,
+        packageVersion: commitPlan.packageVersion,
+        persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+        recordedAt: "2026-06-27T13:45:00.000Z",
+        recordedBy: "Second Operator",
+        reviewWarnings: ["Material certificate required."],
+        selectedPlanId: commitPlan.selectedPlanId,
+        status: "ready",
+        targetRfqId: commitPlan.targetRfqId,
+        warningCount: 1,
+      },
+    ]
+    const promotionOutcomeCommitStatusCounts = promotionOutcomeCommitRecords.reduce<
+      NonCncQuotePromotionOutcomeCommitPersistenceSnapshot["statusCounts"]
+    >((counts, record) => {
+      counts[record.status] = (counts[record.status] ?? 0) + 1
+      return counts
+    }, {})
 
     render(
       <ProcessQuotePreviewCard
@@ -450,7 +536,18 @@ describe("FactoryBid workspace (component)", () => {
           statusCounts: {},
           warningCount: 0,
         }}
+        promotionOutcomeCommitSnapshot={{
+          blockedPackageIds: [],
+          commitReadyPackageIds: [commitPlan.packageId],
+          outcomeCount: promotionOutcomeCommitRecords.reduce((total, record) => total + record.commandOutcomeCount, 0),
+          persistenceVersion: NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+          recordCount: promotionOutcomeCommitRecords.length,
+          records: promotionOutcomeCommitRecords,
+          statusCounts: promotionOutcomeCommitStatusCounts,
+          warningCount: promotionOutcomeCommitRecords.reduce((total, record) => total + record.warningCount, 0),
+        }}
         promotionPlan={promotionPlan}
+        recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
         promotionSnapshot={promotionSnapshot}
       />,
@@ -468,6 +565,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotionOutcomeCommit).toHaveTextContent("3 outcomes")
     expect(promotionOutcomeCommit).toHaveTextContent("Commit run available")
     expect(promotionOutcomeCommit).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    const promotionOutcomeCommitHistory = within(selectedPreview).getByLabelText("Non-CNC promotion commit history")
+    expect(promotionOutcomeCommitHistory).toHaveTextContent("2026-06-27T13:45:00.000Z")
+    expect(promotionOutcomeCommitHistory).toHaveTextContent("Status counts: ready 2")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {

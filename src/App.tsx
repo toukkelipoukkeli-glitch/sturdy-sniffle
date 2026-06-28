@@ -129,6 +129,11 @@ import {
   type NonCncQuotePromotionExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import {
+  createLocalNonCncQuotePromotionOutcomeCommitPersistence,
+  type NonCncQuotePromotionOutcomeCommitPersistenceSnapshot,
+  type RecordNonCncQuotePromotionOutcomeCommitInput,
+} from "./domain/quoting/nonCncQuotePromotionOutcomeCommitPersistence"
+import {
   createLocalNonCncQuotePromotionPersistence,
   type NonCncQuotePromotionPersistenceSnapshot,
 } from "./domain/quoting/nonCncQuotePromotionPersistence"
@@ -4001,6 +4006,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
   const [promotionExecutionSnapshot, setPromotionExecutionSnapshot] = useState<NonCncQuotePromotionExecutionPersistenceSnapshot>(() =>
     promotionExecutionPersistence.snapshot(),
   )
+  const [promotionOutcomeCommitPersistence] = useState(() => createLocalNonCncQuotePromotionOutcomeCommitPersistence())
+  const [promotionOutcomeCommitSnapshot, setPromotionOutcomeCommitSnapshot] =
+    useState<NonCncQuotePromotionOutcomeCommitPersistenceSnapshot>(() => promotionOutcomeCommitPersistence.snapshot())
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4039,6 +4047,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionExecutionPersistence],
   )
+  const recordPromotionOutcomeCommit = useCallback(
+    (input: RecordNonCncQuotePromotionOutcomeCommitInput) => {
+      let isCurrent = true
+      void promotionOutcomeCommitPersistence.recordCommit(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOutcomeCommitSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionOutcomeCommitPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4073,9 +4095,11 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewComparisonPanel preview={preview} />
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
+        promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
         promotionExecutionSnapshot={promotionExecutionSnapshot}
         promotionPlan={promotionPlan}
+        recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
         sheetMetalEditor={
@@ -4276,7 +4300,9 @@ export function ProcessQuotePreviewCard({
   plasticEditor,
   preview,
   promotionExecutionSnapshot,
+  promotionOutcomeCommitSnapshot,
   promotionPlan,
+  recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
   promotionSnapshot,
   sheetMetalEditor,
@@ -4287,7 +4313,9 @@ export function ProcessQuotePreviewCard({
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
+  promotionOutcomeCommitSnapshot: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot
   promotionPlan: NonCncQuotePromotionPlan
+  recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
   sheetMetalEditor?: {
@@ -4337,7 +4365,14 @@ export function ProcessQuotePreviewCard({
   const promotionExecutionRecord = promotionExecutionSnapshot.records.find(
     (record) => record.executionFingerprint === promotionExecutionRun.executionFingerprint,
   )
+  const promotionOutcomeCommitRecord = promotionOutcomeCommitSnapshot.records
+    .filter((record) => record.packageId === promotionOutcomeCommitPlan.packageId)
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  const promotionOutcomeCommitStatusSummary = Object.entries(promotionOutcomeCommitSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
@@ -4347,6 +4382,17 @@ export function ProcessQuotePreviewCard({
     }
     return recordPromotionExecutionRun(promotionExecutionRun)
   }, [promotionExecutionRun, promotionRecord, recordPromotionExecutionRun])
+  useEffect(() => {
+    if (!promotionRecord) {
+      return undefined
+    }
+    return recordPromotionOutcomeCommit({
+      commitPlan: promotionOutcomeCommitPlan,
+      executionRun: promotionOutcomeCommit.executionRun,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "FactoryBid Operator",
+    })
+  }, [promotionOutcomeCommit.executionRun, promotionOutcomeCommitPlan, promotionPlan.requestedAt, promotionRecord, recordPromotionOutcomeCommit])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4807,6 +4853,49 @@ export function ProcessQuotePreviewCard({
           )}
         </ul>
       </div>
+      {promotionOutcomeCommitRecord ? (
+        <div
+          className="process-demo-promotion-commit-history"
+          aria-label="Non-CNC promotion commit history"
+          data-status={promotionOutcomeCommitRecord.status}
+        >
+          <div className="process-demo-promotion-commit-history-heading">
+            <div>
+              <span>Commit history</span>
+              <strong>{formatCount(promotionOutcomeCommitSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionOutcomeCommitSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local outcome commit history: {formatCount(promotionOutcomeCommitSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionOutcomeCommitSnapshot.outcomeCount, "outcome")},{" "}
+            {formatCount(promotionOutcomeCommitSnapshot.warningCount, "warning")}.
+          </p>
+          <div className="process-demo-promotion-commit-history-grid">
+            <div>
+              <span>Latest commit</span>
+              <strong>{humanizeKey(promotionOutcomeCommitRecord.disposition)}</strong>
+              <small>{promotionOutcomeCommitRecord.recordedAt}</small>
+            </div>
+            <div>
+              <span>Outcome totals</span>
+              <strong>{formatCount(promotionOutcomeCommitRecord.commandOutcomeCount, "outcome")}</strong>
+              <small>
+                {formatCount(promotionOutcomeCommitRecord.blockerCount, "blocker")},{" "}
+                {formatCount(promotionOutcomeCommitRecord.warningCount, "warning")}
+              </small>
+            </div>
+            <div>
+              <span>Snapshot ids</span>
+              <small>Blocked: {promotionOutcomeCommitSnapshot.blockedPackageIds.join(", ") || "None"}</small>
+              <small>Ready: {promotionOutcomeCommitSnapshot.commitReadyPackageIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-commit-history-status">
+            Status counts: {promotionOutcomeCommitStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       <div
         className="process-demo-promotion-execution"
         aria-label="Non-CNC promotion execution audit"
