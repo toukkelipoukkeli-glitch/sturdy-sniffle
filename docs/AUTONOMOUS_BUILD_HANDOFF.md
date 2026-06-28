@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-06-27 Europe/Helsinki.
+Last refreshed: 2026-06-28 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `fcf6ec9` (`Add non-CNC application execution audit (#193)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E UI surface for non-CNC promoted quote application execution audits.
-- In-flight PR at this checkpoint: `codex/non-cnc-application-execution-ui` surfaces deterministic dry-run application execution audits in the operator workspace while keeping RFQ quote, offer, and release state unchanged.
+- Main branch checkpoint: `cbda7ae` (`Surface non-CNC application execution audit (#194)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E local persistence boundary for non-CNC promoted quote application execution audits.
+- In-flight PR at this checkpoint: `codex/non-cnc-application-execution-persistence` adds deterministic local persistence snapshots for non-CNC promoted quote application execution audits while keeping RFQ quote, offer, and release state unchanged.
 - Latest merged sequence:
+  - `#194` non-CNC registry previews now surface deterministic promoted quote application execution audit records in the workspace.
   - `#193` non-CNC promoted quote application records now produce deterministic dry-run/commit execution audit records.
   - `#192` non-CNC registry previews now surface local promoted quote application history with Browser/Playwright QA fallback evidence.
   - `#191` non-CNC promoted quote application plans now have deterministic local persistence snapshots with seeded-record validation and deduplication.
@@ -162,7 +163,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 1. Move the app's quote path toward the multi-process registry.
    - CNC workspace pricing now routes through `calculateQuote` without changing visible pricing.
-   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, execution audit records, copyable execution summary, surfaced execution audit UI, local execution persistence snapshots, execution history UI, deterministic outcome drafts, outcome draft UI, reviewed-outcome commit-plan UI, local outcome commit persistence, outcome commit history UI, a deterministic promoted quote read model surfaced in the workspace, a deterministic application-plan boundary surfaced in the workspace, local application-plan persistence snapshots surfaced in the workspace, and deterministic application execution audit records. This branch surfaces those application execution audits in the workspace before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
+   - Read-only non-CNC registry demos now show a guarded process selector, best-price/fastest-lead badges, selected-vs-best summary, quote breakdowns, assumptions, review flags, operator checklist, input-readiness groups, planned input fields, read-only fixture draft values, selector draft coverage, promotion blockers, adapter readiness, preview-only edit controls for sheet-metal/plastics/wire-EDM/fabrication, offer handoff/readiness, deterministic promotion plan contract/panel, local promotion-plan persistence records/snapshot, deterministic promotion action summaries, ready-only promotion draft payloads, canonical command packages, command-package UI, execution audit records, copyable execution summary, surfaced execution audit UI, local execution persistence snapshots, execution history UI, deterministic outcome drafts, outcome draft UI, reviewed-outcome commit-plan UI, local outcome commit persistence, outcome commit history UI, a deterministic promoted quote read model surfaced in the workspace, a deterministic application-plan boundary surfaced in the workspace, local application-plan persistence snapshots surfaced in the workspace, deterministic application execution audit records, and workspace-visible application execution audits. This branch adds local application execution persistence snapshots before mutating active RFQ quote, offer, or release state. After this, all non-CNC engines need persisted quote promotion and offer wiring.
    - Keep all calculators deterministic and preserve focused tests for each process.
 
 2. Add CAD review operator overrides.
