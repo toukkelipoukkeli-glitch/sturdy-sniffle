@@ -7,6 +7,7 @@ import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionPlan } from "./domain/quoting/nonCncQuotePromotionPlan"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
+import { createLocalNonCncQuotePromotionPersistence } from "./domain/quoting/nonCncQuotePromotionPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -399,6 +400,57 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(selectedPreview).getByLabelText("Process quote review flags")).toHaveTextContent(
       "Requires operator review before release",
     )
+  })
+
+  it("surfaces ready non-CNC promotion outcome drafts for candidate records", async () => {
+    const adapter = createLocalNonCncQuotePromotionPersistence()
+    const preview = {
+      ...buildProcessQuotePreview(buildProcessDemoQuotes(), "sheet_metal"),
+      inputPromotionGate: {
+        blockerLabels: [],
+        blockers: [],
+        gateVersion: "process-input-promotion-gate.v1",
+        missingRequiredCount: 0,
+        nextStep: "Persist the quote snapshot.",
+        status: "blocked",
+      },
+      reviewFlags: ["Material certificate required."],
+    } satisfies ReturnType<typeof buildProcessQuotePreview>
+    const promotionPlan = buildNonCncQuotePromotionPlan({
+      preview,
+      requestedAt: "2026-06-27T13:30:00.000Z",
+      requestedBy: "FactoryBid Operator",
+      targetRfqId: "rfq-demo-204",
+      workspacePromotionPersistence: "configured",
+    })
+    const promotionSnapshot = await adapter.recordPlan(promotionPlan)
+
+    render(
+      <ProcessQuotePreviewCard
+        preview={preview}
+        promotionExecutionSnapshot={{
+          packageIds: [],
+          pendingActionCount: 0,
+          persistenceVersion: NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION,
+          recordCount: 0,
+          records: [],
+          selectedPlanIds: [],
+          statusCounts: {},
+          warningCount: 0,
+        }}
+        promotionPlan={promotionPlan}
+        recordPromotionExecutionRun={() => () => undefined}
+        promotionSnapshot={promotionSnapshot}
+      />,
+    )
+
+    const selectedPreview = screen.getByLabelText("Selected non-CNC quote preview")
+    const promotionOutcomeDraft = within(selectedPreview).getByLabelText("Non-CNC promotion outcome draft")
+    expect(promotionOutcomeDraft).toHaveTextContent("ready")
+    expect(promotionOutcomeDraft).toHaveTextContent("3 ready outcomes")
+    expect(promotionOutcomeDraft).toHaveTextContent("0 blocked outcomes")
+    expect(promotionOutcomeDraft).toHaveTextContent("Outcome ready")
+    expect(promotionOutcomeDraft).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {
