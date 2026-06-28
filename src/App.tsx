@@ -123,6 +123,7 @@ import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCnc
 import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
 import { buildNonCncQuotePromotionExecutionRun, type NonCncQuotePromotionExecutionRun } from "./domain/quoting/nonCncQuotePromotionExecution"
 import { buildNonCncQuotePromotionExecutionOutcomeDraft } from "./domain/quoting/nonCncQuotePromotionExecutionOutcomeDraft"
+import { buildNonCncQuotePromotionOutcomeCommitRun } from "./domain/quoting/nonCncQuotePromotionOutcomeCommit"
 import {
   createLocalNonCncQuotePromotionExecutionPersistence,
   type NonCncQuotePromotionExecutionPersistenceSnapshot,
@@ -4312,6 +4313,17 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncQuotePromotionExecutionOutcomeDraft(promotionCommandPackage),
     [promotionCommandPackage],
   )
+  const promotionOutcomeCommit = useMemo(
+    () =>
+      buildNonCncQuotePromotionOutcomeCommitRun({
+        actor: "FactoryBid Operator",
+        commandPackage: promotionCommandPackage,
+        executedAt: promotionPlan.requestedAt,
+        outcomeDraft: promotionOutcomeDraft,
+      }),
+    [promotionCommandPackage, promotionOutcomeDraft, promotionPlan.requestedAt],
+  )
+  const promotionOutcomeCommitPlan = promotionOutcomeCommit.commitPlan
   const promotionExecutionRun = useMemo(
     () =>
       buildNonCncQuotePromotionExecutionRun({
@@ -4737,6 +4749,62 @@ export function ProcessQuotePreviewCard({
               {command.suggestedOutcome ? <small>{command.suggestedOutcome.externalId}</small> : null}
             </li>
           ))}
+        </ul>
+      </div>
+      <div
+        className="process-demo-promotion-commit-plan"
+        aria-label="Non-CNC promotion commit plan"
+        data-status={promotionOutcomeCommitPlan.status}
+      >
+        <div className="process-demo-promotion-commit-plan-heading">
+          <div>
+            <span>Commit plan</span>
+            <strong>{humanizeKey(promotionOutcomeCommitPlan.status)}</strong>
+          </div>
+          <small>{promotionOutcomeCommitPlan.commitVersion}</small>
+        </div>
+        <p>
+          {promotionOutcomeCommit.executionRun
+            ? "Reviewed outcome commit run is ready for future persistence wiring; active RFQ quote, offer, and release state stay unchanged."
+            : promotionOutcomeCommitPlan.nextOperatorMessage}
+        </p>
+        <div className="process-demo-promotion-commit-plan-grid">
+          <div>
+            <span>Commit outcomes</span>
+            <strong>{formatCount(promotionOutcomeCommitPlan.commandOutcomeCount, "outcome")}</strong>
+            <small>{promotionOutcomeCommitPlan.status === "ready" ? "Commit run available" : "Outcome commit withheld"}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOutcomeCommitPlan.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionOutcomeCommitPlan.selectedPlanId}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionOutcomeCommitPlan.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionOutcomeCommitPlan.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-commit-plan-list">
+          {promotionOutcomeCommitPlan.commandOutcomes.length > 0 ? (
+            promotionOutcomeCommitPlan.commandOutcomes.map((outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <div>
+                  <strong>{humanizeKey(outcome.key)}</strong>
+                  <span>{humanizeKey(outcome.status)}</span>
+                </div>
+                <small>{outcome.externalId ?? "No external id"}</small>
+              </li>
+            ))
+          ) : (
+            <li data-status="blocked">
+              <div>
+                <strong>Commit withheld</strong>
+                <span>Blocked</span>
+              </div>
+              <small>{promotionOutcomeCommitPlan.blockerLabels.join(", ") || "No reviewed outcomes ready for commit."}</small>
+            </li>
+          )}
         </ul>
       </div>
       <div
