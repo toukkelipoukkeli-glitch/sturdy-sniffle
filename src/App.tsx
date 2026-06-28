@@ -121,6 +121,7 @@ import {
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
 import { buildNonCncQuotePromotionCommandPackage } from "./domain/quoting/nonCncQuotePromotionCommandPackage"
 import { buildNonCncQuotePromotionDraft } from "./domain/quoting/nonCncQuotePromotionDraft"
+import { buildNonCncQuotePromotionExecutionRun } from "./domain/quoting/nonCncQuotePromotionExecution"
 import {
   createLocalNonCncQuotePromotionPersistence,
   type NonCncQuotePromotionPersistenceSnapshot,
@@ -4278,6 +4279,16 @@ export function ProcessQuotePreviewCard({
   )
   const promotionDraft = useMemo(() => buildNonCncQuotePromotionDraft(promotionActionSummary), [promotionActionSummary])
   const promotionCommandPackage = useMemo(() => buildNonCncQuotePromotionCommandPackage(promotionDraft), [promotionDraft])
+  const promotionExecutionRun = useMemo(
+    () =>
+      buildNonCncQuotePromotionExecutionRun({
+        actor: "FactoryBid Operator",
+        commandPackage: promotionCommandPackage,
+        executedAt: promotionPlan.requestedAt,
+        mode: "dry_run",
+      }),
+    [promotionCommandPackage, promotionPlan.requestedAt],
+  )
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -4638,6 +4649,56 @@ export function ProcessQuotePreviewCard({
             </li>
           ))}
         </ul>
+      </div>
+      <div
+        className="process-demo-promotion-execution"
+        aria-label="Non-CNC promotion execution audit"
+        data-status={promotionExecutionRun.status}
+      >
+        <div className="process-demo-promotion-execution-heading">
+          <div>
+            <span>Execution audit</span>
+            <strong>{humanizeKey(promotionExecutionRun.status)}</strong>
+          </div>
+          <small>{promotionExecutionRun.executionVersion}</small>
+        </div>
+        <p>Dry-run audit only; active RFQ quote, offer, and release state stay unchanged.</p>
+        <div className="process-demo-promotion-execution-grid">
+          <div>
+            <span>Fingerprint</span>
+            <strong>{promotionExecutionRun.executionFingerprint}</strong>
+            <small>{promotionExecutionRun.mode}</small>
+          </div>
+          <div>
+            <span>Commands</span>
+            <strong>{formatCount(promotionExecutionRun.commands.length, "command")}</strong>
+            <small>{promotionExecutionRun.commands.map((command) => humanizeKey(command.status)).join(", ")}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionExecutionRun.warnings.length, "warning")}</strong>
+            <small>{promotionExecutionRun.warnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-execution-list">
+          {promotionExecutionRun.commands.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)}</span>
+              </div>
+              <small>{command.idempotencyKey}</small>
+            </li>
+          ))}
+        </ul>
+        <div className="process-demo-promotion-execution-next">
+          <span>Next actions</span>
+          <ul>
+            {promotionExecutionRun.nextActions.map((action) => (
+              <li key={action}>{action}</li>
+            ))}
+          </ul>
+        </div>
       </div>
       <div className="process-demo-footer">
         <small>{demo.quote.warnings[0] ?? "No calculator flags"}</small>
