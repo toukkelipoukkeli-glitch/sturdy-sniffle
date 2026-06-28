@@ -111,6 +111,25 @@ describe("non-CNC quote promotion execution outcome drafts", () => {
     expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
     expect(outcomeDraft.commandOutcomes.every((command) => command.payloadKind === undefined)).toBe(true)
   })
+
+  it("suppresses suggested outcomes when the package is blocked even if commands stay ready", async () => {
+    const readyPackage = await buildReadyPackage()
+    const commandPackage: NonCncQuotePromotionCommandPackage = {
+      ...readyPackage,
+      nextOperatorMessage: "Blocked at package level.",
+      status: "blocked",
+    }
+
+    const outcomeDraft = buildNonCncQuotePromotionExecutionOutcomeDraft(commandPackage)
+
+    expect(outcomeDraft.status).toBe("blocked")
+    expect(outcomeDraft.readyOutcomeCount).toBe(0)
+    expect(outcomeDraft.blockedOutcomeCount).toBe(3)
+    expect(outcomeDraft.nextOperatorMessage).toBe("Blocked at package level.")
+    expect(outcomeDraft.commandOutcomes.every((command) => command.status === "blocked")).toBe(true)
+    expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
+    expect(outcomeDraft.commandOutcomes.every((command) => command.payloadKind === undefined)).toBe(true)
+  })
 })
 
 async function buildBlockedPackage(): Promise<NonCncQuotePromotionCommandPackage> {

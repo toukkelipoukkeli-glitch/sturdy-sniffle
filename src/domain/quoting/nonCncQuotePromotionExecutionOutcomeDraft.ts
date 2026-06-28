@@ -66,7 +66,7 @@ function buildCommandOutcomeDraft(
   command: NonCncQuotePromotionCommandPackageCommand,
 ): NonCncQuotePromotionCommandOutcomeDraft {
   const idempotencyKey = promotionCommandIdempotencyKey(commandPackage.packageId, command.key)
-  if (command.status !== "ready" || !command.payload) {
+  if (commandPackage.status !== "ready" || command.status !== "ready" || !command.payload) {
     return {
       blockerLabels: [...command.blockerLabels],
       idempotencyKey,
