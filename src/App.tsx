@@ -5096,7 +5096,9 @@ export function ProcessQuotePreviewCard({
             </div>
             <div>
               <span>Commands</span>
-              <strong>{formatCount(promotionApplicationRecord.readyCommandCount, "ready command")}</strong>
+              <strong>
+                {promotionApplicationRecord.readyCommandCount}/{promotionApplicationRecord.commandCount} ready
+              </strong>
               <small>
                 {formatCount(promotionApplicationRecord.blockerCount, "blocker")},{" "}
                 {formatCount(promotionApplicationRecord.warningCount, "warning")}
