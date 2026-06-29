@@ -4529,10 +4529,10 @@ export function ProcessQuotePreviewCard({
   const promotionApplicationOutcomeCommitReadModel = useMemo(
     () =>
       buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel({
-        applicationId: promotionApplicationOutcomeCommit?.commitPlan.applicationId,
+        applicationId: promotionApplicationPlan.applicationId,
         snapshot: promotionApplicationOutcomeCommitSnapshot,
       }),
-    [promotionApplicationOutcomeCommit?.commitPlan.applicationId, promotionApplicationOutcomeCommitSnapshot],
+    [promotionApplicationPlan.applicationId, promotionApplicationOutcomeCommitSnapshot],
   )
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
