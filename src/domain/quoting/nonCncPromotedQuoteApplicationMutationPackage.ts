@@ -2,6 +2,7 @@ import type {
   NonCncPromotedQuoteApplicationOutcomeCommitMutationTarget,
   NonCncPromotedQuoteApplicationOutcomeCommitReadModel,
 } from "./nonCncPromotedQuoteApplicationOutcomeCommitReadModel"
+import type { NonCncPromotedQuoteApplicationCommand } from "./nonCncPromotedQuoteApplicationPlan"
 
 export const NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_PACKAGE_VERSION =
   "non-cnc-promoted-quote-application-mutation-package.v1"
@@ -10,7 +11,8 @@ export type NonCncPromotedQuoteApplicationMutationPackageStatus = "blocked" | "r
 export type NonCncPromotedQuoteApplicationMutationCommandStatus = "blocked" | "ready"
 
 export interface NonCncPromotedQuoteApplicationMutationCommand {
-  key: NonCncPromotedQuoteApplicationOutcomeCommitMutationTarget
+  key: NonCncPromotedQuoteApplicationCommand["key"]
+  mutationTarget: NonCncPromotedQuoteApplicationOutcomeCommitMutationTarget
   label: string
   status: NonCncPromotedQuoteApplicationMutationCommandStatus
   blockerLabels: string[]
@@ -87,8 +89,9 @@ function buildCommand({
 }): NonCncPromotedQuoteApplicationMutationCommand {
   return {
     blockerLabels: ready ? [] : [...blockerLabels],
-    key: target,
+    key: commandKey(target),
     label: commandLabel(target),
+    mutationTarget: target,
     reviewWarnings: [...readModel.reviewWarnings],
     sourceExecutionFingerprint: ready ? readModel.executionFingerprint : undefined,
     status: ready ? "ready" : "blocked",
@@ -117,6 +120,21 @@ function buildMutationPackageId(readModel: NonCncPromotedQuoteApplicationOutcome
     readModel.targetRfqId ? toStableIdToken(readModel.targetRfqId, "readModel.targetRfqId") : "unassigned-rfq",
     readModel.applicationId ? toStableIdToken(readModel.applicationId, "readModel.applicationId") : "unassigned-application",
   ].join(":")
+}
+
+function commandKey(
+  target: NonCncPromotedQuoteApplicationOutcomeCommitMutationTarget,
+): NonCncPromotedQuoteApplicationCommand["key"] {
+  switch (target) {
+    case "active_rfq_quote":
+      return "replace_active_quote"
+    case "offer_workspace":
+      return "refresh_offer_workspace"
+    case "release_state":
+      return "open_offer_builder"
+    default:
+      return assertNever(target)
+  }
 }
 
 function commandLabel(target: NonCncPromotedQuoteApplicationOutcomeCommitMutationTarget): string {

@@ -22,8 +22,9 @@ describe("non-CNC promoted quote application mutation package", () => {
       commands: [
         {
           blockerLabels: [],
-          key: "active_rfq_quote",
+          key: "replace_active_quote",
           label: "Apply active RFQ quote",
+          mutationTarget: "active_rfq_quote",
           reviewWarnings: ["Material certificate required."],
           sourceExecutionFingerprint: "non-cnc-promoted-quote-application-execution-ready",
           status: "ready",
@@ -31,8 +32,9 @@ describe("non-CNC promoted quote application mutation package", () => {
         },
         {
           blockerLabels: [],
-          key: "offer_workspace",
+          key: "refresh_offer_workspace",
           label: "Refresh offer workspace",
+          mutationTarget: "offer_workspace",
           reviewWarnings: ["Material certificate required."],
           sourceExecutionFingerprint: "non-cnc-promoted-quote-application-execution-ready",
           status: "ready",
@@ -40,8 +42,9 @@ describe("non-CNC promoted quote application mutation package", () => {
         },
         {
           blockerLabels: [],
-          key: "release_state",
+          key: "open_offer_builder",
           label: "Refresh release state",
+          mutationTarget: "release_state",
           reviewWarnings: ["Material certificate required."],
           sourceExecutionFingerprint: "non-cnc-promoted-quote-application-execution-ready",
           status: "ready",
