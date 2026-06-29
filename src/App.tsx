@@ -160,6 +160,7 @@ import {
   createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence,
   type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
+import { buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
@@ -4584,6 +4585,10 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionApplicationMutationPackage, promotionPlan.requestedAt],
   )
+  const promotionApplicationMutationExecutionOutcomeDraft = useMemo(
+    () => buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(promotionApplicationMutationExecutionRun),
+    [promotionApplicationMutationExecutionRun],
+  )
   const promotionApplicationMutationExecutionRecord =
     promotionApplicationMutationExecutionSnapshot.records.find(
       (record) => record.executionFingerprint === promotionApplicationMutationExecutionRun.executionFingerprint,
@@ -5621,6 +5626,52 @@ export function ProcessQuotePreviewCard({
           ))}
         </ul>
       </div>
+      <div
+        className="process-demo-promotion-application-mutation-outcome-draft"
+        aria-label="Non-CNC promoted quote application mutation outcome draft"
+        data-status={promotionApplicationMutationExecutionOutcomeDraft.status}
+      >
+        <div className="process-demo-promotion-application-mutation-outcome-draft-heading">
+          <div>
+            <span>Mutation outcome draft</span>
+            <strong>{humanizeKey(promotionApplicationMutationExecutionOutcomeDraft.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationExecutionOutcomeDraft.draftVersion}</small>
+        </div>
+        <p>{promotionApplicationMutationExecutionOutcomeDraft.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-application-mutation-outcome-draft-grid">
+          <div>
+            <span>Boundary</span>
+            <strong>{promotionApplicationMutationExecutionOutcomeDraft.mutationPackageId}</strong>
+            <small>{promotionApplicationMutationExecutionOutcomeDraft.mutationBoundary}</small>
+          </div>
+          <div>
+            <span>Outcomes</span>
+            <strong>
+              {formatCount(promotionApplicationMutationExecutionOutcomeDraft.readyOutcomeCount, "ready outcome")} ·{" "}
+              {formatCount(promotionApplicationMutationExecutionOutcomeDraft.blockedOutcomeCount, "blocked outcome")}
+            </strong>
+            <small>{promotionApplicationMutationExecutionOutcomeDraft.reviewWarnings.join(", ") || "No review warnings"}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionApplicationMutationExecutionOutcomeDraft.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionApplicationMutationExecutionOutcomeDraft.executionFingerprint}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-application-mutation-outcome-draft-list">
+          {promotionApplicationMutationExecutionOutcomeDraft.commandOutcomes.map((outcome) => (
+            <li data-status={outcome.status} key={outcome.key}>
+              <div>
+                <strong>{outcome.label}</strong>
+                <span>{humanizeKey(outcome.status)}</span>
+              </div>
+              <small>{humanizeKey(outcome.mutationTarget)}</small>
+              <small>{outcome.externalId ?? formatLabelPreview(outcome.blockerLabels, "Outcome withheld")}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
       {promotionApplicationMutationExecutionRecord ? (
         <div
           className="process-demo-promotion-application-mutation-execution-history"
@@ -6165,6 +6216,15 @@ function formatFieldCount(count: number, label: string): string {
 
 function formatCount(count: number, label: string, pluralLabel = `${label}s`): string {
   return `${count} ${count === 1 ? label : pluralLabel}`
+}
+
+function formatLabelPreview(labels: readonly string[], fallback: string, visibleCount = 2): string {
+  if (labels.length === 0) {
+    return fallback
+  }
+  const visibleLabels = labels.slice(0, visibleCount).join(", ")
+  const hiddenCount = labels.length - visibleCount
+  return hiddenCount > 0 ? `${visibleLabels}, +${formatCount(hiddenCount, "more blocker")}` : visibleLabels
 }
 
 function buildProcessPreviewCopySummary(
