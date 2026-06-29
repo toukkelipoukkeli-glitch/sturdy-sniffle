@@ -39,8 +39,10 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationExecutionPersistence"
 import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationExecutionRecord,
   type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -105,6 +107,46 @@ function emptyPromotedQuoteApplicationMutationExecutionSnapshot(): NonCncPromote
     selectedPlanIds: [],
     statusCounts: {},
     targetRfqIds: [],
+    warningCount: 0,
+  }
+}
+
+function stalePromotedQuoteApplicationMutationExecutionSnapshot(): NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot {
+  const record = {
+    actor: "Stale Operator",
+    applicationId: "stale-application",
+    applicationRecordId: "stale-application-record",
+    appliedCommandCount: 0,
+    blockedCommandCount: 0,
+    commandCount: 3,
+    executedAt: "2026-06-27T13:30:00.000Z",
+    executionFingerprint: "non-cnc-promoted-quote-application-mutation-execution-stale",
+    executionVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION,
+    failedCommandCount: 0,
+    mode: "dry_run" as const,
+    mutationPackageId: "stale-mutation-package",
+    packageId: "stale-package",
+    pendingActionCount: 1,
+    pendingCommandCount: 0,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_PERSISTENCE_VERSION,
+    preparedCommandCount: 3,
+    selectedPlanId: "stale-plan",
+    status: "prepared" as const,
+    targetRfqId: "stale-rfq",
+    warningCount: 0,
+  } satisfies NonCncPromotedQuoteApplicationMutationExecutionRecord
+  return {
+    applicationIds: [record.applicationId],
+    applicationRecordIds: [record.applicationRecordId],
+    latestRun: record,
+    mutationPackageIds: [record.mutationPackageId],
+    pendingActionCount: record.pendingActionCount,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_PERSISTENCE_VERSION,
+    recordCount: 1,
+    records: [record],
+    selectedPlanIds: [record.selectedPlanId],
+    statusCounts: { prepared: 1 },
+    targetRfqIds: [record.targetRfqId],
     warningCount: 0,
   }
 }
@@ -820,7 +862,7 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
-        promotionApplicationMutationExecutionSnapshot={emptyPromotedQuoteApplicationMutationExecutionSnapshot()}
+        promotionApplicationMutationExecutionSnapshot={stalePromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshotWithStaleRecord}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
@@ -951,6 +993,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationExecution).toHaveTextContent("Mutation audit")
     expect(promotedQuoteApplicationMutationExecution).toHaveTextContent("non-cnc-promoted-quote-application-mutation-execution.v1")
     expect(promotedQuoteApplicationMutationExecution).toHaveTextContent("prepared, prepared, prepared")
+    expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {
