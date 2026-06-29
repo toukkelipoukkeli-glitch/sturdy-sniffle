@@ -62,22 +62,25 @@ describe("non-CNC promoted quote application outcome commit read model", () => {
   })
 
   it("builds a ready-to-apply boundary from committed application outcome records", () => {
-    const staleBlockedRecord = applicationOutcomeCommitRecord({
-      applicationId: "non-cnc-promoted-quote-application:stale",
-      blockerLabels: ["Stale blocked record."],
-      blockerCount: 1,
-      commandOutcomeCount: 0,
-      disposition: "review_only",
-      executionFingerprint: undefined,
-      status: "blocked",
-    })
     const readyRecord = applicationOutcomeCommitRecord({
       commandOutcomeCount: 3,
       disposition: "commit_ready",
       executionFingerprint: "non-cnc-promoted-quote-application-execution-ready",
+      recordedAt: "2026-06-28T11:10:00.000Z",
       reviewWarnings: ["Material certificate required."],
       status: "ready",
       warningCount: 1,
+    })
+    const staleBlockedRecord = applicationOutcomeCommitRecord({
+      applicationRecordId: `${readyRecord.applicationRecordId}:stale`,
+      blockerLabels: ["Stale blocked record."],
+      blockerCount: 1,
+      commandOutcomeCount: 0,
+      commitRecordId: `${readyRecord.commitRecordId}:stale`,
+      disposition: "review_only",
+      executionFingerprint: undefined,
+      recordedAt: "2026-06-28T11:00:00.000Z",
+      status: "blocked",
     })
     const readModel = buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel({
       applicationId: readyRecord.applicationId,
@@ -119,10 +122,11 @@ function emptySnapshot(): NonCncPromotedQuoteApplicationOutcomeCommitPersistence
 function snapshotWithRecords(
   records: NonCncPromotedQuoteApplicationOutcomeCommitRecord[],
 ): NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot {
+  const sortedRecords = [...records].sort(sortNewestFirst)
   return {
     blockedApplicationIds: records.filter((record) => record.status === "blocked").map((record) => record.applicationId),
     commitReadyApplicationIds: records.filter((record) => record.status === "ready").map((record) => record.applicationId),
-    latestRecord: records[0],
+    latestRecord: sortedRecords[0],
     outcomeCount: records.reduce((total, record) => total + record.commandOutcomeCount, 0),
     persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
     recordCount: records.length,
@@ -133,6 +137,17 @@ function snapshotWithRecords(
     }, {}),
     warningCount: records.reduce((total, record) => total + record.warningCount, 0),
   }
+}
+
+function sortNewestFirst(
+  left: NonCncPromotedQuoteApplicationOutcomeCommitRecord,
+  right: NonCncPromotedQuoteApplicationOutcomeCommitRecord,
+): number {
+  return (
+    right.recordedAt.localeCompare(left.recordedAt) ||
+    left.commitRecordId.localeCompare(right.commitRecordId) ||
+    left.applicationRecordId.localeCompare(right.applicationRecordId)
+  )
 }
 
 function applicationOutcomeCommitRecord(

@@ -74,9 +74,20 @@ function selectCommitRecord(
   applicationId: string | undefined,
 ): NonCncPromotedQuoteApplicationOutcomeCommitRecord | undefined {
   if (applicationId) {
-    return snapshot.records.find((record) => record.applicationId === applicationId)
+    return snapshot.records.filter((record) => record.applicationId === applicationId).sort(sortNewestFirst)[0]
   }
   return snapshot.latestRecord
+}
+
+function sortNewestFirst(
+  left: NonCncPromotedQuoteApplicationOutcomeCommitRecord,
+  right: NonCncPromotedQuoteApplicationOutcomeCommitRecord,
+): number {
+  return (
+    right.recordedAt.localeCompare(left.recordedAt) ||
+    left.commitRecordId.localeCompare(right.commitRecordId) ||
+    left.applicationRecordId.localeCompare(right.applicationRecordId)
+  )
 }
 
 function blockedReadModel(blockerLabels: string[]): NonCncPromotedQuoteApplicationOutcomeCommitReadModel {
