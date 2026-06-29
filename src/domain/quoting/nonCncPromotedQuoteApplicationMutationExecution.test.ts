@@ -22,11 +22,24 @@ describe("non-CNC promoted quote application mutation execution", () => {
       mode: "dry_run",
       mutationPackage,
     })
+    const repeatedRun = buildNonCncPromotedQuoteApplicationMutationExecutionRun({
+      actor: "FactoryBid Operator",
+      executedAt: "2026-06-29T12:00:00.000Z",
+      mode: "dry_run",
+      mutationPackage,
+    })
 
     expect(run.executionVersion).toBe(NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION)
     expect(run.executionFingerprint).toMatch(/^non-cnc-promoted-quote-application-mutation-execution-/)
+    expect(repeatedRun).toEqual(run)
     expect(run.status).toBe("prepared")
     expect(run.nextActions).toEqual(["Review 3 prepared non-CNC application mutation commands before committing."])
+    expect(run.warnings).toEqual([
+      "Material certificate required.",
+      "Apply active RFQ quote: Material certificate required.",
+      "Refresh offer workspace: Material certificate required.",
+      "Refresh release state: Material certificate required.",
+    ])
     expect(run.commands.map((command) => [command.key, command.mutationTarget, command.status])).toEqual([
       ["replace_active_quote", "active_rfq_quote", "prepared"],
       ["refresh_offer_workspace", "offer_workspace", "prepared"],
@@ -57,6 +70,7 @@ describe("non-CNC promoted quote application mutation execution", () => {
     expect(run.status).toBe("partial")
     expect(run.commands.map((command) => command.status)).toEqual(["applied", "failed", "pending"])
     expect(run.warnings).toContain("Material certificate required.")
+    expect(run.warnings).toContain("Apply active RFQ quote: Material certificate required.")
     expect(run.warnings).toContain("Refresh offer workspace: Terms need review.")
     expect(run.warnings).toContain("Refresh offer workspace failed: Offer workspace rejected stale terms.")
     expect(mutationPackage.commands.map((command) => command.status)).toEqual(["ready", "ready", "ready"])
@@ -84,6 +98,18 @@ describe("non-CNC promoted quote application mutation execution", () => {
       "Application outcome commit execution fingerprint is missing.",
       "Application outcome commit has no committed outcomes.",
       "Application outcome commit has no mutation targets.",
+      "Apply active RFQ quote: Application outcome commit read model is not ready to apply.",
+      "Apply active RFQ quote: Application outcome commit execution fingerprint is missing.",
+      "Apply active RFQ quote: Application outcome commit has no committed outcomes.",
+      "Apply active RFQ quote: Application outcome commit has no mutation targets.",
+      "Refresh offer workspace: Application outcome commit read model is not ready to apply.",
+      "Refresh offer workspace: Application outcome commit execution fingerprint is missing.",
+      "Refresh offer workspace: Application outcome commit has no committed outcomes.",
+      "Refresh offer workspace: Application outcome commit has no mutation targets.",
+      "Refresh release state: Application outcome commit read model is not ready to apply.",
+      "Refresh release state: Application outcome commit execution fingerprint is missing.",
+      "Refresh release state: Application outcome commit has no committed outcomes.",
+      "Refresh release state: Application outcome commit has no mutation targets.",
     ])
     expect(run.commands.every((command) => command.status === "blocked")).toBe(true)
     expect(run.commands.every((command) => command.externalId === undefined && command.message === undefined)).toBe(true)

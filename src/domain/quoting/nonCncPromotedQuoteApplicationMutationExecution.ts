@@ -222,7 +222,13 @@ function executionNextActions(
   status: NonCncPromotedQuoteApplicationMutationExecutionStatus,
 ): string[] {
   if (status === "blocked") {
-    return mutationPackage.blockerLabels.length > 0 ? [...mutationPackage.blockerLabels] : [mutationPackage.nextOperatorMessage]
+    const commandBlockers = commands.flatMap((command) =>
+      command.status === "blocked" ? command.blockerLabels.map((label) => `${command.label}: ${label}`) : [],
+    )
+    if (mutationPackage.blockerLabels.length > 0 || commandBlockers.length > 0) {
+      return [...mutationPackage.blockerLabels, ...commandBlockers]
+    }
+    return [mutationPackage.nextOperatorMessage]
   }
   if (mode === "dry_run") {
     return [`Review ${commands.length} prepared non-CNC application mutation command${commands.length === 1 ? "" : "s"} before committing.`]
@@ -249,6 +255,7 @@ function executionWarnings(
 ): string[] {
   return [
     ...mutationPackage.reviewWarnings,
+    ...commands.flatMap((command) => command.reviewWarnings.map((warning) => `${command.label}: ${warning}`)),
     ...commands.flatMap((command) => command.warnings.map((warning) => `${command.label}: ${warning}`)),
     ...commands
       .filter((command) => command.status === "failed")
