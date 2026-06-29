@@ -265,7 +265,14 @@ describe("non-CNC promoted quote application mutation execution persistence", ()
           records: [{ ...seededRecord, warningCount: -1 }],
         },
       }),
-    ).toThrow("warningCount must be a non-negative integer")
+    ).toThrow("warningCount must be a non-negative safe integer")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, pendingActionCount: Number.MAX_SAFE_INTEGER + 1 }],
+        },
+      }),
+    ).toThrow("pendingActionCount must be a non-negative safe integer")
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence({
         initialSnapshot: {
