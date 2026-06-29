@@ -151,6 +151,7 @@ import {
   type NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot,
   type RecordNonCncPromotedQuoteApplicationOutcomeCommitInput,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitPersistence"
+import { buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
   type NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot,
@@ -4525,6 +4526,14 @@ export function ProcessQuotePreviewCard({
         (record) => record.applicationId === promotionApplicationOutcomeCommit.commitPlan.applicationId,
       ))
     : undefined
+  const promotionApplicationOutcomeCommitReadModel = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel({
+        applicationId: promotionApplicationOutcomeCommit?.commitPlan.applicationId,
+        snapshot: promotionApplicationOutcomeCommitSnapshot,
+      }),
+    [promotionApplicationOutcomeCommit?.commitPlan.applicationId, promotionApplicationOutcomeCommitSnapshot],
+  )
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
@@ -5408,6 +5417,53 @@ export function ProcessQuotePreviewCard({
           </small>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-application-read-model"
+        aria-label="Non-CNC promoted quote application read model"
+        data-status={promotionApplicationOutcomeCommitReadModel.status}
+      >
+        <div className="process-demo-promotion-application-read-model-heading">
+          <div>
+            <span>Application read model</span>
+            <strong>{humanizeKey(promotionApplicationOutcomeCommitReadModel.status)}</strong>
+          </div>
+          <small>{promotionApplicationOutcomeCommitReadModel.readModelVersion}</small>
+        </div>
+        <p>{promotionApplicationOutcomeCommitReadModel.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-application-read-model-grid">
+          <div>
+            <span>Committed outcomes</span>
+            <strong>{formatCount(promotionApplicationOutcomeCommitReadModel.committedOutcomeCount, "outcome")}</strong>
+            <small>{promotionApplicationOutcomeCommitReadModel.disposition ? humanizeKey(promotionApplicationOutcomeCommitReadModel.disposition) : "No commit record"}</small>
+          </div>
+          <div>
+            <span>Mutation targets</span>
+            <strong>{formatCount(promotionApplicationOutcomeCommitReadModel.mutationTargets.length, "target")}</strong>
+            <small>
+              {promotionApplicationOutcomeCommitReadModel.mutationTargets.map(humanizeKey).join(", ") ||
+                "Withheld until ready"}
+            </small>
+          </div>
+          <div>
+            <span>Execution source</span>
+            <strong>{promotionApplicationOutcomeCommitReadModel.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionApplicationOutcomeCommitReadModel.executionFingerprint ?? "No commit execution fingerprint"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-application-read-model-boundary">
+          <span>Boundary</span>
+          <small>{promotionApplicationOutcomeCommitReadModel.mutationBoundary}</small>
+        </div>
+        {promotionApplicationOutcomeCommitReadModel.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-application-read-model-list">
+            {promotionApplicationOutcomeCommitReadModel.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       {promotionApplicationExecutionRun ? (
         <div
           className="process-demo-promotion-application-execution"

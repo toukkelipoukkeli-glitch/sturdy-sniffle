@@ -2247,6 +2247,7 @@
 }
 
 .process-demo-promotion-read-model,
+.process-demo-promotion-application-read-model,
 .process-demo-promotion-application-plan,
 .process-demo-promotion-application-record,
 .process-demo-promotion-application-outcome-draft,
@@ -2262,6 +2263,7 @@
 }
 
 .process-demo-promotion-read-model[data-status="blocked"],
+.process-demo-promotion-application-read-model[data-status="blocked"],
 .process-demo-promotion-application-plan[data-status="blocked"],
 .process-demo-promotion-application-record[data-status="blocked"],
 .process-demo-promotion-application-outcome-draft[data-status="blocked"],
@@ -2273,6 +2275,7 @@
 }
 
 .process-demo-promotion-read-model[data-status="promoted"],
+.process-demo-promotion-application-read-model[data-status="ready_to_apply"],
 .process-demo-promotion-application-plan[data-status="ready"],
 .process-demo-promotion-application-record[data-status="ready"],
 .process-demo-promotion-application-outcome-draft[data-status="ready"],
@@ -2285,6 +2288,7 @@
 }
 
 .process-demo-promotion-read-model-heading,
+.process-demo-promotion-application-read-model-heading,
 .process-demo-promotion-application-plan-heading,
 .process-demo-promotion-application-record-heading,
 .process-demo-promotion-application-outcome-draft-heading,
@@ -2297,6 +2301,7 @@
 }
 
 .process-demo-promotion-read-model-heading > div,
+.process-demo-promotion-application-read-model-heading > div,
 .process-demo-promotion-application-plan-heading > div,
 .process-demo-promotion-application-record-heading > div,
 .process-demo-promotion-application-outcome-draft-heading > div,
@@ -2309,6 +2314,9 @@
 
 .process-demo-promotion-read-model-heading span,
 .process-demo-promotion-read-model-grid span,
+.process-demo-promotion-application-read-model-heading span,
+.process-demo-promotion-application-read-model-grid span,
+.process-demo-promotion-application-read-model-boundary span,
 .process-demo-promotion-application-plan-heading span,
 .process-demo-promotion-application-plan-grid span,
 .process-demo-promotion-application-record-heading span,
@@ -2327,6 +2335,8 @@
 
 .process-demo-promotion-read-model-heading strong,
 .process-demo-promotion-read-model-grid strong,
+.process-demo-promotion-application-read-model-heading strong,
+.process-demo-promotion-application-read-model-grid strong,
 .process-demo-promotion-application-plan-heading strong,
 .process-demo-promotion-application-plan-grid strong,
 .process-demo-promotion-application-record-heading strong,
@@ -2343,6 +2353,7 @@
 }
 
 .process-demo-promotion-read-model-heading small,
+.process-demo-promotion-application-read-model-heading small,
 .process-demo-promotion-application-plan-heading small,
 .process-demo-promotion-application-record-heading small,
 .process-demo-promotion-application-outcome-draft-heading small,
@@ -2359,6 +2370,7 @@
 }
 
 .process-demo-promotion-read-model p,
+.process-demo-promotion-application-read-model p,
 .process-demo-promotion-application-plan p,
 .process-demo-promotion-application-record p,
 .process-demo-promotion-application-outcome-draft p,
@@ -2372,6 +2384,8 @@
 }
 
 .process-demo-promotion-read-model-grid,
+.process-demo-promotion-application-read-model-grid,
+.process-demo-promotion-application-read-model-list,
 .process-demo-promotion-application-plan-grid,
 .process-demo-promotion-application-plan-list,
 .process-demo-promotion-application-record-grid,
@@ -2386,6 +2400,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.process-demo-promotion-application-read-model-list,
 .process-demo-promotion-application-plan-list,
 .process-demo-promotion-application-outcome-draft-list,
 .process-demo-promotion-application-commit-plan-list,
@@ -2396,6 +2411,9 @@
 }
 
 .process-demo-promotion-read-model-grid > div,
+.process-demo-promotion-application-read-model-grid > div,
+.process-demo-promotion-application-read-model-boundary,
+.process-demo-promotion-application-read-model-list li,
 .process-demo-promotion-application-plan-grid > div,
 .process-demo-promotion-application-plan-list li,
 .process-demo-promotion-application-record-grid > div,
@@ -2432,6 +2450,10 @@
   flex: 0 0 auto;
 }
 
+.process-demo-promotion-application-read-model-list li[data-status="blocked"] strong {
+  color: oklch(0.44 0.12 35);
+}
+
 .process-demo-promotion-application-plan-list li[data-status="blocked"] strong {
   color: oklch(0.44 0.12 35);
 }
@@ -2458,6 +2480,9 @@
 }
 
 .process-demo-promotion-read-model-grid small,
+.process-demo-promotion-application-read-model-grid small,
+.process-demo-promotion-application-read-model-boundary small,
+.process-demo-promotion-application-read-model-list strong,
 .process-demo-promotion-application-plan-grid small,
 .process-demo-promotion-application-plan-list span,
 .process-demo-promotion-application-plan-list small,
@@ -2703,6 +2728,8 @@
   }
 
   .process-demo-promotion-read-model-grid,
+  .process-demo-promotion-application-read-model-grid,
+  .process-demo-promotion-application-read-model-list,
   .process-demo-promotion-application-plan-grid,
   .process-demo-promotion-application-plan-list,
   .process-demo-promotion-application-record-grid,
@@ -2718,6 +2745,7 @@
   }
 
   .process-demo-promotion-read-model-heading,
+  .process-demo-promotion-application-read-model-heading,
   .process-demo-promotion-application-plan-heading,
   .process-demo-promotion-application-record-heading,
   .process-demo-promotion-application-outcome-draft-heading,
