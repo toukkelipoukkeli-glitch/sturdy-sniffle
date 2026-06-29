@@ -152,6 +152,14 @@ import {
   type RecordNonCncPromotedQuoteApplicationOutcomeCommitInput,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitPersistence"
 import { buildNonCncPromotedQuoteApplicationMutationPackage } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationPackage"
+import {
+  buildNonCncPromotedQuoteApplicationMutationExecutionRun,
+  type NonCncPromotedQuoteApplicationMutationExecutionRun,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
+import {
+  createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence,
+  type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
 import { buildNonCncPromotedQuoteApplicationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteApplicationExecutionPersistence,
@@ -4047,6 +4055,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot>(() =>
       promotionApplicationOutcomeCommitPersistence.snapshot(),
     )
+  const [promotionApplicationMutationExecutionPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence(),
+  )
+  const [promotionApplicationMutationExecutionSnapshot, setPromotionApplicationMutationExecutionSnapshot] =
+    useState<NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot>(() =>
+      promotionApplicationMutationExecutionPersistence.snapshot(),
+    )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4141,6 +4156,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionApplicationOutcomeCommitPersistence],
   )
+  const recordPromotionApplicationMutationExecutionRun = useCallback(
+    (run: NonCncPromotedQuoteApplicationMutationExecutionRun) => {
+      let isCurrent = true
+      void promotionApplicationMutationExecutionPersistence.recordRun(run).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationMutationExecutionSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationMutationExecutionPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4175,6 +4204,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewComparisonPanel preview={preview} />
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
+        promotionApplicationMutationExecutionSnapshot={promotionApplicationMutationExecutionSnapshot}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
@@ -4184,6 +4214,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         promotionPlan={promotionPlan}
         recordPromotionApplication={recordPromotionApplication}
         recordPromotionApplicationExecutionRun={recordPromotionApplicationExecutionRun}
+        recordPromotionApplicationMutationExecutionRun={recordPromotionApplicationMutationExecutionRun}
         recordPromotionApplicationOutcomeCommit={recordPromotionApplicationOutcomeCommit}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
@@ -4386,6 +4417,7 @@ export function ProcessQuotePreviewCard({
   plasticEditor,
   preview,
   promotionApplicationExecutionSnapshot,
+  promotionApplicationMutationExecutionSnapshot,
   promotionApplicationOutcomeCommitSnapshot,
   promotionApplicationSnapshot,
   promotionExecutionSnapshot,
@@ -4393,6 +4425,7 @@ export function ProcessQuotePreviewCard({
   promotionPlan,
   recordPromotionApplication,
   recordPromotionApplicationExecutionRun,
+  recordPromotionApplicationMutationExecutionRun,
   recordPromotionApplicationOutcomeCommit,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
@@ -4405,6 +4438,7 @@ export function ProcessQuotePreviewCard({
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
   promotionApplicationExecutionSnapshot: NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot
+  promotionApplicationMutationExecutionSnapshot: NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot
   promotionApplicationOutcomeCommitSnapshot: NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot
   promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
@@ -4412,6 +4446,7 @@ export function ProcessQuotePreviewCard({
   promotionPlan: NonCncQuotePromotionPlan
   recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
   recordPromotionApplicationExecutionRun: (run: NonCncPromotedQuoteApplicationExecutionRun) => () => void
+  recordPromotionApplicationMutationExecutionRun: (run: NonCncPromotedQuoteApplicationMutationExecutionRun) => () => void
   recordPromotionApplicationOutcomeCommit: (input: RecordNonCncPromotedQuoteApplicationOutcomeCommitInput) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
@@ -4539,6 +4574,20 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteApplicationMutationPackage(promotionApplicationOutcomeCommitReadModel),
     [promotionApplicationOutcomeCommitReadModel],
   )
+  const promotionApplicationMutationExecutionRun = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationMutationExecutionRun({
+        actor: "FactoryBid Operator",
+        executedAt: promotionPlan.requestedAt,
+        mode: "dry_run",
+        mutationPackage: promotionApplicationMutationPackage,
+      }),
+    [promotionApplicationMutationPackage, promotionPlan.requestedAt],
+  )
+  const promotionApplicationMutationExecutionRecord =
+    promotionApplicationMutationExecutionSnapshot.records.find(
+      (record) => record.executionFingerprint === promotionApplicationMutationExecutionRun.executionFingerprint,
+    ) ?? promotionApplicationMutationExecutionSnapshot.latestRun
   const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
@@ -4556,6 +4605,10 @@ export function ProcessQuotePreviewCard({
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
   const promotionApplicationOutcomeCommitStatusSummary = Object.entries(promotionApplicationOutcomeCommitSnapshot.statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
+  const promotionApplicationMutationExecutionStatusSummary = Object.entries(promotionApplicationMutationExecutionSnapshot.statusCounts)
     .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
     .map(([status, count]) => `${humanizeKey(status)} ${count}`)
     .join(", ")
@@ -4600,6 +4653,9 @@ export function ProcessQuotePreviewCard({
       recordedBy: "FactoryBid Operator",
     })
   }, [promotionApplicationOutcomeCommit, promotionPlan.requestedAt, recordPromotionApplicationOutcomeCommit])
+  useEffect(() => {
+    return recordPromotionApplicationMutationExecutionRun(promotionApplicationMutationExecutionRun)
+  }, [promotionApplicationMutationExecutionRun, recordPromotionApplicationMutationExecutionRun])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5522,6 +5578,93 @@ export function ProcessQuotePreviewCard({
           ))}
         </ul>
       </div>
+      <div
+        className="process-demo-promotion-application-mutation-execution"
+        aria-label="Non-CNC promoted quote application mutation execution audit"
+        data-status={promotionApplicationMutationExecutionRun.status}
+      >
+        <div className="process-demo-promotion-application-mutation-execution-heading">
+          <div>
+            <span>Mutation audit</span>
+            <strong>{humanizeKey(promotionApplicationMutationExecutionRun.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationExecutionRun.executionVersion}</small>
+        </div>
+        <p>Dry-run mutation audit only; active RFQ quote, offer, and release state stay unchanged.</p>
+        <div className="process-demo-promotion-application-mutation-execution-grid">
+          <div>
+            <span>Fingerprint</span>
+            <strong>{promotionApplicationMutationExecutionRun.executionFingerprint}</strong>
+            <small>{promotionApplicationMutationExecutionRun.mode}</small>
+          </div>
+          <div>
+            <span>Commands</span>
+            <strong>{formatCount(promotionApplicationMutationExecutionRun.commands.length, "command")}</strong>
+            <small>{promotionApplicationMutationExecutionRun.commands.map((command) => humanizeKey(command.status)).join(", ")}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionApplicationMutationExecutionRun.warnings.length, "warning")}</strong>
+            <small>{promotionApplicationMutationExecutionRun.warnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-application-mutation-execution-list">
+          {promotionApplicationMutationExecutionRun.commands.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)}</span>
+              </div>
+              <small>{command.idempotencyKey}</small>
+              <small>{command.externalId ?? "Mutation id withheld"}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {promotionApplicationMutationExecutionRecord ? (
+        <div
+          className="process-demo-promotion-application-mutation-execution-history"
+          aria-label="Non-CNC promoted quote application mutation execution history"
+          data-status={promotionApplicationMutationExecutionRecord.status}
+        >
+          <div className="process-demo-promotion-application-mutation-execution-history-heading">
+            <div>
+              <span>Mutation execution history</span>
+              <strong>{formatCount(promotionApplicationMutationExecutionSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionApplicationMutationExecutionSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local mutation execution history: {formatCount(promotionApplicationMutationExecutionSnapshot.recordCount, "run")},{" "}
+            {formatCount(promotionApplicationMutationExecutionSnapshot.pendingActionCount, "pending action")},{" "}
+            {formatCount(promotionApplicationMutationExecutionSnapshot.warningCount, "warning")}.
+          </p>
+          <div className="process-demo-promotion-application-mutation-execution-history-grid">
+            <div>
+              <span>Latest run</span>
+              <strong>{humanizeKey(promotionApplicationMutationExecutionRecord.status)}</strong>
+              <small>{promotionApplicationMutationExecutionRecord.executedAt}</small>
+            </div>
+            <div>
+              <span>Command totals</span>
+              <strong>{formatCount(promotionApplicationMutationExecutionRecord.commandCount, "command")}</strong>
+              <small>
+                Prepared {promotionApplicationMutationExecutionRecord.preparedCommandCount}, blocked{" "}
+                {promotionApplicationMutationExecutionRecord.blockedCommandCount}, pending{" "}
+                {promotionApplicationMutationExecutionRecord.pendingCommandCount}
+              </small>
+            </div>
+            <div>
+              <span>Snapshot ids</span>
+              <small>Packages: {promotionApplicationMutationExecutionSnapshot.mutationPackageIds.join(", ") || "None"}</small>
+              <small>Targets: {promotionApplicationMutationExecutionSnapshot.targetRfqIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-mutation-execution-history-status">
+            Status counts: {promotionApplicationMutationExecutionStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       {promotionApplicationExecutionRun ? (
         <div
           className="process-demo-promotion-application-execution"
