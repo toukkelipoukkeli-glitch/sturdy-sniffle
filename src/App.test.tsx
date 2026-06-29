@@ -1016,7 +1016,7 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("3 ready outcomes")
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("0 blocked outcomes")
-    expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("active rfq quote")
+    expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("active RFQ quote")
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 
