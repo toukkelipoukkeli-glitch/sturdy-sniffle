@@ -214,6 +214,15 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application read model")).toContainText(
     "active RFQ quote, offer, and release state stay unchanged",
   )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application mutation package")).toContainText(
+    "non-cnc-promoted-quote-application-mutation-package.v1",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application mutation package")).toContainText(
+    "Withheld until ready",
+  )
+  await expect(nonCncDemos.getByLabel("Non-CNC promoted quote application mutation package")).toContainText(
+    "replace active quote",
+  )
   await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
   await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
     "Process preview summary copied.",
