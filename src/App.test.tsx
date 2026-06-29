@@ -20,6 +20,7 @@ import {
   createLocalNonCncPromotedQuoteApplicationOutcomeCommitPersistence,
   type NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitPersistence"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationOutcomeCommitReadModel"
 import { NON_CNC_QUOTE_PROMOTION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncQuotePromotionExecutionPersistence"
 import {
   NON_CNC_QUOTE_PROMOTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
@@ -270,6 +271,19 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("review only")
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: blocked 1")
+    const promotedQuoteApplicationReadModel = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application read model",
+    )
+    expect(promotedQuoteApplicationReadModel).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("Application read model")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("0 targets")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("Promoted quote application outcome commit record is blocked.")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("active RFQ quote, offer, and release state stay unchanged")
     const promotedQuoteApplicationExecution = within(processDemos).getByLabelText("Non-CNC promoted quote application execution audit")
     expect(promotedQuoteApplicationExecution).toHaveAttribute("data-status", "blocked")
     expect(promotedQuoteApplicationExecution).toHaveTextContent("Application audit")
@@ -849,6 +863,18 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Application Operator")
     expect(promotedQuoteApplicationCommitHistory).not.toHaveTextContent("Stale Operator")
     expect(promotedQuoteApplicationCommitHistory).toHaveTextContent("Status counts: blocked 1, ready 1")
+    const promotedQuoteApplicationReadModel = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application read model",
+    )
+    expect(promotedQuoteApplicationReadModel).toHaveAttribute("data-status", "ready_to_apply")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("Application read model")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("3 outcomes")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("3 targets")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("active rfq quote, offer workspace, release state")
+    expect(promotedQuoteApplicationReadModel).toHaveTextContent("non-cnc-promoted-quote-application-execution-")
   })
 
   it("requires a valid due date before creating a manual RFQ", async () => {
