@@ -50,6 +50,10 @@ export function buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
   outcomeDraft,
 }: BuildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlanInput): NonCncPromotedQuoteApplicationMutationOutcomeCommitPlan {
   assertDraftMatchesPackage(mutationPackage, outcomeDraft)
+  const modeBlockers =
+    outcomeDraft.mode === "dry_run"
+      ? []
+      : ["Application mutation outcome draft must come from a dry run before commit."]
   const commandSetBlockers = commandSetMismatchBlockers(mutationPackage, outcomeDraft)
   const invalidCommandLabels = outcomeDraft.commandOutcomes.flatMap((command) =>
     command.status === "ready" && command.blockerLabels.length === 0
@@ -68,6 +72,7 @@ export function buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
     .filter((command) => !command.suggestedOutcome)
     .map((command) => `Missing suggested application mutation outcome for ${command.label}.`)
   const blockerLabels = uniqueLabels([
+    ...modeBlockers,
     ...commandSetBlockers,
     ...mismatchedSuggestedOutcomeLabels,
     ...outcomeDraft.commandOutcomes.flatMap((command) => command.blockerLabels),
@@ -77,6 +82,7 @@ export function buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
   ])
   const status =
     outcomeDraft.status === "ready" &&
+    modeBlockers.length === 0 &&
     commandOutcomes.length > 0 &&
     commandSetBlockers.length === 0 &&
     mismatchedSuggestedOutcomeLabels.length === 0 &&
@@ -150,11 +156,12 @@ function commandSetMismatchBlockers(
   mutationPackage: NonCncPromotedQuoteApplicationMutationPackage,
   outcomeDraft: NonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft,
 ): string[] {
-  const packageCommands = mutationPackage.commands.map((command) => `${command.key}:${command.mutationTarget}`)
-  const draftCommands = outcomeDraft.commandOutcomes.map((command) => `${command.key}:${command.mutationTarget}`)
   if (
-    packageCommands.length !== draftCommands.length ||
-    packageCommands.some((commandKey, index) => commandKey !== draftCommands[index])
+    mutationPackage.commands.length !== outcomeDraft.commandOutcomes.length ||
+    mutationPackage.commands.some((command, index) => {
+      const draftCommand = outcomeDraft.commandOutcomes[index]
+      return !draftCommand || command.key !== draftCommand.key || command.mutationTarget !== draftCommand.mutationTarget
+    })
   ) {
     return ["Application mutation outcome draft command list does not match mutation package commands."]
   }

@@ -100,6 +100,42 @@ describe("non-CNC promoted quote application mutation outcome commit adapter", (
     ).toThrow("application mutation outcome draft does not match mutation package: mutationPackageId")
   })
 
+  it("rejects outcome drafts from a different package id", () => {
+    const mutationPackage = readyMutationPackage()
+    const outcomeDraft = {
+      ...buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(readyDryRun()),
+      packageId: "package-other",
+    }
+
+    expect(() =>
+      buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
+        mutationPackage,
+        outcomeDraft,
+      }),
+    ).toThrow("application mutation outcome draft does not match mutation package: packageId")
+  })
+
+  it("blocks ready outcome drafts that were not sourced from a dry run", () => {
+    const mutationPackage = readyMutationPackage()
+    const outcomeDraft = {
+      ...buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(readyDryRun()),
+      mode: "commit" as const,
+    }
+
+    const commitPlan = buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
+      mutationPackage,
+      outcomeDraft,
+    })
+
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(commitPlan.blockerLabels).toContain("Application mutation outcome draft must come from a dry run before commit.")
+    expect(commitPlan.nextOperatorMessage).toContain("Application mutation outcome draft must come from a dry run before commit.")
+  })
+
   it("blocks malformed ready drafts that are missing a suggested outcome", () => {
     const mutationPackage = readyMutationPackage()
     const outcomeDraft = buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(readyDryRun())
@@ -134,6 +170,76 @@ describe("non-CNC promoted quote application mutation outcome commit adapter", (
     const commitPlan = buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
       mutationPackage,
       outcomeDraft: staleDraft,
+    })
+
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(commitPlan.blockerLabels).toContain(
+      "Application mutation outcome draft command list does not match mutation package commands.",
+    )
+  })
+
+  it("blocks ready drafts whose command order diverges from the mutation package", () => {
+    const mutationPackage = readyMutationPackage()
+    const outcomeDraft = buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(readyDryRun())
+    const reorderedDraft = {
+      ...outcomeDraft,
+      commandOutcomes: [
+        outcomeDraft.commandOutcomes[1]!,
+        outcomeDraft.commandOutcomes[0]!,
+        ...outcomeDraft.commandOutcomes.slice(2),
+      ],
+    }
+
+    const commitPlan = buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
+      mutationPackage,
+      outcomeDraft: reorderedDraft,
+    })
+
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+    expect(commitPlan.blockerLabels).toContain(
+      "Application mutation outcome draft command list does not match mutation package commands.",
+    )
+  })
+
+  it("compares command key and mutation target fields directly instead of relying on delimiter-joined tokens", () => {
+    const mutationPackage = readyMutationPackage()
+    const outcomeDraft = buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(readyDryRun())
+    const aliasingPackage = {
+      ...mutationPackage,
+      commands: mutationPackage.commands.map((command, index) =>
+        index === 0
+          ? {
+              ...command,
+              key: "replace_active_quote:active" as typeof command.key,
+              mutationTarget: "rfq_quote" as typeof command.mutationTarget,
+            }
+          : command,
+      ),
+    }
+    const aliasingDraft = {
+      ...outcomeDraft,
+      commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
+        index === 0
+          ? {
+              ...command,
+              key: "replace_active_quote" as typeof command.key,
+              mutationTarget: "active:rfq_quote" as typeof command.mutationTarget,
+            }
+          : command,
+      ),
+    }
+
+    const commitPlan = buildNonCncPromotedQuoteApplicationMutationOutcomeCommitPlan({
+      mutationPackage: aliasingPackage,
+      outcomeDraft: aliasingDraft,
     })
 
     expect(commitPlan).toMatchObject({
