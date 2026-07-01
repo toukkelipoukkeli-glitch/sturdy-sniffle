@@ -156,6 +156,7 @@ import {
   buildNonCncPromotedQuoteApplicationMutationExecutionRun,
   type NonCncPromotedQuoteApplicationMutationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
+import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import {
   createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence,
   type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
@@ -4589,6 +4590,16 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(promotionApplicationMutationExecutionRun),
     [promotionApplicationMutationExecutionRun],
   )
+  const promotionApplicationMutationOutcomeCommit = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun({
+        actor: "FactoryBid Operator",
+        executedAt: promotionPlan.requestedAt,
+        mutationPackage: promotionApplicationMutationPackage,
+        outcomeDraft: promotionApplicationMutationExecutionOutcomeDraft,
+      }),
+    [promotionApplicationMutationExecutionOutcomeDraft, promotionApplicationMutationPackage, promotionPlan.requestedAt],
+  )
   const promotionApplicationMutationExecutionRecord =
     promotionApplicationMutationExecutionSnapshot.records.find(
       (record) => record.executionFingerprint === promotionApplicationMutationExecutionRun.executionFingerprint,
@@ -5670,6 +5681,68 @@ export function ProcessQuotePreviewCard({
               <small>{outcome.externalId ?? formatLabelPreview(outcome.blockerLabels, "Outcome withheld")}</small>
             </li>
           ))}
+        </ul>
+      </div>
+      <div
+        className="process-demo-promotion-application-mutation-commit-plan"
+        aria-label="Non-CNC promoted quote application mutation commit plan"
+        data-status={promotionApplicationMutationOutcomeCommit.commitPlan.status}
+      >
+        <div className="process-demo-promotion-application-mutation-commit-plan-heading">
+          <div>
+            <span>Mutation commit plan</span>
+            <strong>{humanizeKey(promotionApplicationMutationOutcomeCommit.commitPlan.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationOutcomeCommit.commitPlan.commitVersion}</small>
+        </div>
+        <p>
+          {promotionApplicationMutationOutcomeCommit.executionRun
+            ? "Reviewed mutation outcome commit run is ready for future adapter wiring; active RFQ quote, offer, and release state stay unchanged."
+            : promotionApplicationMutationOutcomeCommit.commitPlan.nextOperatorMessage}
+        </p>
+        <div className="process-demo-promotion-application-mutation-commit-plan-grid">
+          <div>
+            <span>Commit outcomes</span>
+            <strong>{formatCount(promotionApplicationMutationOutcomeCommit.commitPlan.commandOutcomeCount, "outcome")}</strong>
+            <small>{promotionApplicationMutationOutcomeCommit.executionRun ? "Commit run available" : "Mutation commit withheld"}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionApplicationMutationOutcomeCommit.commitPlan.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionApplicationMutationOutcomeCommit.commitPlan.mutationPackageId}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionApplicationMutationOutcomeCommit.commitPlan.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionApplicationMutationOutcomeCommit.commitPlan.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-application-mutation-commit-plan-list">
+          {promotionApplicationMutationOutcomeCommit.commitPlan.commandOutcomes.length > 0 ? (
+            promotionApplicationMutationOutcomeCommit.commitPlan.commandOutcomes.map((outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <div>
+                  <strong>{humanizeKey(outcome.key)}</strong>
+                  <span>{humanizeKey(outcome.status)}</span>
+                </div>
+                <small>{outcome.message ?? "Mutation outcome ready"}</small>
+                <small>{outcome.externalId ?? "No external id"}</small>
+              </li>
+            ))
+          ) : (
+            <li data-status="blocked">
+              <div>
+                <strong>Mutation commit withheld</strong>
+                <span>Blocked</span>
+              </div>
+              <small>
+                {formatLabelPreview(
+                  promotionApplicationMutationOutcomeCommit.commitPlan.blockerLabels,
+                  "No reviewed mutation outcomes ready for commit.",
+                )}
+              </small>
+            </li>
+          )}
         </ul>
       </div>
       {promotionApplicationMutationExecutionRecord ? (
