@@ -88,6 +88,7 @@ describe("non-CNC promoted quote application mutation apply plan", () => {
       ],
       committedOutcomeCount: 0,
       executionFingerprint: undefined,
+      sourceExecutionFingerprint: undefined,
       status: "blocked",
       targetRfqId: undefined,
     })

@@ -13,6 +13,15 @@ export type NonCncPromotedQuoteApplicationMutationApplyCommandKey =
   | "apply_offer_workspace"
   | "apply_release_state"
 
+const MUTATION_TARGET_COMMAND_META = {
+  active_rfq_quote: { key: "apply_active_rfq_quote", label: "Apply active RFQ quote" },
+  offer_workspace: { key: "apply_offer_workspace", label: "Apply offer workspace" },
+  release_state: { key: "apply_release_state", label: "Apply release state" },
+} satisfies Record<
+  NonCncPromotedQuoteApplicationMutationOutcomeCommitMutationTarget,
+  { key: NonCncPromotedQuoteApplicationMutationApplyCommandKey; label: string }
+>
+
 export interface NonCncPromotedQuoteApplicationMutationApplyCommand {
   key: NonCncPromotedQuoteApplicationMutationApplyCommandKey
   label: string
@@ -73,7 +82,7 @@ export function buildNonCncPromotedQuoteApplicationMutationApplyPlan(
     planVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION,
     reviewWarnings: [...readModel.reviewWarnings],
     selectedPlanId: readModel.selectedPlanId,
-    sourceExecutionFingerprint: readModel.sourceExecutionFingerprint,
+    sourceExecutionFingerprint: ready ? readModel.sourceExecutionFingerprint : undefined,
     status: ready ? "ready" : "blocked",
     targetRfqId: ready ? readModel.targetRfqId : undefined,
   }
@@ -148,29 +157,18 @@ function buildApplicationTargetId(
 function commandKey(
   target: NonCncPromotedQuoteApplicationMutationOutcomeCommitMutationTarget,
 ): NonCncPromotedQuoteApplicationMutationApplyCommandKey {
-  switch (target) {
-    case "active_rfq_quote":
-      return "apply_active_rfq_quote"
-    case "offer_workspace":
-      return "apply_offer_workspace"
-    case "release_state":
-      return "apply_release_state"
-    default:
-      return assertNever(target)
-  }
+  return commandMeta(target).key
 }
 
 function commandLabel(target: NonCncPromotedQuoteApplicationMutationOutcomeCommitMutationTarget): string {
-  switch (target) {
-    case "active_rfq_quote":
-      return "Apply active RFQ quote"
-    case "offer_workspace":
-      return "Apply offer workspace"
-    case "release_state":
-      return "Apply release state"
-    default:
-      return assertNever(target)
-  }
+  return commandMeta(target).label
+}
+
+function commandMeta(target: NonCncPromotedQuoteApplicationMutationOutcomeCommitMutationTarget): {
+  key: NonCncPromotedQuoteApplicationMutationApplyCommandKey
+  label: string
+} {
+  return MUTATION_TARGET_COMMAND_META[target]
 }
 
 function defaultMutationTargets(): NonCncPromotedQuoteApplicationMutationOutcomeCommitMutationTarget[] {
@@ -187,8 +185,4 @@ function toStableIdToken(value: string, key: string): string {
 
 function uniqueLabels(labels: string[]): string[] {
   return [...new Set(labels.filter(Boolean))]
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unsupported non-CNC application mutation apply target: ${JSON.stringify(value)}`)
 }
