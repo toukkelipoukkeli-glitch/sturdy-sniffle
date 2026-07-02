@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b9f84da` (`Add mutation apply execution persistence (#224)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice E UI history surface for non-CNC promoted quote application mutation apply execution audits.
-- In-flight PR at this checkpoint: `codex/application-mutation-apply-execution-history` surfaces deterministic local mutation apply execution persistence snapshots in the non-CNC registry preview while keeping active RFQ quote, offer, and release state unchanged.
+- Main branch checkpoint: `dbffb59` (`Surface mutation apply execution history (#225)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F browser-image preview surface for part review attachments.
+- In-flight PR at this checkpoint: `codex/browser-image-attachment-preview` renders safe browser-native image attachment previews in the part review viewport while STEP/DXF/PDF parsing remains behind deterministic fallback descriptors.
 - Latest merged sequence:
+  - `#225` non-CNC registry previews now surface local mutation apply execution history with Browser/Playwright QA fallback evidence and stabilized long App component tests.
   - `#224` non-CNC application mutation apply execution audit records now have deterministic local persistence snapshots with seeded-record validation and deduplication.
   - `#223` non-CNC registry previews now surface deterministic mutation apply execution audit records in the operator workspace with Browser/Playwright QA fallback evidence.
   - `#222` non-CNC application mutation apply plans now produce deterministic dry-run/commit execution audit records with stronger execution fingerprints.
@@ -201,7 +202,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Operators can choose the primary preview attachment and persist that choice.
    - Operators can save durable dimension/material/process correction notes; those notes now appear as explicit quote assumptions without changing quote math or raw RFQ inputs.
    - Deterministic per-type preview and thumbnail labels distinguish CAD models, drawings, photos, spreadsheets, and metadata-only attachments.
-   - Next steps: add richer thumbnail/preview adapter outputs for real STEP/DXF/PDF/image handling while keeping parser failures nonfatal.
+   - Current branch renders browser-native image attachments from safe inline/blob preview sources in the part review viewport.
+   - Next steps: add richer thumbnail/preview adapter outputs for real STEP/DXF/PDF handling while keeping parser failures nonfatal.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 

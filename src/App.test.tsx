@@ -246,6 +246,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("3D CAD preview")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("3D CAD model")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("PDF drawing")
+    expect(screen.getByLabelText("Attachments")).toHaveTextContent("Image thumbnail")
     const calendarPlan = screen.getByLabelText("RFQ calendar plan preview")
     expect(calendarPlan).toHaveTextContent("2 drafts")
     expect(calendarPlan).toHaveTextContent("Quote work: CNC bracket FB-204-A")
@@ -1515,6 +1516,21 @@ describe("FactoryBid workspace (component)", () => {
     unmount()
     render(<App />)
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+  })
+
+  it("renders browser-native image attachments when selected as the primary preview", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    const attachments = within(preview).getByLabelText("Attachments")
+    const imageRow = within(attachments).getByText("FB-204-A-fixture.svg").closest(".attachment-row")
+    expect(imageRow).not.toBeNull()
+    await user.click(within(imageRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    const image = within(screen.getByLabelText("Part preview")).getByRole("img", { name: "FB-204-A-fixture.svg preview" })
+    expect(image).toHaveAttribute("src", expect.stringMatching(/^data:image\/svg\+xml;base64,/))
+    expect(screen.getByLabelText("Part preview")).toHaveTextContent("Image preview")
   })
 
   it("edits offer validity, terms, and notes in the exported draft", async () => {

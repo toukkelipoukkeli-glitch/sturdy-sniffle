@@ -55,14 +55,45 @@ describe("attachment preview output", () => {
         fileName: "fixture-photo.png",
         kind: "photo",
         contentType: "image/png",
+        previewUrl: "data:image/png;base64,AA==",
       }),
     ).toMatchObject({
       kind: "image_thumbnail",
       label: "Image preview",
       renderer: "browser-image",
+      sourceUrl: "data:image/png;base64,AA==",
       status: "ready",
       thumbnailLabel: "Image thumbnail",
       warnings: [],
+    })
+  })
+
+  it("falls back when image attachments do not include a safe browser source", () => {
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "fixture-photo.png",
+        kind: "photo",
+        contentType: "image/png",
+      }),
+    ).toMatchObject({
+      kind: "image_thumbnail",
+      renderer: "browser-image",
+      status: "fallback",
+      warnings: ["Image preview source unavailable; using deterministic image placeholder."],
+    })
+
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "supplier-photo.png",
+        kind: "photo",
+        contentType: "image/png",
+        previewUrl: "https://supplier.example/photo.png",
+      }),
+    ).toMatchObject({
+      kind: "image_thumbnail",
+      renderer: "browser-image",
+      status: "fallback",
+      warnings: ["Image preview source unavailable; using deterministic image placeholder."],
     })
   })
 

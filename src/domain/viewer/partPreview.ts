@@ -291,8 +291,8 @@ function buildWarnings(
   const warnings: string[] = []
   if (primaryMode === "metadata") {
     warnings.push("No previewable attachment matched this part; using metadata-only preview.")
-  } else if (primaryMode !== "cad" && attachments.some((attachment) => attachment.kind === "drawing")) {
-    warnings.push("CAD geometry is unavailable; using drawing preview.")
+  } else if (primaryMode !== "cad" && attachments.some((attachment) => attachment.kind === "drawing" || attachment.kind === "photo")) {
+    warnings.push(`CAD geometry is unavailable; using ${primaryModeWarningLabel(primaryMode)} preview.`)
   }
 
   if (measurementOverlays.length === 0) {
@@ -306,6 +306,21 @@ function buildWarnings(
   }
 
   return [...new Set(warnings)]
+}
+
+function primaryModeWarningLabel(mode: PartPreviewMode): string {
+  switch (mode) {
+    case "cad":
+      return "CAD"
+    case "drawing":
+      return "drawing"
+    case "photo":
+      return "photo"
+    case "spreadsheet":
+      return "spreadsheet"
+    case "metadata":
+      return "metadata-only"
+  }
 }
 
 function buildManufacturabilityFlags(

@@ -18,6 +18,7 @@ export interface AttachmentPreviewOutput {
   kind: AttachmentPreviewOutputKind
   status: AttachmentPreviewOutputStatus
   label: string
+  sourceUrl?: string
   thumbnailLabel: string
   renderer: string
   summary: string
@@ -65,7 +66,7 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   }
 
   if (attachment.kind === "photo") {
-    return imageOutput(fileName)
+    return imageOutput(attachment, fileName)
   }
 
   if (attachment.kind === "spreadsheet") {
@@ -117,7 +118,7 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   }
 
   if (contentType?.startsWith("image/")) {
-    return imageOutput(fileName)
+    return imageOutput(attachment, fileName)
   }
 
   if (/\.(csv|xlsx?|ods)$/.test(normalizedFileName)) {
@@ -145,7 +146,20 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   }
 }
 
-function imageOutput(fileName: string): AttachmentPreviewOutput {
+function imageOutput(attachment: RfqAttachmentDraft, fileName: string): AttachmentPreviewOutput {
+  const sourceUrl = safeImageSource(attachment.previewUrl)
+  if (!sourceUrl) {
+    return fallbackOutput({
+      fileName,
+      kind: "image_thumbnail",
+      label: "Image preview",
+      renderer: "browser-image",
+      summary: "Image thumbnail preview descriptor",
+      thumbnailLabel: "Image thumbnail",
+      warning: "Image preview source unavailable; using deterministic image placeholder.",
+    })
+  }
+
   return {
     outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
     fileName,
@@ -153,10 +167,22 @@ function imageOutput(fileName: string): AttachmentPreviewOutput {
     status: "ready",
     label: "Image preview",
     renderer: "browser-image",
+    sourceUrl,
     summary: "Image thumbnail preview descriptor",
     thumbnailLabel: "Image thumbnail",
     warnings: [],
   }
+}
+
+function safeImageSource(previewUrl: string | undefined): string | undefined {
+  const trimmed = previewUrl?.trim()
+  if (!trimmed) {
+    return undefined
+  }
+  if (/^data:image\/[a-z0-9.+-]+[;,]/i.test(trimmed) || /^blob:/i.test(trimmed)) {
+    return trimmed
+  }
+  return undefined
 }
 
 function fallbackOutput(input: {
