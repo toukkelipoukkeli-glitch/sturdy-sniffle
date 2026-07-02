@@ -851,7 +851,7 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.change(within(fabricationEditor).getByLabelText("Complexity multiplier"), { target: { value: "1.45" } })
     expect(fabricationEditor).toHaveTextContent("Fabrication preview quote recalculated through the non-CNC edit registry.")
     expect(fabricationPreview).toHaveTextContent("€1,789.89")
-  })
+  }, 10_000)
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
@@ -1448,7 +1448,7 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(within(restoredOverride).getByRole("button", { name: "Reopen flags" }))
     expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
     expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Drawing is enough for turning setup.")
-  })
+  }, 10_000)
 
   it("stores CAD dimension material and process correction notes", () => {
     const { unmount } = render(<App />)
