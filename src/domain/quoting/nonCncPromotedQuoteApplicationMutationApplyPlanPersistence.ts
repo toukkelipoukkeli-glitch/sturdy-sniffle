@@ -105,7 +105,7 @@ function buildApplyPlanRecord({
     blockedCommandCount: commandCounts.blocked ?? 0,
     blockerCount: applyPlan.blockerLabels.length,
     blockerLabels: [...applyPlan.blockerLabels],
-    commandCount: applyPlan.commandCount,
+    commandCount: applyPlan.commands.length,
     committedOutcomeCount: applyPlan.committedOutcomeCount,
     disposition: applyPlan.status === "ready" ? "apply_ready" : "review_only",
     executionFingerprint: applyPlan.executionFingerprint,

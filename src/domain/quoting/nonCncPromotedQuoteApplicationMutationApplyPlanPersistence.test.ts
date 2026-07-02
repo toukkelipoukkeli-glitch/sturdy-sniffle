@@ -4,6 +4,7 @@ import { buildNonCncPromotedQuoteApplicationMutationApplyPlan } from "./nonCncPr
 import {
   createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence,
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationApplyPlanRecord,
 } from "./nonCncPromotedQuoteApplicationMutationApplyPlanPersistence"
 import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
@@ -79,6 +80,23 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
       targetRfqId: undefined,
     })
     expect(snapshot.latestRecord?.blockerLabels).toContain("Application mutation outcome commit read model is not ready to apply.")
+  })
+
+  it("derives commandCount from command descriptors instead of a stale summary field", async () => {
+    const applyPlan = buildReadyApplyPlan()
+    const adapter = createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence()
+
+    const snapshot = await adapter.recordApplyPlan({
+      applyPlan: { ...applyPlan, commandCount: 99 },
+      recordedAt: "2026-07-02T10:20:00.000Z",
+      recordedBy: "FactoryBid Operator",
+    })
+
+    expect(snapshot.latestRecord).toMatchObject({
+      blockedCommandCount: 0,
+      commandCount: 3,
+      readyCommandCount: 3,
+    })
   })
 
   it("sorts newest first and counts mixed ready and blocked records", async () => {
@@ -203,20 +221,8 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
     expect(clonedSnapshot.applyReadyPlanIds).toEqual([applyPlan.applyPlanId])
   })
 
-  it("rejects invalid seeded apply plan records", async () => {
-    const adapter = createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence()
-    const applyPlan = buildReadyApplyPlan()
-    const seededRecord = (
-      await adapter.recordApplyPlan({
-        applyPlan,
-        recordedAt: "2026-07-02T10:20:00.000Z",
-        recordedBy: "FactoryBid Operator",
-      })
-    ).records[0]
-    if (!seededRecord) {
-      throw new Error("Expected seeded apply plan record")
-    }
-
+  it("rejects seeded apply plan records with invalid timestamps", async () => {
+    const seededRecord = await seedReadyApplyPlanRecord()
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence({
         initialSnapshot: {
@@ -224,6 +230,10 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
         },
       }),
     ).toThrow("recordedAt must be a valid ISO timestamp")
+  })
+
+  it("rejects seeded apply plan records with inconsistent command counts", async () => {
+    const seededRecord = await seedReadyApplyPlanRecord()
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence({
         initialSnapshot: {
@@ -231,6 +241,10 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
         },
       }),
     ).toThrow("commandCount must equal readyCommandCount plus blockedCommandCount")
+  })
+
+  it("rejects seeded apply plan records with unsafe warning counts", async () => {
+    const seededRecord = await seedReadyApplyPlanRecord()
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence({
         initialSnapshot: {
@@ -238,6 +252,10 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
         },
       }),
     ).toThrow("warningCount must be a non-negative safe integer")
+  })
+
+  it("rejects blocked seeded apply plan records with ready-only target ids", async () => {
+    const seededRecord = await seedReadyApplyPlanRecord()
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence({
         initialSnapshot: {
@@ -256,6 +274,21 @@ describe("non-CNC promoted quote application mutation apply plan persistence", (
     ).toThrow("blocked application mutation apply plan records cannot include a targetRfqId")
   })
 })
+
+async function seedReadyApplyPlanRecord(): Promise<NonCncPromotedQuoteApplicationMutationApplyPlanRecord> {
+  const adapter = createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence()
+  const seededRecord = (
+    await adapter.recordApplyPlan({
+      applyPlan: buildReadyApplyPlan(),
+      recordedAt: "2026-07-02T10:20:00.000Z",
+      recordedBy: "FactoryBid Operator",
+    })
+  ).records[0]
+  if (!seededRecord) {
+    throw new Error("Expected seeded apply plan record")
+  }
+  return seededRecord
+}
 
 function buildReadyApplyPlan() {
   return buildNonCncPromotedQuoteApplicationMutationApplyPlan(readyReadModel())
