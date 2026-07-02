@@ -6008,11 +6008,11 @@ export function ProcessQuotePreviewCard({
         </ul>
       </div>
       <div
-        className="process-demo-promotion-application-mutation-execution"
+        className="process-demo-promotion-application-mutation-apply-execution"
         aria-label="Non-CNC promoted quote application mutation apply execution audit"
         data-status={promotionApplicationMutationApplyExecutionRun.status}
       >
-        <div className="process-demo-promotion-application-mutation-execution-heading">
+        <div className="process-demo-promotion-application-mutation-apply-execution-heading">
           <div>
             <span>Mutation apply audit</span>
             <strong>{humanizeKey(promotionApplicationMutationApplyExecutionRun.status)}</strong>
@@ -6020,7 +6020,7 @@ export function ProcessQuotePreviewCard({
           <small>{promotionApplicationMutationApplyExecutionRun.executionVersion}</small>
         </div>
         <p>Dry-run mutation apply audit only; active RFQ quote, offer, and release state stay unchanged.</p>
-        <div className="process-demo-promotion-application-mutation-execution-grid">
+        <div className="process-demo-promotion-application-mutation-apply-execution-grid">
           <div>
             <span>Fingerprint</span>
             <strong>{promotionApplicationMutationApplyExecutionRun.executionFingerprint}</strong>
@@ -6037,7 +6037,7 @@ export function ProcessQuotePreviewCard({
             <small>{promotionApplicationMutationApplyExecutionRun.warnings.join(", ") || "None"}</small>
           </div>
         </div>
-        <ul className="process-demo-promotion-application-mutation-execution-list">
+        <ul className="process-demo-promotion-application-mutation-apply-execution-list">
           {promotionApplicationMutationApplyExecutionRun.commands.map((command) => (
             <li data-status={command.status} key={`${command.key}:${command.mutationTarget}`}>
               <div>
