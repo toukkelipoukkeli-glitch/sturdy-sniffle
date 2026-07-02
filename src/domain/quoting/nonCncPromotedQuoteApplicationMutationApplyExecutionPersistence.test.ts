@@ -267,6 +267,68 @@ describe("non-CNC promoted quote application mutation apply execution persistenc
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
         initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              appliedCommandCount: 2,
+              failedCommandCount: 1,
+              preparedCommandCount: 0,
+              status: "succeeded",
+            },
+          ],
+        },
+      }),
+    ).toThrow("succeeded application mutation apply execution records must be commit records with only applied commands")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              blockedCommandCount: 1,
+              preparedCommandCount: 2,
+              status: "blocked",
+            },
+          ],
+        },
+      }),
+    ).toThrow("blocked application mutation apply execution records must have only blocked commands")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              appliedCommandCount: 1,
+              mode: "commit",
+              pendingCommandCount: 2,
+              preparedCommandCount: 0,
+              status: "partial",
+            },
+          ],
+        },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              appliedCommandCount: 3,
+              mode: "commit",
+              preparedCommandCount: 0,
+              status: "partial",
+            },
+          ],
+        },
+      }),
+    ).toThrow(
+      "partial application mutation apply execution records must be commit records with a mixed applied, failed, or pending command state",
+    )
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
+        initialSnapshot: {
           records: [{ ...seededRecord, applyPlanId: "" }],
         },
       }),
@@ -274,14 +336,32 @@ describe("non-CNC promoted quote application mutation apply execution persistenc
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
         initialSnapshot: {
-          records: [{ ...seededRecord, status: "blocked", sourceExecutionFingerprint: "source-ready", targetRfqId: undefined }],
+          records: [
+            {
+              ...seededRecord,
+              blockedCommandCount: 3,
+              preparedCommandCount: 0,
+              sourceExecutionFingerprint: "source-ready",
+              status: "blocked",
+              targetRfqId: undefined,
+            },
+          ],
         },
       }),
     ).toThrow("blocked application mutation apply execution records cannot include a sourceExecutionFingerprint")
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
         initialSnapshot: {
-          records: [{ ...seededRecord, sourceExecutionFingerprint: undefined, status: "blocked", targetRfqId: "rfq-demo-204" }],
+          records: [
+            {
+              ...seededRecord,
+              blockedCommandCount: 3,
+              preparedCommandCount: 0,
+              sourceExecutionFingerprint: undefined,
+              status: "blocked",
+              targetRfqId: "rfq-demo-204",
+            },
+          ],
         },
       }),
     ).toThrow("blocked application mutation apply execution records cannot include a targetRfqId")

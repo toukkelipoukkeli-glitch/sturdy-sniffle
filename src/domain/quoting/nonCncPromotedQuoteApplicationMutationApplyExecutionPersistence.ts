@@ -190,6 +190,7 @@ function normalizeRecord(
   if (countedCommands !== normalized.commandCount) {
     throw new Error("commandCount must equal the sum of per-status command counts")
   }
+  validateAggregateStatus(normalized)
   if (normalized.status === "blocked" && normalized.targetRfqId !== undefined) {
     throw new Error("blocked application mutation apply execution records cannot include a targetRfqId")
   }
@@ -198,6 +199,47 @@ function normalizeRecord(
   }
 
   return normalized
+}
+
+function validateAggregateStatus(record: NonCncPromotedQuoteApplicationMutationApplyExecutionRecord): void {
+  if (record.commandCount === 0) {
+    throw new Error("commandCount must be greater than zero for application mutation apply execution records")
+  }
+
+  const activeStatusCount = [
+    record.appliedCommandCount,
+    record.blockedCommandCount,
+    record.failedCommandCount,
+    record.pendingCommandCount,
+    record.preparedCommandCount,
+  ].filter((count) => count > 0).length
+
+  if (record.status === "blocked" && record.blockedCommandCount !== record.commandCount) {
+    throw new Error("blocked application mutation apply execution records must have only blocked commands")
+  }
+  if (record.status === "prepared" && (record.mode !== "dry_run" || record.preparedCommandCount !== record.commandCount)) {
+    throw new Error("prepared application mutation apply execution records must be dry-run records with only prepared commands")
+  }
+  if (record.status === "pending" && (record.mode !== "commit" || record.pendingCommandCount !== record.commandCount)) {
+    throw new Error("pending application mutation apply execution records must be commit records with only pending commands")
+  }
+  if (record.status === "succeeded" && (record.mode !== "commit" || record.appliedCommandCount !== record.commandCount)) {
+    throw new Error("succeeded application mutation apply execution records must be commit records with only applied commands")
+  }
+  if (record.status === "failed" && (record.mode !== "commit" || record.failedCommandCount !== record.commandCount)) {
+    throw new Error("failed application mutation apply execution records must be commit records with only failed commands")
+  }
+  if (
+    record.status === "partial" &&
+    (record.mode !== "commit" ||
+      record.blockedCommandCount > 0 ||
+      record.preparedCommandCount > 0 ||
+      activeStatusCount < 2)
+  ) {
+    throw new Error(
+      "partial application mutation apply execution records must be commit records with a mixed applied, failed, or pending command state",
+    )
+  }
 }
 
 function cloneSnapshot(
