@@ -474,6 +474,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 committed outcomes")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Withheld until ready")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Source fingerprint withheld")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 warnings")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Apply active RFQ quote")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent(
       "Application mutation outcome commit read model is not ready to apply.",
@@ -1158,6 +1160,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 committed outcomes")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Withheld until ready")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Source fingerprint withheld")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 warnings")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Application id is missing.")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("+8 more blockers")
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()

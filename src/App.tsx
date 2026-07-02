@@ -5928,6 +5928,11 @@ export function ProcessQuotePreviewCard({
                 : "Source fingerprint withheld"}
             </small>
           </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionApplicationMutationApplyPlan.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionApplicationMutationApplyPlan.reviewWarnings.join(", ") || "None"}</small>
+          </div>
         </div>
         <div className="process-demo-promotion-application-mutation-apply-plan-boundary">
           <span>Boundary</span>
