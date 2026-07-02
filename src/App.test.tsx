@@ -443,6 +443,23 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
       "Promoted quote application mutation outcome commit record is blocked.",
     )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit record is review-only.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit execution fingerprint is missing.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit execution status is missing.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit has no committed outcomes.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Application outcome commit read model is not ready to apply.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("102 additional blockers")
+    expect(promotedQuoteApplicationMutationReadModel).not.toHaveTextContent("Promoted quote target RFQ is missing.")
     expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("active RFQ quote, offer, and release state stay unchanged")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("review only")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Status counts: blocked 3")
