@@ -44,6 +44,10 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecution"
+import {
+  NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -147,6 +151,24 @@ function emptyPromotedQuoteApplicationMutationApplyPlanSnapshot(): NonCncPromote
     recordCount: 0,
     records: [],
     statusCounts: {},
+    warningCount: 0,
+  }
+}
+
+function emptyPromotedQuoteApplicationMutationApplyExecutionSnapshot(): NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot {
+  return {
+    applicationIds: [],
+    applicationRecordIds: [],
+    applyPlanIds: [],
+    mutationPackageIds: [],
+    pendingActionCount: 0,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    selectedPlanIds: [],
+    sourceExecutionFingerprints: [],
+    statusCounts: {},
+    targetRfqIds: [],
     warningCount: 0,
   }
 }
@@ -513,6 +535,24 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("blocked, blocked, blocked")
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Apply id withheld")
     await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply execution history"),
+      ).toHaveTextContent("Local mutation apply audit history:")
+    })
+    const promotedQuoteApplicationMutationApplyExecutionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation apply execution history",
+    )
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Mutation apply audit history")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Local mutation apply audit history: 4 runs")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("3 commands")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Prepared 0, blocked 3, pending 0")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Targets: None")
+    expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Status counts: blocked 4")
+    await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",
       )
@@ -841,6 +881,7 @@ describe("FactoryBid workspace (component)", () => {
         promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationMutationApplyExecutionSnapshot={emptyPromotedQuoteApplicationMutationApplyExecutionSnapshot()}
         promotionApplicationMutationApplyPlanSnapshot={emptyPromotedQuoteApplicationMutationApplyPlanSnapshot()}
         promotionApplicationMutationExecutionSnapshot={emptyPromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
@@ -848,6 +889,7 @@ describe("FactoryBid workspace (component)", () => {
         promotionApplicationSnapshot={emptyPromotedQuoteApplicationSnapshot()}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationApplyExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationApplyPlan={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
@@ -1031,6 +1073,7 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationMutationApplyExecutionSnapshot={emptyPromotedQuoteApplicationMutationApplyExecutionSnapshot()}
         promotionApplicationMutationApplyPlanSnapshot={emptyPromotedQuoteApplicationMutationApplyPlanSnapshot()}
         promotionApplicationMutationExecutionSnapshot={stalePromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
@@ -1038,6 +1081,7 @@ describe("FactoryBid workspace (component)", () => {
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationApplyExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationApplyPlan={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
@@ -1223,6 +1267,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveAttribute("data-status", "blocked")
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Mutation apply audit")
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Apply id withheld")
+    expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply execution history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
