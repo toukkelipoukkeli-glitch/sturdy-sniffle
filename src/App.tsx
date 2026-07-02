@@ -4638,37 +4638,18 @@ export function ProcessQuotePreviewCard({
     promotionApplicationMutationExecutionSnapshot.records.find(
       (record) => record.executionFingerprint === promotionApplicationMutationExecutionRun.executionFingerprint,
     )
-  const promotionApplicationMutationOutcomeCommitRecord = promotionApplicationMutationOutcomeCommitSnapshot.records.find(
-    (record) => record.sourceExecutionFingerprint === promotionApplicationMutationOutcomeCommit.commitPlan.sourceExecutionFingerprint,
+  const promotionApplicationMutationOutcomeCommitRecord = promotionApplicationMutationOutcomeCommitSnapshot.records
+    .filter((record) => record.sourceExecutionFingerprint === promotionApplicationMutationOutcomeCommit.commitPlan.sourceExecutionFingerprint)
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+  const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
+  const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
+  const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
+  const promotionApplicationExecutionStatusSummary = buildStatusCountSummary(promotionApplicationExecutionSnapshot.statusCounts)
+  const promotionApplicationOutcomeCommitStatusSummary = buildStatusCountSummary(promotionApplicationOutcomeCommitSnapshot.statusCounts)
+  const promotionApplicationMutationExecutionStatusSummary = buildStatusCountSummary(promotionApplicationMutationExecutionSnapshot.statusCounts)
+  const promotionApplicationMutationOutcomeCommitStatusSummary = buildStatusCountSummary(
+    promotionApplicationMutationOutcomeCommitSnapshot.statusCounts,
   )
-  const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionOutcomeCommitStatusSummary = Object.entries(promotionOutcomeCommitSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationStatusSummary = Object.entries(promotionApplicationSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationExecutionStatusSummary = Object.entries(promotionApplicationExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationOutcomeCommitStatusSummary = Object.entries(promotionApplicationOutcomeCommitSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationMutationExecutionStatusSummary = Object.entries(promotionApplicationMutationExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationMutationOutcomeCommitStatusSummary = Object.entries(promotionApplicationMutationOutcomeCommitSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
   useEffect(() => {
     if (!promotionRecord) {
       return undefined
@@ -6386,6 +6367,13 @@ function formatFieldCount(count: number, label: string): string {
 
 function formatCount(count: number, label: string, pluralLabel = `${label}s`): string {
   return `${count} ${count === 1 ? label : pluralLabel}`
+}
+
+function buildStatusCountSummary(statusCounts: Partial<Record<string, number>>): string {
+  return Object.entries(statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
 }
 
 function formatLabelPreview(labels: readonly string[], fallback: string, visibleCount = 2): string {
