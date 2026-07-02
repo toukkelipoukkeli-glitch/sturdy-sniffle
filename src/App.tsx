@@ -157,6 +157,11 @@ import {
   type NonCncPromotedQuoteApplicationMutationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { buildNonCncPromotedQuoteApplicationMutationApplyPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
+import {
+  createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence,
+  type NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot,
+  type RecordNonCncPromotedQuoteApplicationMutationApplyPlanInput,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlanPersistence"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
@@ -4078,6 +4083,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot>(() =>
       promotionApplicationMutationOutcomeCommitPersistence.snapshot(),
     )
+  const [promotionApplicationMutationApplyPlanPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence(),
+  )
+  const [promotionApplicationMutationApplyPlanSnapshot, setPromotionApplicationMutationApplyPlanSnapshot] =
+    useState<NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot>(() =>
+      promotionApplicationMutationApplyPlanPersistence.snapshot(),
+    )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4200,6 +4212,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionApplicationMutationOutcomeCommitPersistence],
   )
+  const recordPromotionApplicationMutationApplyPlan = useCallback(
+    (input: RecordNonCncPromotedQuoteApplicationMutationApplyPlanInput) => {
+      let isCurrent = true
+      void promotionApplicationMutationApplyPlanPersistence.recordApplyPlan(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationMutationApplyPlanSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationMutationApplyPlanPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4234,6 +4260,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewComparisonPanel preview={preview} />
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
+        promotionApplicationMutationApplyPlanSnapshot={promotionApplicationMutationApplyPlanSnapshot}
         promotionApplicationMutationExecutionSnapshot={promotionApplicationMutationExecutionSnapshot}
         promotionApplicationMutationOutcomeCommitSnapshot={promotionApplicationMutationOutcomeCommitSnapshot}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
@@ -4246,6 +4273,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         recordPromotionApplication={recordPromotionApplication}
         recordPromotionApplicationExecutionRun={recordPromotionApplicationExecutionRun}
         recordPromotionApplicationMutationExecutionRun={recordPromotionApplicationMutationExecutionRun}
+        recordPromotionApplicationMutationApplyPlan={recordPromotionApplicationMutationApplyPlan}
         recordPromotionApplicationMutationOutcomeCommit={recordPromotionApplicationMutationOutcomeCommit}
         recordPromotionApplicationOutcomeCommit={recordPromotionApplicationOutcomeCommit}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
@@ -4448,6 +4476,7 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter,
   plasticEditor,
   preview,
+  promotionApplicationMutationApplyPlanSnapshot,
   promotionApplicationExecutionSnapshot,
   promotionApplicationMutationExecutionSnapshot,
   promotionApplicationMutationOutcomeCommitSnapshot,
@@ -4458,6 +4487,7 @@ export function ProcessQuotePreviewCard({
   promotionPlan,
   recordPromotionApplication,
   recordPromotionApplicationExecutionRun,
+  recordPromotionApplicationMutationApplyPlan,
   recordPromotionApplicationMutationExecutionRun,
   recordPromotionApplicationMutationOutcomeCommit,
   recordPromotionApplicationOutcomeCommit,
@@ -4471,6 +4501,7 @@ export function ProcessQuotePreviewCard({
   inputEditAdapter?: NonCncInputEditAdapterSummary
   plasticEditor?: PlasticPreviewEditorControl
   preview: ProcessQuotePreview
+  promotionApplicationMutationApplyPlanSnapshot: NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot
   promotionApplicationExecutionSnapshot: NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot
   promotionApplicationMutationExecutionSnapshot: NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot
   promotionApplicationMutationOutcomeCommitSnapshot: NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot
@@ -4481,6 +4512,7 @@ export function ProcessQuotePreviewCard({
   promotionPlan: NonCncQuotePromotionPlan
   recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
   recordPromotionApplicationExecutionRun: (run: NonCncPromotedQuoteApplicationExecutionRun) => () => void
+  recordPromotionApplicationMutationApplyPlan: (input: RecordNonCncPromotedQuoteApplicationMutationApplyPlanInput) => () => void
   recordPromotionApplicationMutationExecutionRun: (run: NonCncPromotedQuoteApplicationMutationExecutionRun) => () => void
   recordPromotionApplicationMutationOutcomeCommit: (
     input: RecordNonCncPromotedQuoteApplicationMutationOutcomeCommitInput,
@@ -4655,6 +4687,9 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteApplicationMutationApplyPlan(promotionApplicationMutationOutcomeCommitReadModel),
     [promotionApplicationMutationOutcomeCommitReadModel],
   )
+  const promotionApplicationMutationApplyPlanRecord = promotionApplicationMutationApplyPlanSnapshot.records.find(
+    (record) => record.applyPlanId === promotionApplicationMutationApplyPlan.applyPlanId,
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -4663,6 +4698,9 @@ export function ProcessQuotePreviewCard({
   const promotionApplicationMutationExecutionStatusSummary = buildStatusCountSummary(promotionApplicationMutationExecutionSnapshot.statusCounts)
   const promotionApplicationMutationOutcomeCommitStatusSummary = buildStatusCountSummary(
     promotionApplicationMutationOutcomeCommitSnapshot.statusCounts,
+  )
+  const promotionApplicationMutationApplyPlanStatusSummary = buildStatusCountSummary(
+    promotionApplicationMutationApplyPlanSnapshot.statusCounts,
   )
   useEffect(() => {
     if (!promotionRecord) {
@@ -4716,6 +4754,13 @@ export function ProcessQuotePreviewCard({
       recordedBy: "Mutation Operator",
     })
   }, [promotionApplicationMutationOutcomeCommit, promotionPlan.requestedAt, recordPromotionApplicationMutationOutcomeCommit])
+  useEffect(() => {
+    return recordPromotionApplicationMutationApplyPlan({
+      applyPlan: promotionApplicationMutationApplyPlan,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "Mutation Operator",
+    })
+  }, [promotionApplicationMutationApplyPlan, promotionPlan.requestedAt, recordPromotionApplicationMutationApplyPlan])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5951,6 +5996,54 @@ export function ProcessQuotePreviewCard({
           ))}
         </ul>
       </div>
+      {promotionApplicationMutationApplyPlanRecord ? (
+        <div
+          className="process-demo-promotion-application-mutation-apply-history"
+          aria-label="Non-CNC promoted quote application mutation apply history"
+          data-status={promotionApplicationMutationApplyPlanRecord.status}
+        >
+          <div className="process-demo-promotion-application-mutation-apply-history-heading">
+            <div>
+              <span>Mutation apply history</span>
+              <strong>{formatCount(promotionApplicationMutationApplyPlanSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionApplicationMutationApplyPlanSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local mutation apply history: {formatCount(promotionApplicationMutationApplyPlanSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionApplicationMutationApplyPlanSnapshot.readyCommandCount, "ready command")},{" "}
+            {formatCount(promotionApplicationMutationApplyPlanSnapshot.blockedCommandCount, "blocked command")}. Active RFQ quote,
+            offer, and release state stay unchanged.
+          </p>
+          <div className="process-demo-promotion-application-mutation-apply-history-grid">
+            <div>
+              <span>Latest apply plan</span>
+              <strong>{humanizeKey(promotionApplicationMutationApplyPlanRecord.disposition)}</strong>
+              <small>
+                {promotionApplicationMutationApplyPlanRecord.recordedBy} · {promotionApplicationMutationApplyPlanRecord.recordedAt}
+              </small>
+            </div>
+            <div>
+              <span>Command totals</span>
+              <strong>
+                {promotionApplicationMutationApplyPlanRecord.readyCommandCount}/{promotionApplicationMutationApplyPlanRecord.commandCount} ready
+              </strong>
+              <small>
+                {formatCount(promotionApplicationMutationApplyPlanRecord.blockerCount, "blocker")},{" "}
+                {formatCount(promotionApplicationMutationApplyPlanRecord.warningCount, "warning")}
+              </small>
+            </div>
+            <div>
+              <span>Apply plan ids</span>
+              <small>Blocked: {promotionApplicationMutationApplyPlanSnapshot.blockedPlanIds.join(", ") || "None"}</small>
+              <small>Ready: {promotionApplicationMutationApplyPlanSnapshot.applyReadyPlanIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-mutation-apply-history-status">
+            Status counts: {promotionApplicationMutationApplyPlanStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       {promotionApplicationMutationExecutionRecord ? (
         <div
           className="process-demo-promotion-application-mutation-execution-history"

@@ -45,6 +45,10 @@ import {
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
+import {
+  NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlanPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
@@ -125,6 +129,20 @@ function emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot(): NonCncPro
     commitReadyMutationPackageIds: [],
     outcomeCount: 0,
     persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    statusCounts: {},
+    warningCount: 0,
+  }
+}
+
+function emptyPromotedQuoteApplicationMutationApplyPlanSnapshot(): NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot {
+  return {
+    applyReadyPlanIds: [],
+    blockedCommandCount: 0,
+    blockedPlanIds: [],
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_PERSISTENCE_VERSION,
+    readyCommandCount: 0,
     recordCount: 0,
     records: [],
     statusCounts: {},
@@ -481,6 +499,24 @@ describe("FactoryBid workspace (component)", () => {
       "Application mutation outcome commit read model is not ready to apply.",
     )
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("active RFQ quote, offer, or release state")
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
+        "Local mutation apply history:",
+      )
+    })
+    const promotedQuoteApplicationMutationApplyHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation apply history",
+    )
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveTextContent("Mutation apply history")
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveTextContent(
+      "Local mutation apply history: 2 records, 0 ready commands, 6 blocked commands.",
+    )
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveTextContent("0/3 ready")
+    expect(promotedQuoteApplicationMutationApplyHistory).toHaveTextContent("Status counts: blocked 2")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("review only")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Status counts: blocked 3")
     await waitFor(() => {
@@ -792,12 +828,14 @@ describe("FactoryBid workspace (component)", () => {
         promotionOutcomeCommitSnapshot={emptyPromotionOutcomeCommitSnapshot()}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationMutationApplyPlanSnapshot={emptyPromotedQuoteApplicationMutationApplyPlanSnapshot()}
         promotionApplicationMutationExecutionSnapshot={emptyPromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
         promotionApplicationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationOutcomeCommitSnapshot()}
         promotionApplicationSnapshot={emptyPromotedQuoteApplicationSnapshot()}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationApplyPlan={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
         recordPromotionApplicationOutcomeCommit={() => () => undefined}
@@ -980,12 +1018,14 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
+        promotionApplicationMutationApplyPlanSnapshot={emptyPromotedQuoteApplicationMutationApplyPlanSnapshot()}
         promotionApplicationMutationExecutionSnapshot={stalePromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshotWithStaleRecord}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationApplyPlan={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
         recordPromotionApplicationOutcomeCommit={() => () => undefined}
@@ -1164,6 +1204,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Application id is missing.")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("+8 more blockers")
+    expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 
