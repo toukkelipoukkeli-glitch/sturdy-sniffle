@@ -43,6 +43,7 @@ import {
   type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -499,6 +500,18 @@ describe("FactoryBid workspace (component)", () => {
       "Application mutation outcome commit read model is not ready to apply.",
     )
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("active RFQ quote, offer, or release state")
+    const promotedQuoteApplicationMutationApplyExecution = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation apply execution audit",
+    )
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Mutation apply audit")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Dry-run mutation apply audit only")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("3 commands")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("blocked, blocked, blocked")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Apply id withheld")
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",
@@ -1204,6 +1217,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Application id is missing.")
     expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("+8 more blockers")
+    const promotedQuoteApplicationMutationApplyExecution = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application mutation apply execution audit",
+    )
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Mutation apply audit")
+    expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Apply id withheld")
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
