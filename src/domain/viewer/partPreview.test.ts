@@ -190,6 +190,45 @@ describe("part preview model", () => {
     expect(model.manufacturabilityFlags).toEqual(["cad_geometry_missing"])
   })
 
+  it("keeps safe browser image sources available for photo previews", () => {
+    const imageSource = "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
+    const model = buildPartPreviewModel({
+      subject: "RFQ: fixture photo",
+      part: {
+        partNumber: "PHOTO-77",
+        process: "fabrication",
+        materialText: "Painted steel",
+        quantity: 1,
+        attachmentNames: ["PHOTO-77-fixture.svg"],
+      },
+      attachments: [
+        {
+          fileName: "PHOTO-77-fixture.svg",
+          kind: "photo",
+          contentType: "image/svg+xml",
+          previewUrl: imageSource,
+        },
+      ],
+    })
+
+    expect(model.primaryMode).toBe("photo")
+    expect(model.primaryAttachmentName).toBe("PHOTO-77-fixture.svg")
+    expect(model.primaryPreviewLabel).toBe("Image preview")
+    expect(model.warnings).toEqual([
+      "CAD geometry is unavailable; using photo preview.",
+      "No extracted dimensions available for measurement overlays.",
+    ])
+    expect(model.attachments[0]).toMatchObject({
+      previewOutput: {
+        renderer: "browser-image",
+        sourceUrl: imageSource,
+        status: "ready",
+      },
+      reviewState: "ready",
+      thumbnailLabel: "Image thumbnail",
+    })
+  })
+
   it("uses parsed CAD metadata for measurement overlays and adapter warnings", () => {
     const model = buildPartPreviewModel({
       part: {

@@ -31,6 +31,7 @@ export interface RfqIntakeSource {
 export interface RfqAttachmentInput {
   fileName: string
   contentType?: string
+  previewUrl?: string
   sizeBytes?: number
   extractedText?: string
 }

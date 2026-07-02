@@ -499,6 +499,14 @@ interface QuoteWorkItem {
   providerRuns: ProviderRunAudit[]
 }
 
+const demoImagePreviewUrl = [
+  "data:image/svg+xml;base64,",
+  "PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxNjAgMTIwJz48cmVjdCB3aWR0aD0n",
+  "MTYwJyBoZWlnaHQ9JzEyMCcgZmlsbD0nI2Y4ZmFmYycvPjxyZWN0IHg9JzMwJyB5PScyNCcgd2lkdGg9JzEwMCcgaGVpZ2h0",
+  "PSc3Micgcng9JzEwJyBmaWxsPScjMGY3NjZlJy8+PGNpcmNsZSBjeD0nNTUnIGN5PSc0OCcgcj0nMTAnIGZpbGw9JyNjY2Zi",
+  "ZjEnLz48cGF0aCBkPSdNMzggODZsMjQtMjQgMTggMTYgMTgtMjIgMjQgMzB6JyBmaWxsPScjZWNmZWZmJy8+PC9zdmc+",
+].join("")
+
 const initialWorkItems: QuoteWorkItem[] = [
   {
     id: "rfq-204",
@@ -525,6 +533,13 @@ const initialWorkItems: QuoteWorkItem[] = [
         kind: "drawing",
         contentType: "application/pdf",
         sizeBytes: 98304,
+      },
+      {
+        fileName: "FB-204-A-fixture.svg",
+        kind: "photo",
+        contentType: "image/svg+xml",
+        previewUrl: demoImagePreviewUrl,
+        sizeBytes: 640,
       },
     ],
     cadMetadata: [
@@ -7248,12 +7263,29 @@ function PartPreviewPanel({
   const visibleManufacturabilityFlags = preview.manufacturabilityFlags.filter((flag) => !acknowledgedFlags.has(flag))
   const normalizedCorrectionDraft = normalizeCadReviewCorrectionNotes(cadCorrectionDraft)
   const canSaveCadCorrections = !cadReviewCorrectionNotesEqual(normalizedCorrectionDraft, override?.correctionNotes)
+  const primaryAttachment = preview.attachments.find((attachment) => attachment.primary)
+  const primaryImageSource =
+    primaryAttachment?.previewOutput.renderer === "browser-image" && primaryAttachment.previewOutput.status === "ready"
+      ? primaryAttachment.previewOutput.sourceUrl
+      : undefined
+  const [failedPrimaryImageSource, setFailedPrimaryImageSource] = useState<string | undefined>()
+  const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryImageSource !== primaryImageSource)
+
   return (
     <section className="part-preview" aria-label="Part preview">
-      <div className="preview-viewport" data-mode={preview.primaryMode}>
-        <div className="preview-icon" aria-hidden="true">
-          <Cuboid />
-        </div>
+      <div className="preview-viewport" data-mode={preview.primaryMode} data-renderer={primaryAttachment?.previewOutput.renderer ?? "metadata-card"}>
+        {canRenderPrimaryImage ? (
+          <img
+            alt={`${preview.primaryAttachmentName ?? preview.partNumber} preview`}
+            className="preview-image"
+            onError={() => setFailedPrimaryImageSource(primaryImageSource)}
+            src={primaryImageSource}
+          />
+        ) : (
+          <div className="preview-icon" aria-hidden="true">
+            <Cuboid />
+          </div>
+        )}
         <div>
           <span>{formatPreviewMode(preview.primaryMode)}</span>
           <strong>{preview.primaryAttachmentName ?? preview.partNumber}</strong>

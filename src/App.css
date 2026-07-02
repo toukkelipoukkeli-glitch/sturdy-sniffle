@@ -4095,6 +4095,21 @@
     oklch(0.98 0.006 220);
 }
 
+.preview-viewport[data-renderer="browser-image"] {
+  background: oklch(0.98 0.006 220);
+  padding: 10px;
+}
+
+.preview-image {
+  border: 1px solid oklch(0.86 0.018 235);
+  border-radius: 6px;
+  display: block;
+  max-height: 150px;
+  max-width: 100%;
+  object-fit: contain;
+  width: min(100%, 240px);
+}
+
 .preview-icon {
   align-items: center;
   background: oklch(0.22 0.05 205);

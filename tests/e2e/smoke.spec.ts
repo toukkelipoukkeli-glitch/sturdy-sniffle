@@ -81,6 +81,13 @@ test("filters the RFQ queue and discloses attachments", async ({ page }) => {
   await expect(attachments).toBeVisible()
   await expect(attachments).toContainText("FB-204-A.step")
   await expect(attachments).toContainText("FB-204-A.pdf")
+  await expect(attachments).toContainText("FB-204-A-fixture.svg")
+
+  const partPreview = page.getByLabel("Part preview")
+  const imageRow = partPreview.locator(".attachment-row").filter({ hasText: "FB-204-A-fixture.svg" })
+  await imageRow.getByRole("button", { name: "Set primary" }).click()
+  await expect(partPreview.getByRole("img", { name: "FB-204-A-fixture.svg preview" })).toBeVisible()
+  await expect(partPreview).toContainText("Image preview")
 })
 
 test("runs the quote workspace costing workflow", async ({ page }) => {
