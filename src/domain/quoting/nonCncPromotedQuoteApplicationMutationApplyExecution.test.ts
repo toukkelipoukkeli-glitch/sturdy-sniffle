@@ -37,6 +37,7 @@ describe("non-CNC promoted quote application mutation apply execution", () => {
       targetRfqId: applyPlan.targetRfqId,
     })
     expect(run.executionFingerprint).toBe(fingerprintNonCncPromotedQuoteApplicationMutationApplyExecutionRun(run))
+    expect(run.executionFingerprint).toMatch(/^non-cnc-promoted-quote-application-mutation-apply-execution-[0-9a-f]{16}$/)
     expect(run.commands.map((command) => command.status)).toEqual(["prepared", "prepared", "prepared"])
     expect(run.commands[0]).toMatchObject({
       applicationTargetId: applyPlan.commands[0]?.applicationTargetId,
@@ -84,7 +85,7 @@ describe("non-CNC promoted quote application mutation apply execution", () => {
           message: "Offer workspace adapter unavailable.",
           mutationTarget: "offer_workspace",
           status: "failed",
-          warnings: ["Offer workspace fallback used."],
+          warnings: [" Offer workspace fallback used. ", "Offer workspace fallback used.", ""],
         },
       ],
       executedAt: "2026-07-02T13:40:00.000Z",
@@ -108,6 +109,17 @@ describe("non-CNC promoted quote application mutation apply execution", () => {
     ])
     expect(run.warnings).toContain("Apply offer workspace: Offer workspace fallback used.")
     expect(run.warnings).toContain("Apply offer workspace failed: Offer workspace adapter unavailable.")
+  })
+
+  it("rejects unsupported execution modes at the runtime boundary", () => {
+    expect(() =>
+      buildNonCncPromotedQuoteApplicationMutationApplyExecutionRun({
+        actor: "FactoryBid Operator",
+        applyPlan: buildReadyApplyPlan(),
+        executedAt: "2026-07-02T13:55:00.000Z",
+        mode: "preview" as never,
+      }),
+    ).toThrow("mode must be commit or dry_run")
   })
 
   it("builds succeeded commit audit records when every command is applied", () => {

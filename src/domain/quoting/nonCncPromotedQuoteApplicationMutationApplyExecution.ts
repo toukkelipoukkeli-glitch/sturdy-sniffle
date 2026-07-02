@@ -343,7 +343,7 @@ function normalizeOutcomeStatus(
 }
 
 function normalizeWarnings(warnings: string[]): string[] {
-  return warnings.map((warning) => optionalTrim(warning)).filter((warning): warning is string => Boolean(warning))
+  return [...new Set(warnings.map((warning) => optionalTrim(warning)).filter((warning): warning is string => Boolean(warning)))]
 }
 
 function applyCommandIdempotencyKey(applyPlanId: string, commandKey: string, mutationTarget: string): string {
@@ -378,10 +378,10 @@ function flattenKeys(value: unknown, keys: Record<string, true> = {}): Record<st
 }
 
 function fingerprint(value: string): string {
-  let hash = 0x811c9dc5
+  let hash = 0xcbf29ce484222325n
   for (const character of value) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 0x01000193) >>> 0
+    hash ^= BigInt(character.charCodeAt(0))
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n)
   }
-  return hash.toString(16).padStart(8, "0")
+  return hash.toString(16).padStart(16, "0")
 }
