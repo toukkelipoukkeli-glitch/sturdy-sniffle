@@ -45,6 +45,7 @@ import {
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
   type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
@@ -428,6 +429,38 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent(
       "Local mutation outcome commit history: 3 records, 0 outcomes, 0 warnings.",
     )
+    const promotedQuoteApplicationMutationReadModel = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation read model",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("Mutation read model")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("0 targets")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit record is blocked.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit record is review-only.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit execution fingerprint is missing.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit execution status is missing.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Promoted quote application mutation outcome commit has no committed outcomes.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "Application outcome commit read model is not ready to apply.",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("102 additional blockers")
+    expect(promotedQuoteApplicationMutationReadModel).not.toHaveTextContent("Promoted quote target RFQ is missing.")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("active RFQ quote, offer, and release state stay unchanged")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("review only")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Status counts: blocked 3")
     await waitFor(() => {
@@ -1081,6 +1114,20 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Commit run available")
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("active RFQ quote")
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Prepared active RFQ quote mutation")
+    const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application mutation read model",
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("Mutation read model")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("0 targets")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
+      "No promoted quote application mutation outcome commit record is available.",
+    )
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 
