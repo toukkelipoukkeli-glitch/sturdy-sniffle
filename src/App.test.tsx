@@ -44,6 +44,7 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
@@ -461,6 +462,25 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("102 additional blockers")
     expect(promotedQuoteApplicationMutationReadModel).not.toHaveTextContent("Promoted quote target RFQ is missing.")
     expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent("active RFQ quote, offer, and release state stay unchanged")
+    const promotedQuoteApplicationMutationApplyPlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation apply plan",
+    )
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Mutation apply plan")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("3 commands")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 committed outcomes")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Source fingerprint withheld")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 warnings")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Apply active RFQ quote")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent(
+      "Application mutation outcome commit read model is not ready to apply.",
+    )
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("active RFQ quote, offer, or release state")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("review only")
     expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Status counts: blocked 3")
     await waitFor(() => {
@@ -1128,6 +1148,22 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationReadModel).toHaveTextContent(
       "No promoted quote application mutation outcome commit record is available.",
     )
+    const promotedQuoteApplicationMutationApplyPlan = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application mutation apply plan",
+    )
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Mutation apply plan")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("3 commands")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 committed outcomes")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Source fingerprint withheld")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("0 warnings")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("None")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("Application id is missing.")
+    expect(promotedQuoteApplicationMutationApplyPlan).toHaveTextContent("+8 more blockers")
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 

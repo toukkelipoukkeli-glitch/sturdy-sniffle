@@ -156,6 +156,7 @@ import {
   buildNonCncPromotedQuoteApplicationMutationExecutionRun,
   type NonCncPromotedQuoteApplicationMutationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
+import { buildNonCncPromotedQuoteApplicationMutationApplyPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
@@ -4650,6 +4651,10 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionApplicationMutationOutcomeCommit.commitPlan.mutationPackageId, promotionApplicationMutationOutcomeCommitSnapshot],
   )
+  const promotionApplicationMutationApplyPlan = useMemo(
+    () => buildNonCncPromotedQuoteApplicationMutationApplyPlan(promotionApplicationMutationOutcomeCommitReadModel),
+    [promotionApplicationMutationOutcomeCommitReadModel],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -5889,6 +5894,62 @@ export function ProcessQuotePreviewCard({
             ) : null}
           </ul>
         ) : null}
+      </div>
+      <div
+        className="process-demo-promotion-application-mutation-apply-plan"
+        aria-label="Non-CNC promoted quote application mutation apply plan"
+        data-status={promotionApplicationMutationApplyPlan.status}
+      >
+        <div className="process-demo-promotion-application-mutation-apply-plan-heading">
+          <div>
+            <span>Mutation apply plan</span>
+            <strong>{humanizeKey(promotionApplicationMutationApplyPlan.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationApplyPlan.planVersion}</small>
+        </div>
+        <p>{promotionApplicationMutationApplyPlan.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-application-mutation-apply-plan-grid">
+          <div>
+            <span>Apply commands</span>
+            <strong>{formatCount(promotionApplicationMutationApplyPlan.commandCount, "command")}</strong>
+            <small>{formatCount(promotionApplicationMutationApplyPlan.committedOutcomeCount, "committed outcome")}</small>
+          </div>
+          <div>
+            <span>Target RFQ</span>
+            <strong>{promotionApplicationMutationApplyPlan.targetRfqId ?? "Withheld until ready"}</strong>
+            <small>{promotionApplicationMutationApplyPlan.executionFingerprint ?? "No apply fingerprint"}</small>
+          </div>
+          <div>
+            <span>Apply id</span>
+            <strong>{promotionApplicationMutationApplyPlan.status === "ready" ? "Ready adapter descriptor" : "Review-only"}</strong>
+            <small>
+              {promotionApplicationMutationApplyPlan.sourceExecutionFingerprint
+                ? promotionApplicationMutationApplyPlan.applyPlanId
+                : "Source fingerprint withheld"}
+            </small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionApplicationMutationApplyPlan.reviewWarnings.length, "warning")}</strong>
+            <small>{promotionApplicationMutationApplyPlan.reviewWarnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-application-mutation-apply-plan-boundary">
+          <span>Boundary</span>
+          <small>{promotionApplicationMutationApplyPlan.mutationBoundary}</small>
+        </div>
+        <ul className="process-demo-promotion-application-mutation-apply-plan-list">
+          {promotionApplicationMutationApplyPlan.commands.map((command) => (
+            <li data-status={command.status} key={`${command.key}:${command.mutationTarget}`}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)}</span>
+              </div>
+              <small>{humanizeKey(command.mutationTarget)}</small>
+              <small>{command.applicationTargetId ?? formatLabelPreview(command.blockerLabels, "Apply target withheld")}</small>
+            </li>
+          ))}
+        </ul>
       </div>
       {promotionApplicationMutationExecutionRecord ? (
         <div
