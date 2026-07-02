@@ -149,6 +149,8 @@ function assertExecutionMatchesCommitPlan(
     throw new Error("application mutation outcome commit execution run must use commit mode")
   }
 
+  // The plan source fingerprint points at the reviewed dry run; the execution fingerprint points at the later commit run.
+  // Keep those identities distinct and verify the committed command outcomes instead.
   const mismatches = [
     executionRun.mutationPackageId === commitPlan.mutationPackageId ? undefined : "mutationPackageId",
     executionRun.applicationId === commitPlan.applicationId ? undefined : "applicationId",

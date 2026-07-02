@@ -51,6 +51,8 @@ describe("non-CNC promoted quote application mutation outcome commit persistence
       status: "ready",
       targetRfqId: mutationPackage.targetRfqId,
     })
+    expect(snapshot.latestRecord?.sourceExecutionFingerprint).toBe(commitPlan.sourceExecutionFingerprint)
+    expect(snapshot.latestRecord?.executionFingerprint).not.toBe(commitPlan.sourceExecutionFingerprint)
     expect(snapshot.latestRecord?.commandOutcomes.map((outcome) => outcome.key)).toEqual([
       "replace_active_quote",
       "refresh_offer_workspace",
