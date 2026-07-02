@@ -44,6 +44,7 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
+import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -380,6 +381,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("3 blocked outcomes")
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent(
       "Application outcome commit read model is not ready to apply.",
+    )
+    const promotedQuoteApplicationMutationCommitPlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation commit plan",
+    )
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Mutation commit plan")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Mutation commit withheld")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent(
+      "Application mutation outcome draft entry for Apply active RFQ quote is not ready for commit.",
     )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation execution history")).toHaveTextContent(
@@ -1017,6 +1031,17 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("3 ready outcomes")
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("0 blocked outcomes")
     expect(promotedQuoteApplicationMutationOutcomeDraft).toHaveTextContent("active RFQ quote")
+    const promotedQuoteApplicationMutationCommitPlan = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote application mutation commit plan",
+    )
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("3 outcomes")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Commit run available")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("active RFQ quote")
+    expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Prepared active RFQ quote mutation")
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
   })
 
