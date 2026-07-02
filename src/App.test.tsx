@@ -45,6 +45,10 @@ import {
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
+import {
+  NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -109,6 +113,19 @@ function emptyPromotedQuoteApplicationMutationExecutionSnapshot(): NonCncPromote
     selectedPlanIds: [],
     statusCounts: {},
     targetRfqIds: [],
+    warningCount: 0,
+  }
+}
+
+function emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot(): NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot {
+  return {
+    blockedMutationPackageIds: [],
+    commitReadyMutationPackageIds: [],
+    outcomeCount: 0,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    recordCount: 0,
+    records: [],
+    statusCounts: {},
     warningCount: 0,
   }
 }
@@ -395,6 +412,24 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent(
       "Application mutation outcome draft entry for Apply active RFQ quote is not ready for commit.",
     )
+    await waitFor(() => {
+      expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation commit history")).toHaveTextContent(
+        "Local mutation outcome commit history:",
+      )
+    })
+    const promotedQuoteApplicationMutationCommitHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote application mutation commit history",
+    )
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Mutation commit history")
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent(
+      "Local mutation outcome commit history: 3 records, 0 outcomes, 0 warnings.",
+    )
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("review only")
+    expect(promotedQuoteApplicationMutationCommitHistory).toHaveTextContent("Status counts: blocked 3")
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation execution history")).toHaveTextContent(
         "Local mutation execution history:",
@@ -705,11 +740,13 @@ describe("FactoryBid workspace (component)", () => {
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
         promotionApplicationMutationExecutionSnapshot={emptyPromotedQuoteApplicationMutationExecutionSnapshot()}
+        promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
         promotionApplicationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationOutcomeCommitSnapshot()}
         promotionApplicationSnapshot={emptyPromotedQuoteApplicationSnapshot()}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
         recordPromotionApplicationOutcomeCommit={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
@@ -891,11 +928,13 @@ describe("FactoryBid workspace (component)", () => {
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
         promotionApplicationMutationExecutionSnapshot={stalePromotedQuoteApplicationMutationExecutionSnapshot()}
+        promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshotWithStaleRecord}
         promotionApplicationSnapshot={promotionApplicationSnapshot}
         recordPromotionApplication={() => () => undefined}
         recordPromotionApplicationExecutionRun={() => () => undefined}
         recordPromotionApplicationMutationExecutionRun={() => () => undefined}
+        recordPromotionApplicationMutationOutcomeCommit={() => () => undefined}
         recordPromotionApplicationOutcomeCommit={() => () => undefined}
         recordPromotionOutcomeCommit={() => () => undefined}
         recordPromotionExecutionRun={() => () => undefined}
