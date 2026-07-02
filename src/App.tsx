@@ -7268,13 +7268,17 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-image" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
+  const [failedPrimaryImageSource, setFailedPrimaryImageSource] = useState<string | undefined>()
+  const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryImageSource !== primaryImageSource)
+
   return (
     <section className="part-preview" aria-label="Part preview">
       <div className="preview-viewport" data-mode={preview.primaryMode} data-renderer={primaryAttachment?.previewOutput.renderer ?? "metadata-card"}>
-        {primaryImageSource ? (
+        {canRenderPrimaryImage ? (
           <img
             alt={`${preview.primaryAttachmentName ?? preview.partNumber} preview`}
             className="preview-image"
+            onError={() => setFailedPrimaryImageSource(primaryImageSource)}
             src={primaryImageSource}
           />
         ) : (

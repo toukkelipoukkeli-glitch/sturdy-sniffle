@@ -1531,6 +1531,11 @@ describe("FactoryBid workspace (component)", () => {
     const image = within(screen.getByLabelText("Part preview")).getByRole("img", { name: "FB-204-A-fixture.svg preview" })
     expect(image).toHaveAttribute("src", expect.stringMatching(/^data:image\/svg\+xml;base64,/))
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("Image preview")
+
+    fireEvent.error(image)
+
+    expect(within(screen.getByLabelText("Part preview")).queryByRole("img", { name: "FB-204-A-fixture.svg preview" })).toBeNull()
+    expect(screen.getByLabelText("Part preview").querySelector(".preview-icon")).not.toBeNull()
   })
 
   it("edits offer validity, terms, and notes in the exported draft", async () => {
