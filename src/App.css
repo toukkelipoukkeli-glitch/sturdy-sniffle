@@ -2250,6 +2250,7 @@
 
 .process-demo-promotion-read-model,
 .process-demo-promotion-application-read-model,
+.process-demo-promotion-application-mutation-read-model,
 .process-demo-promotion-application-mutation-package,
 .process-demo-promotion-application-mutation-execution,
 .process-demo-promotion-application-mutation-outcome-draft,
@@ -2270,6 +2271,7 @@
 
 .process-demo-promotion-read-model[data-status="blocked"],
 .process-demo-promotion-application-read-model[data-status="blocked"],
+.process-demo-promotion-application-mutation-read-model[data-status="blocked"],
 .process-demo-promotion-application-mutation-package[data-status="blocked"],
 .process-demo-promotion-application-mutation-execution[data-status="blocked"],
 .process-demo-promotion-application-mutation-outcome-draft[data-status="blocked"],
@@ -2286,6 +2288,7 @@
 
 .process-demo-promotion-read-model[data-status="promoted"],
 .process-demo-promotion-application-read-model[data-status="ready_to_apply"],
+.process-demo-promotion-application-mutation-read-model[data-status="ready_to_apply"],
 .process-demo-promotion-application-mutation-package[data-status="ready"],
 .process-demo-promotion-application-mutation-execution[data-status="prepared"],
 .process-demo-promotion-application-mutation-execution[data-status="succeeded"],
@@ -2304,6 +2307,7 @@
 
 .process-demo-promotion-read-model-heading,
 .process-demo-promotion-application-read-model-heading,
+.process-demo-promotion-application-mutation-read-model-heading,
 .process-demo-promotion-application-mutation-package-heading,
 .process-demo-promotion-application-mutation-execution-heading,
 .process-demo-promotion-application-mutation-outcome-draft-heading,
@@ -2321,6 +2325,7 @@
 
 .process-demo-promotion-read-model-heading > div,
 .process-demo-promotion-application-read-model-heading > div,
+.process-demo-promotion-application-mutation-read-model-heading > div,
 .process-demo-promotion-application-mutation-package-heading > div,
 .process-demo-promotion-application-mutation-execution-heading > div,
 .process-demo-promotion-application-mutation-outcome-draft-heading > div,
@@ -2340,6 +2345,9 @@
 .process-demo-promotion-application-read-model-heading span,
 .process-demo-promotion-application-read-model-grid span,
 .process-demo-promotion-application-read-model-boundary span,
+.process-demo-promotion-application-mutation-read-model-heading span,
+.process-demo-promotion-application-mutation-read-model-grid span,
+.process-demo-promotion-application-mutation-read-model-boundary span,
 .process-demo-promotion-application-mutation-package-heading span,
 .process-demo-promotion-application-mutation-package-grid span,
 .process-demo-promotion-application-mutation-package-boundary span,
@@ -2369,6 +2377,8 @@
 .process-demo-promotion-read-model-grid strong,
 .process-demo-promotion-application-read-model-heading strong,
 .process-demo-promotion-application-read-model-grid strong,
+.process-demo-promotion-application-mutation-read-model-heading strong,
+.process-demo-promotion-application-mutation-read-model-grid strong,
 .process-demo-promotion-application-mutation-package-heading strong,
 .process-demo-promotion-application-mutation-package-grid strong,
 .process-demo-promotion-application-mutation-execution-heading strong,
@@ -2394,6 +2404,7 @@
 
 .process-demo-promotion-read-model-heading small,
 .process-demo-promotion-application-read-model-heading small,
+.process-demo-promotion-application-mutation-read-model-heading small,
 .process-demo-promotion-application-mutation-package-heading small,
 .process-demo-promotion-application-mutation-execution-heading small,
 .process-demo-promotion-application-mutation-outcome-draft-heading small,
@@ -2415,6 +2426,7 @@
 
 .process-demo-promotion-read-model p,
 .process-demo-promotion-application-read-model p,
+.process-demo-promotion-application-mutation-read-model p,
 .process-demo-promotion-application-mutation-package p,
 .process-demo-promotion-application-mutation-execution p,
 .process-demo-promotion-application-mutation-outcome-draft p,
@@ -2434,6 +2446,8 @@
 .process-demo-promotion-read-model-grid,
 .process-demo-promotion-application-read-model-grid,
 .process-demo-promotion-application-read-model-list,
+.process-demo-promotion-application-mutation-read-model-grid,
+.process-demo-promotion-application-mutation-read-model-list,
 .process-demo-promotion-application-mutation-package-grid,
 .process-demo-promotion-application-mutation-package-list,
 .process-demo-promotion-application-mutation-execution-grid,
@@ -2457,6 +2471,7 @@
 }
 
 .process-demo-promotion-application-read-model-list,
+.process-demo-promotion-application-mutation-read-model-list,
 .process-demo-promotion-application-mutation-package-list,
 .process-demo-promotion-application-mutation-execution-list,
 .process-demo-promotion-application-mutation-outcome-draft-list,
@@ -2474,6 +2489,9 @@
 .process-demo-promotion-application-read-model-grid > div,
 .process-demo-promotion-application-read-model-boundary,
 .process-demo-promotion-application-read-model-list li,
+.process-demo-promotion-application-mutation-read-model-grid > div,
+.process-demo-promotion-application-mutation-read-model-boundary,
+.process-demo-promotion-application-mutation-read-model-list li,
 .process-demo-promotion-application-mutation-package-grid > div,
 .process-demo-promotion-application-mutation-package-boundary,
 .process-demo-promotion-application-mutation-package-list li,
@@ -2523,7 +2541,8 @@
   flex: 0 0 auto;
 }
 
-.process-demo-promotion-application-read-model-list li[data-status="blocked"] strong {
+.process-demo-promotion-application-read-model-list li[data-status="blocked"] strong,
+.process-demo-promotion-application-mutation-read-model-list li[data-status="blocked"] strong {
   color: oklch(0.44 0.12 35);
 }
 
@@ -2565,6 +2584,9 @@
 .process-demo-promotion-application-read-model-grid small,
 .process-demo-promotion-application-read-model-boundary small,
 .process-demo-promotion-application-read-model-list strong,
+.process-demo-promotion-application-mutation-read-model-grid small,
+.process-demo-promotion-application-mutation-read-model-boundary small,
+.process-demo-promotion-application-mutation-read-model-list strong,
 .process-demo-promotion-application-mutation-package-grid small,
 .process-demo-promotion-application-mutation-package-boundary small,
 .process-demo-promotion-application-mutation-package-list span,

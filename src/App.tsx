@@ -157,6 +157,7 @@ import {
   type NonCncPromotedQuoteApplicationMutationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
+import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence,
   type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
@@ -4641,6 +4642,14 @@ export function ProcessQuotePreviewCard({
   const promotionApplicationMutationOutcomeCommitRecord = promotionApplicationMutationOutcomeCommitSnapshot.records
     .filter((record) => record.sourceExecutionFingerprint === promotionApplicationMutationOutcomeCommit.commitPlan.sourceExecutionFingerprint)
     .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+  const promotionApplicationMutationOutcomeCommitReadModel = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel({
+        mutationPackageId: promotionApplicationMutationOutcomeCommit.commitPlan.mutationPackageId,
+        snapshot: promotionApplicationMutationOutcomeCommitSnapshot,
+      }),
+    [promotionApplicationMutationOutcomeCommit.commitPlan.mutationPackageId, promotionApplicationMutationOutcomeCommitSnapshot],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -5823,6 +5832,64 @@ export function ProcessQuotePreviewCard({
           </small>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-application-mutation-read-model"
+        aria-label="Non-CNC promoted quote application mutation read model"
+        data-status={promotionApplicationMutationOutcomeCommitReadModel.status}
+      >
+        <div className="process-demo-promotion-application-mutation-read-model-heading">
+          <div>
+            <span>Mutation read model</span>
+            <strong>{humanizeKey(promotionApplicationMutationOutcomeCommitReadModel.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationOutcomeCommitReadModel.readModelVersion}</small>
+        </div>
+        <p>{promotionApplicationMutationOutcomeCommitReadModel.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-application-mutation-read-model-grid">
+          <div>
+            <span>Committed outcomes</span>
+            <strong>{formatCount(promotionApplicationMutationOutcomeCommitReadModel.committedOutcomeCount, "outcome")}</strong>
+            <small>
+              {promotionApplicationMutationOutcomeCommitReadModel.disposition
+                ? humanizeKey(promotionApplicationMutationOutcomeCommitReadModel.disposition)
+                : "No mutation commit record"}
+            </small>
+          </div>
+          <div>
+            <span>Mutation targets</span>
+            <strong>{formatCount(promotionApplicationMutationOutcomeCommitReadModel.mutationTargets.length, "target")}</strong>
+            <small>
+              {promotionApplicationMutationOutcomeCommitReadModel.mutationTargets.map(humanizeKey).join(", ") ||
+                "Withheld until ready"}
+            </small>
+          </div>
+          <div>
+            <span>Execution source</span>
+            <strong>{promotionApplicationMutationOutcomeCommitReadModel.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionApplicationMutationOutcomeCommitReadModel.executionFingerprint ?? "No mutation commit fingerprint"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-application-mutation-read-model-boundary">
+          <span>Boundary</span>
+          <small>{promotionApplicationMutationOutcomeCommitReadModel.mutationBoundary}</small>
+        </div>
+        {promotionApplicationMutationOutcomeCommitReadModel.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-application-mutation-read-model-list">
+            {promotionApplicationMutationOutcomeCommitReadModel.blockerLabels.slice(0, 6).map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+            {promotionApplicationMutationOutcomeCommitReadModel.blockerLabels.length > 6 ? (
+              <li data-status="blocked">
+                <strong>
+                  {formatCount(promotionApplicationMutationOutcomeCommitReadModel.blockerLabels.length - 6, "additional blocker")}
+                </strong>
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
+      </div>
       {promotionApplicationMutationExecutionRecord ? (
         <div
           className="process-demo-promotion-application-mutation-execution-history"
