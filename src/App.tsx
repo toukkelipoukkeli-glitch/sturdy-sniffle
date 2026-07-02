@@ -156,6 +156,7 @@ import {
   buildNonCncPromotedQuoteApplicationMutationExecutionRun,
   type NonCncPromotedQuoteApplicationMutationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
+import { buildNonCncPromotedQuoteApplicationMutationApplyExecutionRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecution"
 import { buildNonCncPromotedQuoteApplicationMutationApplyPlan } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
   createLocalNonCncPromotedQuoteApplicationMutationApplyPlanPersistence,
@@ -4687,6 +4688,16 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteApplicationMutationApplyPlan(promotionApplicationMutationOutcomeCommitReadModel),
     [promotionApplicationMutationOutcomeCommitReadModel],
   )
+  const promotionApplicationMutationApplyExecutionRun = useMemo(
+    () =>
+      buildNonCncPromotedQuoteApplicationMutationApplyExecutionRun({
+        actor: "Mutation Operator",
+        applyPlan: promotionApplicationMutationApplyPlan,
+        executedAt: promotionPlan.requestedAt,
+        mode: "dry_run",
+      }),
+    [promotionApplicationMutationApplyPlan, promotionPlan.requestedAt],
+  )
   const promotionApplicationMutationApplyPlanRecord = promotionApplicationMutationApplyPlanSnapshot.records.find(
     (record) => record.applyPlanId === promotionApplicationMutationApplyPlan.applyPlanId,
   )
@@ -5992,6 +6003,49 @@ export function ProcessQuotePreviewCard({
               </div>
               <small>{humanizeKey(command.mutationTarget)}</small>
               <small>{command.applicationTargetId ?? formatLabelPreview(command.blockerLabels, "Apply target withheld")}</small>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div
+        className="process-demo-promotion-application-mutation-apply-execution"
+        aria-label="Non-CNC promoted quote application mutation apply execution audit"
+        data-status={promotionApplicationMutationApplyExecutionRun.status}
+      >
+        <div className="process-demo-promotion-application-mutation-apply-execution-heading">
+          <div>
+            <span>Mutation apply audit</span>
+            <strong>{humanizeKey(promotionApplicationMutationApplyExecutionRun.status)}</strong>
+          </div>
+          <small>{promotionApplicationMutationApplyExecutionRun.executionVersion}</small>
+        </div>
+        <p>Dry-run mutation apply audit only; active RFQ quote, offer, and release state stay unchanged.</p>
+        <div className="process-demo-promotion-application-mutation-apply-execution-grid">
+          <div>
+            <span>Fingerprint</span>
+            <strong>{promotionApplicationMutationApplyExecutionRun.executionFingerprint}</strong>
+            <small>{promotionApplicationMutationApplyExecutionRun.mode}</small>
+          </div>
+          <div>
+            <span>Commands</span>
+            <strong>{formatCount(promotionApplicationMutationApplyExecutionRun.commands.length, "command")}</strong>
+            <small>{promotionApplicationMutationApplyExecutionRun.commands.map((command) => humanizeKey(command.status)).join(", ")}</small>
+          </div>
+          <div>
+            <span>Warnings</span>
+            <strong>{formatCount(promotionApplicationMutationApplyExecutionRun.warnings.length, "warning")}</strong>
+            <small>{promotionApplicationMutationApplyExecutionRun.warnings.join(", ") || "None"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-application-mutation-apply-execution-list">
+          {promotionApplicationMutationApplyExecutionRun.commands.map((command) => (
+            <li data-status={command.status} key={`${command.key}:${command.mutationTarget}`}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)}</span>
+              </div>
+              <small>{command.idempotencyKey}</small>
+              <small>{command.externalId ?? command.applicationTargetId ?? "Apply id withheld"}</small>
             </li>
           ))}
         </ul>
