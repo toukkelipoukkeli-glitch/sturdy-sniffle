@@ -44,7 +44,10 @@ export function buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadMode
 }: BuildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModelInput): NonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel {
   const record = selectCommitRecord(snapshot, mutationPackageId)
   if (!record) {
-    return blockedReadModel(["No promoted quote application mutation outcome commit record is available."])
+    return {
+      ...blockedReadModel(["No promoted quote application mutation outcome commit record is available."]),
+      mutationPackageId,
+    }
   }
 
   const blockerLabels = commitReadinessBlockers(record)
@@ -80,12 +83,14 @@ function selectCommitRecord(
   mutationPackageId: string | undefined,
 ): NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord | undefined {
   if (mutationPackageId) {
-    return snapshot.records.filter((record) => record.mutationPackageId === mutationPackageId).sort(sortNewestFirst)[0]
+    return snapshot.records
+      .filter((record) => record.mutationPackageId === mutationPackageId)
+      .sort(sortMutationOutcomeCommitRecordsNewestFirst)[0]
   }
   return snapshot.latestRecord
 }
 
-function sortNewestFirst(
+export function sortMutationOutcomeCommitRecordsNewestFirst(
   left: NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord,
   right: NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord,
 ): number {

@@ -4,6 +4,7 @@ import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_VERSION } fr
 import {
   buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel,
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
+  sortMutationOutcomeCommitRecordsNewestFirst,
 } from "./nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
@@ -27,6 +28,19 @@ describe("non-CNC promoted quote application mutation outcome commit read model"
         "Resolve promoted quote application mutation outcome commit blockers before applying it to active RFQ, offer, or release state.",
       readModelVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_READ_MODEL_VERSION,
       reviewWarnings: [],
+      status: "blocked",
+    })
+  })
+
+  it("echoes the requested mutation package id when a persisted record is missing", () => {
+    const readModel = buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel({
+      mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:missing",
+      snapshot: emptySnapshot(),
+    })
+
+    expect(readModel).toMatchObject({
+      blockerLabels: ["No promoted quote application mutation outcome commit record is available."],
+      mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:missing",
       status: "blocked",
     })
   })
@@ -151,7 +165,7 @@ function emptySnapshot(): NonCncPromotedQuoteApplicationMutationOutcomeCommitPer
 function snapshotWithRecords(
   records: NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord[],
 ): NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot {
-  const sortedRecords = [...records].sort(sortNewestFirst)
+  const sortedRecords = [...records].sort(sortMutationOutcomeCommitRecordsNewestFirst)
   return {
     blockedMutationPackageIds: records.filter((record) => record.status === "blocked").map((record) => record.mutationPackageId),
     commitReadyMutationPackageIds: records.filter((record) => record.status === "ready").map((record) => record.mutationPackageId),
@@ -169,17 +183,6 @@ function snapshotWithRecords(
     ),
     warningCount: records.reduce((total, record) => total + record.warningCount, 0),
   }
-}
-
-function sortNewestFirst(
-  left: NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord,
-  right: NonCncPromotedQuoteApplicationMutationOutcomeCommitRecord,
-): number {
-  return (
-    right.recordedAt.localeCompare(left.recordedAt) ||
-    left.commitRecordId.localeCompare(right.commitRecordId) ||
-    left.sourceExecutionFingerprint.localeCompare(right.sourceExecutionFingerprint)
-  )
 }
 
 function mutationOutcomeCommitRecord(
