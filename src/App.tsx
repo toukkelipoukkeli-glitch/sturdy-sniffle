@@ -158,6 +158,11 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecution"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import {
+  createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence,
+  type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
+  type RecordNonCncPromotedQuoteApplicationMutationOutcomeCommitInput,
+} from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence"
+import {
   createLocalNonCncPromotedQuoteApplicationMutationExecutionPersistence,
   type NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionPersistence"
@@ -4064,6 +4069,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot>(() =>
       promotionApplicationMutationExecutionPersistence.snapshot(),
     )
+  const [promotionApplicationMutationOutcomeCommitPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence(),
+  )
+  const [promotionApplicationMutationOutcomeCommitSnapshot, setPromotionApplicationMutationOutcomeCommitSnapshot] =
+    useState<NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot>(() =>
+      promotionApplicationMutationOutcomeCommitPersistence.snapshot(),
+    )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -4172,6 +4184,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionApplicationMutationExecutionPersistence],
   )
+  const recordPromotionApplicationMutationOutcomeCommit = useCallback(
+    (input: RecordNonCncPromotedQuoteApplicationMutationOutcomeCommitInput) => {
+      let isCurrent = true
+      void promotionApplicationMutationOutcomeCommitPersistence.recordCommit(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionApplicationMutationOutcomeCommitSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionApplicationMutationOutcomeCommitPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -4207,6 +4233,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
       <ProcessQuotePreviewCard
         inputEditAdapter={selectedInputEditAdapter}
         promotionApplicationMutationExecutionSnapshot={promotionApplicationMutationExecutionSnapshot}
+        promotionApplicationMutationOutcomeCommitSnapshot={promotionApplicationMutationOutcomeCommitSnapshot}
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         preview={preview}
@@ -4217,6 +4244,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         recordPromotionApplication={recordPromotionApplication}
         recordPromotionApplicationExecutionRun={recordPromotionApplicationExecutionRun}
         recordPromotionApplicationMutationExecutionRun={recordPromotionApplicationMutationExecutionRun}
+        recordPromotionApplicationMutationOutcomeCommit={recordPromotionApplicationMutationOutcomeCommit}
         recordPromotionApplicationOutcomeCommit={recordPromotionApplicationOutcomeCommit}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
@@ -4420,6 +4448,7 @@ export function ProcessQuotePreviewCard({
   preview,
   promotionApplicationExecutionSnapshot,
   promotionApplicationMutationExecutionSnapshot,
+  promotionApplicationMutationOutcomeCommitSnapshot,
   promotionApplicationOutcomeCommitSnapshot,
   promotionApplicationSnapshot,
   promotionExecutionSnapshot,
@@ -4428,6 +4457,7 @@ export function ProcessQuotePreviewCard({
   recordPromotionApplication,
   recordPromotionApplicationExecutionRun,
   recordPromotionApplicationMutationExecutionRun,
+  recordPromotionApplicationMutationOutcomeCommit,
   recordPromotionApplicationOutcomeCommit,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
@@ -4441,6 +4471,7 @@ export function ProcessQuotePreviewCard({
   preview: ProcessQuotePreview
   promotionApplicationExecutionSnapshot: NonCncPromotedQuoteApplicationExecutionPersistenceSnapshot
   promotionApplicationMutationExecutionSnapshot: NonCncPromotedQuoteApplicationMutationExecutionPersistenceSnapshot
+  promotionApplicationMutationOutcomeCommitSnapshot: NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot
   promotionApplicationOutcomeCommitSnapshot: NonCncPromotedQuoteApplicationOutcomeCommitPersistenceSnapshot
   promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
@@ -4449,6 +4480,9 @@ export function ProcessQuotePreviewCard({
   recordPromotionApplication: (input: RecordNonCncPromotedQuoteApplicationInput) => () => void
   recordPromotionApplicationExecutionRun: (run: NonCncPromotedQuoteApplicationExecutionRun) => () => void
   recordPromotionApplicationMutationExecutionRun: (run: NonCncPromotedQuoteApplicationMutationExecutionRun) => () => void
+  recordPromotionApplicationMutationOutcomeCommit: (
+    input: RecordNonCncPromotedQuoteApplicationMutationOutcomeCommitInput,
+  ) => () => void
   recordPromotionApplicationOutcomeCommit: (input: RecordNonCncPromotedQuoteApplicationOutcomeCommitInput) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
@@ -4604,30 +4638,18 @@ export function ProcessQuotePreviewCard({
     promotionApplicationMutationExecutionSnapshot.records.find(
       (record) => record.executionFingerprint === promotionApplicationMutationExecutionRun.executionFingerprint,
     )
-  const promotionExecutionStatusSummary = Object.entries(promotionExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionOutcomeCommitStatusSummary = Object.entries(promotionOutcomeCommitSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationStatusSummary = Object.entries(promotionApplicationSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationExecutionStatusSummary = Object.entries(promotionApplicationExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationOutcomeCommitStatusSummary = Object.entries(promotionApplicationOutcomeCommitSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
-  const promotionApplicationMutationExecutionStatusSummary = Object.entries(promotionApplicationMutationExecutionSnapshot.statusCounts)
-    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
-    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
-    .join(", ")
+  const promotionApplicationMutationOutcomeCommitRecord = promotionApplicationMutationOutcomeCommitSnapshot.records
+    .filter((record) => record.sourceExecutionFingerprint === promotionApplicationMutationOutcomeCommit.commitPlan.sourceExecutionFingerprint)
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+  const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
+  const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
+  const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
+  const promotionApplicationExecutionStatusSummary = buildStatusCountSummary(promotionApplicationExecutionSnapshot.statusCounts)
+  const promotionApplicationOutcomeCommitStatusSummary = buildStatusCountSummary(promotionApplicationOutcomeCommitSnapshot.statusCounts)
+  const promotionApplicationMutationExecutionStatusSummary = buildStatusCountSummary(promotionApplicationMutationExecutionSnapshot.statusCounts)
+  const promotionApplicationMutationOutcomeCommitStatusSummary = buildStatusCountSummary(
+    promotionApplicationMutationOutcomeCommitSnapshot.statusCounts,
+  )
   useEffect(() => {
     if (!promotionRecord) {
       return undefined
@@ -4672,6 +4694,14 @@ export function ProcessQuotePreviewCard({
   useEffect(() => {
     return recordPromotionApplicationMutationExecutionRun(promotionApplicationMutationExecutionRun)
   }, [promotionApplicationMutationExecutionRun, recordPromotionApplicationMutationExecutionRun])
+  useEffect(() => {
+    return recordPromotionApplicationMutationOutcomeCommit({
+      commitPlan: promotionApplicationMutationOutcomeCommit.commitPlan,
+      executionRun: promotionApplicationMutationOutcomeCommit.executionRun,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "Mutation Operator",
+    })
+  }, [promotionApplicationMutationOutcomeCommit, promotionPlan.requestedAt, recordPromotionApplicationMutationOutcomeCommit])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -5745,6 +5775,54 @@ export function ProcessQuotePreviewCard({
           )}
         </ul>
       </div>
+      {promotionApplicationMutationOutcomeCommitRecord ? (
+        <div
+          className="process-demo-promotion-application-mutation-commit-history"
+          aria-label="Non-CNC promoted quote application mutation commit history"
+          data-status={promotionApplicationMutationOutcomeCommitRecord.status}
+        >
+          <div className="process-demo-promotion-application-mutation-commit-history-heading">
+            <div>
+              <span>Mutation commit history</span>
+              <strong>{formatCount(promotionApplicationMutationOutcomeCommitSnapshot.recordCount, "record")}</strong>
+            </div>
+            <small>{promotionApplicationMutationOutcomeCommitSnapshot.persistenceVersion}</small>
+          </div>
+          <p>
+            Local mutation outcome commit history:{" "}
+            {formatCount(promotionApplicationMutationOutcomeCommitSnapshot.recordCount, "record")},{" "}
+            {formatCount(promotionApplicationMutationOutcomeCommitSnapshot.outcomeCount, "outcome")},{" "}
+            {formatCount(promotionApplicationMutationOutcomeCommitSnapshot.warningCount, "warning")}. Active RFQ quote, offer, and release
+            state stay unchanged.
+          </p>
+          <div className="process-demo-promotion-application-mutation-commit-history-grid">
+            <div>
+              <span>Latest commit</span>
+              <strong>{humanizeKey(promotionApplicationMutationOutcomeCommitRecord.disposition)}</strong>
+              <small>
+                {promotionApplicationMutationOutcomeCommitRecord.recordedBy} ·{" "}
+                {promotionApplicationMutationOutcomeCommitRecord.recordedAt}
+              </small>
+            </div>
+            <div>
+              <span>Outcome totals</span>
+              <strong>{formatCount(promotionApplicationMutationOutcomeCommitRecord.commandOutcomeCount, "outcome")}</strong>
+              <small>
+                {formatCount(promotionApplicationMutationOutcomeCommitRecord.blockerCount, "blocker")},{" "}
+                {formatCount(promotionApplicationMutationOutcomeCommitRecord.warningCount, "warning")}
+              </small>
+            </div>
+            <div>
+              <span>Mutation package ids</span>
+              <small>Blocked: {promotionApplicationMutationOutcomeCommitSnapshot.blockedMutationPackageIds.join(", ") || "None"}</small>
+              <small>Ready: {promotionApplicationMutationOutcomeCommitSnapshot.commitReadyMutationPackageIds.join(", ") || "None"}</small>
+            </div>
+          </div>
+          <small className="process-demo-promotion-application-mutation-commit-history-status">
+            Status counts: {promotionApplicationMutationOutcomeCommitStatusSummary || "None"}
+          </small>
+        </div>
+      ) : null}
       {promotionApplicationMutationExecutionRecord ? (
         <div
           className="process-demo-promotion-application-mutation-execution-history"
@@ -6289,6 +6367,13 @@ function formatFieldCount(count: number, label: string): string {
 
 function formatCount(count: number, label: string, pluralLabel = `${label}s`): string {
   return `${count} ${count === 1 ? label : pluralLabel}`
+}
+
+function buildStatusCountSummary(statusCounts: Partial<Record<string, number>>): string {
+  return Object.entries(statusCounts)
+    .sort(([leftStatus], [rightStatus]) => leftStatus.localeCompare(rightStatus))
+    .map(([status, count]) => `${humanizeKey(status)} ${count}`)
+    .join(", ")
 }
 
 function formatLabelPreview(labels: readonly string[], fallback: string, visibleCount = 2): string {

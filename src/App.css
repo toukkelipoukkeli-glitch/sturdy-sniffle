@@ -1592,6 +1592,7 @@
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
   display: grid;
+  align-content: start;
   gap: 4px;
   min-width: 0;
   padding: 7px;
@@ -1805,6 +1806,7 @@
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
   display: grid;
+  align-content: start;
   gap: 4px;
   min-width: 0;
   padding: 7px;
@@ -2600,6 +2602,7 @@
 .process-demo-promotion-execution,
 .process-demo-promotion-application-commit-history,
 .process-demo-promotion-application-execution-history,
+.process-demo-promotion-application-mutation-commit-history,
 .process-demo-promotion-application-mutation-execution-history,
 .process-demo-promotion-execution-history {
   background: oklch(0.968 0.014 285);
@@ -2614,6 +2617,7 @@
 .process-demo-promotion-execution[data-status="blocked"],
 .process-demo-promotion-application-commit-history[data-status="blocked"],
 .process-demo-promotion-application-execution-history[data-status="blocked"],
+.process-demo-promotion-application-mutation-commit-history[data-status="blocked"],
 .process-demo-promotion-application-mutation-execution-history[data-status="blocked"],
 .process-demo-promotion-execution-history[data-status="blocked"] {
   background: oklch(0.985 0.018 35);
@@ -2626,6 +2630,7 @@
 .process-demo-promotion-application-commit-history[data-status="ready"],
 .process-demo-promotion-application-execution-history[data-status="prepared"],
 .process-demo-promotion-application-execution-history[data-status="succeeded"],
+.process-demo-promotion-application-mutation-commit-history[data-status="ready"],
 .process-demo-promotion-application-mutation-execution-history[data-status="prepared"],
 .process-demo-promotion-application-mutation-execution-history[data-status="succeeded"],
 .process-demo-promotion-execution-history[data-status="prepared"],
@@ -2638,6 +2643,7 @@
 .process-demo-promotion-execution-heading,
 .process-demo-promotion-application-commit-history-heading,
 .process-demo-promotion-application-execution-history-heading,
+.process-demo-promotion-application-mutation-commit-history-heading,
 .process-demo-promotion-application-mutation-execution-history-heading,
 .process-demo-promotion-execution-history-heading {
   align-items: center;
@@ -2649,6 +2655,7 @@
 .process-demo-promotion-execution-heading > div,
 .process-demo-promotion-application-commit-history-heading > div,
 .process-demo-promotion-application-execution-history-heading > div,
+.process-demo-promotion-application-mutation-commit-history-heading > div,
 .process-demo-promotion-application-mutation-execution-history-heading > div,
 .process-demo-promotion-execution-history-heading > div {
   display: grid;
@@ -2663,6 +2670,8 @@
 .process-demo-promotion-application-commit-history-grid span,
 .process-demo-promotion-application-execution-history-heading span,
 .process-demo-promotion-application-execution-history-grid span,
+.process-demo-promotion-application-mutation-commit-history-heading span,
+.process-demo-promotion-application-mutation-commit-history-grid span,
 .process-demo-promotion-application-mutation-execution-history-heading span,
 .process-demo-promotion-application-mutation-execution-history-grid span,
 .process-demo-promotion-execution-history-heading span,
@@ -2679,6 +2688,8 @@
 .process-demo-promotion-application-commit-history-grid strong,
 .process-demo-promotion-application-execution-history-heading strong,
 .process-demo-promotion-application-execution-history-grid strong,
+.process-demo-promotion-application-mutation-commit-history-heading strong,
+.process-demo-promotion-application-mutation-commit-history-grid strong,
 .process-demo-promotion-application-mutation-execution-history-heading strong,
 .process-demo-promotion-application-mutation-execution-history-grid strong,
 .process-demo-promotion-execution-history-heading strong,
@@ -2691,6 +2702,7 @@
 .process-demo-promotion-execution-heading small,
 .process-demo-promotion-application-commit-history-heading small,
 .process-demo-promotion-application-execution-history-heading small,
+.process-demo-promotion-application-mutation-commit-history-heading small,
 .process-demo-promotion-application-mutation-execution-history-heading small,
 .process-demo-promotion-execution-history-heading small {
   background: white;
@@ -2705,6 +2717,7 @@
 .process-demo-promotion-execution p,
 .process-demo-promotion-application-commit-history p,
 .process-demo-promotion-application-execution-history p,
+.process-demo-promotion-application-mutation-commit-history p,
 .process-demo-promotion-application-mutation-execution-history p,
 .process-demo-promotion-execution-history p {
   color: oklch(0.36 0.035 250);
@@ -2718,8 +2731,10 @@
 .process-demo-promotion-execution-list,
 .process-demo-promotion-application-commit-history-grid,
 .process-demo-promotion-application-execution-history-grid,
+.process-demo-promotion-application-mutation-commit-history-grid,
 .process-demo-promotion-application-mutation-execution-history-grid,
 .process-demo-promotion-execution-history-grid {
+  align-items: start;
   display: grid;
   gap: 7px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2737,12 +2752,14 @@
 .process-demo-promotion-execution-next,
 .process-demo-promotion-application-commit-history-grid > div,
 .process-demo-promotion-application-execution-history-grid > div,
+.process-demo-promotion-application-mutation-commit-history-grid > div,
 .process-demo-promotion-application-mutation-execution-history-grid > div,
 .process-demo-promotion-execution-history-grid > div {
   background: oklch(0.985 0.004 245);
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
   display: grid;
+  align-content: start;
   gap: 4px;
   min-width: 0;
   padding: 7px;
@@ -2772,6 +2789,8 @@
 .process-demo-promotion-application-commit-history-status,
 .process-demo-promotion-application-execution-history-grid small,
 .process-demo-promotion-application-execution-history-status,
+.process-demo-promotion-application-mutation-commit-history-grid small,
+.process-demo-promotion-application-mutation-commit-history-status,
 .process-demo-promotion-application-mutation-execution-history-grid small,
 .process-demo-promotion-application-mutation-execution-history-status,
 .process-demo-promotion-execution-history-grid small,
@@ -2858,6 +2877,7 @@
   .process-demo-promotion-application-commit-history-grid,
   .process-demo-promotion-application-execution-grid,
   .process-demo-promotion-application-execution-history-grid,
+  .process-demo-promotion-application-mutation-commit-history-grid,
   .process-demo-promotion-application-execution-list {
     grid-template-columns: 1fr;
   }
@@ -2875,6 +2895,7 @@
   .process-demo-promotion-application-commit-plan-heading,
   .process-demo-promotion-application-commit-history-heading,
   .process-demo-promotion-application-execution-heading,
+  .process-demo-promotion-application-mutation-commit-history-heading,
   .process-demo-promotion-application-execution-history-heading {
     align-items: flex-start;
     flex-direction: column;
