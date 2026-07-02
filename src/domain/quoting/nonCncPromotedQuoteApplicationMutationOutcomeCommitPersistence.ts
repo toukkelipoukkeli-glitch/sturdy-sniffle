@@ -156,10 +156,31 @@ function assertExecutionMatchesCommitPlan(
     executionRun.packageId === commitPlan.packageId ? undefined : "packageId",
     executionRun.selectedPlanId === commitPlan.selectedPlanId ? undefined : "selectedPlanId",
     executionRun.targetRfqId === commitPlan.targetRfqId ? undefined : "targetRfqId",
+    executionMatchesCommandOutcomes(executionRun, commitPlan) ? undefined : "commandOutcomes",
   ].filter((field): field is string => Boolean(field))
   if (mismatches.length > 0) {
     throw new Error(`application mutation outcome commit execution run does not match commit plan: ${mismatches.join(", ")}`)
   }
+}
+
+function executionMatchesCommandOutcomes(
+  executionRun: NonCncPromotedQuoteApplicationMutationExecutionRun,
+  commitPlan: NonCncPromotedQuoteApplicationMutationOutcomeCommitPlan,
+): boolean {
+  if (executionRun.commands.length !== commitPlan.commandOutcomes.length) {
+    return false
+  }
+  return commitPlan.commandOutcomes.every((outcome, index) => {
+    const command = executionRun.commands[index]
+    return (
+      command !== undefined &&
+      command.key === outcome.key &&
+      command.status === outcome.status &&
+      command.externalId === outcome.externalId &&
+      command.message === outcome.message &&
+      compareStringArrays(command.warnings, outcome.warnings ?? [])
+    )
+  })
 }
 
 function buildCommitRecordId({ sourceExecutionFingerprint }: { sourceExecutionFingerprint: string }): string {
@@ -248,6 +269,9 @@ function normalizeRecord(
   if (normalized.status === "ready" && !normalized.executionFingerprint) {
     throw new Error("ready application mutation outcome commit records require an executionFingerprint")
   }
+  if (normalized.status === "ready" && normalized.executionStatus === undefined) {
+    throw new Error("ready application mutation outcome commit records require an executionStatus")
+  }
   if (normalized.status === "blocked" && normalized.executionFingerprint !== undefined) {
     throw new Error("blocked application mutation outcome commit records cannot include an executionFingerprint")
   }
@@ -325,7 +349,7 @@ function normalizeOutcome(
     status: normalizeOutcomeStatus(outcome.status),
     warnings: outcome.warnings?.map((warning) => nonBlank(warning, "commandOutcome.warning")),
   }
-  return normalized.warnings ? normalized : { ...normalized, warnings: undefined }
+  return normalized
 }
 
 function sortNewestFirst(
@@ -348,6 +372,10 @@ function countStatuses(
     counts[record.status] = (counts[record.status] ?? 0) + 1
     return counts
   }, {})
+}
+
+function compareStringArrays(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
 function nonNegativeInteger(value: number, fieldName: string): number {

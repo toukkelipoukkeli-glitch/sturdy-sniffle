@@ -132,14 +132,46 @@ describe("non-CNC promoted quote application mutation outcome commit persistence
       }),
     ).rejects.toThrow("application mutation outcome commit execution run must use commit mode")
 
+    for (const [field, patchedRun] of [
+      [
+        "mutationPackageId",
+        { ...executionRun, mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:other" },
+      ],
+      ["applicationId", { ...executionRun, applicationId: "non-cnc-promoted-quote-application:other" }],
+      [
+        "applicationRecordId",
+        {
+          ...executionRun,
+          applicationRecordId: "non-cnc-promoted-quote-application-record:non-cnc-promoted-quote-application:other",
+        },
+      ],
+      ["packageId", { ...executionRun, packageId: "package-other" }],
+      ["selectedPlanId", { ...executionRun, selectedPlanId: "non-cnc-promotion:other" }],
+      ["targetRfqId", { ...executionRun, targetRfqId: "rfq-other" }],
+    ] as const) {
+      await expect(
+        adapter.recordCommit({
+          commitPlan,
+          executionRun: patchedRun,
+          recordedAt: "2026-06-29T12:20:00.000Z",
+          recordedBy: "FactoryBid Operator",
+        }),
+      ).rejects.toThrow(`application mutation outcome commit execution run does not match commit plan: ${field}`)
+    }
+
     await expect(
       adapter.recordCommit({
         commitPlan,
-        executionRun: { ...executionRun, mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:other" },
+        executionRun: {
+          ...executionRun,
+          commands: executionRun.commands.map((command, index) =>
+            index === 0 ? { ...command, externalId: "active-rfq-quote:rfq-other:stale" } : command,
+          ),
+        },
         recordedAt: "2026-06-29T12:20:00.000Z",
         recordedBy: "FactoryBid Operator",
       }),
-    ).rejects.toThrow("application mutation outcome commit execution run does not match commit plan: mutationPackageId")
+    ).rejects.toThrow("application mutation outcome commit execution run does not match commit plan: commandOutcomes")
 
     await expect(
       adapter.recordCommit({
@@ -164,22 +196,7 @@ describe("non-CNC promoted quote application mutation outcome commit persistence
   })
 
   it("deduplicates seeded records and returns cloned snapshots", async () => {
-    const { commitPlan, executionRun } = readyCommitRun()
-    if (!executionRun) {
-      throw new Error("Expected ready application mutation outcome commit run")
-    }
-    const adapter = createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence()
-    const seededRecord = (
-      await adapter.recordCommit({
-        commitPlan,
-        executionRun,
-        recordedAt: "2026-06-29T12:20:00.000Z",
-        recordedBy: "FactoryBid Operator",
-      })
-    ).records[0]
-    if (!seededRecord) {
-      throw new Error("Expected seeded application mutation outcome commit record")
-    }
+    const { commitPlan, executionRun, seededRecord } = await seedReadyRecord()
 
     const seededAdapter = createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence({
       initialSnapshot: {
@@ -246,22 +263,7 @@ describe("non-CNC promoted quote application mutation outcome commit persistence
   })
 
   it("rejects invalid seeded mutation outcome commit records", async () => {
-    const { commitPlan, executionRun } = readyCommitRun()
-    if (!executionRun) {
-      throw new Error("Expected ready application mutation outcome commit run")
-    }
-    const adapter = createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence()
-    const seededRecord = (
-      await adapter.recordCommit({
-        commitPlan,
-        executionRun,
-        recordedAt: "2026-06-29T12:20:00.000Z",
-        recordedBy: "FactoryBid Operator",
-      })
-    ).records[0]
-    if (!seededRecord) {
-      throw new Error("Expected seeded application mutation outcome commit record")
-    }
+    const { seededRecord } = await seedReadyRecord()
 
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence({
@@ -284,6 +286,13 @@ describe("non-CNC promoted quote application mutation outcome commit persistence
         },
       }),
     ).toThrow("ready application mutation outcome commit records require an executionFingerprint")
+    expect(() =>
+      createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, executionStatus: undefined }],
+        },
+      }),
+    ).toThrow("ready application mutation outcome commit records require an executionStatus")
     expect(() =>
       createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence({
         initialSnapshot: {
@@ -329,6 +338,26 @@ function readyCommitRun() {
     mutationPackage,
     outcomeDraft: buildNonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft(dryRun),
   })
+}
+
+async function seedReadyRecord() {
+  const { commitPlan, executionRun } = readyCommitRun()
+  if (!executionRun) {
+    throw new Error("Expected ready application mutation outcome commit run")
+  }
+  const adapter = createLocalNonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence()
+  const seededRecord = (
+    await adapter.recordCommit({
+      commitPlan,
+      executionRun,
+      recordedAt: "2026-06-29T12:20:00.000Z",
+      recordedBy: "FactoryBid Operator",
+    })
+  ).records[0]
+  if (!seededRecord) {
+    throw new Error("Expected seeded application mutation outcome commit record")
+  }
+  return { commitPlan, executionRun, seededRecord }
 }
 
 function readyMutationPackage(): NonCncPromotedQuoteApplicationMutationPackage {
