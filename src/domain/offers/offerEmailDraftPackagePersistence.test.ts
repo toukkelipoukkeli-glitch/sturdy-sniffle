@@ -8,6 +8,7 @@ import { buildCncOfferDraft, type OfferDraft } from "./offer"
 import { buildOfferExportPackage, type OfferExportPackage } from "./offerExportPackage"
 import { buildOfferEmailDraftPackage, type OfferEmailDraftPackage } from "./offerEmailDraftPackage"
 import {
+  buildOfferEmailDraftPackagePersistenceRecord,
   createLocalOfferEmailDraftPackagePersistence,
   fingerprintOfferEmailDraftPackage,
   OFFER_EMAIL_DRAFT_PACKAGE_PERSISTENCE_VERSION,
@@ -101,6 +102,57 @@ describe("offer email draft package persistence", () => {
     })
   })
 
+  it("normalizes optional package text before storing seeded records", () => {
+    const emailPackage = {
+      ...readyEmailPackage(),
+      body: "  Customer body  ",
+      bodyPreview: "  Customer body  ",
+      commandKey: "  email-draft  ",
+      recipient: "  nora@example.test  ",
+      subject: "  Offer OFFER-204  ",
+    }
+
+    const adapter = createLocalOfferEmailDraftPackagePersistence({
+      initialSnapshot: {
+        records: [recordFixture(emailPackage, "2026-06-20T09:05:00+03:00", "Sari")],
+      },
+    })
+
+    expect(adapter.snapshot().records[0]).toMatchObject({
+      commandKey: "email-draft",
+      emailPackage: {
+        body: "Customer body",
+        bodyPreview: "Customer body",
+        commandKey: "email-draft",
+        recipient: "nora@example.test",
+        subject: "Offer OFFER-204",
+      },
+      recipient: "nora@example.test",
+    })
+  })
+
+  it("omits whitespace-only optional package text from seeded records", () => {
+    const emailPackage = {
+      ...readyEmailPackage(),
+      commandKey: " ",
+      recipient: " ",
+      subject: " ",
+    }
+
+    const adapter = createLocalOfferEmailDraftPackagePersistence({
+      initialSnapshot: {
+        records: [recordFixture(emailPackage, "2026-06-20T09:05:00+03:00", "Sari")],
+      },
+    })
+    const record = adapter.snapshot().records[0]
+
+    expect(record).not.toHaveProperty("commandKey")
+    expect(record).not.toHaveProperty("recipient")
+    expect(record?.emailPackage).not.toHaveProperty("commandKey")
+    expect(record?.emailPackage).not.toHaveProperty("recipient")
+    expect(record?.emailPackage).not.toHaveProperty("subject")
+  })
+
   it("returns cloned snapshots so callers cannot mutate persistence state", async () => {
     const adapter = createLocalOfferEmailDraftPackagePersistence()
     const emailPackage = readyEmailPackage()
@@ -155,6 +207,23 @@ describe("offer email draft package persistence", () => {
         },
       }),
     ).toThrow("recordedAt must be a valid ISO timestamp")
+
+    expect(() =>
+      createLocalOfferEmailDraftPackagePersistence({
+        initialSnapshot: {
+          records: [
+            recordFixture(
+              {
+                ...emailPackage,
+                status: "queued" as never,
+              },
+              "2026-06-20T09:05:00+03:00",
+              "Sari",
+            ),
+          ],
+        },
+      }),
+    ).toThrow("email package status must be blocked or ready")
   })
 })
 
@@ -194,23 +263,11 @@ function recordFixture(
   recordedAt: string,
   recordedBy: string,
 ): OfferEmailDraftPackagePersistenceRecord {
-  return {
-    attachmentFileNames: [...emailPackage.attachmentFileNames],
-    blockerLabels: [...emailPackage.blockerLabels],
+  return buildOfferEmailDraftPackagePersistenceRecord({
     emailPackage,
-    packageFingerprint: fingerprintOfferEmailDraftPackage(emailPackage),
-    persistenceVersion: OFFER_EMAIL_DRAFT_PACKAGE_PERSISTENCE_VERSION,
     recordedAt,
     recordedBy,
-    releaseAt: emailPackage.releaseAt,
-    rfqId: emailPackage.rfqId,
-    offerId: emailPackage.offerId,
-    offerNumber: emailPackage.offerNumber,
-    status: emailPackage.status,
-    warningLabels: [...emailPackage.warningLabels],
-    ...(emailPackage.commandKey ? { commandKey: emailPackage.commandKey } : {}),
-    ...(emailPackage.recipient ? { recipient: emailPackage.recipient } : {}),
-  }
+  })
 }
 
 function offerDraft(): OfferDraft {

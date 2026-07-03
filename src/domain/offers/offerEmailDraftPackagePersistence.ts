@@ -50,7 +50,7 @@ export function createLocalOfferEmailDraftPackagePersistence({
 
   return {
     async recordPackage(input) {
-      const record = buildRecord(input)
+      const record = buildOfferEmailDraftPackagePersistenceRecord(input)
       snapshotState = normalizeSnapshot({
         records: [
           ...snapshotState.records.filter((candidate) => candidate.packageFingerprint !== record.packageFingerprint),
@@ -76,7 +76,7 @@ export function fingerprintOfferEmailDraftPackage(emailPackage: OfferEmailDraftP
   return `offer-email-draft-package-${fingerprint(stablePayload)}`
 }
 
-function buildRecord(input: {
+export function buildOfferEmailDraftPackagePersistenceRecord(input: {
   emailPackage: OfferEmailDraftPackage
   recordedAt?: string
   recordedBy: string
@@ -123,24 +123,12 @@ function normalizeSnapshot(
 }
 
 function normalizeRecord(record: OfferEmailDraftPackagePersistenceRecord): OfferEmailDraftPackagePersistenceRecord {
-  const emailPackage = clonePackage(record.emailPackage)
-  return {
-    attachmentFileNames: [...emailPackage.attachmentFileNames],
-    blockerLabels: [...emailPackage.blockerLabels],
-    commandKey: optionalTrim(record.commandKey) ?? emailPackage.commandKey,
-    emailPackage,
-    packageFingerprint: fingerprintOfferEmailDraftPackage(emailPackage),
-    persistenceVersion: normalizePersistenceVersion(record.persistenceVersion),
-    recordedAt: normalizeIsoTimestamp(record.recordedAt, "recordedAt"),
-    recordedBy: nonBlank(record.recordedBy, "recordedBy"),
-    recipient: optionalTrim(record.recipient) ?? emailPackage.recipient,
-    releaseAt: emailPackage.releaseAt,
-    rfqId: emailPackage.rfqId,
-    offerId: emailPackage.offerId,
-    offerNumber: emailPackage.offerNumber,
-    status: emailPackage.status,
-    warningLabels: [...emailPackage.warningLabels],
-  }
+  normalizePersistenceVersion(record.persistenceVersion)
+  return buildOfferEmailDraftPackagePersistenceRecord({
+    emailPackage: record.emailPackage,
+    recordedAt: record.recordedAt,
+    recordedBy: record.recordedBy,
+  })
 }
 
 function cloneSnapshot(snapshot: OfferEmailDraftPackagePersistenceSnapshot): OfferEmailDraftPackagePersistenceSnapshot {
@@ -154,26 +142,20 @@ function cloneSnapshot(snapshot: OfferEmailDraftPackagePersistenceSnapshot): Off
 }
 
 function cloneRecord(record: OfferEmailDraftPackagePersistenceRecord): OfferEmailDraftPackagePersistenceRecord {
-  return {
-    attachmentFileNames: [...record.attachmentFileNames],
-    blockerLabels: [...record.blockerLabels],
-    emailPackage: clonePackage(record.emailPackage),
-    packageFingerprint: record.packageFingerprint,
-    persistenceVersion: record.persistenceVersion,
+  normalizePersistenceVersion(record.persistenceVersion)
+  return buildOfferEmailDraftPackagePersistenceRecord({
+    emailPackage: record.emailPackage,
     recordedAt: record.recordedAt,
     recordedBy: record.recordedBy,
-    releaseAt: record.releaseAt,
-    rfqId: record.rfqId,
-    offerId: record.offerId,
-    offerNumber: record.offerNumber,
-    status: record.status,
-    warningLabels: [...record.warningLabels],
-    ...(record.commandKey ? { commandKey: record.commandKey } : {}),
-    ...(record.recipient ? { recipient: record.recipient } : {}),
-  }
+  })
 }
 
 function clonePackage(emailPackage: OfferEmailDraftPackage): OfferEmailDraftPackage {
+  const body = optionalTrim(emailPackage.body)
+  const bodyPreview = optionalTrim(emailPackage.bodyPreview)
+  const commandKey = optionalTrim(emailPackage.commandKey)
+  const recipient = optionalTrim(emailPackage.recipient)
+  const subject = optionalTrim(emailPackage.subject)
   return {
     attachmentFileNames: [...emailPackage.attachmentFileNames],
     blockerLabels: [...emailPackage.blockerLabels],
@@ -186,11 +168,11 @@ function clonePackage(emailPackage: OfferEmailDraftPackage): OfferEmailDraftPack
     status: normalizePackageStatus(emailPackage.status),
     summaryHeadline: nonBlank(emailPackage.summaryHeadline, "emailPackage.summaryHeadline"),
     warningLabels: [...emailPackage.warningLabels],
-    ...(emailPackage.body ? { body: emailPackage.body } : {}),
-    ...(emailPackage.bodyPreview ? { bodyPreview: emailPackage.bodyPreview } : {}),
-    ...(emailPackage.commandKey ? { commandKey: emailPackage.commandKey } : {}),
-    ...(emailPackage.recipient ? { recipient: emailPackage.recipient } : {}),
-    ...(emailPackage.subject ? { subject: emailPackage.subject } : {}),
+    ...(body ? { body } : {}),
+    ...(bodyPreview ? { bodyPreview } : {}),
+    ...(commandKey ? { commandKey } : {}),
+    ...(recipient ? { recipient } : {}),
+    ...(subject ? { subject } : {}),
   }
 }
 
@@ -244,7 +226,11 @@ function stableJson(value: unknown): string {
 }
 
 function fingerprint(value: string): string {
-  let hash = 2_166_136_261
+  return `${fnv32(value, 2_166_136_261)}${fnv32(value, 4_200_727_613)}`
+}
+
+function fnv32(value: string, seed: number): string {
+  let hash = seed
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index)
     hash = Math.imul(hash, 16_777_619)
