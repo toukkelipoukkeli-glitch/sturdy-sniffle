@@ -84,6 +84,12 @@ import {
   summarizeOfferReleaseExecutionHistory,
   type OfferReleaseExecutionHistorySummary,
 } from "./domain/offers/offerReleaseExecutionHistory"
+import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
+import {
+  summarizeOfferEmailDraftPackageHistory,
+  type OfferEmailDraftPackageHistorySummary,
+} from "./domain/offers/offerEmailDraftPackageHistory"
+import { buildOfferEmailDraftPackagePersistenceRecord } from "./domain/offers/offerEmailDraftPackagePersistence"
 import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
@@ -1519,6 +1525,20 @@ function App() {
     () => summarizeOfferReleaseExecutionHistory([offerReleaseExecutionPreview, ...selectedReleaseExecutionRuns]),
     [offerReleaseExecutionPreview, selectedReleaseExecutionRuns],
   )
+  const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
+  const offerEmailDraftPackageHistory = useMemo(
+    () =>
+      summarizeOfferEmailDraftPackageHistory({
+        records: [
+          buildOfferEmailDraftPackagePersistenceRecord({
+            emailPackage: offerEmailDraftPackage,
+            recordedAt: workspaceNow,
+            recordedBy: workspaceOperatorName,
+          }),
+        ],
+      }),
+    [offerEmailDraftPackage, workspaceNow, workspaceOperatorName],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
@@ -2142,6 +2162,7 @@ function App() {
               readiness={offerSendReadiness}
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
+              releaseEmailDraftHistory={offerEmailDraftPackageHistory}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
               releaseReview={selectedReleaseReview}
@@ -8104,6 +8125,7 @@ function OfferView({
   readiness,
   releaseGate,
   releaseExecution,
+  releaseEmailDraftHistory,
   releaseHistory,
   releasePlan,
   releaseReview,
@@ -8129,6 +8151,7 @@ function OfferView({
   readiness: OfferSendReadinessResult
   releaseGate: QuoteReleaseGateDecision
   releaseExecution: OfferReleaseExecutionRun
+  releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
   releaseReview?: ReleaseReviewState
@@ -8267,6 +8290,7 @@ function OfferView({
         onScheduleFollowUp={onScheduleFollowUp}
       />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
+      <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseExecutionPanel
         execution={releaseExecution}
         onExecuteRelease={onExecuteRelease}
@@ -8466,6 +8490,71 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
   )
 }
 
+function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDraftPackageHistorySummary }) {
+  const latest = history.latestPackage
+  const latestStatus = latest ? humanizeKey(latest.status) : "None"
+  const latestRecipient = latest?.recipient ?? "Recipient pending"
+
+  return (
+    <section className="offer-email-draft-history-panel" aria-label="Offer email draft package history">
+      <div className="offer-email-draft-history-heading">
+        <div>
+          <span className="eyebrow">
+            <Mail aria-hidden="true" />
+            Draft package history
+          </span>
+          <strong>{history.totalPackages === 1 ? "1 draft package" : `${history.totalPackages} draft packages`}</strong>
+        </div>
+        <span
+          className={
+            history.blockedPackageCount > 0
+              ? "offer-email-draft-history-status offer-email-draft-history-status-review"
+              : "offer-email-draft-history-status offer-email-draft-history-status-ready"
+          }
+        >
+          {history.blockedPackageCount > 0 ? "Review" : "Provider-safe"}
+        </span>
+      </div>
+      <div className="offer-email-draft-history-summary">
+        <Metric label="Packages" value={String(history.totalPackages)} />
+        <Metric label="Latest" value={latestStatus} />
+        <Metric label="Ready" value={String(history.readyPackageCount)} />
+        <Metric label="Blocked" value={String(history.blockedPackageCount)} />
+      </div>
+      {latest ? (
+        <div className="offer-email-draft-history-latest" data-status={latest.status}>
+          <div>
+            <strong>{latestRecipient}</strong>
+            <span>
+              {latest.attachmentCount} attachment{latest.attachmentCount === 1 ? "" : "s"} · {latest.nextActionCount} next action
+              {latest.nextActionCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <small>{shortEmailDraftPackageFingerprint(latest.packageFingerprint)}</small>
+        </div>
+      ) : (
+        <div className="flag">
+          <AlertTriangle aria-hidden="true" />
+          <span>No email draft package records are available.</span>
+        </div>
+      )}
+      {history.recipientSummaries.length > 0 ? (
+        <div className="offer-email-draft-history-recipients" aria-label="Email draft package recipients">
+          {history.recipientSummaries.map((recipient) => (
+            <div className="flag ok" key={recipient.recipient}>
+              <CheckCircle2 aria-hidden="true" />
+              <span>
+                {recipient.recipient} · {recipient.packageCount} package{recipient.packageCount === 1 ? "" : "s"} ·{" "}
+                {recipient.statuses.map(humanizeKey).join(", ")}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 function OfferReleaseExecutionPanel({
   execution,
   onExecuteRelease,
@@ -8590,6 +8679,10 @@ function buildLocalReleaseCommandOutcomes(releasePlan: OfferReleasePlan): OfferR
 
 function shortAuditFingerprint(fingerprint: string) {
   return fingerprint.replace(/^offer-release-execution-/, "")
+}
+
+function shortEmailDraftPackageFingerprint(fingerprint: string) {
+  return fingerprint.replace(/^offer-email-draft-package-/, "")
 }
 
 function OfferLifecyclePanel({
