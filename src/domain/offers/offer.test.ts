@@ -158,6 +158,25 @@ describe("offer builder", () => {
     expect(formatOfferMoney(-75, "USD")).toBe("-USD 0.75")
   })
 
+  it("formats latest customer revision summaries for imported non-contiguous history", () => {
+    expect(
+      formatOfferRevisionSummary([
+        {
+          revision: 1,
+          createdAt: "2026-06-19",
+          createdBy: "FactoryBid OS",
+          reason: "Initial draft",
+        },
+        {
+          revision: 4,
+          createdAt: "2026-06-24",
+          createdBy: "Sari",
+          reason: "Imported customer-requested validity update.",
+        },
+      ]),
+    ).toBe("Revision 4 (2026-06-24) by Sari: Imported customer-requested validity update.")
+  })
+
   it("rejects impossible validity windows", () => {
     const quote = calculateCncQuote(rushTurnedSpacerFixture)
 

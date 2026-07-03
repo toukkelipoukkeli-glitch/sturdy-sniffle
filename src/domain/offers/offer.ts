@@ -232,10 +232,10 @@ export function renderOfferText(offer: OfferDraft): string {
 }
 
 export function formatOfferRevisionSummary(revisions: OfferRevision[]): string {
-  const latest = normalizeRevisionHistory(revisions).at(-1)
-  if (!latest) {
+  if (revisions.length === 0) {
     throw new Error("offer must include at least one revision")
   }
+  const latest = revisions.reduce((currentLatest, revision) => (revision.revision >= currentLatest.revision ? revision : currentLatest))
   return `Revision ${latest.revision} (${latest.createdAt}) by ${latest.createdBy}: ${latest.reason}`
 }
 
