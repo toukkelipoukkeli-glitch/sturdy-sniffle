@@ -4101,6 +4101,13 @@
   padding: 10px;
 }
 
+.preview-viewport[data-renderer="step-metadata-card"],
+.preview-viewport[data-renderer="dxf-metadata-card"] {
+  aspect-ratio: auto;
+  min-height: 270px;
+  overflow: visible;
+}
+
 .preview-image {
   border: 1px solid oklch(0.86 0.018 235);
   border-radius: 6px;
@@ -4336,6 +4343,90 @@
   color: oklch(0.42 0.09 58);
   font-size: 0.68rem;
   font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cad-geometry-review {
+  border-top: 1px solid oklch(0.9 0.018 220);
+  display: grid;
+  gap: 5px;
+  padding-top: 7px;
+}
+
+.cad-geometry-review-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.cad-geometry-review-heading span {
+  color: oklch(0.42 0.028 250);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cad-geometry-review-heading strong {
+  background: oklch(0.94 0.038 148);
+  border-radius: 999px;
+  color: oklch(0.32 0.075 148);
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 4px 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cad-geometry-review[data-status="needs_review"] .cad-geometry-review-heading strong {
+  background: oklch(0.96 0.05 85);
+  color: oklch(0.38 0.09 72);
+}
+
+.cad-geometry-review[data-status="blocked"] .cad-geometry-review-heading strong {
+  background: oklch(0.94 0.035 28);
+  color: oklch(0.4 0.1 28);
+}
+
+.cad-geometry-review-grid {
+  display: grid;
+  gap: 5px 8px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.7fr);
+  margin: 0;
+}
+
+.cad-geometry-review-grid div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cad-geometry-review-grid dt {
+  color: oklch(0.48 0.025 250);
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cad-geometry-review-grid dd {
+  color: oklch(0.25 0.035 250);
+  font-size: 0.66rem;
+  font-weight: 850;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cad-geometry-review p {
+  color: oklch(0.34 0.035 250);
+  font-size: 0.66rem;
+  font-weight: 760;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -4632,6 +4723,14 @@
 
 .attachment-geometry-thumbnail {
   border-color: oklch(0.78 0.04 190);
+}
+
+.attachment-geometry-thumbnail[data-review-status="needs_review"] {
+  border-color: oklch(0.78 0.07 78);
+}
+
+.attachment-geometry-thumbnail[data-review-status="blocked"] {
+  border-color: oklch(0.72 0.08 28);
 }
 
 .attachment-row .attachment-metadata-thumbnail span,

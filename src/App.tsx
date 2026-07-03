@@ -219,6 +219,7 @@ import {
   type PartPreviewModel,
   type PartPreviewMode,
 } from "./domain/viewer/partPreview"
+import { buildCadGeometryReviewSummary, type CadGeometryReviewSummary } from "./domain/viewer/cadGeometryReviewSummary"
 import { cadMetadataFileMatches } from "./domain/viewer/cadMetadataFileMatch"
 import {
   buildCapacityCommitmentPlan,
@@ -7317,6 +7318,17 @@ function PartPreviewPanel({
       : undefined
   const primaryCadMetadata = primaryAttachment ? cadMetadataForAttachmentThumbnail(primaryAttachment, preview) : undefined
   const primaryGeometryPreview = primaryAttachment?.previewOutput.geometryPreview
+  const geometryReviewSummaries = useMemo(
+    () =>
+      new Map(
+        preview.attachments.flatMap((attachment) => {
+          const geometryPreview = attachment.previewOutput.geometryPreview
+          return geometryPreview ? [[attachment.fileName, buildCadGeometryReviewSummary(geometryPreview)] as const] : []
+        }),
+      ),
+    [preview.attachments],
+  )
+  const primaryGeometryReviewSummary = primaryAttachment ? geometryReviewSummaries.get(primaryAttachment.fileName) : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
@@ -7352,8 +7364,12 @@ function PartPreviewPanel({
             src={primaryPdfSource}
             title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
-        ) : primaryAttachment && primaryGeometryPreview ? (
-          <CadGeometryPreviewCard attachmentFileName={primaryAttachment.fileName} geometryPreview={primaryGeometryPreview} />
+        ) : primaryAttachment && primaryGeometryPreview && primaryGeometryReviewSummary ? (
+          <CadGeometryPreviewCard
+            attachmentFileName={primaryAttachment.fileName}
+            geometryPreview={primaryGeometryPreview}
+            reviewSummary={primaryGeometryReviewSummary}
+          />
         ) : primaryAttachment && primaryCadMetadata ? (
           <CadMetadataPreviewCard attachmentFileName={primaryAttachment.fileName} metadata={primaryCadMetadata} preview={preview} />
         ) : (
@@ -7492,6 +7508,7 @@ function PartPreviewPanel({
         <div className="attachment-list" aria-label="Attachments">
           {preview.attachments.map((attachment) => {
             const attachmentGeometryPreview = attachment.previewOutput.geometryPreview
+            const attachmentGeometryReviewSummary = attachmentGeometryPreview ? geometryReviewSummaries.get(attachment.fileName) : undefined
             const attachmentCadMetadata = cadMetadataForAttachmentThumbnail(attachment, preview)
 
             return (
@@ -7502,8 +7519,12 @@ function PartPreviewPanel({
                 data-thumbnail={attachmentGeometryPreview ? "cad-geometry" : attachmentCadMetadata ? "cad-metadata" : undefined}
                 key={attachment.fileName}
               >
-                {attachmentGeometryPreview ? (
-                  <CadGeometryThumbnailCard attachmentFileName={attachment.fileName} geometryPreview={attachmentGeometryPreview} />
+                {attachmentGeometryPreview && attachmentGeometryReviewSummary ? (
+                  <CadGeometryThumbnailCard
+                    attachmentFileName={attachment.fileName}
+                    geometryPreview={attachmentGeometryPreview}
+                    reviewSummary={attachmentGeometryReviewSummary}
+                  />
                 ) : attachmentCadMetadata ? (
                   <CadMetadataThumbnailCard attachmentFileName={attachment.fileName} metadata={attachmentCadMetadata} preview={preview} />
                 ) : (
@@ -7513,7 +7534,9 @@ function PartPreviewPanel({
                   <strong>{attachment.fileName}</strong>
                   <small>
                     {attachment.thumbnailLabel} · {humanizeKey(attachment.previewOutput.status)}
-                    {attachmentGeometryPreview ? ` · ${geometryPreviewSummary(attachmentGeometryPreview)}` : ""}
+                    {attachmentGeometryPreview && attachmentGeometryReviewSummary
+                      ? ` · ${geometryPreviewSummary(attachmentGeometryPreview, attachmentGeometryReviewSummary)}`
+                      : ""}
                     {attachment.previewOutput.warnings.length > 0 ? ` · ${attachment.previewOutput.warnings.join(" ")}` : ""}
                     {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
                   </small>
@@ -7589,14 +7612,21 @@ function CadMetadataPreviewCard({
 function CadGeometryPreviewCard({
   attachmentFileName,
   geometryPreview,
+  reviewSummary,
 }: {
   attachmentFileName: string
   geometryPreview: AttachmentGeometryPreview
+  reviewSummary: CadGeometryReviewSummary
 }) {
   const outlineStyle = geometryOutlineStyle(geometryPreview)
 
   return (
-    <div className="cad-geometry-card" aria-label={`${attachmentFileName} geometry preview`} data-status={geometryPreview.status}>
+    <div
+      className="cad-geometry-card"
+      aria-label={`${attachmentFileName} geometry preview`}
+      data-review-status={reviewSummary.status}
+      data-status={geometryPreview.status}
+    >
       <div className="cad-geometry-heading">
         <span>{geometryPreview.format.toUpperCase()}</span>
         <strong>{humanizeKey(geometryPreview.status)}</strong>
@@ -7618,6 +7648,35 @@ function CadGeometryPreviewCard({
       {geometryPreview.warnings.length > 0 ? (
         <p className="cad-geometry-warning">{geometryPreview.warnings.join(" ")}</p>
       ) : null}
+      <CadGeometryReviewSummaryPanel attachmentFileName={attachmentFileName} summary={reviewSummary} />
+    </div>
+  )
+}
+
+function CadGeometryReviewSummaryPanel({
+  attachmentFileName,
+  summary,
+}: {
+  attachmentFileName: string
+  summary: CadGeometryReviewSummary
+}) {
+  return (
+    <div className="cad-geometry-review" aria-label={`${attachmentFileName} geometry review summary`} data-status={summary.status}>
+      <div className="cad-geometry-review-heading">
+        <span>Review</span>
+        <strong>{humanizeKey(summary.status)}</strong>
+      </div>
+      <dl className="cad-geometry-review-grid">
+        <div>
+          <dt>Checks</dt>
+          <dd>{geometryReviewCountsLabel(summary)}</dd>
+        </div>
+        <div>
+          <dt>Warnings</dt>
+          <dd>{summary.warningCount}</dd>
+        </div>
+      </dl>
+      <p>{summary.blockers[0] ?? summary.nextAction}</p>
     </div>
   )
 }
@@ -7649,15 +7708,24 @@ function CadMetadataThumbnailCard({
 function CadGeometryThumbnailCard({
   attachmentFileName,
   geometryPreview,
+  reviewSummary,
 }: {
   attachmentFileName: string
   geometryPreview: AttachmentGeometryPreview
+  reviewSummary: CadGeometryReviewSummary
 }) {
   return (
-    <div className="attachment-geometry-thumbnail" aria-label={`${attachmentFileName} geometry thumbnail`} data-status={geometryPreview.status}>
+    <div
+      className="attachment-geometry-thumbnail"
+      aria-label={`${attachmentFileName} geometry thumbnail`}
+      data-review-status={reviewSummary.status}
+      data-status={geometryPreview.status}
+    >
       <span>{geometryPreview.format.toUpperCase()}</span>
       <strong>{geometryBoundsLabel(geometryPreview)}</strong>
-      <small>{geometryThumbnailKindLabel(geometryPreview)}</small>
+      <small>
+        {geometryThumbnailKindLabel(geometryPreview)} · {humanizeKey(reviewSummary.status)}
+      </small>
     </div>
   )
 }
@@ -9632,11 +9700,21 @@ function geometryThumbnailKindLabel(geometryPreview: AttachmentGeometryPreview) 
   return "Fallback"
 }
 
-function geometryPreviewSummary(geometryPreview: AttachmentGeometryPreview) {
+function geometryPreviewSummary(geometryPreview: AttachmentGeometryPreview, reviewSummary: CadGeometryReviewSummary) {
+  const reviewLabel = `review ${humanizeKey(reviewSummary.status)}`
+
   if (geometryPreview.status === "ready") {
-    return `Geometry ${geometryBoundsLabel(geometryPreview)}`
+    return `Geometry ${geometryBoundsLabel(geometryPreview)} · ${reviewLabel}`
   }
-  return `Geometry fallback ${geometryBoundsLabel(geometryPreview)}`
+  return `Geometry fallback ${geometryBoundsLabel(geometryPreview)} · ${reviewLabel}`
+}
+
+function geometryReviewCountsLabel(summary: CadGeometryReviewSummary) {
+  const labels = (["blocked", "needs_review", "ready"] as const).flatMap((status) => {
+    const count = summary.checkCounts[status] ?? 0
+    return count > 0 ? [`${count} ${humanizeKey(status)}`] : []
+  })
+  return labels.join(" / ")
 }
 
 function geometryOutlineStyle(geometryPreview: AttachmentGeometryPreview) {
