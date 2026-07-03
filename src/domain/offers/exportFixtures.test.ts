@@ -87,6 +87,7 @@ describe("offer export fixtures", () => {
       Passivation included as outside service.
 
       Terms
+      Key terms: Key terms covered: VAT, Calculation basis, Delivery start.
       VAT: Prices exclude VAT.
       Calculation basis: Material and machining assumptions follow the attached calculation.
       Delivery start: Lead time starts after written approval and final drawing release.

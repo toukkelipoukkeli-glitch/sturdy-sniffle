@@ -1,4 +1,12 @@
-import { formatOfferMoney, formatOfferRevisionSummary, formatOfferRevisionTimeline, type OfferDraft, type OfferLineItem } from "./offer"
+import {
+  formatOfferMoney,
+  formatOfferRevisionSummary,
+  formatOfferRevisionTimeline,
+  formatOfferTermsSummary,
+  normalizeTerms,
+  type OfferDraft,
+  type OfferLineItem,
+} from "./offer"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 
 export const OFFER_DOCUMENT_VERSION = "offer-document.v1"
@@ -260,14 +268,21 @@ function buildNotesSection(notes: string[]): OfferDocumentSection[] {
 }
 
 function buildTermsSection(offer: OfferDraft): OfferDocumentSection {
+  const normalizedTerms = normalizeTerms(offer.terms)
   return {
     key: "terms",
     title: "Terms",
     kind: "terms",
-    fields: offer.terms.map((term) => ({
-      label: term.label,
-      value: term.value,
-    })),
+    fields: [
+      {
+        label: "Key terms",
+        value: formatOfferTermsSummary(normalizedTerms),
+      },
+      ...normalizedTerms.map((term) => ({
+        label: term.label,
+        value: term.value,
+      })),
+    ],
   }
 }
 

@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e5e0430` (`Add offer revision timeline copy (#240)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer alternate customer-copy follow-up.
-- In-flight PR at this checkpoint: `codex/offer-alternate-copy` adds deterministic customer-ready prose for offer alternates while quote math and release behavior stay unchanged.
+- Main branch checkpoint: `4ae644f` (`Add offer alternate customer copy (#241)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer terms summary follow-up.
+- In-flight PR at this checkpoint: `codex/offer-terms-summary` adds deterministic customer-ready summary copy for offer terms while quote math and release behavior stay unchanged.
 - Latest merged sequence:
+  - `#241` adds deterministic customer-ready prose for offer alternate options.
   - `#240` adds deterministic multi-revision customer copy to offer documents/export metadata.
   - `#239` persists compact CAD override audit events for saved corrections, acknowledged flags, and reopened review state, and adds deterministic customer-facing offer revision summary metadata/text.
   - `#238` persists CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
@@ -250,7 +251,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Add render/export verification without making AI required.
    - Record export warnings and assumptions in offer history.
    - `#240` adds deterministic multi-revision customer copy to the revision history section/export metadata.
-   - Current branch adds deterministic customer-ready prose for alternate options.
+   - `#241` adds deterministic customer-ready prose for alternate options.
+   - Current branch adds deterministic customer-ready summary copy for offer terms.
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.

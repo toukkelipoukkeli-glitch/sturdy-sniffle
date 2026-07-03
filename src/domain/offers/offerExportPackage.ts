@@ -1,6 +1,16 @@
 import type { QuoteEngineCurrencyCode, QuoteEngineResult } from "../quoting/registry"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
-import { formatOfferMoney, formatOfferRevisionSummary, formatOfferRevisionTimeline, type OfferDraft, type OfferLineItem, type OfferRevision } from "./offer"
+import {
+  formatOfferMoney,
+  formatOfferRevisionSummary,
+  formatOfferRevisionTimeline,
+  formatOfferTermsSummary,
+  normalizeTerms,
+  type OfferDraft,
+  type OfferLineItem,
+  type OfferRevision,
+  type OfferTerm,
+} from "./offer"
 import {
   buildOfferDocument,
   renderOfferDocumentText,
@@ -57,6 +67,11 @@ export interface OfferRevisionSummary {
   items: OfferRevisionSummaryItem[]
 }
 
+export interface OfferTermsSummary {
+  customerSummary: string
+  items: OfferTerm[]
+}
+
 export interface OfferPdfExportVerification {
   status: OfferExportPackageStatus
   targetFileName: string
@@ -81,6 +96,7 @@ export interface OfferExportPackage {
   plainText: string
   alternates: OfferAlternate[]
   revisionSummary: OfferRevisionSummary
+  termsSummary: OfferTermsSummary
   pdf: OfferPdfExportVerification
 }
 
@@ -109,6 +125,7 @@ export function buildOfferExportPackage(input: OfferExportPackageInput): OfferEx
     plainText,
     alternates,
     revisionSummary: buildRevisionSummary(input.offer.revisionHistory),
+    termsSummary: buildTermsSummary(input.offer.terms),
     pdf,
   }
 }
@@ -239,6 +256,14 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
       reason: revision.reason,
       isLatest: revision.revision === latestRevision.revision,
     })),
+  }
+}
+
+function buildTermsSummary(terms: OfferTerm[]): OfferTermsSummary {
+  const normalizedTerms = normalizeTerms(terms)
+  return {
+    customerSummary: formatOfferTermsSummary(normalizedTerms),
+    items: normalizedTerms.map((term) => ({ ...term })),
   }
 }
 

@@ -244,6 +244,11 @@ export function formatOfferRevisionTimeline(revisions: OfferRevision[]): string[
     .map((revision) => `Revision ${revision.revision}: ${revision.reason} (${revision.createdAt}, ${revision.createdBy})`)
 }
 
+export function formatOfferTermsSummary(terms: OfferTerm[]): string {
+  const normalizedTerms = normalizeTerms(terms)
+  return `Key terms covered: ${normalizedTerms.map((term) => term.label).join(", ")}.`
+}
+
 function assertHasRevisions(revisions: OfferRevision[]): void {
   if (revisions.length === 0) {
     throw new Error("offer must include at least one revision")
@@ -322,7 +327,7 @@ function normalizeCustomer(customer: OfferCustomer): OfferCustomer {
   return normalized
 }
 
-function normalizeTerms(terms: OfferTerm[]): OfferTerm[] {
+export function normalizeTerms(terms: OfferTerm[]): OfferTerm[] {
   if (terms.length === 0) {
     throw new Error("offer must include at least one term")
   }

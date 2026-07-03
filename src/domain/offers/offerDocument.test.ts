@@ -77,6 +77,10 @@ describe("offer document", () => {
     expect(document.sections.find((section) => section.key === "revision_history")?.body).toEqual([
       "- Revision 1: Initial draft (2026-06-19, FactoryBid OS)",
     ])
+    expect(document.sections.find((section) => section.key === "terms")?.fields?.[0]).toEqual({
+      label: "Key terms",
+      value: "Key terms covered: VAT, Calculation basis, Delivery start.",
+    })
     expect(document.footerLines).toEqual([
       "Prices exclude VAT unless otherwise stated.",
       "Lead times start after written approval and final drawing release.",

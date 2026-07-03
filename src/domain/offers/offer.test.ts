@@ -14,6 +14,7 @@ import {
   formatOfferMoney,
   formatOfferRevisionSummary,
   formatOfferRevisionTimeline,
+  formatOfferTermsSummary,
   renderOfferText,
 } from "./offer"
 
@@ -205,6 +206,45 @@ describe("offer builder", () => {
       "Revision 1: Initial draft (2026-06-19, FactoryBid OS)",
       "Revision 3: Updated machining assumptions after drawing review. (2026-06-22, Mika)",
     ])
+  })
+
+  it("formats deterministic customer terms summary copy", () => {
+    expect(
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: "Validity",
+          value: "Offer is valid for 14 days.",
+        },
+        {
+          key: "delivery",
+          label: "Delivery",
+          value: "Lead time starts after drawing release.",
+        },
+      ]),
+    ).toBe("Key terms covered: Validity, Delivery.")
+  })
+
+  it("rejects invalid customer terms summary inputs", () => {
+    expect(() => formatOfferTermsSummary([])).toThrow("offer must include at least one term")
+    expect(() =>
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: " ",
+          value: "Offer is valid for 14 days.",
+        },
+      ]),
+    ).toThrow("terms[0].label is required")
+    expect(() =>
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: "Validity",
+          value: " ",
+        },
+      ]),
+    ).toThrow("terms[0].value is required")
   })
 
   it("rejects impossible validity windows", () => {
