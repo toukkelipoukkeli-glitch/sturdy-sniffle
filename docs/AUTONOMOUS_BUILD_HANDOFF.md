@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5647029` (`Add offer terms summary copy (#242)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer release send-summary follow-up.
-- In-flight PR at this checkpoint: `codex/offer-send-summary` adds deterministic send/follow-up summary metadata to release plans while quote math and release execution behavior stay unchanged.
+- Main branch checkpoint: `242d020` (`Add offer release send summary (#243)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer release send-summary UI follow-up.
+- In-flight PR at this checkpoint: `codex/offer-send-summary-ui` surfaces deterministic send/follow-up summary metadata in the release plan panel while release execution behavior stays unchanged.
 - Latest merged sequence:
+  - `#243` adds deterministic release-plan send/follow-up summary metadata, including all email attachment filenames.
   - `#242` adds deterministic customer-ready summary copy for offer terms and normalizes exported term items.
   - `#241` adds deterministic customer-ready prose for offer alternate options.
   - `#240` adds deterministic multi-revision customer copy to offer documents/export metadata.
@@ -254,7 +255,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#240` adds deterministic multi-revision customer copy to the revision history section/export metadata.
    - `#241` adds deterministic customer-ready prose for alternate options.
    - `#242` adds deterministic customer-ready summary copy for offer terms.
-   - Current branch adds deterministic release-plan send/follow-up summary metadata.
+   - `#243` adds deterministic release-plan send/follow-up summary metadata.
+   - Current branch surfaces that summary in the release plan UI.
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
