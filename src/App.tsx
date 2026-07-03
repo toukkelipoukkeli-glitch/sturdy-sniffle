@@ -7265,6 +7265,19 @@ function isCadMetadataPreviewRenderer(renderer: string) {
   return renderer === "step-metadata-card" || renderer === "dxf-metadata-card"
 }
 
+type PartPreviewAttachmentRow = PartPreviewModel["attachments"][number]
+
+function cadMetadataForAttachmentThumbnail(
+  attachment: PartPreviewAttachmentRow,
+  preview: PartPreviewModel,
+): PartPreviewCadMetadata | undefined {
+  if (attachment.previewOutput.status !== "ready" || !isCadMetadataPreviewRenderer(attachment.previewOutput.renderer)) {
+    return undefined
+  }
+
+  return preview.cadMetadata.find((metadata) => cadMetadataFileMatches(metadata.fileName, attachment.fileName))
+}
+
 function PartPreviewPanel({
   cadCorrectionDraft,
   cadReviewDraft,
@@ -7301,12 +7314,7 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-pdf" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
-  const primaryCadMetadata =
-    primaryAttachment &&
-    primaryAttachment.previewOutput.status === "ready" &&
-    isCadMetadataPreviewRenderer(primaryAttachment.previewOutput.renderer)
-      ? preview.cadMetadata.find((metadata) => cadMetadataFileMatches(metadata.fileName, primaryAttachment.fileName))
-      : undefined
+  const primaryCadMetadata = primaryAttachment ? cadMetadataForAttachmentThumbnail(primaryAttachment, preview) : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
@@ -7476,29 +7484,43 @@ function PartPreviewPanel({
           </div>
         ) : null}
         <div className="attachment-list" aria-label="Attachments">
-          {preview.attachments.map((attachment) => (
-            <div className="attachment-row" data-primary={attachment.primary} data-review-state={attachment.reviewState} key={attachment.fileName}>
-              <FileText aria-hidden="true" />
-              <span>
-                <strong>{attachment.fileName}</strong>
-                <small>
-                  {attachment.thumbnailLabel} · {humanizeKey(attachment.previewOutput.status)}
-                  {attachment.previewOutput.warnings.length > 0 ? ` · ${attachment.previewOutput.warnings.join(" ")}` : ""}
-                  {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
-                </small>
-              </span>
-              <div className="attachment-actions">
-                <strong>{attachment.primary ? `Primary · ${humanizeKey(attachment.reviewState)}` : humanizeKey(attachment.reviewState)}</strong>
-                <button
-                  disabled={attachment.primary || attachment.modes[0] === "metadata"}
-                  onClick={() => onPrimaryAttachmentChange(attachment.fileName)}
-                  type="button"
-                >
-                  Set primary
-                </button>
+          {preview.attachments.map((attachment) => {
+            const attachmentCadMetadata = cadMetadataForAttachmentThumbnail(attachment, preview)
+
+            return (
+              <div
+                className="attachment-row"
+                data-primary={attachment.primary}
+                data-review-state={attachment.reviewState}
+                data-thumbnail={attachmentCadMetadata ? "cad-metadata" : undefined}
+                key={attachment.fileName}
+              >
+                {attachmentCadMetadata ? (
+                  <CadMetadataThumbnailCard attachmentFileName={attachment.fileName} metadata={attachmentCadMetadata} preview={preview} />
+                ) : (
+                  <FileText aria-hidden="true" />
+                )}
+                <span>
+                  <strong>{attachment.fileName}</strong>
+                  <small>
+                    {attachment.thumbnailLabel} · {humanizeKey(attachment.previewOutput.status)}
+                    {attachment.previewOutput.warnings.length > 0 ? ` · ${attachment.previewOutput.warnings.join(" ")}` : ""}
+                    {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
+                  </small>
+                </span>
+                <div className="attachment-actions">
+                  <strong>{attachment.primary ? `Primary · ${humanizeKey(attachment.reviewState)}` : humanizeKey(attachment.reviewState)}</strong>
+                  <button
+                    disabled={attachment.primary || attachment.modes[0] === "metadata"}
+                    onClick={() => onPrimaryAttachmentChange(attachment.fileName)}
+                    type="button"
+                  >
+                    Set primary
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         {preview.warnings.length > 0 ? (
           <div className="preview-warning-list">
@@ -7550,6 +7572,30 @@ function CadMetadataPreviewCard({
           <dd>{humanizeKey(metadata.provider)}</dd>
         </div>
       </dl>
+    </div>
+  )
+}
+
+function CadMetadataThumbnailCard({
+  attachmentFileName,
+  metadata,
+  preview,
+}: {
+  attachmentFileName: string
+  metadata: PartPreviewCadMetadata
+  preview: PartPreviewModel
+}) {
+  const processLabel = metadata.process
+    ? humanizeKey(metadata.process)
+    : preview.metadata.process
+      ? humanizeKey(preview.metadata.process)
+      : "Unknown"
+
+  return (
+    <div className="attachment-metadata-thumbnail" aria-label={`${attachmentFileName} metadata thumbnail`}>
+      <span>{metadata.format.toUpperCase()}</span>
+      <strong>{metadata.materialText ?? preview.metadata.materialText ?? "Unknown"}</strong>
+      <small>{processLabel}</small>
     </div>
   )
 }

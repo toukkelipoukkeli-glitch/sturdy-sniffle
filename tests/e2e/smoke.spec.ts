@@ -145,6 +145,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   const costingPartPreview = page.getByLabel("Part preview")
   await expect(costingPartPreview).toContainText("FB-204-A.step")
   await expect(costingPartPreview.getByLabel("FB-204-A.step adapter preview")).toContainText("Aluminum 6082")
+  await expect(costingPartPreview.getByLabel("FB-204-A.step metadata thumbnail")).toContainText("Aluminum 6082")
   await expect(page.getByLabel("Attachments", { exact: true })).toContainText("ready")
   await expect(page.getByLabel("Measurements")).toContainText("Length")
   await expect(page.getByLabel("CAD metadata")).toContainText("FB-204-A.step")
