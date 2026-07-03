@@ -14,6 +14,7 @@ import {
   formatOfferMoney,
   formatOfferRevisionSummary,
   formatOfferRevisionTimeline,
+  formatOfferTermsSummary,
   renderOfferText,
 } from "./offer"
 
@@ -205,6 +206,23 @@ describe("offer builder", () => {
       "Revision 1: Initial draft (2026-06-19, FactoryBid OS)",
       "Revision 3: Updated machining assumptions after drawing review. (2026-06-22, Mika)",
     ])
+  })
+
+  it("formats deterministic customer terms summary copy", () => {
+    expect(
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: "Validity",
+          value: "Offer is valid for 14 days.",
+        },
+        {
+          key: "delivery",
+          label: "Delivery",
+          value: "Lead time starts after drawing release.",
+        },
+      ]),
+    ).toBe("Validity: Offer is valid for 14 days.; Delivery: Lead time starts after drawing release.")
   })
 
   it("rejects impossible validity windows", () => {

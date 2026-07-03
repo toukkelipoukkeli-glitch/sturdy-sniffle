@@ -1,6 +1,15 @@
 import type { QuoteEngineCurrencyCode, QuoteEngineResult } from "../quoting/registry"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
-import { formatOfferMoney, formatOfferRevisionSummary, formatOfferRevisionTimeline, type OfferDraft, type OfferLineItem, type OfferRevision } from "./offer"
+import {
+  formatOfferMoney,
+  formatOfferRevisionSummary,
+  formatOfferRevisionTimeline,
+  formatOfferTermsSummary,
+  type OfferDraft,
+  type OfferLineItem,
+  type OfferRevision,
+  type OfferTerm,
+} from "./offer"
 import {
   buildOfferDocument,
   renderOfferDocumentText,
@@ -57,6 +66,17 @@ export interface OfferRevisionSummary {
   items: OfferRevisionSummaryItem[]
 }
 
+export interface OfferTermsSummaryItem {
+  key: string
+  label: string
+  value: string
+}
+
+export interface OfferTermsSummary {
+  customerSummary: string
+  items: OfferTermsSummaryItem[]
+}
+
 export interface OfferPdfExportVerification {
   status: OfferExportPackageStatus
   targetFileName: string
@@ -81,6 +101,7 @@ export interface OfferExportPackage {
   plainText: string
   alternates: OfferAlternate[]
   revisionSummary: OfferRevisionSummary
+  termsSummary: OfferTermsSummary
   pdf: OfferPdfExportVerification
 }
 
@@ -109,6 +130,7 @@ export function buildOfferExportPackage(input: OfferExportPackageInput): OfferEx
     plainText,
     alternates,
     revisionSummary: buildRevisionSummary(input.offer.revisionHistory),
+    termsSummary: buildTermsSummary(input.offer.terms),
     pdf,
   }
 }
@@ -238,6 +260,17 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
       createdBy: revision.createdBy,
       reason: revision.reason,
       isLatest: revision.revision === latestRevision.revision,
+    })),
+  }
+}
+
+function buildTermsSummary(terms: OfferTerm[]): OfferTermsSummary {
+  return {
+    customerSummary: formatOfferTermsSummary(terms),
+    items: terms.map((term, index) => ({
+      key: nonBlank(term.key, `terms[${index}].key`),
+      label: nonBlank(term.label, `terms[${index}].label`),
+      value: nonBlank(term.value, `terms[${index}].value`),
     })),
   }
 }

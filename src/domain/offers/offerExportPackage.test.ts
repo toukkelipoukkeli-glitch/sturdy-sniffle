@@ -65,6 +65,27 @@ describe("offer export package", () => {
         latestReason: "Added expedited delivery alternate requested by buyer.",
         latestRevision: 2,
       },
+      termsSummary: {
+        customerSummary:
+          "VAT: Prices exclude VAT.; Calculation basis: Material and machining assumptions follow the attached calculation.; Delivery start: Lead time starts after written approval and final drawing release.",
+        items: [
+          {
+            key: "vat",
+            label: "VAT",
+            value: "Prices exclude VAT.",
+          },
+          {
+            key: "calculation_basis",
+            label: "Calculation basis",
+            value: "Material and machining assumptions follow the attached calculation.",
+          },
+          {
+            key: "delivery_start",
+            label: "Delivery start",
+            value: "Lead time starts after written approval and final drawing release.",
+          },
+        ],
+      },
     })
     expect(exportPackage.alternates).toEqual([
       {
@@ -124,6 +145,9 @@ describe("offer export package", () => {
     )
     expect(exportPackage.plainText).toContain("- Revision 1: Initial draft (2026-06-20, FactoryBid OS)")
     expect(exportPackage.plainText).toContain("- Revision 2: Added expedited delivery alternate requested by buyer. (2026-06-21, Sari)")
+    expect(exportPackage.plainText).toContain(
+      "Key terms: VAT: Prices exclude VAT.; Calculation basis: Material and machining assumptions follow the attached calculation.; Delivery start: Lead time starts after written approval and final drawing release.",
+    )
     expect(exportPackage.pdf.contentFingerprint).toMatch(/^[a-f0-9]{8}$/)
   })
 
