@@ -5219,6 +5219,7 @@
 .offer-release-plan-panel,
 .offer-release-execution-panel,
 .offer-email-draft-history-panel,
+.offer-provider-outcome-history-panel,
 .offer-release-history-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -5236,6 +5237,7 @@
 .offer-release-plan-heading,
 .offer-release-execution-heading,
 .offer-email-draft-history-heading,
+.offer-provider-outcome-history-heading,
 .offer-release-history-heading,
 .offer-reply-heading,
 .offer-reply-card {
@@ -5253,6 +5255,7 @@
 .offer-release-plan-heading > div,
 .offer-release-execution-heading > div,
 .offer-email-draft-history-heading > div,
+.offer-provider-outcome-history-heading > div,
 .offer-release-history-heading > div,
 .offer-reply-heading > div,
 .offer-reply-card > div {
@@ -5269,6 +5272,7 @@
 .offer-release-plan-heading strong,
 .offer-release-execution-heading strong,
 .offer-email-draft-history-heading strong,
+.offer-provider-outcome-history-heading strong,
 .offer-release-history-heading strong,
 .offer-reply-heading strong {
   font-size: 0.92rem;
@@ -5480,6 +5484,24 @@
   color: oklch(0.36 0.09 75);
 }
 
+.offer-provider-outcome-history-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.offer-provider-outcome-history-status-ready {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.offer-provider-outcome-history-status-review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
 .offer-export-summary,
 .quote-approval-summary,
 .quote-approval-checks,
@@ -5503,6 +5525,9 @@
 .offer-email-draft-history-summary,
 .offer-email-draft-history-latest,
 .offer-email-draft-history-recipients,
+.offer-provider-outcome-history-summary,
+.offer-provider-outcome-history-latest,
+.offer-provider-outcome-history-commands,
 .offer-release-history-summary,
 .offer-release-history-retries,
 .offer-reply-summary,
@@ -5719,6 +5744,10 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.offer-provider-outcome-history-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .offer-email-draft-history-latest {
   background: oklch(0.985 0.004 240);
   border: 1px solid oklch(0.9 0.016 235);
@@ -5748,6 +5777,41 @@
 
 .offer-email-draft-history-latest span,
 .offer-email-draft-history-latest small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.offer-provider-outcome-history-latest {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 10px;
+}
+
+.offer-provider-outcome-history-latest[data-status="applied"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.offer-provider-outcome-history-latest[data-status="failed"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
+.offer-provider-outcome-history-latest > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.offer-provider-outcome-history-latest strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.offer-provider-outcome-history-latest span,
+.offer-provider-outcome-history-latest small {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
   font-weight: 700;
@@ -6624,6 +6688,9 @@
   .offer-email-draft-history-summary,
   .offer-email-draft-history-latest,
   .offer-email-draft-history-recipients,
+  .offer-provider-outcome-history-summary,
+  .offer-provider-outcome-history-latest,
+  .offer-provider-outcome-history-commands,
   .offer-release-history-summary,
   .offer-release-history-retries,
   .offer-reply-summary,
