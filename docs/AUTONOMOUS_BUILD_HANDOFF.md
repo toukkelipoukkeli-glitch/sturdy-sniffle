@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e96bd8b` (`Add offer email draft package history (#247)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow UI surface for offer email draft package history.
-- In-flight PR at this checkpoint: `codex/offer-email-draft-history-ui` surfaces the deterministic email draft package history summary in the offer workspace while actual Gmail/provider sending stays guarded for later.
+- Main branch checkpoint: `9e138b4` (`Surface offer email draft package history (#248)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a local/mock offer email draft provider adapter.
+- In-flight PR at this checkpoint: `codex/offer-email-draft-provider` turns ready guarded email draft packages into deterministic local release command outcomes while actual Gmail/provider sending stays guarded for later.
 - Latest merged sequence:
+  - `#248` surfaces the deterministic email draft package history summary in the offer workspace with Browser/Playwright QA fallback evidence.
   - `#247` summarizes persisted email draft package records for future UI/API surfaces.
   - `#246` records deterministic email draft package snapshots in local persistence with seeded-record normalization and deduplication.
   - `#245` builds deterministic, provider-safe email draft packages from ready offer release plans while malformed/non-ready commands stay blocked.
@@ -148,7 +149,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, release execution audit/history/fingerprints, and persistence adapters.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, release execution audit/history/fingerprints, and persistence adapters.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
@@ -264,7 +265,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#245` builds a guarded provider-safe email draft package boundary without sending email.
    - `#246` records email draft package snapshots in local deterministic persistence before any provider send wiring.
    - `#247` summarizes persisted draft package records for future UI/API surfaces.
-   - Current branch surfaces the deterministic draft package history summary in the offer workspace.
+   - `#248` surfaces the deterministic draft package history summary in the offer workspace.
+   - Current branch adds a local/mock email draft provider adapter that returns release command outcomes without calling Gmail.
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
