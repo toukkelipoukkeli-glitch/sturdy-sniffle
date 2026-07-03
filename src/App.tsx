@@ -219,6 +219,7 @@ import {
   type PartPreviewModel,
   type PartPreviewMode,
 } from "./domain/viewer/partPreview"
+import { cadMetadataFileMatches } from "./domain/viewer/cadMetadataFileMatch"
 import {
   buildCapacityCommitmentPlan,
   type CapacityCommitmentPlan,
@@ -7260,33 +7261,6 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
   )
 }
 
-function splitPreviewFileName(fileName: string) {
-  const normalizedFileName = fileName.trim().toLowerCase()
-  const extensionStart = normalizedFileName.lastIndexOf(".")
-  const stem = extensionStart > 0 ? normalizedFileName.slice(0, extensionStart) : normalizedFileName
-  const extension = extensionStart > 0 ? normalizedFileName.slice(extensionStart + 1) : ""
-
-  return {
-    extension,
-    normalizedFileName,
-    stemSegments: stem.split(/[^a-z0-9]+/).filter(Boolean),
-  }
-}
-
-function metadataFileMatches(metadataFileName: string, attachmentFileName: string) {
-  const metadataFile = splitPreviewFileName(metadataFileName)
-  const attachmentFile = splitPreviewFileName(attachmentFileName)
-  if (metadataFile.normalizedFileName === attachmentFile.normalizedFileName) {
-    return true
-  }
-
-  return (
-    metadataFile.extension === attachmentFile.extension &&
-    metadataFile.stemSegments.length === attachmentFile.stemSegments.length &&
-    metadataFile.stemSegments.every((segment, index) => segment === attachmentFile.stemSegments[index])
-  )
-}
-
 function isCadMetadataPreviewRenderer(renderer: string) {
   return renderer === "step-metadata-card" || renderer === "dxf-metadata-card"
 }
@@ -7331,7 +7305,7 @@ function PartPreviewPanel({
     primaryAttachment &&
     primaryAttachment.previewOutput.status === "ready" &&
     isCadMetadataPreviewRenderer(primaryAttachment.previewOutput.renderer)
-      ? preview.cadMetadata.find((metadata) => metadataFileMatches(metadata.fileName, primaryAttachment.fileName))
+      ? preview.cadMetadata.find((metadata) => cadMetadataFileMatches(metadata.fileName, primaryAttachment.fileName))
       : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()

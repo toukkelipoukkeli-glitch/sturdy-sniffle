@@ -2,6 +2,7 @@ import type { ParsedRfqIntake, RfqAttachmentDraft, RfqAttachmentKind, RfqPartDra
 import { compareLex } from "../shared/deterministic"
 import type { CadMetadataResult } from "../integrations/cadMetadata"
 import { buildAttachmentPreviewOutput, type AttachmentPreviewOutput } from "./attachmentPreviewOutput"
+import { cadMetadataFileBelongsToPart, cadMetadataFileMatches } from "./cadMetadataFileMatch"
 
 export const PART_PREVIEW_MODEL_VERSION = "part-preview.v1"
 
@@ -92,12 +93,12 @@ export function buildPartPreviewModelsFromRfq(parsedRfq: ParsedRfqIntake): PartP
 
 export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPreviewModel {
   const partNumber = nonBlank(input.part.partNumber, "part.partNumber")
-  const attachmentNames = new Set(input.part.attachmentNames.map(normalizeToken))
+  const attachmentFileNames = input.part.attachmentNames
+  const attachmentNames = new Set(attachmentFileNames.map(normalizeToken))
   const matchingAttachments = selectMatchingAttachments(partNumber, attachmentNames, input.attachments)
-  const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentNames, input.cadMetadata ?? [])
-  const cadMetadataByFileName = new Map(cadMetadata.map((metadata) => [normalizeToken(metadata.fileName), metadata]))
+  const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentFileNames, input.cadMetadata ?? [])
   const rankedAttachments = matchingAttachments
-    .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames, cadMetadataByFileName.get(normalizeToken(attachment.fileName))))
+    .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames, findCadMetadataForAttachment(cadMetadata, attachment.fileName)))
     .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
   const preferredPrimaryToken = input.preferredPrimaryAttachmentName ? normalizeToken(input.preferredPrimaryAttachmentName) : undefined
   const preferredPrimaryAttachment = input.preferredPrimaryAttachmentName
@@ -112,9 +113,8 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     : undefined
   const primaryAttachment = preferredPrimaryAttachment ?? rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
-  const primaryAttachmentToken = primaryAttachment ? normalizeToken(primaryAttachment.fileName) : undefined
   const primaryCadMetadata =
-    cadMetadata.find((metadata) => normalizeToken(metadata.fileName) === primaryAttachmentToken) ?? cadMetadata[0]
+    (primaryAttachment ? findCadMetadataForAttachment(cadMetadata, primaryAttachment.fileName) : undefined) ?? cadMetadata[0]
   const measurementOverlays = buildMeasurementOverlays({
     ...input.part,
     dimensions: {
@@ -137,7 +137,7 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     attachments: rankedAttachments.map((attachment) => ({
       ...attachment,
       primary: attachment.fileName === primaryAttachment?.fileName,
-      ...reviewStateForAttachment(attachment, cadMetadataByFileName.get(normalizeToken(attachment.fileName))),
+      ...reviewStateForAttachment(attachment, findCadMetadataForAttachment(cadMetadata, attachment.fileName)),
     })),
     measurementOverlays,
     cadMetadata: cadMetadata.map(toPartPreviewCadMetadata),
@@ -196,16 +196,22 @@ function selectMatchingAttachments(
 
 function selectMatchingCadMetadata(
   partNumber: string,
-  attachmentNames: Set<string>,
+  attachmentNames: string[],
   cadMetadata: CadMetadataResult[],
 ): CadMetadataResult[] {
-  const normalizedPartNumber = normalizeToken(partNumber)
+  if (attachmentNames.length > 0) {
+    return cadMetadata
+      .filter((metadata) => attachmentNames.some((attachmentName) => cadMetadataFileMatches(metadata.fileName, attachmentName)))
+      .sort((left, right) => compareLex(left.fileName, right.fileName))
+  }
+
   return cadMetadata
-    .filter((metadata) => {
-      const normalizedFileName = normalizeToken(metadata.fileName)
-      return attachmentNames.has(normalizedFileName) || normalizedFileName.includes(normalizedPartNumber)
-    })
+    .filter((metadata) => cadMetadataFileBelongsToPart(metadata.fileName, partNumber))
     .sort((left, right) => compareLex(left.fileName, right.fileName))
+}
+
+function findCadMetadataForAttachment(cadMetadata: CadMetadataResult[], attachmentFileName: string): CadMetadataResult | undefined {
+  return cadMetadata.find((metadata) => cadMetadataFileMatches(metadata.fileName, attachmentFileName))
 }
 
 function rankAttachment(

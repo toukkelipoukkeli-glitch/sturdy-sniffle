@@ -402,6 +402,44 @@ describe("part preview model", () => {
     ])
   })
 
+  it("does not collapse distinct CAD metadata filename segments", () => {
+    const model = buildPartPreviewModel({
+      part: {
+        partNumber: "AB-C",
+        attachmentNames: ["AB-C.step"],
+      },
+      attachments: [
+        {
+          fileName: "AB-C.step",
+          kind: "cad",
+        },
+      ],
+      cadMetadata: [
+        {
+          adapterVersion: "cad-metadata.v1",
+          dimensions: {
+            lengthMm: 999,
+          },
+          fileName: "A-BC.step",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "cad",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ],
+    })
+
+    expect(model.cadMetadata).toEqual([])
+    expect(model.measurementOverlays).toEqual([])
+    expect(model.attachments[0].previewOutput).toMatchObject({
+      renderer: "step-viewer",
+      status: "fallback",
+    })
+  })
+
   it("uses metadata-only mode when no previewable attachments match", () => {
     const model = buildPartPreviewModel({
       part: {
