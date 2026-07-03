@@ -213,7 +213,12 @@ import {
   type ManualMaterialKey,
   type ManualPriority,
 } from "./domain/rfq/manualRfq"
-import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
+import {
+  buildPartPreviewModel,
+  type PartPreviewCadMetadata,
+  type PartPreviewModel,
+  type PartPreviewMode,
+} from "./domain/viewer/partPreview"
 import {
   buildCapacityCommitmentPlan,
   type CapacityCommitmentPlan,
@@ -7255,6 +7260,37 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
   )
 }
 
+function splitPreviewFileName(fileName: string) {
+  const normalizedFileName = fileName.trim().toLowerCase()
+  const extensionStart = normalizedFileName.lastIndexOf(".")
+  const stem = extensionStart > 0 ? normalizedFileName.slice(0, extensionStart) : normalizedFileName
+  const extension = extensionStart > 0 ? normalizedFileName.slice(extensionStart + 1) : ""
+
+  return {
+    extension,
+    normalizedFileName,
+    stemSegments: stem.split(/[^a-z0-9]+/).filter(Boolean),
+  }
+}
+
+function metadataFileMatches(metadataFileName: string, attachmentFileName: string) {
+  const metadataFile = splitPreviewFileName(metadataFileName)
+  const attachmentFile = splitPreviewFileName(attachmentFileName)
+  if (metadataFile.normalizedFileName === attachmentFile.normalizedFileName) {
+    return true
+  }
+
+  return (
+    metadataFile.extension === attachmentFile.extension &&
+    metadataFile.stemSegments.length === attachmentFile.stemSegments.length &&
+    metadataFile.stemSegments.every((segment, index) => segment === attachmentFile.stemSegments[index])
+  )
+}
+
+function isCadMetadataPreviewRenderer(renderer: string) {
+  return renderer === "step-metadata-card" || renderer === "dxf-metadata-card"
+}
+
 function PartPreviewPanel({
   cadCorrectionDraft,
   cadReviewDraft,
@@ -7291,6 +7327,12 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-pdf" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
+  const primaryCadMetadata =
+    primaryAttachment &&
+    primaryAttachment.previewOutput.status === "ready" &&
+    isCadMetadataPreviewRenderer(primaryAttachment.previewOutput.renderer)
+      ? preview.cadMetadata.find((metadata) => metadataFileMatches(metadata.fileName, primaryAttachment.fileName))
+      : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
@@ -7326,6 +7368,8 @@ function PartPreviewPanel({
             src={primaryPdfSource}
             title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
+        ) : primaryAttachment && primaryCadMetadata ? (
+          <CadMetadataPreviewCard attachmentFileName={primaryAttachment.fileName} metadata={primaryCadMetadata} preview={preview} />
         ) : (
           <div className="preview-icon" aria-hidden="true">
             <Cuboid />
@@ -7494,6 +7538,45 @@ function PartPreviewPanel({
         ) : null}
       </div>
     </section>
+  )
+}
+
+function CadMetadataPreviewCard({
+  attachmentFileName,
+  metadata,
+  preview,
+}: {
+  attachmentFileName: string
+  metadata: PartPreviewCadMetadata
+  preview: PartPreviewModel
+}) {
+  const processLabel = metadata.process
+    ? humanizeKey(metadata.process)
+    : preview.metadata.process
+      ? humanizeKey(preview.metadata.process)
+      : "Unknown"
+
+  return (
+    <div className="preview-metadata-card" aria-label={`${attachmentFileName} adapter preview`}>
+      <div className="preview-metadata-card-heading">
+        <span>{metadata.format.toUpperCase()}</span>
+        <strong>{humanizeKey(metadata.status)}</strong>
+      </div>
+      <dl className="preview-metadata-grid">
+        <div>
+          <dt>Material</dt>
+          <dd>{metadata.materialText ?? preview.metadata.materialText ?? "Unknown"}</dd>
+        </div>
+        <div>
+          <dt>Process</dt>
+          <dd>{processLabel}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>{humanizeKey(metadata.provider)}</dd>
+        </div>
+      </dl>
+    </div>
   )
 }
 
