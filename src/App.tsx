@@ -310,9 +310,19 @@ interface ReleaseReviewState {
 interface CadReviewOverrideState {
   acknowledgedFlags: string[]
   correctionNotes?: CadReviewCorrectionNotes
+  geometryReviewActionSnapshot?: CadGeometryReviewActionSnapshot
   note: string
   reviewedAt: string
   reviewedBy: string
+}
+
+type CadGeometryReviewActionSnapshotItem = Pick<CadGeometryReviewSummary["actions"][number], "key" | "priority" | "label" | "detail">
+
+interface CadGeometryReviewActionSnapshot {
+  actions: CadGeometryReviewActionSnapshotItem[]
+  attachmentFileName: string
+  capturedAt: string
+  reviewStatus: CadGeometryReviewSummary["status"]
 }
 
 interface CadReviewCorrectionNotes {
@@ -1262,11 +1272,13 @@ function App() {
     if (!correctionNotes && !selectedCadReviewOverride) {
       return
     }
+    const geometryReviewActionSnapshot = buildCadGeometryReviewActionSnapshot(partPreview, workspaceNow)
     setCadReviewOverridesById((current) => ({
       ...current,
       [selectedId]: {
         acknowledgedFlags: current[selectedId]?.acknowledgedFlags ?? [],
         correctionNotes,
+        geometryReviewActionSnapshot,
         note: current[selectedId]?.note ?? "",
         reviewedAt: workspaceNow,
         reviewedBy: workspaceOperatorName,
@@ -1277,11 +1289,13 @@ function App() {
     if (partPreview.manufacturabilityFlags.length === 0) {
       return
     }
+    const geometryReviewActionSnapshot = buildCadGeometryReviewActionSnapshot(partPreview, workspaceNow)
     setCadReviewOverridesById((current) => ({
       ...current,
       [selectedId]: {
         acknowledgedFlags: [...partPreview.manufacturabilityFlags],
         correctionNotes: normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft) ?? current[selectedId]?.correctionNotes,
+        geometryReviewActionSnapshot,
         note:
           selectedCadReviewDraft.trim() ||
           `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
@@ -2438,9 +2452,47 @@ function isCadReviewOverrideState(value: unknown): value is CadReviewOverrideSta
     Array.isArray(value.acknowledgedFlags) &&
     value.acknowledgedFlags.every((flag) => typeof flag === "string") &&
     (value.correctionNotes === undefined || isCadReviewCorrectionNotes(value.correctionNotes)) &&
+    (value.geometryReviewActionSnapshot === undefined || isCadGeometryReviewActionSnapshot(value.geometryReviewActionSnapshot)) &&
     typeof value.note === "string" &&
     typeof value.reviewedAt === "string" &&
     typeof value.reviewedBy === "string"
+  )
+}
+
+function isCadGeometryReviewActionSnapshot(value: unknown): value is CadGeometryReviewActionSnapshot {
+  return (
+    isObjectRecord(value) &&
+    typeof value.attachmentFileName === "string" &&
+    typeof value.capturedAt === "string" &&
+    isCadGeometryReviewStatus(value.reviewStatus) &&
+    Array.isArray(value.actions) &&
+    value.actions.length > 0 &&
+    value.actions.every(isCadGeometryReviewActionSnapshotItem)
+  )
+}
+
+function isCadGeometryReviewActionSnapshotItem(value: unknown): value is CadGeometryReviewActionSnapshotItem {
+  return (
+    isObjectRecord(value) &&
+    isCadGeometryReviewActionKey(value.key) &&
+    (value.priority === "primary" || value.priority === "secondary") &&
+    typeof value.label === "string" &&
+    typeof value.detail === "string"
+  )
+}
+
+function isCadGeometryReviewStatus(value: unknown): value is CadGeometryReviewSummary["status"] {
+  return value === "ready" || value === "needs_review" || value === "blocked"
+}
+
+function isCadGeometryReviewActionKey(value: unknown): value is CadGeometryReviewActionSnapshotItem["key"] {
+  return (
+    value === "use_metadata_card" ||
+    value === "request_geometry_parser_review" ||
+    value === "confirm_geometry_dimensions" ||
+    value === "confirm_flat_pattern_thickness" ||
+    value === "confirm_geometry_units" ||
+    value === "review_geometry_provider_warnings"
   )
 }
 
@@ -2460,6 +2512,31 @@ function normalizeCadReviewCorrectionNotes(notes: CadReviewCorrectionNotes): Cad
     process: notes.process?.trim() || undefined,
   }
   return normalized.dimensions || normalized.material || normalized.process ? normalized : undefined
+}
+
+function buildCadGeometryReviewActionSnapshot(preview: PartPreviewModel, capturedAt: string): CadGeometryReviewActionSnapshot | undefined {
+  const primaryAttachment = preview.attachments.find((attachment) => attachment.primary)
+  const geometryPreview = primaryAttachment?.previewOutput.geometryPreview
+  if (!primaryAttachment || !geometryPreview) {
+    return undefined
+  }
+
+  const reviewSummary = buildCadGeometryReviewSummary(geometryPreview)
+  if (reviewSummary.actions.length === 0) {
+    return undefined
+  }
+
+  return {
+    actions: reviewSummary.actions.map(({ detail, key, label, priority }) => ({
+      detail,
+      key,
+      label,
+      priority,
+    })),
+    attachmentFileName: primaryAttachment.fileName,
+    capturedAt,
+    reviewStatus: reviewSummary.status,
+  }
 }
 
 function cadReviewCorrectionNotesEqual(left: CadReviewCorrectionNotes | undefined, right: CadReviewCorrectionNotes | undefined): boolean {
@@ -7322,6 +7399,7 @@ function PartPreviewPanel({
   const visibleManufacturabilityFlags = preview.manufacturabilityFlags.filter((flag) => !acknowledgedFlags.has(flag))
   const normalizedCorrectionDraft = normalizeCadReviewCorrectionNotes(cadCorrectionDraft)
   const canSaveCadCorrections = !cadReviewCorrectionNotesEqual(normalizedCorrectionDraft, override?.correctionNotes)
+  const geometryReviewActionSnapshot = override?.geometryReviewActionSnapshot
   const primaryAttachment = preview.attachments.find((attachment) => attachment.primary)
   const primaryImageSource =
     primaryAttachment?.previewOutput.renderer === "browser-image" && primaryAttachment.previewOutput.status === "ready"
@@ -7469,6 +7547,25 @@ function PartPreviewPanel({
                   </>
                 ) : null}
               </dl>
+            ) : null}
+            {geometryReviewActionSnapshot ? (
+              <div className="cad-review-action-history" aria-label="CAD geometry review action history">
+                <div>
+                  <span>Geometry actions</span>
+                  <strong>
+                    {geometryReviewActionSnapshot.attachmentFileName} · {humanizeKey(geometryReviewActionSnapshot.reviewStatus)}
+                  </strong>
+                  <small>{formatShortDateTime(geometryReviewActionSnapshot.capturedAt)}</small>
+                </div>
+                <ul>
+                  {geometryReviewActionSnapshot.actions.map((action) => (
+                    <li data-priority={action.priority} key={action.key}>
+                      <strong>{action.label}</strong>
+                      <span>{action.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
             <div className="cad-correction-grid">
               <label className="field">

@@ -1,6 +1,6 @@
 # FactoryBid OS — Production Readiness Checklist
 
-Last updated: 2026-06-27 (Europe/Helsinki). Owner: autonomous build loop.
+Last updated: 2026-07-03 (Europe/Helsinki). Owner: autonomous build loop.
 
 This checklist tracks the gap between the current `main` and a production-grade local-first
 factory tarjouslaskenta system, as defined by the mission Definition of Done (DoD §1–§10).
@@ -55,8 +55,8 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 ## §4 CAD-like part review
 
 - ✅ Preview states (ready/metadata-only/needs-review/unsupported), metadata, manufacturability flags computed and shown; model never blank (`partPreview.ts`, `cadMetadata.ts`).
-- ✅ **Operator override UI** — manufacturability flags can be acknowledged/reopened with a persistent operator note, primary preview attachment selection is durable, and dimension/material/process correction notes can be saved/restored/cleared; reviewed corrections surface as explicit quote assumptions without changing deterministic totals or raw RFQ inputs. (Slice F)
-- 🟡 **Thumbnails / real previews** — attachment-specific preview and thumbnail labels now distinguish CAD models, drawings, photos, spreadsheets, and metadata-only cards; safe browser-native image attachments render as real `<img>` previews, safe PDF drawing attachments render as browser document previews, successful STEP/DXF metadata adapter results now mark preview descriptors ready, render compact viewport metadata cards, expose compact metadata thumbnail tiles with boundary-aware filename matching, carry metadata-derived geometry preview descriptors on ready STEP/DXF attachment outputs, render those geometry descriptors in viewport/thumbnail surfaces, compute deterministic ready/needs-review/blocked geometry review summaries, surface those summaries in the viewport and geometry thumbnails, and this branch adds deterministic operator action hints for geometry review warnings/blockers while parser failures still use deterministic placeholders. → **Slice F**
+- ✅ **Operator override UI** — manufacturability flags can be acknowledged/reopened with a persistent operator note, primary preview attachment selection is durable, and dimension/material/process correction notes can be saved/restored/cleared; reviewed corrections surface as explicit quote assumptions without changing deterministic totals or raw RFQ inputs, and this branch persists CAD geometry review action context alongside saved operator corrections for reload-safe audit history. (Slice F)
+- 🟡 **Thumbnails / real previews** — attachment-specific preview and thumbnail labels now distinguish CAD models, drawings, photos, spreadsheets, and metadata-only cards; safe browser-native image attachments render as real `<img>` previews, safe PDF drawing attachments render as browser document previews, successful STEP/DXF metadata adapter results now mark preview descriptors ready, render compact viewport metadata cards, expose compact metadata thumbnail tiles with boundary-aware filename matching, carry metadata-derived geometry preview descriptors on ready STEP/DXF attachment outputs, render those geometry descriptors in viewport/thumbnail surfaces, compute deterministic ready/needs-review/blocked geometry review summaries, surface those summaries in the viewport and geometry thumbnails, and surface deterministic operator action hints for geometry review warnings/blockers while parser failures still use deterministic placeholders. → **Slice F**
 - 🟡 **Real STEP/DXF/PDF adapter wired** — adapter interfaces exist for metadata and metadata-derived geometry descriptors; no real parser, app uses fixtures. → **Slice F (deferred; keep behind adapter)**
 
 ## §5 Offer builder and export
