@@ -96,6 +96,10 @@ import {
 } from "./domain/offers/offerReleaseProviderOutcomeHistory"
 import { buildOfferReleaseProviderOutcomePersistenceRecord } from "./domain/offers/offerReleaseProviderOutcomePersistence"
 import {
+  buildOfferReleaseProviderOutcomeReadiness,
+  type OfferReleaseProviderOutcomeReadiness,
+} from "./domain/offers/offerReleaseProviderOutcomeReadiness"
+import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
   type OfferReleasePlan,
@@ -1565,6 +1569,14 @@ function App() {
       }),
     [offerReleasePlan, offerReleaseProviderCommandOutcomes, workspaceNow, workspaceOperatorName],
   )
+  const offerReleaseProviderOutcomeReadiness = useMemo(
+    () =>
+      buildOfferReleaseProviderOutcomeReadiness({
+        history: offerReleaseProviderOutcomeHistory,
+        releasePlan: offerReleasePlan,
+      }),
+    [offerReleasePlan, offerReleaseProviderOutcomeHistory],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
@@ -2192,6 +2204,7 @@ function App() {
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
+              releaseProviderOutcomeReadiness={offerReleaseProviderOutcomeReadiness}
               releaseReview={selectedReleaseReview}
               replySnapshot={offerReplySnapshot}
               replySync={offerReplySync}
@@ -8156,6 +8169,7 @@ function OfferView({
   releaseHistory,
   releasePlan,
   releaseProviderOutcomeHistory,
+  releaseProviderOutcomeReadiness,
   releaseReview,
   replySnapshot,
   replySync,
@@ -8183,6 +8197,7 @@ function OfferView({
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
+  releaseProviderOutcomeReadiness: OfferReleaseProviderOutcomeReadiness
   releaseReview?: ReleaseReviewState
   replySnapshot?: OfferReplySyncPersistenceSnapshot
   replySync?: GmailOfferReplySyncResult
@@ -8325,6 +8340,7 @@ function OfferView({
         execution={releaseExecution}
         onExecuteRelease={onExecuteRelease}
         releasePlan={releasePlan}
+        releaseProviderOutcomeReadiness={releaseProviderOutcomeReadiness}
       />
       <OfferReleaseHistoryPanel history={releaseHistory} />
       <OfferReplyPanel replySnapshot={replySnapshot} replySync={replySync} onSyncReplies={onSyncReplies} />
@@ -8660,14 +8676,20 @@ function OfferReleaseExecutionPanel({
   execution,
   onExecuteRelease,
   releasePlan,
+  releaseProviderOutcomeReadiness,
 }: {
   execution: OfferReleaseExecutionRun
   onExecuteRelease: () => void
   releasePlan: OfferReleasePlan
+  releaseProviderOutcomeReadiness: OfferReleaseProviderOutcomeReadiness
 }) {
   const statusLabel = offerReleaseExecutionStatusLabel(execution.status)
   const artifactCount = execution.lifecycleEvents.length + execution.workspaceActions.length + execution.calendarEvents.length
-  const canExecuteRelease = releasePlan.status === "ready" && execution.mode === "dry_run" && execution.status === "prepared"
+  const canExecuteRelease =
+    releasePlan.status === "ready" &&
+    releaseProviderOutcomeReadiness.status === "ready" &&
+    execution.mode === "dry_run" &&
+    execution.status === "prepared"
 
   return (
     <section className="offer-release-execution-panel" aria-label="Offer release execution audit">
@@ -8700,8 +8722,28 @@ function OfferReleaseExecutionPanel({
             ? "Applies local release artifacts and records command outcomes."
             : execution.status === "succeeded"
               ? "Release execution has been recorded."
-              : "Resolve release blockers before execution."}
+              : releaseProviderOutcomeReadiness.status === "blocked"
+                ? "Resolve provider outcome readiness before execution."
+                : "Resolve release blockers before execution."}
         </span>
+      </div>
+      <div className="offer-release-execution-actions" aria-label="Provider outcome readiness">
+        {releaseProviderOutcomeReadiness.status === "ready" ? (
+          <div className="flag ok">
+            <CheckCircle2 aria-hidden="true" />
+            <span>
+              Provider outcomes ready: {releaseProviderOutcomeReadiness.appliedCommandCount} applied command
+              {releaseProviderOutcomeReadiness.appliedCommandCount === 1 ? "" : "s"}.
+            </span>
+          </div>
+        ) : (
+          releaseProviderOutcomeReadiness.nextActions.map((action) => (
+            <div className="flag" key={action}>
+              <AlertTriangle aria-hidden="true" />
+              <span>{action}</span>
+            </div>
+          ))
+        )}
       </div>
       <div className="offer-release-execution-command-list">
         {execution.commands.map((command) => (

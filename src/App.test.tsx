@@ -1763,6 +1763,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(calendarDrafts).toHaveTextContent("Follow up with North Forge about offer OFFER-204.")
 
     const executionAudit = screen.getByLabelText("Offer release execution audit")
+    expect(within(executionAudit).getByLabelText("Provider outcome readiness")).toHaveTextContent(
+      "Provider outcomes ready: 6 applied commands.",
+    )
     await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))
 
     expect(executionAudit).toHaveTextContent("Execution completed")

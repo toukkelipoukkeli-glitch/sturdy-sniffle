@@ -459,6 +459,7 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("03 Jul, 10.00 - 03 Jul, 10.30")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
+  await expect(page.getByLabel("Provider outcome readiness")).toContainText("Provider outcomes ready: 6 applied commands.")
   await page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" }).click()
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
