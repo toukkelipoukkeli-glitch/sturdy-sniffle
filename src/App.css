@@ -4467,6 +4467,57 @@
   cursor: not-allowed;
 }
 
+.attachment-row[data-thumbnail="cad-metadata"] {
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+}
+
+.attachment-metadata-thumbnail {
+  background: white;
+  border: 1px solid oklch(0.82 0.025 230);
+  border-radius: 6px;
+  display: grid;
+  gap: 1px;
+  min-height: 48px;
+  min-width: 0;
+  padding: 6px 7px;
+  width: 74px;
+}
+
+.attachment-row .attachment-metadata-thumbnail span,
+.attachment-row .attachment-metadata-thumbnail strong,
+.attachment-row .attachment-metadata-thumbnail small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-row .attachment-metadata-thumbnail span {
+  color: oklch(0.3 0.045 230);
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  min-width: 0;
+  text-transform: uppercase;
+}
+
+.attachment-row .attachment-metadata-thumbnail strong {
+  color: oklch(0.24 0.035 250);
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+  white-space: normal;
+}
+
+.attachment-row .attachment-metadata-thumbnail small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
 .attachment-row[data-primary="true"] {
   border-color: oklch(0.72 0.08 190);
 }
