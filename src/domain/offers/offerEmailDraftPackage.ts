@@ -79,7 +79,7 @@ function blockedPackage(
 ): OfferEmailDraftPackage {
   return {
     ...base,
-    attachmentFileNames: command ? stringArrayPayload(command.payload, "attachments") : base.attachmentFileNames,
+    attachmentFileNames: base.attachmentFileNames,
     blockerLabels: uniqueNonBlank([...primaryBlockers, ...fallbackBlockers]),
     commandKey: command?.key,
     status: "blocked",
@@ -128,7 +128,7 @@ function stringPayload(payload: Record<string, OfferReleaseCommandPayloadValue> 
 
 function stringArrayPayload(payload: Record<string, OfferReleaseCommandPayloadValue> | undefined, key: string): string[] {
   const value = payload?.[key]
-  return Array.isArray(value) ? uniqueNonBlank(value) : []
+  return Array.isArray(value) ? uniqueNonBlank(value.filter((item): item is string => typeof item === "string")) : []
 }
 
 function bodyPreview(body: string): string {

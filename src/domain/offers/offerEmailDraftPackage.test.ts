@@ -86,7 +86,9 @@ describe("offer email draft package", () => {
       timezone: "Europe/Helsinki",
     })
 
-    expect(buildOfferEmailDraftPackage(blockedPlan)).toMatchObject({
+    const draftPackage = buildOfferEmailDraftPackage(blockedPlan)
+
+    expect(draftPackage).toMatchObject({
       blockerLabels: [
         "Customer email is required before offer release.",
         "RFQ status must be ready before offer release; current status is estimating.",
@@ -94,7 +96,6 @@ describe("offer email draft package", () => {
       ],
       status: "blocked",
     })
-    const draftPackage = buildOfferEmailDraftPackage(blockedPlan)
     expect(draftPackage).not.toHaveProperty("recipient")
     expect(draftPackage).not.toHaveProperty("subject")
     expect(draftPackage).not.toHaveProperty("body")
@@ -109,9 +110,11 @@ describe("offer email draft package", () => {
     emailCommand.payload.to = " "
     emailCommand.payload.subject = 123
     emailCommand.payload.body = ""
-    emailCommand.payload.attachments = []
+    emailCommand.payload.attachments = [1, " "] as unknown as string[]
 
-    expect(buildOfferEmailDraftPackage(plan)).toMatchObject({
+    const draftPackage = buildOfferEmailDraftPackage(plan)
+
+    expect(draftPackage).toMatchObject({
       attachmentFileNames: [],
       blockerLabels: [
         "Email draft command is missing a recipient.",
@@ -122,10 +125,26 @@ describe("offer email draft package", () => {
       commandKey: "email-draft",
       status: "blocked",
     })
-    const draftPackage = buildOfferEmailDraftPackage(plan)
     expect(draftPackage).not.toHaveProperty("recipient")
     expect(draftPackage).not.toHaveProperty("subject")
     expect(draftPackage).not.toHaveProperty("body")
+  })
+
+  it("does not surface attachment names from non-ready email commands", () => {
+    const plan = readyReleasePlan()
+    const emailCommand = plan.commands.find((command) => command.kind === "email_draft")
+    if (!emailCommand?.payload) {
+      throw new Error("test fixture expected an email command")
+    }
+    emailCommand.status = "requires_review"
+    emailCommand.payload.attachments = ["OFFER-204-rev1.pdf"]
+
+    expect(buildOfferEmailDraftPackage(plan)).toMatchObject({
+      attachmentFileNames: [],
+      blockerLabels: ["Email draft command is requires_review."],
+      commandKey: "email-draft",
+      status: "blocked",
+    })
   })
 })
 
