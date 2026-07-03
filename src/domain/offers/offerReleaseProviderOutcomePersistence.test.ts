@@ -47,6 +47,7 @@ describe("offer release provider outcome persistence", () => {
         releasePlan,
       }),
     )
+    expect(record.outcomeFingerprint).toMatch(/^offer-release-provider-outcomes-[0-9a-f]{32}$/)
     expect(record.commandOutcomes.map((outcome) => outcome.key)).toEqual([
       "calendar-follow-up",
       "email-draft",
@@ -85,9 +86,25 @@ describe("offer release provider outcome persistence", () => {
     })
 
     releasePlan.commands[0].label = "Mutated email command"
-    commandOutcomes[0].warnings?.push("Mutated warning")
+    const mutableOutcome = commandOutcomes.find((outcome) => outcome.key === "calendar-follow-up")
+    expect(mutableOutcome?.warnings).toEqual([
+      "Local adapter recorded the command; no external calendar connector call was made.",
+    ])
+    if (!mutableOutcome?.warnings) {
+      throw new Error("expected calendar outcome warnings")
+    }
+    mutableOutcome.warnings.push("Mutated warning")
     const firstSnapshot = adapter.snapshot()
-    firstSnapshot.records[0]?.commandOutcomes[0]?.warnings?.push("Snapshot mutation")
+    const mutableSnapshotOutcome = firstSnapshot.records[0]?.commandOutcomes.find(
+      (outcome) => outcome.key === "calendar-follow-up",
+    )
+    expect(mutableSnapshotOutcome?.warnings).toEqual([
+      "Local adapter recorded the command; no external calendar connector call was made.",
+    ])
+    if (!mutableSnapshotOutcome?.warnings) {
+      throw new Error("expected snapshot calendar outcome warnings")
+    }
+    mutableSnapshotOutcome.warnings.push("Snapshot mutation")
 
     const secondSnapshot = adapter.snapshot()
     expect(secondSnapshot.records[0].releasePlan.commands[0].label).toBe("Draft offer email")

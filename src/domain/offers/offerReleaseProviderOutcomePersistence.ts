@@ -297,10 +297,20 @@ function stableJson(value: unknown): string {
 }
 
 function fingerprint(value: string): string {
-  let hash = 0x811c9dc5
-  for (const character of value) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 0x01000193) >>> 0
+  let hashA = 0x811c9dc5
+  let hashB = 0x01000193
+  let hashC = 0x9e3779b9
+  let hashD = 0x85ebca6b
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    hashA ^= code
+    hashA = Math.imul(hashA, 0x01000193) >>> 0
+    hashB ^= code + index
+    hashB = Math.imul(hashB, 0x85ebca6b) >>> 0
+    hashC ^= code + value.length
+    hashC = Math.imul(hashC, 0xc2b2ae35) >>> 0
+    hashD ^= code + hashA
+    hashD = Math.imul(hashD, 0x27d4eb2f) >>> 0
   }
-  return hash.toString(16).padStart(8, "0")
+  return [hashA, hashB, hashC, hashD].map((hash) => hash.toString(16).padStart(8, "0")).join("")
 }
