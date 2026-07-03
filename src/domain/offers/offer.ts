@@ -327,7 +327,7 @@ function normalizeCustomer(customer: OfferCustomer): OfferCustomer {
   return normalized
 }
 
-function normalizeTerms(terms: OfferTerm[]): OfferTerm[] {
+export function normalizeTerms(terms: OfferTerm[]): OfferTerm[] {
   if (terms.length === 0) {
     throw new Error("offer must include at least one term")
   }

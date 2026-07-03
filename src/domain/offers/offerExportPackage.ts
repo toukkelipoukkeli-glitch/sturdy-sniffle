@@ -5,6 +5,7 @@ import {
   formatOfferRevisionSummary,
   formatOfferRevisionTimeline,
   formatOfferTermsSummary,
+  normalizeTerms,
   type OfferDraft,
   type OfferLineItem,
   type OfferRevision,
@@ -259,9 +260,10 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
 }
 
 function buildTermsSummary(terms: OfferTerm[]): OfferTermsSummary {
+  const normalizedTerms = normalizeTerms(terms)
   return {
-    customerSummary: formatOfferTermsSummary(terms),
-    items: terms.map((term) => ({ ...term })),
+    customerSummary: formatOfferTermsSummary(normalizedTerms),
+    items: normalizedTerms.map((term) => ({ ...term })),
   }
 }
 

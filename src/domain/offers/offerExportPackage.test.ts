@@ -190,6 +190,63 @@ describe("offer export package", () => {
     })
   })
 
+  it("normalizes term summary items and document fields from the same term data", () => {
+    const offer = {
+      ...buildCncOfferDraft({
+        customer: { name: "North Forge" },
+        issuedAt: "2026-06-20",
+        offerNumber: "OFFER-205",
+        quote: calculateCncQuote(aluminumBracketFixture),
+        validUntil: "2026-07-04",
+      }),
+      terms: [
+        {
+          key: " vat ",
+          label: " VAT ",
+          value: " Prices exclude VAT. ",
+        },
+        {
+          key: " delivery_start ",
+          label: " Delivery start ",
+          value: " Lead time starts after written approval. ",
+        },
+      ],
+    }
+
+    const exportPackage = buildOfferExportPackage({ offer })
+    const termsSection = exportPackage.document.sections.find((section) => section.key === "terms")
+
+    expect(exportPackage.termsSummary).toEqual({
+      customerSummary: "Key terms covered: VAT, Delivery start.",
+      items: [
+        {
+          key: "vat",
+          label: "VAT",
+          value: "Prices exclude VAT.",
+        },
+        {
+          key: "delivery_start",
+          label: "Delivery start",
+          value: "Lead time starts after written approval.",
+        },
+      ],
+    })
+    expect(termsSection?.fields).toEqual([
+      {
+        label: "Key terms",
+        value: "Key terms covered: VAT, Delivery start.",
+      },
+      {
+        label: "VAT",
+        value: "Prices exclude VAT.",
+      },
+      {
+        label: "Delivery start",
+        value: "Lead time starts after written approval.",
+      },
+    ])
+  })
+
   it("rejects alternates that cannot be compared with the base offer line", () => {
     const offer = buildCncOfferDraft({
       customer: { name: "North Forge" },
