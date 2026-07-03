@@ -66,8 +66,7 @@ describe("offer export package", () => {
         latestRevision: 2,
       },
       termsSummary: {
-        customerSummary:
-          "VAT: Prices exclude VAT.; Calculation basis: Material and machining assumptions follow the attached calculation.; Delivery start: Lead time starts after written approval and final drawing release.",
+        customerSummary: "Key terms covered: VAT, Calculation basis, Delivery start.",
         items: [
           {
             key: "vat",
@@ -146,7 +145,7 @@ describe("offer export package", () => {
     expect(exportPackage.plainText).toContain("- Revision 1: Initial draft (2026-06-20, FactoryBid OS)")
     expect(exportPackage.plainText).toContain("- Revision 2: Added expedited delivery alternate requested by buyer. (2026-06-21, Sari)")
     expect(exportPackage.plainText).toContain(
-      "Key terms: VAT: Prices exclude VAT.; Calculation basis: Material and machining assumptions follow the attached calculation.; Delivery start: Lead time starts after written approval and final drawing release.",
+      "Key terms: Key terms covered: VAT, Calculation basis, Delivery start.",
     )
     expect(exportPackage.pdf.contentFingerprint).toMatch(/^[a-f0-9]{8}$/)
   })

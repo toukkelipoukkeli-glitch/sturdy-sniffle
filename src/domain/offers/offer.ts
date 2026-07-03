@@ -245,10 +245,8 @@ export function formatOfferRevisionTimeline(revisions: OfferRevision[]): string[
 }
 
 export function formatOfferTermsSummary(terms: OfferTerm[]): string {
-  if (terms.length === 0) {
-    throw new Error("offer must include at least one term")
-  }
-  return terms.map((term, index) => `${nonBlank(term.label, `terms[${index}].label`)}: ${nonBlank(term.value, `terms[${index}].value`)}`).join("; ")
+  const normalizedTerms = normalizeTerms(terms)
+  return `Key terms covered: ${normalizedTerms.map((term) => term.label).join(", ")}.`
 }
 
 function assertHasRevisions(revisions: OfferRevision[]): void {

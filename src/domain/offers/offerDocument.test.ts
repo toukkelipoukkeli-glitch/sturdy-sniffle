@@ -79,8 +79,7 @@ describe("offer document", () => {
     ])
     expect(document.sections.find((section) => section.key === "terms")?.fields?.[0]).toEqual({
       label: "Key terms",
-      value:
-        "VAT: Prices exclude VAT.; Calculation basis: Material and machining assumptions follow the attached calculation.; Delivery start: Lead time starts after written approval and final drawing release.",
+      value: "Key terms covered: VAT, Calculation basis, Delivery start.",
     })
     expect(document.footerLines).toEqual([
       "Prices exclude VAT unless otherwise stated.",

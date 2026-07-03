@@ -66,15 +66,9 @@ export interface OfferRevisionSummary {
   items: OfferRevisionSummaryItem[]
 }
 
-export interface OfferTermsSummaryItem {
-  key: string
-  label: string
-  value: string
-}
-
 export interface OfferTermsSummary {
   customerSummary: string
-  items: OfferTermsSummaryItem[]
+  items: OfferTerm[]
 }
 
 export interface OfferPdfExportVerification {
@@ -267,11 +261,7 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
 function buildTermsSummary(terms: OfferTerm[]): OfferTermsSummary {
   return {
     customerSummary: formatOfferTermsSummary(terms),
-    items: terms.map((term, index) => ({
-      key: nonBlank(term.key, `terms[${index}].key`),
-      label: nonBlank(term.label, `terms[${index}].label`),
-      value: nonBlank(term.value, `terms[${index}].value`),
-    })),
+    items: terms.map((term) => ({ ...term })),
   }
 }
 

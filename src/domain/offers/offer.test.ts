@@ -222,7 +222,29 @@ describe("offer builder", () => {
           value: "Lead time starts after drawing release.",
         },
       ]),
-    ).toBe("Validity: Offer is valid for 14 days.; Delivery: Lead time starts after drawing release.")
+    ).toBe("Key terms covered: Validity, Delivery.")
+  })
+
+  it("rejects invalid customer terms summary inputs", () => {
+    expect(() => formatOfferTermsSummary([])).toThrow("offer must include at least one term")
+    expect(() =>
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: " ",
+          value: "Offer is valid for 14 days.",
+        },
+      ]),
+    ).toThrow("terms[0].label is required")
+    expect(() =>
+      formatOfferTermsSummary([
+        {
+          key: "validity",
+          label: "Validity",
+          value: " ",
+        },
+      ]),
+    ).toThrow("terms[0].value is required")
   })
 
   it("rejects impossible validity windows", () => {
