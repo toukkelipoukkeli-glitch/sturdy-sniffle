@@ -20,13 +20,13 @@ export function cadMetadataFileMatches(metadataFileName: string, attachmentFileN
 
 export function cadMetadataFileBelongsToPart(fileName: string, partNumber: string): boolean {
   const file = parseCadMetadataFileName(fileName)
-  const part = parseCadMetadataFileName(partNumber)
-  if (part.stemSegments.length === 0 || file.stemSegments.length < part.stemSegments.length) {
+  const partSegments = parseCadMetadataSegments(partNumber)
+  if (partSegments.length === 0 || file.stemSegments.length < partSegments.length) {
     return false
   }
 
   return file.stemSegments.some((_, startIndex) =>
-    part.stemSegments.every((segment, offset) => file.stemSegments[startIndex + offset] === segment),
+    partSegments.every((segment, offset) => file.stemSegments[startIndex + offset] === segment),
   )
 }
 
@@ -39,6 +39,10 @@ function parseCadMetadataFileName(value: string): ParsedCadMetadataFileName {
   return {
     extension,
     normalizedFileName,
-    stemSegments: stem.split(/[^a-z0-9]+/).filter(Boolean),
+    stemSegments: parseCadMetadataSegments(stem),
   }
+}
+
+function parseCadMetadataSegments(value: string): string[] {
+  return value.trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
 }

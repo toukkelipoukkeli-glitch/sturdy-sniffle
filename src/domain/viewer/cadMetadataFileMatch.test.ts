@@ -16,5 +16,7 @@ describe("CAD metadata filename matching", () => {
   it("matches part-number fallbacks on complete filename segments", () => {
     expect(cadMetadataFileBelongsToPart("FB-204-A-rev2.step", "FB-204-A")).toBe(true)
     expect(cadMetadataFileBelongsToPart("FB-204-A2.step", "FB-204-A")).toBe(false)
+    expect(cadMetadataFileBelongsToPart("AB-12-other.step", "AB.12")).toBe(true)
+    expect(cadMetadataFileBelongsToPart("AB-999-other.step", "AB.12")).toBe(false)
   })
 })

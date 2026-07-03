@@ -62,6 +62,11 @@ export interface BuildPartPreviewModelInput {
 
 type RankedPartPreviewAttachment = Omit<PartPreviewAttachment, "primary" | "reviewReasons" | "reviewState">
 
+interface RankedPartPreviewAttachmentRecord {
+  attachment: RankedPartPreviewAttachment
+  cadMetadata?: CadMetadataResult
+}
+
 export interface PartPreviewCadMetadata {
   fileName: string
   provider: CadMetadataResult["provider"]
@@ -97,24 +102,31 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
   const attachmentNames = new Set(attachmentFileNames.map(normalizeToken))
   const matchingAttachments = selectMatchingAttachments(partNumber, attachmentNames, input.attachments)
   const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentFileNames, input.cadMetadata ?? [])
-  const rankedAttachments = matchingAttachments
-    .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames, findCadMetadataForAttachment(cadMetadata, attachment.fileName)))
-    .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
+  const rankedAttachmentRecords = matchingAttachments
+    .map((attachment): RankedPartPreviewAttachmentRecord => {
+      const matchingCadMetadata = findCadMetadataForAttachment(cadMetadata, attachment.fileName)
+      return {
+        attachment: rankAttachment(attachment, partNumber, attachmentNames, matchingCadMetadata),
+        cadMetadata: matchingCadMetadata,
+      }
+    })
+    .sort((left, right) => right.attachment.score - left.attachment.score || compareLex(left.attachment.fileName, right.attachment.fileName))
+  const rankedAttachments = rankedAttachmentRecords.map(({ attachment }) => attachment)
   const preferredPrimaryToken = input.preferredPrimaryAttachmentName ? normalizeToken(input.preferredPrimaryAttachmentName) : undefined
-  const preferredPrimaryAttachment = input.preferredPrimaryAttachmentName
-    ? rankedAttachments.find(
-        (attachment) => attachment.fileName === input.preferredPrimaryAttachmentName && attachment.modes[0] !== "metadata",
+  const preferredPrimaryRecord = input.preferredPrimaryAttachmentName
+    ? rankedAttachmentRecords.find(
+        ({ attachment }) => attachment.fileName === input.preferredPrimaryAttachmentName && attachment.modes[0] !== "metadata",
       ) ??
       (preferredPrimaryToken
-        ? rankedAttachments.find(
-            (attachment) => normalizeToken(attachment.fileName) === preferredPrimaryToken && attachment.modes[0] !== "metadata",
+        ? rankedAttachmentRecords.find(
+            ({ attachment }) => normalizeToken(attachment.fileName) === preferredPrimaryToken && attachment.modes[0] !== "metadata",
           )
         : undefined)
     : undefined
-  const primaryAttachment = preferredPrimaryAttachment ?? rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
+  const primaryRecord = preferredPrimaryRecord ?? rankedAttachmentRecords.find(({ attachment }) => attachment.modes[0] !== "metadata")
+  const primaryAttachment = primaryRecord?.attachment
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
-  const primaryCadMetadata =
-    (primaryAttachment ? findCadMetadataForAttachment(cadMetadata, primaryAttachment.fileName) : undefined) ?? cadMetadata[0]
+  const primaryCadMetadata = primaryRecord?.cadMetadata ?? cadMetadata[0]
   const measurementOverlays = buildMeasurementOverlays({
     ...input.part,
     dimensions: {
@@ -134,10 +146,10 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     primaryPreviewLabel: primaryAttachment?.previewLabel ?? "Metadata preview",
     primaryThumbnailLabel: primaryAttachment?.thumbnailLabel ?? "Metadata card",
     availableModes: collectAvailableModes(rankedAttachments),
-    attachments: rankedAttachments.map((attachment) => ({
+    attachments: rankedAttachmentRecords.map(({ attachment, cadMetadata }) => ({
       ...attachment,
       primary: attachment.fileName === primaryAttachment?.fileName,
-      ...reviewStateForAttachment(attachment, findCadMetadataForAttachment(cadMetadata, attachment.fileName)),
+      ...reviewStateForAttachment(attachment, cadMetadata),
     })),
     measurementOverlays,
     cadMetadata: cadMetadata.map(toPartPreviewCadMetadata),
