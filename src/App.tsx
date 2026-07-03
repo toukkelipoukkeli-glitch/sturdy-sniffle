@@ -91,6 +91,11 @@ import {
 } from "./domain/offers/offerEmailDraftPackageHistory"
 import { buildOfferEmailDraftPackagePersistenceRecord } from "./domain/offers/offerEmailDraftPackagePersistence"
 import {
+  summarizeOfferReleaseProviderOutcomeHistory,
+  type OfferReleaseProviderOutcomeHistorySummary,
+} from "./domain/offers/offerReleaseProviderOutcomeHistory"
+import { buildOfferReleaseProviderOutcomePersistenceRecord } from "./domain/offers/offerReleaseProviderOutcomePersistence"
+import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
   type OfferReleasePlan,
@@ -1539,6 +1544,27 @@ function App() {
       }),
     [offerEmailDraftPackage, workspaceNow, workspaceOperatorName],
   )
+  const offerReleaseProviderCommandOutcomes = useMemo(
+    () => (offerReleasePlan.status === "ready" ? buildLocalReleaseCommandOutcomes(offerReleasePlan) : []),
+    [offerReleasePlan],
+  )
+  const offerReleaseProviderOutcomeHistory = useMemo(
+    () =>
+      summarizeOfferReleaseProviderOutcomeHistory({
+        records:
+          offerReleaseProviderCommandOutcomes.length > 0
+            ? [
+                buildOfferReleaseProviderOutcomePersistenceRecord({
+                  commandOutcomes: offerReleaseProviderCommandOutcomes,
+                  recordedAt: workspaceNow,
+                  recordedBy: workspaceOperatorName,
+                  releasePlan: offerReleasePlan,
+                }),
+              ]
+            : [],
+      }),
+    [offerReleasePlan, offerReleaseProviderCommandOutcomes, workspaceNow, workspaceOperatorName],
+  )
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
@@ -1751,7 +1777,7 @@ function App() {
     try {
       const run = buildOfferReleaseExecutionRun({
         actor: workspaceOperatorName,
-        commandOutcomes: buildLocalReleaseCommandOutcomes(offerReleasePlan),
+        commandOutcomes: offerReleaseProviderCommandOutcomes,
         executedAt: workspaceNow,
         mode: "commit",
         plan: offerReleasePlan,
@@ -2165,6 +2191,7 @@ function App() {
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
+              releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
               releaseReview={selectedReleaseReview}
               replySnapshot={offerReplySnapshot}
               replySync={offerReplySync}
@@ -8128,6 +8155,7 @@ function OfferView({
   releaseEmailDraftHistory,
   releaseHistory,
   releasePlan,
+  releaseProviderOutcomeHistory,
   releaseReview,
   replySnapshot,
   replySync,
@@ -8154,6 +8182,7 @@ function OfferView({
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
+  releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
   releaseReview?: ReleaseReviewState
   replySnapshot?: OfferReplySyncPersistenceSnapshot
   replySync?: GmailOfferReplySyncResult
@@ -8291,6 +8320,7 @@ function OfferView({
       />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
+      <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseExecutionPanel
         execution={releaseExecution}
         onExecuteRelease={onExecuteRelease}
@@ -8555,6 +8585,77 @@ function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDr
   )
 }
 
+function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferReleaseProviderOutcomeHistorySummary }) {
+  const latest = history.latestOutcomeBatch
+  const latestStatus =
+    history.totalOutcomeBatches === 0 ? "None" : history.failedCommandCount > 0 ? "Review failures" : "Provider-ready"
+
+  return (
+    <section className="offer-provider-outcome-history-panel" aria-label="Offer provider outcome history">
+      <div className="offer-provider-outcome-history-heading">
+        <div>
+          <span className="eyebrow">
+            <Database aria-hidden="true" />
+            Provider outcome history
+          </span>
+          <strong>
+            {history.totalOutcomeBatches === 1 ? "1 outcome batch" : `${history.totalOutcomeBatches} outcome batches`}
+          </strong>
+        </div>
+        <span
+          className={
+            history.failedCommandCount > 0
+              ? "offer-provider-outcome-history-status offer-provider-outcome-history-status-review"
+              : "offer-provider-outcome-history-status offer-provider-outcome-history-status-ready"
+          }
+        >
+          {latestStatus}
+        </span>
+      </div>
+      <div className="offer-provider-outcome-history-summary">
+        <Metric label="Batches" value={String(history.totalOutcomeBatches)} />
+        <Metric label="Commands" value={String(history.commandCount)} />
+        <Metric label="Applied" value={String(history.appliedCommandCount)} />
+        <Metric label="Failed" value={String(history.failedCommandCount)} />
+      </div>
+      {latest ? (
+        <div
+          className="offer-provider-outcome-history-latest"
+          data-status={latest.failedCommandCount > 0 ? "failed" : "applied"}
+        >
+          <div>
+            <strong>{latest.failedCommandCount > 0 ? "Provider outcomes need review" : "Provider outcomes ready"}</strong>
+            <span>
+              {latest.commandCount} command{latest.commandCount === 1 ? "" : "s"} · {latest.warningCount} warning
+              {latest.warningCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <small>{shortProviderOutcomeFingerprint(latest.outcomeFingerprint)}</small>
+        </div>
+      ) : (
+        <div className="flag">
+          <AlertTriangle aria-hidden="true" />
+          <span>No provider outcome records are available.</span>
+        </div>
+      )}
+      {history.commandSummaries.length > 0 ? (
+        <div className="offer-provider-outcome-history-commands" aria-label="Provider outcome command summaries">
+          {history.commandSummaries.slice(0, 6).map((command) => (
+            <div className={command.statuses.includes("failed") ? "flag" : "flag ok"} key={command.commandKey}>
+              {command.statuses.includes("failed") ? <AlertTriangle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
+              <span>
+                {providerOutcomeCommandLabel(command.commandKey)} · {command.outcomeCount} outcome
+                {command.outcomeCount === 1 ? "" : "s"} ·{" "}
+                {command.statuses.map(humanizeKey).join(", ")}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 function OfferReleaseExecutionPanel({
   execution,
   onExecuteRelease,
@@ -8683,6 +8784,16 @@ function shortAuditFingerprint(fingerprint: string) {
 
 function shortEmailDraftPackageFingerprint(fingerprint: string) {
   return fingerprint.replace(/^offer-email-draft-package-/, "")
+}
+
+function shortProviderOutcomeFingerprint(fingerprint: string) {
+  return fingerprint.replace(/^offer-release-provider-outcomes-/, "")
+}
+
+function providerOutcomeCommandLabel(commandKey: string) {
+  return commandKey
+    .replace(/[-_:]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase())
 }
 
 function OfferLifecyclePanel({
