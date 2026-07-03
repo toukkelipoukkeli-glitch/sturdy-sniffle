@@ -84,6 +84,11 @@ test("filters the RFQ queue and discloses attachments", async ({ page }) => {
   await expect(attachments).toContainText("FB-204-A-fixture.svg")
 
   const partPreview = page.getByLabel("Part preview")
+  const pdfRow = partPreview.locator(".attachment-row").filter({ hasText: "FB-204-A.pdf" })
+  await pdfRow.getByRole("button", { name: "Set primary" }).click()
+  await expect(partPreview.getByTitle("FB-204-A.pdf PDF preview")).toBeVisible()
+  await expect(partPreview).toContainText("PDF drawing preview")
+
   const imageRow = partPreview.locator(".attachment-row").filter({ hasText: "FB-204-A-fixture.svg" })
   await imageRow.getByRole("button", { name: "Set primary" }).click()
   await expect(partPreview.getByRole("img", { name: "FB-204-A-fixture.svg preview" })).toBeVisible()

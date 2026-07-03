@@ -1510,6 +1510,10 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(within(drawingRow as HTMLElement).getByRole("button", { name: "Set primary" }))
 
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+    expect(within(screen.getByLabelText("Part preview")).getByTitle("FB-204-A.pdf PDF preview")).toHaveAttribute(
+      "src",
+      expect.stringMatching(/^data:application\/pdf;base64,/),
+    )
     const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
     expect(stored.primaryAttachmentById?.[stored.selectedId]).toBe("FB-204-A.pdf")
 
