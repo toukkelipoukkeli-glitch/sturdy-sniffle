@@ -4095,7 +4095,8 @@
     oklch(0.98 0.006 220);
 }
 
-.preview-viewport[data-renderer="browser-image"] {
+.preview-viewport[data-renderer="browser-image"],
+.preview-viewport[data-renderer="browser-pdf"] {
   background: oklch(0.98 0.006 220);
   padding: 10px;
 }
@@ -4107,6 +4108,15 @@
   max-height: 150px;
   max-width: 100%;
   object-fit: contain;
+  width: min(100%, 240px);
+}
+
+.preview-document {
+  background: white;
+  border: 1px solid oklch(0.86 0.018 235);
+  border-radius: 6px;
+  display: block;
+  height: min(150px, 100%);
   width: min(100%, 240px);
 }
 

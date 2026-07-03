@@ -355,6 +355,7 @@ interface WorkspaceLocalState {
 }
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
+export const pdfPreviewLoadTimeoutMs = 8_000
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
     now: "2026-06-20T09:00:00+03:00",
@@ -507,6 +508,23 @@ const demoImagePreviewUrl = [
   "ZjEnLz48cGF0aCBkPSdNMzggODZsMjQtMjQgMTggMTYgMTgtMjIgMjQgMzB6JyBmaWxsPScjZWNmZWZmJy8+PC9zdmc+",
 ].join("")
 
+const demoPdfPreviewUrl = [
+  "data:application/pdf;base64,",
+  "JVBERi0xLjcKJYGBgYEKCjYgMCBvYmoKPDwKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL0xlbmd0aCAxMjIKPj4Kc3Ry",
+  "ZWFtCnicDccxCgJBDEbhPqdILbgm/2STGRAL2QULGyEXEFlF0UIRz+/w4MH3pn2SDDKyDPC+Av7caHNYnr/le7+c1yGt",
+  "WpWojbVyXgnGeSRl6Sl3qYLzRVtzA6aCIsUwmULcAq4R3nz2gIR0j+HdY8SO80G5ojnpRH8tqR2HCmVuZHN0cmVhbQpl",
+  "bmRvYmoKCjcgMCBvYmoKPDwKL0ZpbHRlciAvRmxhdGVEZWNvZGUKL1R5cGUgL09ialN0bQovTiA1Ci9GaXJzdCAyNgov",
+  "TGVuZ3RoIDM2Mgo+PgpzdHJlYW0KeJzVUk1Lw0AQve+vmKMeZGeTNB9SCm2TKEhRWkFRPKTJUiJlV5KN1H/vTJJaehDP",
+  "Hh67M/Nm9+3OU4DgQRCAD1EMAUx8DyYQKQXTqZCPXx8a5EOx062Qd3XVwitxENbwJuTSdsaBErOZOHGXhSv2dieGJlBM",
+  "PjIeGlt1pW5gmmd5jhghYhgQQkQvpXVJSAgexVTzYtoTomAE5SIf0Z9TLR8QRkMP13vuZOzPaCVuyJx04AbxEP/cy3dl",
+  "wxneX3qSmZArW6WF03CRXnvohdTgY+zHvnq5pO9odOHs/31cr7+25tcXns2Zx8tDbjR7oJ+yXOvWdk1JY2debqnCm1u",
+  "9/9SuLourCJOYdEZxQh4bjSGf77fvuuypHGYHd7NxrGFIcG6lq7pY2AO5D9mvAYKKkT04N8Y6dmXvR+NIDUfh6NEzyS",
+  "xIyE23dX3ISSXkomh1L/Wkk0SY0la12YF8qs3ctPUxwSd+Ayk0xeoKZW5kc3RyZWFtCmVuZG9iagoKOCAwIG9iago8",
+  "PAovU2l6ZSA5Ci9Sb290IDIgMCBSCi9JbmZvIDMgMCBSCi9GaWx0ZXIgL0ZsYXRlRGVjb2RlCi9UeXBlIC9YUmVmCi9M",
+  "ZW5ndGggNDEKL1cgWyAxIDIgMiBdCi9JbmRleCBbIDAgOSBdCj4+CnN0cmVhbQp4nBXEsREAIAwDsbfDHS37t4zEQAlW",
+  "IaDbbEhKTpWWOCDezxcGYiMDwQplbmRzdHJlYW0KZW5kb2JqCgpzdGFydHhyZWYKNjc1CiUlRU9G",
+].join("")
+
 const initialWorkItems: QuoteWorkItem[] = [
   {
     id: "rfq-204",
@@ -532,6 +550,7 @@ const initialWorkItems: QuoteWorkItem[] = [
         fileName: "FB-204-A.pdf",
         kind: "drawing",
         contentType: "application/pdf",
+        previewUrl: demoPdfPreviewUrl,
         sizeBytes: 98304,
       },
       {
@@ -7268,8 +7287,26 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-image" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
-  const [failedPrimaryImageSource, setFailedPrimaryImageSource] = useState<string | undefined>()
-  const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryImageSource !== primaryImageSource)
+  const primaryPdfSource =
+    primaryAttachment?.previewOutput.renderer === "browser-pdf" && primaryAttachment.previewOutput.status === "ready"
+      ? primaryAttachment.previewOutput.sourceUrl
+      : undefined
+  const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
+  const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
+  const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
+  const canRenderPrimaryPdf = Boolean(primaryPdfSource && failedPrimaryPreviewSource !== primaryPdfSource)
+
+  useEffect(() => {
+    if (!primaryPdfSource || failedPrimaryPreviewSource === primaryPdfSource || loadedPrimaryPdfSource === primaryPdfSource) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFailedPrimaryPreviewSource(primaryPdfSource)
+    }, pdfPreviewLoadTimeoutMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [failedPrimaryPreviewSource, loadedPrimaryPdfSource, primaryPdfSource])
 
   return (
     <section className="part-preview" aria-label="Part preview">
@@ -7278,8 +7315,16 @@ function PartPreviewPanel({
           <img
             alt={`${preview.primaryAttachmentName ?? preview.partNumber} preview`}
             className="preview-image"
-            onError={() => setFailedPrimaryImageSource(primaryImageSource)}
+            onError={() => setFailedPrimaryPreviewSource(primaryImageSource)}
             src={primaryImageSource}
+          />
+        ) : canRenderPrimaryPdf ? (
+          <iframe
+            className="preview-document"
+            onError={() => setFailedPrimaryPreviewSource(primaryPdfSource)}
+            onLoad={() => setLoadedPrimaryPdfSource(primaryPdfSource)}
+            src={primaryPdfSource}
+            title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
         ) : (
           <div className="preview-icon" aria-hidden="true">

@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import App, { ProcessQuotePreviewCard } from "./App"
+import App, { ProcessQuotePreviewCard, pdfPreviewLoadTimeoutMs } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
@@ -233,6 +233,7 @@ describe("FactoryBid workspace (component)", () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: originalClipboard,
@@ -1510,12 +1511,60 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(within(drawingRow as HTMLElement).getByRole("button", { name: "Set primary" }))
 
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+    expect(within(screen.getByLabelText("Part preview")).getByTitle("FB-204-A.pdf PDF preview")).toHaveAttribute(
+      "src",
+      expect.stringMatching(/^data:application\/pdf;base64,/),
+    )
     const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
     expect(stored.primaryAttachmentById?.[stored.selectedId]).toBe("FB-204-A.pdf")
 
     unmount()
     render(<App />)
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+  })
+
+  it("keeps a browser-native PDF preview after the iframe reports loaded", () => {
+    vi.useFakeTimers()
+    render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    const attachments = within(preview).getByLabelText("Attachments")
+    const drawingRow = within(attachments).getByText("FB-204-A.pdf").closest(".attachment-row")
+    expect(drawingRow).not.toBeNull()
+    fireEvent.click(within(drawingRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    const pdfPreview = within(screen.getByLabelText("Part preview")).getByTitle("FB-204-A.pdf PDF preview")
+    fireEvent.load(pdfPreview)
+
+    act(() => {
+      vi.advanceTimersByTime(pdfPreviewLoadTimeoutMs + 1)
+    })
+
+    expect(within(screen.getByLabelText("Part preview")).getByTitle("FB-204-A.pdf PDF preview")).toBeVisible()
+    expect(screen.getByLabelText("Part preview")).toHaveTextContent("PDF drawing preview")
+  })
+
+  it("falls back when a browser-native PDF preview never reports loaded", () => {
+    vi.useFakeTimers()
+    render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    const attachments = within(preview).getByLabelText("Attachments")
+    const drawingRow = within(attachments).getByText("FB-204-A.pdf").closest(".attachment-row")
+    expect(drawingRow).not.toBeNull()
+    fireEvent.click(within(drawingRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    expect(within(screen.getByLabelText("Part preview")).getByTitle("FB-204-A.pdf PDF preview")).toBeVisible()
+
+    act(() => {
+      vi.advanceTimersByTime(pdfPreviewLoadTimeoutMs + 1)
+    })
+
+    const partPreview = screen.getByLabelText("Part preview")
+    const primaryPreviewViewport = partPreview.querySelector(".preview-viewport")
+    expect(primaryPreviewViewport).not.toBeNull()
+    expect(within(partPreview).queryByTitle("FB-204-A.pdf PDF preview")).toBeNull()
+    expect(primaryPreviewViewport?.querySelector(".preview-icon")).not.toBeNull()
   })
 
   it("renders browser-native image attachments when selected as the primary preview", async () => {

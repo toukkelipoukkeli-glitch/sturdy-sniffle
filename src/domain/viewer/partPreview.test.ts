@@ -229,6 +229,41 @@ describe("part preview model", () => {
     })
   })
 
+  it("keeps safe browser PDF sources available for drawing previews", () => {
+    const pdfSource = "data:application/pdf;base64,JVBERi0xLjQK"
+    const model = buildPartPreviewModel({
+      subject: "RFQ: drawing preview",
+      part: {
+        partNumber: "DRAW-42",
+        process: "cnc_milling",
+        materialText: "Aluminum 6082",
+        quantity: 12,
+        attachmentNames: ["DRAW-42.pdf"],
+      },
+      attachments: [
+        {
+          fileName: "DRAW-42.pdf",
+          kind: "drawing",
+          contentType: "application/pdf",
+          previewUrl: pdfSource,
+        },
+      ],
+    })
+
+    expect(model.primaryMode).toBe("drawing")
+    expect(model.primaryAttachmentName).toBe("DRAW-42.pdf")
+    expect(model.primaryPreviewLabel).toBe("PDF drawing preview")
+    expect(model.attachments[0]).toMatchObject({
+      previewOutput: {
+        renderer: "browser-pdf",
+        sourceUrl: pdfSource,
+        status: "ready",
+      },
+      reviewState: "ready",
+      thumbnailLabel: "PDF drawing",
+    })
+  })
+
   it("uses parsed CAD metadata for measurement overlays and adapter warnings", () => {
     const model = buildPartPreviewModel({
       part: {

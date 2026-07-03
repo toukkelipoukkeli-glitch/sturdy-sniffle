@@ -68,6 +68,25 @@ describe("attachment preview output", () => {
     })
   })
 
+  it("returns ready descriptors for safe browser-native PDF previews", () => {
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "drawing.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+        previewUrl: "data:application/pdf;base64,JVBERi0xLjQK",
+      }),
+    ).toMatchObject({
+      kind: "pdf_page",
+      label: "PDF drawing preview",
+      renderer: "browser-pdf",
+      sourceUrl: "data:application/pdf;base64,JVBERi0xLjQK",
+      status: "ready",
+      thumbnailLabel: "PDF drawing",
+      warnings: [],
+    })
+  })
+
   it("falls back when image attachments do not include a safe browser source", () => {
     expect(
       buildAttachmentPreviewOutput({
@@ -94,6 +113,35 @@ describe("attachment preview output", () => {
       renderer: "browser-image",
       status: "fallback",
       warnings: ["Image preview source unavailable; using deterministic image placeholder."],
+    })
+  })
+
+  it("falls back when PDF attachments do not include a safe browser source", () => {
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "drawing.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+      }),
+    ).toMatchObject({
+      kind: "pdf_page",
+      renderer: "pdf-page",
+      status: "fallback",
+      warnings: ["PDF renderer unavailable; using deterministic drawing placeholder."],
+    })
+
+    expect(
+      buildAttachmentPreviewOutput({
+        fileName: "supplier-drawing.pdf",
+        kind: "drawing",
+        contentType: "application/pdf",
+        previewUrl: "https://supplier.example/drawing.pdf",
+      }),
+    ).toMatchObject({
+      kind: "pdf_page",
+      renderer: "pdf-page",
+      status: "fallback",
+      warnings: ["PDF renderer unavailable; using deterministic drawing placeholder."],
     })
   })
 

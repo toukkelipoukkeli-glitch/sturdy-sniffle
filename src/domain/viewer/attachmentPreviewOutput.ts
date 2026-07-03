@@ -54,15 +54,7 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
         warning: "DXF renderer unavailable; using deterministic drawing placeholder.",
       })
     }
-    return fallbackOutput({
-      fileName,
-      kind: "pdf_page",
-      label: "PDF drawing preview",
-      renderer: "pdf-page",
-      summary: "PDF page preview descriptor",
-      thumbnailLabel: "PDF drawing",
-      warning: "PDF renderer unavailable; using deterministic drawing placeholder.",
-    })
+    return pdfOutput(attachment, fileName)
   }
 
   if (attachment.kind === "photo") {
@@ -106,15 +98,7 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   }
 
   if (/\.pdf$/.test(normalizedFileName) || contentType?.includes("pdf")) {
-    return fallbackOutput({
-      fileName,
-      kind: "pdf_page",
-      label: "PDF drawing preview",
-      renderer: "pdf-page",
-      summary: "PDF page preview descriptor",
-      thumbnailLabel: "PDF drawing",
-      warning: "PDF renderer unavailable; using deterministic drawing placeholder.",
-    })
+    return pdfOutput(attachment, fileName)
   }
 
   if (contentType?.startsWith("image/")) {
@@ -174,12 +158,51 @@ function imageOutput(attachment: RfqAttachmentDraft, fileName: string): Attachme
   }
 }
 
+function pdfOutput(attachment: RfqAttachmentDraft, fileName: string): AttachmentPreviewOutput {
+  const sourceUrl = safePdfSource(attachment.previewUrl)
+  if (!sourceUrl) {
+    return fallbackOutput({
+      fileName,
+      kind: "pdf_page",
+      label: "PDF drawing preview",
+      renderer: "pdf-page",
+      summary: "PDF page preview descriptor",
+      thumbnailLabel: "PDF drawing",
+      warning: "PDF renderer unavailable; using deterministic drawing placeholder.",
+    })
+  }
+
+  return {
+    outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
+    fileName,
+    kind: "pdf_page",
+    status: "ready",
+    label: "PDF drawing preview",
+    renderer: "browser-pdf",
+    sourceUrl,
+    summary: "PDF page preview descriptor",
+    thumbnailLabel: "PDF drawing",
+    warnings: [],
+  }
+}
+
 function safeImageSource(previewUrl: string | undefined): string | undefined {
   const trimmed = previewUrl?.trim()
   if (!trimmed) {
     return undefined
   }
   if (/^data:image\/[a-z0-9.+-]+[;,]/i.test(trimmed) || /^blob:/i.test(trimmed)) {
+    return trimmed
+  }
+  return undefined
+}
+
+function safePdfSource(previewUrl: string | undefined): string | undefined {
+  const trimmed = previewUrl?.trim()
+  if (!trimmed) {
+    return undefined
+  }
+  if (/^data:application\/pdf[;,]/i.test(trimmed) || /^blob:/i.test(trimmed)) {
     return trimmed
   }
   return undefined
