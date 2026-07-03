@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `4db4ddc` (`Harden CAD metadata filename matching (#230)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD metadata thumbnail card.
-- In-flight PR at this checkpoint: `codex/cad-metadata-thumbnail-card` adds compact metadata-backed thumbnail tiles for ready STEP/DXF attachments in the part preview attachment list.
+- Main branch checkpoint: `dc92dd7` (`Add CAD metadata thumbnail cards (#231)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry preview adapter boundary.
+- In-flight PR at this checkpoint: `codex/cad-geometry-preview-adapter` adds deterministic metadata-derived STEP/DXF geometry preview descriptors with provider/fallback seams while real parsers stay deferred.
 - Latest merged sequence:
+  - `#231` ready STEP/DXF metadata adapter results now render compact metadata-backed thumbnail tiles in the part preview attachment list.
   - `#230` CAD metadata filename matching now uses a shared boundary-aware helper so distinct filename segments and dotted part numbers cannot collapse into the same attachment.
   - `#229` ready STEP/DXF metadata adapter results now render compact primary viewport metadata cards.
   - `#228` successful CAD metadata adapter results now mark STEP/DXF preview descriptors ready while parser failures remain deterministic nonfatal fallbacks.
@@ -135,7 +136,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
-- CAD-like attachment preview models, CAD metadata adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, and boundary-aware CAD metadata matching.
+- CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, and boundary-aware CAD metadata matching.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
@@ -211,13 +212,14 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Successful CAD metadata adapter results now mark STEP/DXF preview descriptors ready, while parser failures remain deterministic placeholders.
    - Ready STEP/DXF metadata adapter results now render as compact primary viewport metadata cards.
    - `#230` hardened CAD metadata filename matching with a shared boundary-aware helper so distinct filename segments and dotted part numbers cannot collapse into the same attachment.
-   - Current branch adds compact metadata-backed thumbnail tiles for ready STEP/DXF attachments while real geometry parsing stays deferred.
-   - Next steps: add richer geometry preview adapters for real STEP/DXF rendering while keeping parser failures nonfatal.
+   - `#231` added compact metadata-backed thumbnail tiles for ready STEP/DXF attachments while real geometry parsing stays deferred.
+   - Current branch adds metadata-derived STEP/DXF geometry preview descriptors with provider/fallback seams while keeping parser failures nonfatal.
+   - Next steps: wire the geometry descriptors into viewport/thumbnail rendering and eventually swap in real parser providers.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
-   - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
+   - Include Browser/Playwright desktop and mobile QA for UI-facing follow-up slices.
 
 3. Introduce operator identity and a single injected workspace clock.
-   - Current in-flight slice replaces action-time wall-clock writes and scattered operator names with an explicit local workspace context.
+   - Local workspace runtime context already replaced action-time wall-clock writes and scattered operator names.
    - Next steps: let Convex/auth-resolved actor data feed the same context when configured.
    - Keep audit records deterministic in tests.
    - Avoid auth scope creep; this is local identity plumbing, not a full login system.
