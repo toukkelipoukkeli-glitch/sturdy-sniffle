@@ -4,6 +4,14 @@ export const CAD_GEOMETRY_REVIEW_SUMMARY_VERSION = "cad-geometry-review-summary.
 
 export type CadGeometryReviewStatus = "ready" | "needs_review" | "blocked"
 export type CadGeometryReviewCheckKey = "preview_status" | "bounds" | "outline" | "units" | "provider_warnings"
+export type CadGeometryReviewActionKey =
+  | "use_metadata_card"
+  | "request_geometry_parser_review"
+  | "confirm_geometry_dimensions"
+  | "confirm_flat_pattern_thickness"
+  | "confirm_geometry_units"
+  | "review_geometry_provider_warnings"
+export type CadGeometryReviewActionPriority = "primary" | "secondary"
 
 export interface CadGeometryReviewCheck {
   key: CadGeometryReviewCheckKey
@@ -11,6 +19,13 @@ export interface CadGeometryReviewCheck {
   label: string
   message: string
   warnings: string[]
+}
+
+export interface CadGeometryReviewAction {
+  key: CadGeometryReviewActionKey
+  priority: CadGeometryReviewActionPriority
+  label: string
+  detail: string
 }
 
 export interface CadGeometryReviewSummary {
@@ -24,6 +39,7 @@ export interface CadGeometryReviewSummary {
   warnings: string[]
   blockers: string[]
   nextAction: string
+  actions: CadGeometryReviewAction[]
   checks: CadGeometryReviewCheck[]
 }
 
@@ -38,6 +54,7 @@ export function buildCadGeometryReviewSummary(preview: CadGeometryPreviewResult)
   const status = summarizeStatus(checks)
   const blockers = checks.filter((check) => check.status === "blocked").map((check) => check.message)
   const warnings = unique(checks.flatMap((check) => check.warnings))
+  const actions = buildCadGeometryReviewActions(preview, checks, status)
 
   return {
     summaryVersion: CAD_GEOMETRY_REVIEW_SUMMARY_VERSION,
@@ -50,6 +67,7 @@ export function buildCadGeometryReviewSummary(preview: CadGeometryPreviewResult)
     warnings,
     blockers,
     nextAction: nextActionFor(status),
+    actions,
     checks,
   }
 }
@@ -240,6 +258,101 @@ function nextActionFor(status: CadGeometryReviewStatus) {
   return "Geometry descriptor is ready for operator preview."
 }
 
+function buildCadGeometryReviewActions(
+  preview: CadGeometryPreviewResult,
+  checks: CadGeometryReviewCheck[],
+  status: CadGeometryReviewStatus,
+): CadGeometryReviewAction[] {
+  if (status === "ready") {
+    return []
+  }
+
+  const actions: CadGeometryReviewAction[] = []
+  const addAction = (action: CadGeometryReviewAction) => {
+    if (!actions.some((existing) => existing.key === action.key)) {
+      actions.push(action)
+    }
+  }
+
+  if (status === "blocked") {
+    addAction({
+      key: "use_metadata_card",
+      priority: "primary",
+      label: "Use metadata card",
+      detail: "Keep quote decisions on RFQ and attachment metadata until geometry blockers clear.",
+    })
+  }
+
+  for (const check of checks) {
+    if (check.status === "ready") {
+      continue
+    }
+
+    switch (check.key) {
+      case "preview_status":
+        addAction({
+          key: "use_metadata_card",
+          priority: status === "blocked" ? "primary" : "secondary",
+          label: "Use metadata card",
+          detail: "Treat the preview as fallback-only until the geometry descriptor is ready.",
+        })
+        break
+      case "bounds":
+        if (check.status === "blocked") {
+          addAction({
+            key: "request_geometry_parser_review",
+            priority: "primary",
+            label: "Request geometry parser review",
+            detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
+          })
+        } else if (preview.previewKind === "dxf_flat_pattern" && !positiveFinite(preview.bounds?.thicknessMm)) {
+          addAction({
+            key: "confirm_flat_pattern_thickness",
+            priority: "primary",
+            label: "Confirm flat-pattern thickness",
+            detail: "Verify thickness from drawing or material metadata before flat-pattern calculations.",
+          })
+        } else {
+          addAction({
+            key: "confirm_geometry_dimensions",
+            priority: "primary",
+            label: "Confirm geometry dimensions",
+            detail: "Verify geometry dimensions against drawing or material metadata before quoting.",
+          })
+        }
+        break
+      case "outline":
+        addAction({
+          key: "request_geometry_parser_review",
+          priority: "primary",
+          label: "Request geometry parser review",
+          detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
+        })
+        break
+      case "units":
+        addAction({
+          key: "confirm_geometry_units",
+          priority: "secondary",
+          label: "Confirm drawing units",
+          detail: "Verify units before quoting dimensions from this preview.",
+        })
+        break
+      case "provider_warnings":
+        addAction({
+          key: "review_geometry_provider_warnings",
+          priority: "secondary",
+          label: "Review geometry provider warnings",
+          detail: "Review provider warning text before accepting the descriptor.",
+        })
+        break
+      default:
+        assertNeverCheckKey(check.key)
+    }
+  }
+
+  return actions
+}
+
 function positiveFinite(value: number | undefined): boolean {
   return typeof value === "number" && Number.isFinite(value) && value > 0
 }
@@ -247,6 +360,11 @@ function positiveFinite(value: number | undefined): boolean {
 function assertNeverPreviewKind(previewKind: never): never {
   const unexpectedPreviewKind: CadGeometryPreviewKind = previewKind
   throw new Error(`Unhandled CAD geometry preview kind: ${unexpectedPreviewKind}`)
+}
+
+function assertNeverCheckKey(checkKey: never): never {
+  const unexpectedCheckKey: CadGeometryReviewCheckKey = checkKey
+  throw new Error(`Unhandled CAD geometry review check: ${unexpectedCheckKey}`)
 }
 
 function unique(values: string[]): string[] {

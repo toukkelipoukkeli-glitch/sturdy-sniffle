@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `42ed4c9` (`Add CAD geometry review summaries (#235)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry review summary UI.
-- In-flight PR at this checkpoint: `codex/cad-geometry-review-summary-ui` surfaces deterministic ready/needs-review/blocked geometry review summaries in the part preview viewport and attachment thumbnail surfaces while real parsers stay deferred.
+- Main branch checkpoint: `1759a5b` (`Surface CAD geometry review summaries (#236)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry review action-hints UI.
+- In-flight PR at this checkpoint: `codex/cad-geometry-action-hints` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture while real parsers stay deferred.
 - Latest merged sequence:
+  - `#236` surfaces deterministic geometry review summaries in the part preview viewport and attachment thumbnail surfaces.
   - `#235` adds deterministic ready/needs-review/blocked summary checks for metadata-derived CAD geometry descriptors.
   - `#234` metadata-derived geometry descriptors now render in the part preview viewport and attachment thumbnails with Browser/Playwright QA fallback evidence.
   - `#233` ready STEP/DXF attachment preview outputs now carry deterministic geometry preview descriptors for viewport and thumbnail rendering.
@@ -221,8 +222,9 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#233` carries geometry descriptors on ready STEP/DXF attachment preview outputs for later UI rendering.
    - `#234` renders those geometry descriptors in viewport/thumbnail surfaces.
    - `#235` adds deterministic geometry-specific review summary checks for ready/needs-review/blocked preview states.
-   - Current branch surfaces those geometry review summaries in the viewport and attachment thumbnails.
-   - Next steps: add operator override/action hooks for geometry summary blockers and eventually swap in real parser providers.
+   - `#236` surfaces those geometry review summaries in the viewport and attachment thumbnails.
+   - Current branch adds operator action hints for geometry review warnings/blockers and a DXF needs-review preview fixture.
+   - Next steps: wire action hints into persisted operator override events and eventually swap in real parser providers.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA for UI-facing follow-up slices.
 

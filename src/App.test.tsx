@@ -264,6 +264,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(geometryThumbnail).toHaveTextContent("ready")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("3D CAD model")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("PDF drawing")
+    expect(screen.getByLabelText("Attachments")).toHaveTextContent("DXF drawing")
     expect(screen.getByLabelText("Attachments")).toHaveTextContent("Image thumbnail")
     const calendarPlan = screen.getByLabelText("RFQ calendar plan preview")
     expect(calendarPlan).toHaveTextContent("2 drafts")
@@ -1538,6 +1539,29 @@ describe("FactoryBid workspace (component)", () => {
     unmount()
     render(<App />)
     expect(screen.getByLabelText("Part preview")).toHaveTextContent("FB-204-A.pdf")
+  })
+
+  it("surfaces CAD geometry review action hints for DXF previews that need review", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    const attachments = within(preview).getByLabelText("Attachments")
+    const dxfRow = within(attachments).getByText("FB-204-A-flat.dxf").closest(".attachment-row")
+    expect(dxfRow).not.toBeNull()
+    await user.click(within(dxfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    const geometryPreview = within(screen.getByLabelText("Part preview")).getByLabelText("FB-204-A-flat.dxf geometry preview")
+    expect(geometryPreview).toHaveTextContent("DXF")
+    expect(geometryPreview).toHaveTextContent("250 x 120 mm")
+    const geometryReview = within(geometryPreview).getByLabelText("FB-204-A-flat.dxf geometry review summary")
+    expect(geometryReview).toHaveTextContent("needs review")
+    expect(geometryReview).toHaveTextContent("2 needs review / 3 ready")
+    expect(geometryReview).toHaveTextContent("Confirm flat-pattern thickness")
+    const actionHints = within(geometryReview).getByLabelText("FB-204-A-flat.dxf geometry review action hints")
+    expect(actionHints).toHaveTextContent("Confirm flat-pattern thickness")
+    expect(actionHints).toHaveTextContent("Review geometry provider warnings")
+    expect(actionHints).toHaveTextContent("Verify thickness from drawing or material metadata before flat-pattern calculations.")
   })
 
   it("keeps a browser-native PDF preview after the iframe reports loaded", () => {

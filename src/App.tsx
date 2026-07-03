@@ -561,6 +561,12 @@ const initialWorkItems: QuoteWorkItem[] = [
         sizeBytes: 98304,
       },
       {
+        fileName: "FB-204-A-flat.dxf",
+        kind: "drawing",
+        contentType: "image/vnd.dxf",
+        sizeBytes: 53248,
+      },
+      {
         fileName: "FB-204-A-fixture.svg",
         kind: "photo",
         contentType: "image/svg+xml",
@@ -576,6 +582,15 @@ const initialWorkItems: QuoteWorkItem[] = [
         materialText: "Aluminum 6082",
         previewKind: "cad",
         process: "cnc_milling",
+      }),
+      buildCadMetadataResult({
+        dimensions: { lengthMm: 250, widthMm: 120 },
+        fileName: "FB-204-A-flat.dxf",
+        format: "dxf",
+        materialText: "Aluminum 6082",
+        previewKind: "drawing",
+        process: "cnc_milling",
+        warnings: ["Check bend relief manually."],
       }),
     ],
     notes: ["STEP and drawing attached", "Customer asked for 25 pcs", "Deburr included"],
@@ -7676,7 +7691,18 @@ function CadGeometryReviewSummaryPanel({
           <dd>{summary.warningCount}</dd>
         </div>
       </dl>
-      <p>{summary.blockers[0] ?? summary.nextAction}</p>
+      {summary.actions.length > 0 ? (
+        <ul className="cad-geometry-review-actions" aria-label={`${attachmentFileName} geometry review action hints`}>
+          {summary.actions.map((action) => (
+            <li data-priority={action.priority} key={action.key}>
+              <strong>{action.label}</strong>
+              <span>{action.detail}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{summary.blockers[0] ?? summary.nextAction}</p>
+      )}
     </div>
   )
 }
