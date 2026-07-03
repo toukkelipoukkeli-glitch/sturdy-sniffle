@@ -94,8 +94,10 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
   const partNumber = nonBlank(input.part.partNumber, "part.partNumber")
   const attachmentNames = new Set(input.part.attachmentNames.map(normalizeToken))
   const matchingAttachments = selectMatchingAttachments(partNumber, attachmentNames, input.attachments)
+  const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentNames, input.cadMetadata ?? [])
+  const cadMetadataByFileName = new Map(cadMetadata.map((metadata) => [normalizeToken(metadata.fileName), metadata]))
   const rankedAttachments = matchingAttachments
-    .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames))
+    .map((attachment) => rankAttachment(attachment, partNumber, attachmentNames, cadMetadataByFileName.get(normalizeToken(attachment.fileName))))
     .sort((left, right) => right.score - left.score || compareLex(left.fileName, right.fileName))
   const preferredPrimaryToken = input.preferredPrimaryAttachmentName ? normalizeToken(input.preferredPrimaryAttachmentName) : undefined
   const preferredPrimaryAttachment = input.preferredPrimaryAttachmentName
@@ -110,7 +112,6 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     : undefined
   const primaryAttachment = preferredPrimaryAttachment ?? rankedAttachments.find((attachment) => attachment.modes[0] !== "metadata")
   const primaryMode = primaryAttachment?.modes[0] ?? "metadata"
-  const cadMetadata = selectMatchingCadMetadata(partNumber, attachmentNames, input.cadMetadata ?? [])
   const primaryAttachmentToken = primaryAttachment ? normalizeToken(primaryAttachment.fileName) : undefined
   const primaryCadMetadata =
     cadMetadata.find((metadata) => normalizeToken(metadata.fileName) === primaryAttachmentToken) ?? cadMetadata[0]
@@ -122,7 +123,6 @@ export function buildPartPreviewModel(input: BuildPartPreviewModelInput): PartPr
     },
   })
   const warnings = buildWarnings(primaryMode, rankedAttachments, measurementOverlays, cadMetadata)
-  const cadMetadataByFileName = new Map(cadMetadata.map((metadata) => [normalizeToken(metadata.fileName), metadata]))
   const manufacturabilityFlags = buildManufacturabilityFlags(primaryMode, cadMetadata, measurementOverlays)
 
   return {
@@ -212,9 +212,10 @@ function rankAttachment(
   attachment: RfqAttachmentDraft,
   partNumber: string,
   attachmentNames: Set<string>,
+  cadMetadata: CadMetadataResult | undefined,
 ): RankedPartPreviewAttachment {
   const modes = modesForAttachment(attachment.kind)
-  const previewOutput = buildAttachmentPreviewOutput(attachment)
+  const previewOutput = buildAttachmentPreviewOutput(attachment, cadMetadata)
   const score =
     modePriority[modes[0]] +
     (normalizeToken(attachment.fileName).includes(normalizeToken(partNumber)) ? 20 : 0) +

@@ -87,6 +87,64 @@ describe("attachment preview output", () => {
     })
   })
 
+  it("returns ready descriptors for parser-backed STEP and DXF metadata", () => {
+    expect(
+      buildAttachmentPreviewOutput(
+        {
+          fileName: "housing.step",
+          kind: "cad",
+          contentType: "model/step",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "housing.step",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "cad",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ),
+    ).toMatchObject({
+      kind: "step_model",
+      label: "3D CAD preview",
+      renderer: "step-metadata-card",
+      status: "ready",
+      thumbnailLabel: "3D CAD model",
+      warnings: [],
+    })
+
+    expect(
+      buildAttachmentPreviewOutput(
+        {
+          fileName: "flat-pattern.dxf",
+          kind: "drawing",
+          contentType: "image/vnd.dxf",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "flat-pattern.dxf",
+          format: "dxf",
+          metadataOnly: false,
+          previewKind: "drawing",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: ["Check bend relief manually."],
+        },
+      ),
+    ).toMatchObject({
+      kind: "dxf_drawing",
+      label: "DXF drawing preview",
+      renderer: "dxf-metadata-card",
+      status: "ready",
+      thumbnailLabel: "DXF drawing",
+      warnings: ["Check bend relief manually."],
+    })
+  })
+
   it("falls back when image attachments do not include a safe browser source", () => {
     expect(
       buildAttachmentPreviewOutput({

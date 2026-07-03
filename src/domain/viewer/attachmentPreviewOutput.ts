@@ -1,4 +1,5 @@
 import type { RfqAttachmentDraft } from "../rfq/intake"
+import type { CadMetadataResult } from "../integrations/cadMetadata"
 
 export const ATTACHMENT_PREVIEW_OUTPUT_VERSION = "attachment-preview-output.v1"
 
@@ -25,34 +26,21 @@ export interface AttachmentPreviewOutput {
   warnings: string[]
 }
 
-export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): AttachmentPreviewOutput {
+export function buildAttachmentPreviewOutput(
+  attachment: RfqAttachmentDraft,
+  cadMetadata?: CadMetadataResult,
+): AttachmentPreviewOutput {
   const fileName = nonBlank(attachment.fileName, "attachment.fileName")
   const normalizedFileName = fileName.toLowerCase()
   const contentType = attachment.contentType?.toLowerCase()
 
   if (attachment.kind === "cad") {
-    return fallbackOutput({
-      fileName,
-      kind: "step_model",
-      label: "3D CAD preview",
-      renderer: "step-viewer",
-      summary: "STEP model preview descriptor",
-      thumbnailLabel: "3D CAD model",
-      warning: "STEP geometry renderer unavailable; using deterministic CAD model placeholder.",
-    })
+    return stepOutput(fileName, cadMetadata)
   }
 
   if (attachment.kind === "drawing") {
     if (/\.dxf$/.test(normalizedFileName) || contentType?.includes("dxf")) {
-      return fallbackOutput({
-        fileName,
-        kind: "dxf_drawing",
-        label: "DXF drawing preview",
-        renderer: "dxf-viewer",
-        summary: "DXF drawing preview descriptor",
-        thumbnailLabel: "DXF drawing",
-        warning: "DXF renderer unavailable; using deterministic drawing placeholder.",
-      })
+      return dxfOutput(fileName, cadMetadata)
     }
     return pdfOutput(attachment, fileName)
   }
@@ -74,27 +62,11 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
   }
 
   if (/\.(step|stp)$/.test(normalizedFileName) || contentType?.includes("step")) {
-    return fallbackOutput({
-      fileName,
-      kind: "step_model",
-      label: "3D CAD preview",
-      renderer: "step-viewer",
-      summary: "STEP model preview descriptor",
-      thumbnailLabel: "3D CAD model",
-      warning: "STEP geometry renderer unavailable; using deterministic CAD model placeholder.",
-    })
+    return stepOutput(fileName, cadMetadata)
   }
 
   if (/\.dxf$/.test(normalizedFileName) || contentType?.includes("dxf")) {
-    return fallbackOutput({
-      fileName,
-      kind: "dxf_drawing",
-      label: "DXF drawing preview",
-      renderer: "dxf-viewer",
-      summary: "DXF drawing preview descriptor",
-      thumbnailLabel: "DXF drawing",
-      warning: "DXF renderer unavailable; using deterministic drawing placeholder.",
-    })
+    return dxfOutput(fileName, cadMetadata)
   }
 
   if (/\.pdf$/.test(normalizedFileName) || contentType?.includes("pdf")) {
@@ -128,6 +100,62 @@ export function buildAttachmentPreviewOutput(attachment: RfqAttachmentDraft): At
     thumbnailLabel: "Metadata card",
     warnings: ["Attachment cannot be previewed directly; showing metadata only."],
   }
+}
+
+function stepOutput(fileName: string, cadMetadata: CadMetadataResult | undefined): AttachmentPreviewOutput {
+  if (cadMetadataReadyFor(cadMetadata, "step")) {
+    return {
+      outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
+      fileName,
+      kind: "step_model",
+      status: "ready",
+      label: "3D CAD preview",
+      renderer: "step-metadata-card",
+      summary: "STEP metadata preview descriptor",
+      thumbnailLabel: "3D CAD model",
+      warnings: [...cadMetadata.warnings],
+    }
+  }
+
+  return fallbackOutput({
+    fileName,
+    kind: "step_model",
+    label: "3D CAD preview",
+    renderer: "step-viewer",
+    summary: "STEP model preview descriptor",
+    thumbnailLabel: "3D CAD model",
+    warning: "STEP geometry renderer unavailable; using deterministic CAD model placeholder.",
+  })
+}
+
+function dxfOutput(fileName: string, cadMetadata: CadMetadataResult | undefined): AttachmentPreviewOutput {
+  if (cadMetadataReadyFor(cadMetadata, "dxf")) {
+    return {
+      outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
+      fileName,
+      kind: "dxf_drawing",
+      status: "ready",
+      label: "DXF drawing preview",
+      renderer: "dxf-metadata-card",
+      summary: "DXF metadata preview descriptor",
+      thumbnailLabel: "DXF drawing",
+      warnings: [...cadMetadata.warnings],
+    }
+  }
+
+  return fallbackOutput({
+    fileName,
+    kind: "dxf_drawing",
+    label: "DXF drawing preview",
+    renderer: "dxf-viewer",
+    summary: "DXF drawing preview descriptor",
+    thumbnailLabel: "DXF drawing",
+    warning: "DXF renderer unavailable; using deterministic drawing placeholder.",
+  })
+}
+
+function cadMetadataReadyFor(metadata: CadMetadataResult | undefined, format: "step" | "dxf"): metadata is CadMetadataResult {
+  return Boolean(metadata && metadata.status === "succeeded" && !metadata.metadataOnly && metadata.format === format)
 }
 
 function imageOutput(attachment: RfqAttachmentDraft, fileName: string): AttachmentPreviewOutput {

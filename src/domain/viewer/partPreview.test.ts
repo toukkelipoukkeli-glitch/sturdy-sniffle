@@ -323,6 +323,11 @@ describe("part preview model", () => {
     ])
     expect(model.attachments[0]).toMatchObject({
       fileName: "LASER-42.dxf",
+      previewOutput: {
+        renderer: "dxf-metadata-card",
+        status: "ready",
+        warnings: ["Check bend relief manually."],
+      },
       reviewReasons: ["Check bend relief manually."],
       reviewState: "needs_review",
     })
@@ -381,6 +386,15 @@ describe("part preview model", () => {
     })
 
     expect(model.primaryAttachmentName).toBe("FB-204-A.step")
+    expect(model.attachments[0]).toMatchObject({
+      fileName: "FB-204-A.step",
+      previewOutput: {
+        renderer: "step-metadata-card",
+        status: "ready",
+        warnings: [],
+      },
+      reviewState: "ready",
+    })
     expect(model.measurementOverlays).toEqual([
       { key: "length", label: "Length", valueMm: 120 },
       { key: "width", label: "Width", valueMm: 80 },
