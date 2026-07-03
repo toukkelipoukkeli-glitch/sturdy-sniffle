@@ -8728,6 +8728,7 @@ function offerLifecycleEventLabel(kind: OfferLifecycleEventInput["kind"]) {
 function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
   const statusLabel = offerReleasePlanStatusLabel(releasePlan.status)
   const sendSummary = releasePlan.sendSummary
+  const attachmentCount = sendSummary.attachmentFileNames?.length ?? 0
 
   return (
     <section className="offer-release-plan-panel" aria-label="Offer release command plan">
@@ -8752,8 +8753,8 @@ function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan 
         <div>
           <strong>{sendSummary.headline}</strong>
           <span>
-            {sendSummary.recipient ?? "Recipient pending"} · {sendSummary.attachmentFileNames?.length ?? 0} attachment
-            {(sendSummary.attachmentFileNames?.length ?? 0) === 1 ? "" : "s"}
+            {sendSummary.recipient ?? "Recipient pending"} · {attachmentCount} attachment
+            {attachmentCount === 1 ? "" : "s"}
             {sendSummary.followUpDueAt ? ` · Follow-up ${sendSummary.followUpDueAt}` : ""}
           </span>
         </div>
