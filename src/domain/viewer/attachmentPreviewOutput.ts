@@ -103,7 +103,7 @@ export function buildAttachmentPreviewOutput(
 }
 
 function stepOutput(fileName: string, cadMetadata: CadMetadataResult | undefined): AttachmentPreviewOutput {
-  if (cadMetadataReadyFor(cadMetadata, "step")) {
+  if (cadMetadataReadyFor(cadMetadata, fileName, "step")) {
     return {
       outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
       fileName,
@@ -129,7 +129,7 @@ function stepOutput(fileName: string, cadMetadata: CadMetadataResult | undefined
 }
 
 function dxfOutput(fileName: string, cadMetadata: CadMetadataResult | undefined): AttachmentPreviewOutput {
-  if (cadMetadataReadyFor(cadMetadata, "dxf")) {
+  if (cadMetadataReadyFor(cadMetadata, fileName, "dxf")) {
     return {
       outputVersion: ATTACHMENT_PREVIEW_OUTPUT_VERSION,
       fileName,
@@ -154,8 +154,22 @@ function dxfOutput(fileName: string, cadMetadata: CadMetadataResult | undefined)
   })
 }
 
-function cadMetadataReadyFor(metadata: CadMetadataResult | undefined, format: "step" | "dxf"): metadata is CadMetadataResult {
-  return Boolean(metadata && metadata.status === "succeeded" && !metadata.metadataOnly && metadata.format === format)
+function cadMetadataReadyFor(
+  metadata: CadMetadataResult | undefined,
+  fileName: string,
+  format: "step" | "dxf",
+): metadata is CadMetadataResult {
+  return Boolean(
+    metadata &&
+      normalizeFileToken(metadata.fileName) === normalizeFileToken(fileName) &&
+      metadata.status === "succeeded" &&
+      !metadata.metadataOnly &&
+      metadata.format === format,
+  )
+}
+
+function normalizeFileToken(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
 }
 
 function imageOutput(attachment: RfqAttachmentDraft, fileName: string): AttachmentPreviewOutput {

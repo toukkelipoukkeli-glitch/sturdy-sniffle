@@ -145,6 +145,86 @@ describe("attachment preview output", () => {
     })
   })
 
+  it("keeps deterministic fallbacks when CAD metadata is unsuitable", () => {
+    expect(
+      buildAttachmentPreviewOutput(
+        {
+          fileName: "housing.step",
+          kind: "cad",
+          contentType: "model/step",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "supplier-housing.step",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "cad",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ),
+    ).toMatchObject({
+      kind: "step_model",
+      renderer: "step-viewer",
+      status: "fallback",
+      warnings: ["STEP geometry renderer unavailable; using deterministic CAD model placeholder."],
+    })
+
+    expect(
+      buildAttachmentPreviewOutput(
+        {
+          fileName: "flat-pattern.dxf",
+          kind: "drawing",
+          contentType: "image/vnd.dxf",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "flat-pattern.dxf",
+          format: "dxf",
+          metadataOnly: true,
+          previewKind: "drawing",
+          provider: "metadata_fallback",
+          status: "fallback",
+          units: "mm",
+          warnings: ["CAD parser unavailable; using attachment and RFQ metadata only."],
+        },
+      ),
+    ).toMatchObject({
+      kind: "dxf_drawing",
+      renderer: "dxf-viewer",
+      status: "fallback",
+      warnings: ["DXF renderer unavailable; using deterministic drawing placeholder."],
+    })
+
+    expect(
+      buildAttachmentPreviewOutput(
+        {
+          fileName: "flat-pattern.dxf",
+          kind: "drawing",
+          contentType: "image/vnd.dxf",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "flat-pattern.dxf",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "drawing",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ),
+    ).toMatchObject({
+      kind: "dxf_drawing",
+      renderer: "dxf-viewer",
+      status: "fallback",
+      warnings: ["DXF renderer unavailable; using deterministic drawing placeholder."],
+    })
+  })
+
   it("falls back when image attachments do not include a safe browser source", () => {
     expect(
       buildAttachmentPreviewOutput({
