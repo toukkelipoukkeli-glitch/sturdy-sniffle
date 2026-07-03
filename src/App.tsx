@@ -355,6 +355,7 @@ interface WorkspaceLocalState {
 }
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
+const pdfPreviewLoadTimeoutMs = 8_000
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
     now: "2026-06-20T09:00:00+03:00",
@@ -7291,8 +7292,21 @@ function PartPreviewPanel({
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
+  const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
   const canRenderPrimaryPdf = Boolean(primaryPdfSource && failedPrimaryPreviewSource !== primaryPdfSource)
+
+  useEffect(() => {
+    if (!primaryPdfSource || failedPrimaryPreviewSource === primaryPdfSource || loadedPrimaryPdfSource === primaryPdfSource) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFailedPrimaryPreviewSource(primaryPdfSource)
+    }, pdfPreviewLoadTimeoutMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [failedPrimaryPreviewSource, loadedPrimaryPdfSource, primaryPdfSource])
 
   return (
     <section className="part-preview" aria-label="Part preview">
@@ -7308,6 +7322,7 @@ function PartPreviewPanel({
           <iframe
             className="preview-document"
             onError={() => setFailedPrimaryPreviewSource(primaryPdfSource)}
+            onLoad={() => setLoadedPrimaryPdfSource(primaryPdfSource)}
             src={primaryPdfSource}
             title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
