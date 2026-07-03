@@ -7314,12 +7314,7 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-pdf" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
-  const primaryCadMetadata =
-    primaryAttachment &&
-    primaryAttachment.previewOutput.status === "ready" &&
-    isCadMetadataPreviewRenderer(primaryAttachment.previewOutput.renderer)
-      ? preview.cadMetadata.find((metadata) => cadMetadataFileMatches(metadata.fileName, primaryAttachment.fileName))
-      : undefined
+  const primaryCadMetadata = primaryAttachment ? cadMetadataForAttachmentThumbnail(primaryAttachment, preview) : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
