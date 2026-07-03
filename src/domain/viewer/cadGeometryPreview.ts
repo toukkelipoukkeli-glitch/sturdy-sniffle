@@ -71,13 +71,18 @@ export function createCadGeometryPreviewAdapter(options: CadGeometryPreviewAdapt
       try {
         return provider.build(input)
       } catch (error) {
-        const fallback = fallbackProvider.build(input)
-        return {
-          ...fallback,
-          warnings: [
-            `CAD geometry provider ${provider.provider} failed: ${errorToMessage(error)}.`,
-            ...fallback.warnings,
-          ],
+        const providerWarning = `CAD geometry provider ${provider.provider} failed: ${errorToMessage(error)}.`
+        try {
+          const fallback = fallbackProvider.build(input)
+          return {
+            ...fallback,
+            warnings: unique([providerWarning, ...fallback.warnings]),
+          }
+        } catch (fallbackError) {
+          return buildLastResortFallback(input, [
+            providerWarning,
+            `CAD geometry fallback provider ${fallbackProvider.provider} failed: ${errorToMessage(fallbackError)}.`,
+          ])
         }
       }
     },
@@ -259,6 +264,22 @@ function buildFallbackResult(input: {
   }
 }
 
+function buildLastResortFallback(input: CadGeometryPreviewInput, warnings: string[]): CadGeometryPreviewResult {
+  const fileName = optionalFileName(input.fileName) ?? "unknown"
+  const metadataMatches = input.cadMetadata ? cadMetadataFileMatches(input.cadMetadata.fileName, fileName) : false
+  return buildFallbackResult({
+    fileName,
+    format: metadataMatches && input.cadMetadata ? input.cadMetadata.format : detectFormat(fileName),
+    provider: "metadata_fallback",
+    units: metadataMatches && input.cadMetadata ? input.cadMetadata.units : "unknown",
+    warnings: [
+      ...warnings,
+      ...(optionalFileName(input.fileName) ? [] : ["No CAD geometry fallback file name was available; using unknown preview target."]),
+      ...(metadataMatches && input.cadMetadata ? input.cadMetadata.warnings : []),
+    ],
+  })
+}
+
 function readStepBounds(dimensions: CadMetadataDimensions | undefined): CadGeometryPreviewBounds | undefined {
   const flat = readFlatBounds(dimensions)
   const heightMm = positiveFinite(dimensions?.heightMm) ?? positiveFinite(dimensions?.thicknessMm)
@@ -332,6 +353,11 @@ function positiveFinite(value: number | undefined): number | undefined {
 
 function unique(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))]
+}
+
+function optionalFileName(value: string): string | undefined {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
 }
 
 function nonBlank(value: string, key: string): string {

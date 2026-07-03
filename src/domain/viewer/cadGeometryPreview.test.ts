@@ -148,6 +148,56 @@ describe("CAD geometry preview adapter", () => {
     })
   })
 
+  it("keeps adapter fallback deterministic when validation also fails", () => {
+    const result = createCadGeometryPreviewAdapter({
+      provider: createMockCadGeometryPreviewProvider({ shouldFail: true }),
+    }).build({
+      fileName: " ",
+    })
+
+    expect(result).toMatchObject({
+      adapterVersion: "cad-geometry-preview.v1",
+      provider: "metadata_fallback",
+      status: "fallback",
+      fileName: "unknown",
+      format: "unknown",
+      previewKind: "metadata_card",
+      renderer: "metadata-card",
+      units: "unknown",
+      outlineSegments: [],
+      warnings: [
+        "CAD geometry provider mock failed: Mock CAD geometry preview provider failure.",
+        "CAD geometry fallback provider metadata_fallback failed: fileName is required.",
+        "No CAD geometry fallback file name was available; using unknown preview target.",
+      ],
+    })
+  })
+
+  it("keeps adapter fallback deterministic when a custom fallback provider fails", () => {
+    const result = createCadGeometryPreviewAdapter({
+      provider: createMockCadGeometryPreviewProvider({ shouldFail: true }),
+      fallbackProvider: createMockCadGeometryPreviewProvider({ shouldFail: true }),
+    }).build({
+      fileName: "housing.step",
+    })
+
+    expect(result).toMatchObject({
+      adapterVersion: "cad-geometry-preview.v1",
+      provider: "metadata_fallback",
+      status: "fallback",
+      fileName: "housing.step",
+      format: "step",
+      previewKind: "metadata_card",
+      renderer: "metadata-card",
+      units: "unknown",
+      outlineSegments: [],
+      warnings: [
+        "CAD geometry provider mock failed: Mock CAD geometry preview provider failure.",
+        "CAD geometry fallback provider mock failed: Mock CAD geometry preview provider failure.",
+      ],
+    })
+  })
+
   it("does not use mismatched or incomplete metadata as ready geometry", () => {
     expect(
       createMetadataCadGeometryPreviewProvider().build({
