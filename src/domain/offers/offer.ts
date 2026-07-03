@@ -231,6 +231,14 @@ export function renderOfferText(offer: OfferDraft): string {
   return lines.join("\n")
 }
 
+export function formatOfferRevisionSummary(revisions: OfferRevision[]): string {
+  if (revisions.length === 0) {
+    throw new Error("offer must include at least one revision")
+  }
+  const latest = revisions.reduce((currentLatest, revision) => (revision.revision >= currentLatest.revision ? revision : currentLatest))
+  return `Revision ${latest.revision} (${latest.createdAt}) by ${latest.createdBy}: ${latest.reason}`
+}
+
 export function formatOfferMoney(cents: number, currency: QuoteEngineCurrencyCode): string {
   assertCents(cents, "cents")
 

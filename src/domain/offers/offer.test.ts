@@ -7,7 +7,7 @@ import { pomGuideFixture } from "../quoting/plastics.fixtures"
 import { calculateQuote, type QuoteEngineResult } from "../quoting/registry"
 import { laserBentBracketFixture } from "../quoting/sheetMetal.fixtures"
 import { toolSteelKeywayFixture } from "../quoting/wireEdm.fixtures"
-import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
+import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, formatOfferRevisionSummary, renderOfferText } from "./offer"
 
 const quoteEngineOfferCases: Array<{ quote: QuoteEngineResult; processLabel: string }> = [
   {
@@ -115,6 +115,9 @@ describe("offer builder", () => {
       },
     ])
     expect(renderOfferText(revised)).toContain("Revision: 2")
+    expect(formatOfferRevisionSummary(revised.revisionHistory)).toBe(
+      "Revision 2 (2026-06-20) by Sari: Added expedite alternate requested by buyer.",
+    )
   })
 
   it("preserves unit price remainder in the plain-text export", () => {
@@ -153,6 +156,25 @@ describe("offer builder", () => {
   it("formats integer-cent amounts without locale drift", () => {
     expect(formatOfferMoney(115418, "EUR")).toBe("EUR 1154.18")
     expect(formatOfferMoney(-75, "USD")).toBe("-USD 0.75")
+  })
+
+  it("formats latest customer revision summaries for imported non-contiguous history", () => {
+    expect(
+      formatOfferRevisionSummary([
+        {
+          revision: 1,
+          createdAt: "2026-06-19",
+          createdBy: "FactoryBid OS",
+          reason: "Initial draft",
+        },
+        {
+          revision: 4,
+          createdAt: "2026-06-24",
+          createdBy: "Sari",
+          reason: "Imported customer-requested validity update.",
+        },
+      ]),
+    ).toBe("Revision 4 (2026-06-24) by Sari: Imported customer-requested validity update.")
   })
 
   it("rejects impossible validity windows", () => {

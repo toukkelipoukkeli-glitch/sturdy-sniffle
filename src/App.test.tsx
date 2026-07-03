@@ -1456,6 +1456,7 @@ describe("FactoryBid workspace (component)", () => {
 
     expect(screen.queryByLabelText("Manufacturability flags")).toBeNull()
     expect(screen.getByLabelText("CAD review override")).toHaveTextContent("Drawing is enough for turning setup.")
+    expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("Acknowledged flags")
 
     unmount()
     render(<App />)
@@ -1467,7 +1468,8 @@ describe("FactoryBid workspace (component)", () => {
 
     await user.click(within(restoredOverride).getByRole("button", { name: "Reopen flags" }))
     expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
-    expect(screen.getByLabelText("CAD review override")).not.toHaveTextContent("Drawing is enough for turning setup.")
+    expect(within(screen.getByLabelText("CAD review override")).getByLabelText("CAD review note")).toHaveValue("")
+    expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("Reopened review")
   }, 10_000)
 
   it("stores CAD dimension material and process correction notes", () => {
@@ -1583,6 +1585,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(history).toHaveTextContent("needs review")
     expect(history).toHaveTextContent("Confirm flat-pattern thickness")
     expect(history).toHaveTextContent("Review geometry provider warnings")
+    const eventHistory = screen.getByLabelText("CAD review override event history")
+    expect(eventHistory).toHaveTextContent("1 event recorded")
+    expect(eventHistory).toHaveTextContent("Saved corrections")
+    expect(eventHistory).toHaveTextContent("Corrections: dimensions")
+    expect(eventHistory).toHaveTextContent("2 geometry actions")
 
     const pdfRow = within(screen.getByLabelText("Attachments")).getByText("FB-204-A.pdf").closest(".attachment-row")
     expect(pdfRow).not.toBeNull()
@@ -1591,10 +1598,13 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.change(within(pdfOverride).getByLabelText("Material correction note"), { target: { value: "Use the same Al 6082 stock." } })
     fireEvent.click(within(pdfOverride).getByRole("button", { name: "Save corrections" }))
     expect(screen.getByLabelText("CAD geometry review action history")).toHaveTextContent("FB-204-A-flat.dxf")
+    expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("2 events recorded")
+    expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("Corrections: dimensions, material")
 
     await waitFor(() => {
       const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
       const snapshot = stored.cadReviewOverridesById?.[stored.selectedId]?.geometryReviewActionSnapshot
+      const events = stored.cadReviewOverrideEventsById?.[stored.selectedId]
       expect(snapshot).toMatchObject({
         attachmentFileName: "FB-204-A-flat.dxf",
         capturedAt: "2026-06-20T09:00:00+03:00",
@@ -1606,6 +1616,18 @@ describe("FactoryBid workspace (component)", () => {
           expect.objectContaining({ key: "review_geometry_provider_warnings", label: "Review geometry provider warnings", priority: "secondary" }),
         ]),
       )
+      expect(events).toEqual([
+        expect.objectContaining({
+          correctionFields: ["dimensions"],
+          geometryReviewActionCount: 2,
+          kind: "corrections_saved",
+        }),
+        expect.objectContaining({
+          correctionFields: ["dimensions", "material"],
+          geometryReviewActionCount: 2,
+          kind: "corrections_saved",
+        }),
+      ])
     })
 
     unmount()
@@ -1613,6 +1635,9 @@ describe("FactoryBid workspace (component)", () => {
     const restoredHistory = screen.getByLabelText("CAD geometry review action history")
     expect(restoredHistory).toHaveTextContent("FB-204-A-flat.dxf")
     expect(restoredHistory).toHaveTextContent("Confirm flat-pattern thickness")
+    const restoredEvents = screen.getByLabelText("CAD review override event history")
+    expect(restoredEvents).toHaveTextContent("2 events recorded")
+    expect(restoredEvents).toHaveTextContent("Saved corrections")
   })
 
   it("keeps a browser-native PDF preview after the iframe reports loaded", () => {
