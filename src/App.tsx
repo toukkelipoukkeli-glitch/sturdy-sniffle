@@ -7266,6 +7266,7 @@ function isCadMetadataPreviewRenderer(renderer: string) {
 }
 
 type PartPreviewAttachmentRow = PartPreviewModel["attachments"][number]
+type AttachmentGeometryPreview = NonNullable<PartPreviewAttachmentRow["previewOutput"]["geometryPreview"]>
 
 function cadMetadataForAttachmentThumbnail(
   attachment: PartPreviewAttachmentRow,
@@ -7315,6 +7316,7 @@ function PartPreviewPanel({
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
   const primaryCadMetadata = primaryAttachment ? cadMetadataForAttachmentThumbnail(primaryAttachment, preview) : undefined
+  const primaryGeometryPreview = primaryAttachment?.previewOutput.geometryPreview
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
@@ -7350,6 +7352,8 @@ function PartPreviewPanel({
             src={primaryPdfSource}
             title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
+        ) : primaryAttachment && primaryGeometryPreview ? (
+          <CadGeometryPreviewCard attachmentFileName={primaryAttachment.fileName} geometryPreview={primaryGeometryPreview} />
         ) : primaryAttachment && primaryCadMetadata ? (
           <CadMetadataPreviewCard attachmentFileName={primaryAttachment.fileName} metadata={primaryCadMetadata} preview={preview} />
         ) : (
@@ -7357,11 +7361,13 @@ function PartPreviewPanel({
             <Cuboid />
           </div>
         )}
-        <div>
-          <span>{formatPreviewMode(preview.primaryMode)}</span>
-          <strong>{preview.primaryAttachmentName ?? preview.partNumber}</strong>
-          <small>{preview.primaryPreviewLabel}</small>
-        </div>
+        {primaryGeometryPreview ? null : (
+          <div>
+            <span>{formatPreviewMode(preview.primaryMode)}</span>
+            <strong>{preview.primaryAttachmentName ?? preview.partNumber}</strong>
+            <small>{preview.primaryPreviewLabel}</small>
+          </div>
+        )}
       </div>
       <div className="preview-side">
         <div className="preview-mode-row" aria-label="Preview modes">
@@ -7485,6 +7491,7 @@ function PartPreviewPanel({
         ) : null}
         <div className="attachment-list" aria-label="Attachments">
           {preview.attachments.map((attachment) => {
+            const attachmentGeometryPreview = attachment.previewOutput.geometryPreview
             const attachmentCadMetadata = cadMetadataForAttachmentThumbnail(attachment, preview)
 
             return (
@@ -7492,10 +7499,12 @@ function PartPreviewPanel({
                 className="attachment-row"
                 data-primary={attachment.primary}
                 data-review-state={attachment.reviewState}
-                data-thumbnail={attachmentCadMetadata ? "cad-metadata" : undefined}
+                data-thumbnail={attachmentGeometryPreview ? "cad-geometry" : attachmentCadMetadata ? "cad-metadata" : undefined}
                 key={attachment.fileName}
               >
-                {attachmentCadMetadata ? (
+                {attachmentGeometryPreview ? (
+                  <CadGeometryThumbnailCard attachmentFileName={attachment.fileName} geometryPreview={attachmentGeometryPreview} />
+                ) : attachmentCadMetadata ? (
                   <CadMetadataThumbnailCard attachmentFileName={attachment.fileName} metadata={attachmentCadMetadata} preview={preview} />
                 ) : (
                   <FileText aria-hidden="true" />
@@ -7504,6 +7513,7 @@ function PartPreviewPanel({
                   <strong>{attachment.fileName}</strong>
                   <small>
                     {attachment.thumbnailLabel} · {humanizeKey(attachment.previewOutput.status)}
+                    {attachmentGeometryPreview ? ` · ${geometryPreviewSummary(attachmentGeometryPreview)}` : ""}
                     {attachment.previewOutput.warnings.length > 0 ? ` · ${attachment.previewOutput.warnings.join(" ")}` : ""}
                     {attachment.reviewReasons.length > 0 ? ` · ${attachment.reviewReasons.join(" ")}` : ""}
                   </small>
@@ -7576,6 +7586,42 @@ function CadMetadataPreviewCard({
   )
 }
 
+function CadGeometryPreviewCard({
+  attachmentFileName,
+  geometryPreview,
+}: {
+  attachmentFileName: string
+  geometryPreview: AttachmentGeometryPreview
+}) {
+  const outlineStyle = geometryOutlineStyle(geometryPreview)
+
+  return (
+    <div className="cad-geometry-card" aria-label={`${attachmentFileName} geometry preview`} data-status={geometryPreview.status}>
+      <div className="cad-geometry-heading">
+        <span>{geometryPreview.format.toUpperCase()}</span>
+        <strong>{humanizeKey(geometryPreview.status)}</strong>
+      </div>
+      <div className="cad-geometry-graphic" aria-hidden="true" data-kind={geometryPreview.previewKind}>
+        <div className="cad-geometry-outline" data-kind={geometryPreview.previewKind} style={outlineStyle} />
+      </div>
+      <dl className="cad-geometry-grid">
+        <div>
+          <dt>Geometry</dt>
+          <dd>{geometryKindLabel(geometryPreview)}</dd>
+        </div>
+        <div>
+          <dt>Bounds</dt>
+          <dd>{geometryBoundsLabel(geometryPreview)}</dd>
+        </div>
+      </dl>
+      <p className="cad-geometry-provider">{humanizeKey(geometryPreview.provider)}</p>
+      {geometryPreview.warnings.length > 0 ? (
+        <p className="cad-geometry-warning">{geometryPreview.warnings.join(" ")}</p>
+      ) : null}
+    </div>
+  )
+}
+
 function CadMetadataThumbnailCard({
   attachmentFileName,
   metadata,
@@ -7596,6 +7642,22 @@ function CadMetadataThumbnailCard({
       <span>{metadata.format.toUpperCase()}</span>
       <strong>{metadata.materialText ?? preview.metadata.materialText ?? "Unknown"}</strong>
       <small>{processLabel}</small>
+    </div>
+  )
+}
+
+function CadGeometryThumbnailCard({
+  attachmentFileName,
+  geometryPreview,
+}: {
+  attachmentFileName: string
+  geometryPreview: AttachmentGeometryPreview
+}) {
+  return (
+    <div className="attachment-geometry-thumbnail" aria-label={`${attachmentFileName} geometry thumbnail`} data-status={geometryPreview.status}>
+      <span>{geometryPreview.format.toUpperCase()}</span>
+      <strong>{geometryBoundsLabel(geometryPreview)}</strong>
+      <small>{geometryThumbnailKindLabel(geometryPreview)}</small>
     </div>
   )
 }
@@ -9531,6 +9593,65 @@ function formatKilograms(value: number) {
   const rounded = roundKilograms(value)
   const label = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")
   return `${label} kg`
+}
+
+function formatMillimeters(value: number) {
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)
+}
+
+function geometryBoundsLabel(geometryPreview: AttachmentGeometryPreview) {
+  const bounds = geometryPreview.bounds
+  if (!bounds) {
+    return geometryPreview.units === "mm" ? "Metadata only" : "Unknown"
+  }
+
+  const depth = bounds.heightMm ?? bounds.thicknessMm
+  const values = [bounds.lengthMm, bounds.widthMm, depth].filter((value): value is number => typeof value === "number")
+  const units = geometryPreview.units === "mm" ? " mm" : ""
+  return `${values.map(formatMillimeters).join(" x ")}${units}`
+}
+
+function geometryKindLabel(geometryPreview: AttachmentGeometryPreview) {
+  if (geometryPreview.previewKind === "step_bounding_box") {
+    return "STEP bounds"
+  }
+  if (geometryPreview.previewKind === "dxf_flat_pattern") {
+    return "DXF outline"
+  }
+  return "Metadata card"
+}
+
+function geometryThumbnailKindLabel(geometryPreview: AttachmentGeometryPreview) {
+  if (geometryPreview.previewKind === "step_bounding_box") {
+    return "Bounds"
+  }
+  if (geometryPreview.previewKind === "dxf_flat_pattern") {
+    return "Outline"
+  }
+  return "Fallback"
+}
+
+function geometryPreviewSummary(geometryPreview: AttachmentGeometryPreview) {
+  if (geometryPreview.status === "ready") {
+    return `Geometry ${geometryBoundsLabel(geometryPreview)}`
+  }
+  return `Geometry fallback ${geometryBoundsLabel(geometryPreview)}`
+}
+
+function geometryOutlineStyle(geometryPreview: AttachmentGeometryPreview) {
+  const bounds = geometryPreview.bounds
+  if (!bounds) {
+    return { height: "58%", width: "72%" }
+  }
+
+  const longest = Math.max(bounds.lengthMm, bounds.widthMm, 1)
+  const widthPercent = Math.max(44, Math.min(92, (bounds.lengthMm / longest) * 92))
+  const heightPercent = Math.max(36, Math.min(84, (bounds.widthMm / longest) * 84))
+  return {
+    height: `${heightPercent}%`,
+    width: `${widthPercent}%`,
+  }
 }
 
 function formatSignedCurrencyDelta(cents: number, currency: string) {

@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `08b9178` (`Add CAD geometry preview adapter (#232)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry preview output wiring.
-- In-flight PR at this checkpoint: `codex/cad-geometry-preview-output` carries deterministic geometry preview descriptors on ready STEP/DXF attachment preview outputs while real parsers stay deferred.
+- Main branch checkpoint: `3aaaba9` (`Carry CAD geometry previews on attachment outputs (#233)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry preview UI rendering.
+- In-flight PR at this checkpoint: `codex/cad-geometry-preview-ui` renders deterministic metadata-derived geometry descriptors in the part preview viewport and attachment thumbnails while real parsers stay deferred.
 - Latest merged sequence:
+  - `#233` ready STEP/DXF attachment preview outputs now carry deterministic geometry preview descriptors for viewport and thumbnail rendering.
   - `#232` metadata-derived STEP/DXF geometry preview descriptors now have a deterministic adapter boundary with guarded provider/fallback behavior.
   - `#231` ready STEP/DXF metadata adapter results now render compact metadata-backed thumbnail tiles in the part preview attachment list.
   - `#230` CAD metadata filename matching now uses a shared boundary-aware helper so distinct filename segments and dotted part numbers cannot collapse into the same attachment.
@@ -137,7 +138,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
-- CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, and boundary-aware CAD metadata matching.
+- CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, and boundary-aware CAD metadata matching.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
@@ -215,8 +216,9 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#230` hardened CAD metadata filename matching with a shared boundary-aware helper so distinct filename segments and dotted part numbers cannot collapse into the same attachment.
    - `#231` added compact metadata-backed thumbnail tiles for ready STEP/DXF attachments while real geometry parsing stays deferred.
    - `#232` added metadata-derived STEP/DXF geometry preview descriptors with provider/fallback seams while keeping parser failures nonfatal.
-   - Current branch carries geometry descriptors on ready STEP/DXF attachment preview outputs for later UI rendering.
-   - Next steps: render the geometry descriptors in viewport/thumbnail surfaces and eventually swap in real parser providers.
+   - `#233` carries geometry descriptors on ready STEP/DXF attachment preview outputs for later UI rendering.
+   - Current branch renders those geometry descriptors in viewport/thumbnail surfaces.
+   - Next steps: deepen geometry-specific warnings/dimensional checks and eventually swap in real parser providers.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA for UI-facing follow-up slices.
 
