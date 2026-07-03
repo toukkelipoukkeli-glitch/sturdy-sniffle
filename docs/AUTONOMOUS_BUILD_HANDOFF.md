@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1759a5b` (`Surface CAD geometry review summaries (#236)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD geometry review action-hints UI.
-- In-flight PR at this checkpoint: `codex/cad-geometry-action-hints` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture while real parsers stay deferred.
+- Main branch checkpoint: `68edd00` (`Add CAD geometry review action hints (#237)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD review action-history persistence UI.
+- In-flight PR at this checkpoint: `codex/cad-review-action-history` persists the selected CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
 - Latest merged sequence:
+  - `#237` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture.
   - `#236` surfaces deterministic geometry review summaries in the part preview viewport and attachment thumbnail surfaces.
   - `#235` adds deterministic ready/needs-review/blocked summary checks for metadata-derived CAD geometry descriptors.
   - `#234` metadata-derived geometry descriptors now render in the part preview viewport and attachment thumbnails with Browser/Playwright QA fallback evidence.

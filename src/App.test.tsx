@@ -1564,6 +1564,57 @@ describe("FactoryBid workspace (component)", () => {
     expect(actionHints).toHaveTextContent("Verify thickness from drawing or material metadata before flat-pattern calculations.")
   })
 
+  it("persists CAD geometry review action history with operator corrections", async () => {
+    window.localStorage.clear()
+    const { unmount } = render(<App />)
+
+    const preview = screen.getByLabelText("Part preview")
+    const attachments = within(preview).getByLabelText("Attachments")
+    const dxfRow = within(attachments).getByText("FB-204-A-flat.dxf").closest(".attachment-row")
+    expect(dxfRow).not.toBeNull()
+    fireEvent.click(within(dxfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+
+    const override = screen.getByLabelText("CAD review override")
+    fireEvent.change(within(override).getByLabelText("Dimension correction note"), { target: { value: "Confirm 6 mm plate thickness before quoting." } })
+    fireEvent.click(within(override).getByRole("button", { name: "Save corrections" }))
+
+    const history = screen.getByLabelText("CAD geometry review action history")
+    expect(history).toHaveTextContent("FB-204-A-flat.dxf")
+    expect(history).toHaveTextContent("needs review")
+    expect(history).toHaveTextContent("Confirm flat-pattern thickness")
+    expect(history).toHaveTextContent("Review geometry provider warnings")
+
+    const pdfRow = within(screen.getByLabelText("Attachments")).getByText("FB-204-A.pdf").closest(".attachment-row")
+    expect(pdfRow).not.toBeNull()
+    fireEvent.click(within(pdfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+    const pdfOverride = screen.getByLabelText("CAD review override")
+    fireEvent.change(within(pdfOverride).getByLabelText("Material correction note"), { target: { value: "Use the same Al 6082 stock." } })
+    fireEvent.click(within(pdfOverride).getByRole("button", { name: "Save corrections" }))
+    expect(screen.getByLabelText("CAD geometry review action history")).toHaveTextContent("FB-204-A-flat.dxf")
+
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      const snapshot = stored.cadReviewOverridesById?.[stored.selectedId]?.geometryReviewActionSnapshot
+      expect(snapshot).toMatchObject({
+        attachmentFileName: "FB-204-A-flat.dxf",
+        capturedAt: "2026-06-20T09:00:00+03:00",
+        reviewStatus: "needs_review",
+      })
+      expect(snapshot.actions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ key: "confirm_flat_pattern_thickness", label: "Confirm flat-pattern thickness", priority: "primary" }),
+          expect.objectContaining({ key: "review_geometry_provider_warnings", label: "Review geometry provider warnings", priority: "secondary" }),
+        ]),
+      )
+    })
+
+    unmount()
+    render(<App />)
+    const restoredHistory = screen.getByLabelText("CAD geometry review action history")
+    expect(restoredHistory).toHaveTextContent("FB-204-A-flat.dxf")
+    expect(restoredHistory).toHaveTextContent("Confirm flat-pattern thickness")
+  })
+
   it("keeps a browser-native PDF preview after the iframe reports loaded", () => {
     vi.useFakeTimers()
     render(<App />)
