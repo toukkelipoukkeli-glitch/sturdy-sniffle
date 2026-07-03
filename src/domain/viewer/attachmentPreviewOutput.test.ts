@@ -188,6 +188,51 @@ describe("attachment preview output", () => {
     })
   })
 
+  it("keeps geometry preview degraded when ready CAD metadata lacks dimensions", () => {
+    const output = buildAttachmentPreviewOutput(
+      {
+        fileName: "housing.step",
+        kind: "cad",
+        contentType: "model/step",
+      },
+      {
+        adapterVersion: "cad-metadata.v1",
+        fileName: "housing.step",
+        format: "step",
+        metadataOnly: false,
+        previewKind: "cad",
+        provider: "heuristic",
+        status: "succeeded",
+        units: "unknown",
+        warnings: ["No CAD dimensions were extracted."],
+      },
+    )
+
+    expect(output).toMatchObject({
+      geometryPreview: {
+        adapterVersion: "cad-geometry-preview.v1",
+        fileName: "housing.step",
+        format: "step",
+        outlineSegments: [],
+        previewKind: "metadata_card",
+        provider: "metadata_geometry",
+        renderer: "metadata-card",
+        status: "fallback",
+        units: "unknown",
+        warnings: [
+          "STEP geometry preview requires length, width, and height or thickness dimensions.",
+          "No CAD dimensions were extracted.",
+        ],
+      },
+      kind: "step_model",
+      label: "3D CAD preview",
+      renderer: "step-metadata-card",
+      status: "ready",
+      thumbnailLabel: "3D CAD model",
+      warnings: ["No CAD dimensions were extracted."],
+    })
+  })
+
   it("keeps deterministic fallbacks when CAD metadata is unsuitable", () => {
     const mismatchedStep = buildAttachmentPreviewOutput(
       {
