@@ -33,6 +33,7 @@ export interface OfferDocumentSection {
 }
 
 export interface OfferDocumentAlternate {
+  customerSummary: string
   label: string
   totalLabel: string
   priceDeltaLabel: string
@@ -152,9 +153,8 @@ function buildPricingSection(offer: OfferDraft): OfferDocumentSection {
 }
 
 function buildAlternatesSection(alternates: OfferDocumentAlternate[]): OfferDocumentSection[] {
-  const rows = alternates
-    .map(normalizeAlternate)
-    .map((alternate) => [
+  const normalizedAlternates = alternates.map(normalizeAlternate)
+  const rows = normalizedAlternates.map((alternate) => [
       alternate.label,
       alternate.totalLabel,
       alternate.priceDeltaLabel,
@@ -173,6 +173,7 @@ function buildAlternatesSection(alternates: OfferDocumentAlternate[]): OfferDocu
       key: "alternates",
       title: "Alternates",
       kind: "alternates",
+      body: normalizedAlternates.map((alternate) => `- ${alternate.customerSummary}`),
       table: {
         columns: ["Option", "Total", "Price delta", "Lead time", "Lead delta", "Positioning", "Notes"],
         rows,
@@ -279,6 +280,7 @@ function compactFields(fields: Array<[string, string | undefined]>): OfferDocume
 
 function normalizeAlternate(alternate: OfferDocumentAlternate): OfferDocumentAlternate {
   return {
+    customerSummary: nonBlank(alternate.customerSummary, "alternate.customerSummary"),
     label: nonBlank(alternate.label, "alternate.label"),
     totalLabel: nonBlank(alternate.totalLabel, "alternate.totalLabel"),
     priceDeltaLabel: nonBlank(alternate.priceDeltaLabel, "alternate.priceDeltaLabel"),

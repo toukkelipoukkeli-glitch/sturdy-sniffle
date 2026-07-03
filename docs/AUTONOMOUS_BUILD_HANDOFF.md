@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c9bd21e` (`Add CAD override events and offer revision summaries (#239)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer revision-history copy follow-up.
-- In-flight PR at this checkpoint: `codex/offer-revision-history-copy` adds deterministic multi-revision customer copy to offer documents/export metadata while quote math and release behavior stay unchanged.
+- Main branch checkpoint: `e5e0430` (`Add offer revision timeline copy (#240)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer alternate customer-copy follow-up.
+- In-flight PR at this checkpoint: `codex/offer-alternate-copy` adds deterministic customer-ready prose for offer alternates while quote math and release behavior stay unchanged.
 - Latest merged sequence:
+  - `#240` adds deterministic multi-revision customer copy to offer documents/export metadata.
   - `#239` persists compact CAD override audit events for saved corrections, acknowledged flags, and reopened review state, and adds deterministic customer-facing offer revision summary metadata/text.
   - `#238` persists CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
   - `#237` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture.
@@ -248,7 +249,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Keep deterministic plain-text and PDF-ready content as source of truth.
    - Add render/export verification without making AI required.
    - Record export warnings and assumptions in offer history.
-   - Current branch adds deterministic multi-revision customer copy to the revision history section/export metadata.
+   - `#240` adds deterministic multi-revision customer copy to the revision history section/export metadata.
+   - Current branch adds deterministic customer-ready prose for alternate options.
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.

@@ -68,6 +68,8 @@ describe("offer export package", () => {
     })
     expect(exportPackage.alternates).toEqual([
       {
+        customerSummary:
+          "Expedite 4-day build: EUR 1615.86 (+EUR 461.68 vs base), 4 working days (-5 days vs base). Expedite premium for faster lead time; no calculator review flags.",
         id: "rush-4-day",
         label: "Expedite 4-day build",
         currency: "EUR",
@@ -109,8 +111,14 @@ describe("offer export package", () => {
         ],
       ],
     })
+    expect(exportPackage.document.sections.find((section) => section.key === "alternates")?.body).toEqual([
+      "- Expedite 4-day build: EUR 1615.86 (+EUR 461.68 vs base), 4 working days (-5 days vs base). Expedite premium for faster lead time; no calculator review flags.",
+    ])
     expect(exportPackage.plainText).toContain("Alternates")
     expect(exportPackage.plainText).toContain("Expedite 4-day build | EUR 1615.86 | +EUR 461.68 | 4 working days | -5 days")
+    expect(exportPackage.plainText).toContain(
+      "- Expedite 4-day build: EUR 1615.86 (+EUR 461.68 vs base), 4 working days (-5 days vs base). Expedite premium for faster lead time; no calculator review flags.",
+    )
     expect(exportPackage.plainText).toContain(
       "Current revision: Revision 2 (2026-06-21) by Sari: Added expedited delivery alternate requested by buyer.",
     )
