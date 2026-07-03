@@ -4357,6 +4357,7 @@
 .cad-geometry-review-heading {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: space-between;
   min-width: 0;
@@ -4395,7 +4396,7 @@
 .cad-geometry-review-grid {
   display: grid;
   gap: 5px 8px;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.7fr);
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   margin: 0;
 }
 
@@ -4418,9 +4419,7 @@
   font-size: 0.66rem;
   font-weight: 850;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .cad-geometry-review p {
@@ -4428,6 +4427,42 @@
   font-size: 0.66rem;
   font-weight: 760;
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cad-geometry-review-actions {
+  --cad-geometry-review-action-border: oklch(0.72 0.095 75);
+  --cad-geometry-review-action-border-primary: oklch(0.57 0.13 42);
+
+  display: grid;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cad-geometry-review-actions li {
+  border-left: 2px solid var(--cad-geometry-review-action-border);
+  display: grid;
+  gap: 1px;
+  padding-left: 7px;
+}
+
+.cad-geometry-review-actions li[data-priority="primary"] {
+  border-left-color: var(--cad-geometry-review-action-border-primary);
+}
+
+.cad-geometry-review-actions strong {
+  color: oklch(0.28 0.04 250);
+  font-size: 0.64rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.cad-geometry-review-actions span {
+  color: oklch(0.4 0.03 250);
+  font-size: 0.62rem;
+  font-weight: 740;
   overflow-wrap: anywhere;
 }
 

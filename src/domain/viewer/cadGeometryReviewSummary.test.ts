@@ -39,6 +39,7 @@ describe("CAD geometry review summary", () => {
       warnings: [],
       blockers: [],
       nextAction: "Geometry descriptor is ready for operator preview.",
+      actions: [],
       checks: [
         {
           key: "preview_status",
@@ -103,6 +104,20 @@ describe("CAD geometry review summary", () => {
       ],
       blockers: [],
       nextAction: "Review geometry warnings and confirm dimensions before relying on this preview.",
+      actions: [
+        {
+          key: "confirm_flat_pattern_thickness",
+          priority: "primary",
+          label: "Confirm flat-pattern thickness",
+          detail: "Verify thickness from drawing or material metadata before flat-pattern calculations.",
+        },
+        {
+          key: "review_geometry_provider_warnings",
+          priority: "secondary",
+          label: "Review geometry provider warnings",
+          detail: "Review provider warning text before accepting the descriptor.",
+        },
+      ],
     })
     expect(summary.checks.find((check) => check.key === "bounds")).toMatchObject({
       status: "needs_review",
@@ -130,6 +145,32 @@ describe("CAD geometry review summary", () => {
       warningCount: 5,
       blockers: ["Geometry bounds are unavailable.", "Geometry outline is unavailable for metadata-only preview."],
       nextAction: "Use the metadata card and request geometry parser review before geometry-dependent decisions.",
+      actions: [
+        {
+          key: "use_metadata_card",
+          priority: "primary",
+          label: "Use metadata card",
+          detail: "Keep quote decisions on RFQ and attachment metadata until geometry blockers clear.",
+        },
+        {
+          key: "request_geometry_parser_review",
+          priority: "primary",
+          label: "Request geometry parser review",
+          detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
+        },
+        {
+          key: "confirm_geometry_units",
+          priority: "secondary",
+          label: "Confirm drawing units",
+          detail: "Verify units before quoting dimensions from this preview.",
+        },
+        {
+          key: "review_geometry_provider_warnings",
+          priority: "secondary",
+          label: "Review geometry provider warnings",
+          detail: "Review provider warning text before accepting the descriptor.",
+        },
+      ],
     })
     expect(summary.warnings).toEqual([
       "Geometry preview is fallback-only; review metadata before using it for geometry-dependent decisions.",
