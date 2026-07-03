@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9db5bfd` (`Surface offer provider outcome history (#253)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing deterministic provider outcome readiness for release execution gates.
-- In-flight PR at this checkpoint: `codex/offer-provider-outcome-readiness` converts provider outcome history into ready/blocked execution readiness while real Gmail/calendar/provider sending stays deferred.
+- Main branch checkpoint: `1ab11b9` (`Add offer provider outcome readiness (#254)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a workspace execution gate for provider outcome readiness.
+- In-flight PR at this checkpoint: `codex/offer-provider-outcome-readiness-ui` surfaces provider outcome readiness in the release execution audit and gates execution on it while real Gmail/calendar/provider sending stays deferred.
 - Latest merged sequence:
+  - `#254` converts provider outcome history into ready/blocked execution readiness for future release gates.
   - `#253` surfaces local provider outcome batch readiness in the offer workspace with Browser/Playwright QA fallback evidence.
   - `#252` summarizes local provider outcome batch records for future operator/API surfaces.
   - `#251` records and normalizes provider-backed release command outcome batches before release executions consume them.
@@ -154,7 +155,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates, release execution audit/history/fingerprints, and persistence adapters.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates and workspace execution gate, release execution audit/history/fingerprints, and persistence adapters.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
