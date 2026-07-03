@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `68edd00` (`Add CAD geometry review action hints (#237)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD review action-history persistence UI.
-- In-flight PR at this checkpoint: `codex/cad-review-action-history` persists the selected CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
+- Main branch checkpoint: `5e734ba` (`Persist CAD review action history (#238)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow CAD review override event-history and offer summary follow-up.
+- In-flight PR at this checkpoint: `codex/cad-override-events-offer-summary` persists compact CAD override audit events for saved corrections, acknowledged flags, and reopened review state, and adds deterministic customer-facing offer revision summary metadata/text while quote math, real parsers, and release behavior stay unchanged.
 - Latest merged sequence:
+  - `#238` persists CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
   - `#237` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture.
   - `#236` surfaces deterministic geometry review summaries in the part preview viewport and attachment thumbnail surfaces.
   - `#235` adds deterministic ready/needs-review/blocked summary checks for metadata-derived CAD geometry descriptors.
@@ -142,7 +143,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
-- CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, and boundary-aware CAD metadata matching.
+- CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
@@ -224,8 +225,10 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#234` renders those geometry descriptors in viewport/thumbnail surfaces.
    - `#235` adds deterministic geometry-specific review summary checks for ready/needs-review/blocked preview states.
    - `#236` surfaces those geometry review summaries in the viewport and attachment thumbnails.
-   - Current branch adds operator action hints for geometry review warnings/blockers and a DXF needs-review preview fixture.
-   - Next steps: wire action hints into persisted operator override events and eventually swap in real parser providers.
+   - `#237` adds operator action hints for geometry review warnings/blockers and a DXF needs-review preview fixture.
+   - `#238` wires selected action hints into persisted operator override history.
+   - Current branch persists compact operator override event history and adds customer-facing offer revision summary metadata/text.
+   - Next steps: eventually swap in real parser providers and add richer multi-revision customer copy.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA for UI-facing follow-up slices.
 

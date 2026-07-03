@@ -4682,6 +4682,66 @@
   border-left-color: var(--cad-review-action-history-border-primary);
 }
 
+.cad-review-event-history {
+  background: oklch(0.985 0.01 225);
+  border: 1px solid oklch(0.88 0.035 230);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+}
+
+.cad-review-event-history > div {
+  display: grid;
+  gap: 2px;
+}
+
+.cad-review-event-history > div > span {
+  color: oklch(0.37 0.065 225);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.cad-review-event-history strong {
+  color: oklch(0.25 0.055 245);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.cad-review-event-history ol {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cad-review-event-history li {
+  border-left: 2px solid oklch(0.68 0.08 230);
+  display: grid;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+.cad-review-event-history li[data-kind="flags_acknowledged"] {
+  border-left-color: oklch(0.6 0.12 155);
+}
+
+.cad-review-event-history li[data-kind="override_reopened"] {
+  border-left-color: oklch(0.62 0.14 32);
+}
+
+.cad-review-event-history span,
+.cad-review-event-history small {
+  color: oklch(0.44 0.035 250);
+  font-size: 0.72rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .cad-review-actions {
   display: flex;
   flex-wrap: wrap;

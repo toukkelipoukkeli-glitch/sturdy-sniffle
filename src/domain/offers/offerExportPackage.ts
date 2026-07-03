@@ -1,6 +1,6 @@
 import type { QuoteEngineCurrencyCode, QuoteEngineResult } from "../quoting/registry"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
-import { formatOfferMoney, type OfferDraft, type OfferLineItem, type OfferRevision } from "./offer"
+import { formatOfferMoney, formatOfferRevisionSummary, type OfferDraft, type OfferLineItem, type OfferRevision } from "./offer"
 import {
   buildOfferDocument,
   renderOfferDocumentText,
@@ -49,6 +49,7 @@ export interface OfferRevisionSummaryItem {
 }
 
 export interface OfferRevisionSummary {
+  customerSummary: string
   latestRevision: number
   latestReason: string
   items: OfferRevisionSummaryItem[]
@@ -195,6 +196,7 @@ function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary 
   const latestRevision = revisions.at(-1)!
 
   return {
+    customerSummary: formatOfferRevisionSummary(revisions),
     latestRevision: latestRevision.revision,
     latestReason: latestRevision.reason,
     items: revisions.map((revision) => ({

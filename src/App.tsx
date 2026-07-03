@@ -316,6 +316,26 @@ interface CadReviewOverrideState {
   reviewedBy: string
 }
 
+type CadReviewOverrideEventKind = "corrections_saved" | "corrections_cleared" | "flags_acknowledged" | "override_reopened"
+
+interface CadReviewOverrideEvent {
+  acknowledgedFlagCount: number
+  attachmentFileName?: string
+  correctionFields: Array<keyof CadReviewCorrectionNotes>
+  geometryReviewActionCount: number
+  geometryReviewStatus?: CadGeometryReviewSummary["status"]
+  id: string
+  kind: CadReviewOverrideEventKind
+  note?: string
+  occurredAt: string
+  operator: string
+}
+
+interface CadReviewOverrideEventBuildInput extends Omit<CadReviewOverrideEvent, "id"> {
+  sequence: number
+  workItemId: string
+}
+
 type CadGeometryReviewActionSnapshotItem = Pick<CadGeometryReviewSummary["actions"][number], "key" | "priority" | "label" | "detail">
 
 interface CadGeometryReviewActionSnapshot {
@@ -357,6 +377,7 @@ interface OfferExportHistoryEvent {
 interface WorkspaceLocalState {
   actionsById: Record<string, WorkspaceActionRecord[]>
   activeView: WorkspaceView
+  cadReviewOverrideEventsById: Record<string, CadReviewOverrideEvent[]>
   cadReviewOverridesById: Record<string, CadReviewOverrideState>
   editsById: Record<string, Partial<QuoteEditState>>
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
@@ -931,6 +952,9 @@ function App() {
   const [showAttachments, setShowAttachments] = useState(false)
   const [isCreatingRfq, setIsCreatingRfq] = useState(false)
   const [actionsById, setActionsById] = useState<Record<string, WorkspaceActionRecord[]>>(workspaceLocalState?.actionsById ?? {})
+  const [cadReviewOverrideEventsById, setCadReviewOverrideEventsById] = useState<Record<string, CadReviewOverrideEvent[]>>(
+    workspaceLocalState?.cadReviewOverrideEventsById ?? {},
+  )
   const [cadReviewOverridesById, setCadReviewOverridesById] = useState<Record<string, CadReviewOverrideState>>(
     workspaceLocalState?.cadReviewOverridesById ?? {},
   )
@@ -979,6 +1003,7 @@ function App() {
     writeWorkspaceLocalState({
       actionsById,
       activeView,
+      cadReviewOverrideEventsById,
       cadReviewOverridesById,
       editsById,
       offerDraftEditsById,
@@ -995,6 +1020,7 @@ function App() {
   }, [
     actionsById,
     activeView,
+    cadReviewOverrideEventsById,
     cadReviewOverridesById,
     editsById,
     offerDraftEditsById,
@@ -1010,6 +1036,10 @@ function App() {
   const queueNow = workspaceNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
+  const selectedCadReviewOverrideEvents = useMemo(
+    () => cadReviewOverrideEventsById[selectedId] ?? [],
+    [cadReviewOverrideEventsById, selectedId],
+  )
   const selectedEdit = editStateForItem(selectedItem, editsById[selectedId])
   const selectedStatus = statusById[selectedId] ?? selectedItem.status
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
@@ -1267,12 +1297,31 @@ function App() {
       },
     }))
   }
+  const appendSelectedCadReviewOverrideEvent = (event: Omit<CadReviewOverrideEventBuildInput, "occurredAt" | "operator" | "sequence" | "workItemId">) => {
+    setCadReviewOverrideEventsById((current) => {
+      const events = current[selectedId] ?? []
+      return {
+        ...current,
+        [selectedId]: [
+          ...events,
+          buildCadReviewOverrideEvent({
+            ...event,
+            occurredAt: workspaceNow,
+            operator: workspaceOperatorName,
+            sequence: events.length + 1,
+            workItemId: selectedId,
+          }),
+        ],
+      }
+    })
+  }
   const saveSelectedCadCorrections = () => {
     const correctionNotes = normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft)
     if (!correctionNotes && !selectedCadReviewOverride) {
       return
     }
     const geometryReviewActionSnapshot = buildCadGeometryReviewActionSnapshot(partPreview, workspaceNow)
+    const retainedGeometryReviewActionSnapshot = geometryReviewActionSnapshot ?? selectedCadReviewOverride?.geometryReviewActionSnapshot
     setCadReviewOverridesById((current) => ({
       ...current,
       [selectedId]: {
@@ -1284,27 +1333,60 @@ function App() {
         reviewedBy: workspaceOperatorName,
       },
     }))
+    appendSelectedCadReviewOverrideEvent({
+      acknowledgedFlagCount: selectedCadReviewOverride?.acknowledgedFlags.length ?? 0,
+      attachmentFileName: retainedGeometryReviewActionSnapshot?.attachmentFileName,
+      correctionFields: cadReviewCorrectionFields(correctionNotes),
+      geometryReviewActionCount: retainedGeometryReviewActionSnapshot?.actions.length ?? 0,
+      geometryReviewStatus: retainedGeometryReviewActionSnapshot?.reviewStatus,
+      kind: correctionNotes ? "corrections_saved" : "corrections_cleared",
+      note: correctionNotes ? "Saved operator CAD correction notes." : "Cleared operator CAD correction notes.",
+    })
   }
   const acknowledgeSelectedCadFlags = () => {
     if (partPreview.manufacturabilityFlags.length === 0) {
       return
     }
     const geometryReviewActionSnapshot = buildCadGeometryReviewActionSnapshot(partPreview, workspaceNow)
+    const retainedGeometryReviewActionSnapshot = geometryReviewActionSnapshot ?? selectedCadReviewOverride?.geometryReviewActionSnapshot
+    const acknowledgedFlags = [...partPreview.manufacturabilityFlags]
+    const correctionNotes = normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft) ?? selectedCadReviewOverride?.correctionNotes
+    const note =
+      selectedCadReviewDraft.trim() ||
+      `Operator acknowledged ${acknowledgedFlags.length} manufacturability flag${acknowledgedFlags.length === 1 ? "" : "s"}.`
     setCadReviewOverridesById((current) => ({
       ...current,
       [selectedId]: {
-        acknowledgedFlags: [...partPreview.manufacturabilityFlags],
+        acknowledgedFlags,
         correctionNotes: normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft) ?? current[selectedId]?.correctionNotes,
         geometryReviewActionSnapshot: geometryReviewActionSnapshot ?? current[selectedId]?.geometryReviewActionSnapshot,
-        note:
-          selectedCadReviewDraft.trim() ||
-          `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
+        note,
         reviewedAt: workspaceNow,
         reviewedBy: workspaceOperatorName,
       },
     }))
+    appendSelectedCadReviewOverrideEvent({
+      acknowledgedFlagCount: acknowledgedFlags.length,
+      attachmentFileName: retainedGeometryReviewActionSnapshot?.attachmentFileName,
+      correctionFields: cadReviewCorrectionFields(correctionNotes),
+      geometryReviewActionCount: retainedGeometryReviewActionSnapshot?.actions.length ?? 0,
+      geometryReviewStatus: retainedGeometryReviewActionSnapshot?.reviewStatus,
+      kind: "flags_acknowledged",
+      note,
+    })
   }
   const resetSelectedCadReview = () => {
+    if (selectedCadReviewOverride) {
+      appendSelectedCadReviewOverrideEvent({
+        acknowledgedFlagCount: selectedCadReviewOverride.acknowledgedFlags.length,
+        attachmentFileName: selectedCadReviewOverride.geometryReviewActionSnapshot?.attachmentFileName,
+        correctionFields: cadReviewCorrectionFields(selectedCadReviewOverride.correctionNotes),
+        geometryReviewActionCount: selectedCadReviewOverride.geometryReviewActionSnapshot?.actions.length ?? 0,
+        geometryReviewStatus: selectedCadReviewOverride.geometryReviewActionSnapshot?.reviewStatus,
+        kind: "override_reopened",
+        note: "Reopened CAD review flags for operator review.",
+      })
+    }
     setCadReviewOverridesById((current) => {
       const next = { ...current }
       delete next[selectedId]
@@ -2011,6 +2093,7 @@ function App() {
           {activeView === "costing" ? (
             <CostingView
               cadReviewDraft={selectedCadReviewDraft}
+              cadReviewEvents={selectedCadReviewOverrideEvents}
               cadCorrectionDraft={selectedCadCorrectionDraft}
               cadReviewOverride={selectedCadReviewOverride}
               cycleMinutes={cycleMinutes}
@@ -2176,6 +2259,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   }
 
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
+  const cadReviewOverrideEventsById = optionalRecordOfArrays(value.cadReviewOverrideEventsById, isCadReviewOverrideEvent)
   const cadReviewOverridesById = optionalRecordOfValues(value.cadReviewOverridesById, isCadReviewOverrideState)
   const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
@@ -2187,6 +2271,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const statusById = optionalRecordOfValues(value.statusById, isQuoteQueueStatus)
   if (
     !actionsById ||
+    !cadReviewOverrideEventsById ||
     !cadReviewOverridesById ||
     !editsById ||
     !offerDraftEditsById ||
@@ -2209,6 +2294,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   return {
     actionsById,
     activeView,
+    cadReviewOverrideEventsById,
     cadReviewOverridesById,
     editsById,
     offerDraftEditsById,
@@ -2446,6 +2532,40 @@ function isReleaseReviewState(value: unknown): value is ReleaseReviewState {
   )
 }
 
+function isCadReviewOverrideEvent(value: unknown): value is CadReviewOverrideEvent {
+  if (!isObjectRecord(value)) {
+    return false
+  }
+  const acknowledgedFlagCount = value.acknowledgedFlagCount
+  const geometryReviewActionCount = value.geometryReviewActionCount
+
+  return (
+    typeof acknowledgedFlagCount === "number" &&
+    Number.isInteger(acknowledgedFlagCount) &&
+    acknowledgedFlagCount >= 0 &&
+    (value.attachmentFileName === undefined || typeof value.attachmentFileName === "string") &&
+    Array.isArray(value.correctionFields) &&
+    value.correctionFields.every(isCadReviewCorrectionField) &&
+    typeof geometryReviewActionCount === "number" &&
+    Number.isInteger(geometryReviewActionCount) &&
+    geometryReviewActionCount >= 0 &&
+    (value.geometryReviewStatus === undefined || isCadGeometryReviewStatus(value.geometryReviewStatus)) &&
+    typeof value.id === "string" &&
+    isCadReviewOverrideEventKind(value.kind) &&
+    (value.note === undefined || typeof value.note === "string") &&
+    typeof value.occurredAt === "string" &&
+    typeof value.operator === "string"
+  )
+}
+
+function isCadReviewOverrideEventKind(value: unknown): value is CadReviewOverrideEventKind {
+  return value === "corrections_saved" || value === "corrections_cleared" || value === "flags_acknowledged" || value === "override_reopened"
+}
+
+function isCadReviewCorrectionField(value: unknown): value is keyof CadReviewCorrectionNotes {
+  return value === "dimensions" || value === "material" || value === "process"
+}
+
 function isCadReviewOverrideState(value: unknown): value is CadReviewOverrideState {
   return (
     isObjectRecord(value) &&
@@ -2514,6 +2634,29 @@ function normalizeCadReviewCorrectionNotes(notes: CadReviewCorrectionNotes): Cad
   return normalized.dimensions || normalized.material || normalized.process ? normalized : undefined
 }
 
+function cadReviewCorrectionFields(notes: CadReviewCorrectionNotes | undefined): Array<keyof CadReviewCorrectionNotes> {
+  return (["dimensions", "material", "process"] as const).filter((field) => Boolean(notes?.[field]))
+}
+
+function buildCadReviewOverrideEvent(input: CadReviewOverrideEventBuildInput): CadReviewOverrideEvent {
+  return {
+    acknowledgedFlagCount: input.acknowledgedFlagCount,
+    attachmentFileName: input.attachmentFileName,
+    correctionFields: input.correctionFields,
+    geometryReviewActionCount: input.geometryReviewActionCount,
+    geometryReviewStatus: input.geometryReviewStatus,
+    id: `${slugForCadReviewEventId(input.workItemId)}-cad-review-${String(input.sequence).padStart(3, "0")}-${input.kind}`,
+    kind: input.kind,
+    note: input.note,
+    occurredAt: input.occurredAt,
+    operator: input.operator,
+  }
+}
+
+function slugForCadReviewEventId(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "workspace-item"
+}
+
 function buildCadGeometryReviewActionSnapshot(preview: PartPreviewModel, capturedAt: string): CadGeometryReviewActionSnapshot | undefined {
   const primaryAttachment = preview.attachments.find((attachment) => attachment.primary)
   const geometryPreview = primaryAttachment?.previewOutput.geometryPreview
@@ -2537,6 +2680,35 @@ function buildCadGeometryReviewActionSnapshot(preview: PartPreviewModel, capture
     capturedAt,
     reviewStatus: reviewSummary.status,
   }
+}
+
+function cadReviewOverrideEventLabel(kind: CadReviewOverrideEventKind): string {
+  switch (kind) {
+    case "corrections_cleared":
+      return "Cleared corrections"
+    case "corrections_saved":
+      return "Saved corrections"
+    case "flags_acknowledged":
+      return "Acknowledged flags"
+    case "override_reopened":
+      return "Reopened review"
+  }
+}
+
+function cadReviewOverrideEventDetail(event: CadReviewOverrideEvent): string {
+  const details = [
+    event.attachmentFileName,
+    event.geometryReviewStatus ? humanizeKey(event.geometryReviewStatus) : undefined,
+    event.geometryReviewActionCount > 0
+      ? `${event.geometryReviewActionCount} geometry action${event.geometryReviewActionCount === 1 ? "" : "s"}`
+      : undefined,
+    event.acknowledgedFlagCount > 0
+      ? `${event.acknowledgedFlagCount} acknowledged flag${event.acknowledgedFlagCount === 1 ? "" : "s"}`
+      : undefined,
+    event.correctionFields.length > 0 ? `Corrections: ${event.correctionFields.map(humanizeKey).join(", ")}` : undefined,
+  ].filter(Boolean)
+
+  return details.join(" · ") || "Override state changed"
 }
 
 function cadReviewCorrectionNotesEqual(left: CadReviewCorrectionNotes | undefined, right: CadReviewCorrectionNotes | undefined): boolean {
@@ -7151,6 +7323,7 @@ function CapacityProcessRow({
 function CostingView({
   cadCorrectionDraft,
   cadReviewDraft,
+  cadReviewEvents,
   cadReviewOverride,
   cycleMinutes,
   machineHourlyRateCents,
@@ -7179,6 +7352,7 @@ function CostingView({
 }: {
   cadCorrectionDraft: CadReviewCorrectionNotes
   cadReviewDraft: string
+  cadReviewEvents: CadReviewOverrideEvent[]
   cadReviewOverride: CadReviewOverrideState | undefined
   cycleMinutes: number
   machineHourlyRateCents: number
@@ -7220,6 +7394,7 @@ function CostingView({
       <PartPreviewPanel
         cadCorrectionDraft={cadCorrectionDraft}
         cadReviewDraft={cadReviewDraft}
+        cadReviewEvents={cadReviewEvents}
         onAcknowledgeCadFlags={onAcknowledgeCadFlags}
         onCadCorrectionDraftChange={onCadCorrectionDraftChange}
         onCadReviewDraftChange={onCadReviewDraftChange}
@@ -7375,6 +7550,7 @@ function cadMetadataForAttachmentThumbnail(
 function PartPreviewPanel({
   cadCorrectionDraft,
   cadReviewDraft,
+  cadReviewEvents,
   onAcknowledgeCadFlags,
   onCadCorrectionDraftChange,
   onCadReviewDraftChange,
@@ -7386,6 +7562,7 @@ function PartPreviewPanel({
 }: {
   cadCorrectionDraft: CadReviewCorrectionNotes
   cadReviewDraft: string
+  cadReviewEvents: CadReviewOverrideEvent[]
   onAcknowledgeCadFlags: () => void
   onCadCorrectionDraftChange: (field: keyof CadReviewCorrectionNotes, value: string) => void
   onCadReviewDraftChange: (value: string) => void
@@ -7400,6 +7577,7 @@ function PartPreviewPanel({
   const normalizedCorrectionDraft = normalizeCadReviewCorrectionNotes(cadCorrectionDraft)
   const canSaveCadCorrections = !cadReviewCorrectionNotesEqual(normalizedCorrectionDraft, override?.correctionNotes)
   const geometryReviewActionSnapshot = override?.geometryReviewActionSnapshot
+  const recentCadReviewEvents = cadReviewEvents.slice(-4).reverse()
   const primaryAttachment = preview.attachments.find((attachment) => attachment.primary)
   const primaryImageSource =
     primaryAttachment?.previewOutput.renderer === "browser-image" && primaryAttachment.previewOutput.status === "ready"
@@ -7506,7 +7684,7 @@ function PartPreviewPanel({
             ))}
           </div>
         ) : null}
-        {preview.manufacturabilityFlags.length > 0 || geometryReviewActionSnapshot ? (
+        {preview.manufacturabilityFlags.length > 0 || geometryReviewActionSnapshot || recentCadReviewEvents.length > 0 ? (
           <div className="cad-review-override" aria-label="CAD review override">
             {override ? (
               <div className="cad-review-summary">
@@ -7565,6 +7743,28 @@ function PartPreviewPanel({
                     </li>
                   ))}
                 </ul>
+              </div>
+            ) : null}
+            {recentCadReviewEvents.length > 0 ? (
+              <div className="cad-review-event-history" aria-label="CAD review override event history">
+                <div>
+                  <span>Override audit</span>
+                  <strong>
+                    {cadReviewEvents.length} event{cadReviewEvents.length === 1 ? "" : "s"} recorded
+                  </strong>
+                </div>
+                <ol>
+                  {recentCadReviewEvents.map((event) => (
+                    <li data-kind={event.kind} key={event.id}>
+                      <strong>{cadReviewOverrideEventLabel(event.kind)}</strong>
+                      <span>
+                        {formatShortDateTime(event.occurredAt)} by {event.operator}
+                      </span>
+                      <small>{cadReviewOverrideEventDetail(event)}</small>
+                      {event.note ? <small>{event.note}</small> : null}
+                    </li>
+                  ))}
+                </ol>
               </div>
             ) : null}
             <div className="cad-correction-grid">

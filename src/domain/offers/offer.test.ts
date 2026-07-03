@@ -7,7 +7,7 @@ import { pomGuideFixture } from "../quoting/plastics.fixtures"
 import { calculateQuote, type QuoteEngineResult } from "../quoting/registry"
 import { laserBentBracketFixture } from "../quoting/sheetMetal.fixtures"
 import { toolSteelKeywayFixture } from "../quoting/wireEdm.fixtures"
-import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, renderOfferText } from "./offer"
+import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, formatOfferRevisionSummary, renderOfferText } from "./offer"
 
 const quoteEngineOfferCases: Array<{ quote: QuoteEngineResult; processLabel: string }> = [
   {
@@ -115,6 +115,9 @@ describe("offer builder", () => {
       },
     ])
     expect(renderOfferText(revised)).toContain("Revision: 2")
+    expect(formatOfferRevisionSummary(revised.revisionHistory)).toBe(
+      "Revision 2 (2026-06-20) by Sari: Added expedite alternate requested by buyer.",
+    )
   })
 
   it("preserves unit price remainder in the plain-text export", () => {

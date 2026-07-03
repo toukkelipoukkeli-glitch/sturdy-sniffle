@@ -57,6 +57,7 @@ describe("offer export package", () => {
         warnings: [],
       },
       revisionSummary: {
+        customerSummary: "Revision 2 (2026-06-21) by Sari: Added expedited delivery alternate requested by buyer.",
         latestReason: "Added expedited delivery alternate requested by buyer.",
         latestRevision: 2,
       },
@@ -106,6 +107,9 @@ describe("offer export package", () => {
     })
     expect(exportPackage.plainText).toContain("Alternates")
     expect(exportPackage.plainText).toContain("Expedite 4-day build | EUR 1615.86 | +EUR 461.68 | 4 working days | -5 days")
+    expect(exportPackage.plainText).toContain(
+      "Current revision: Revision 2 (2026-06-21) by Sari: Added expedited delivery alternate requested by buyer.",
+    )
     expect(exportPackage.pdf.contentFingerprint).toMatch(/^[a-f0-9]{8}$/)
   })
 

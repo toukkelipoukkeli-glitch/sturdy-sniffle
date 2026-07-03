@@ -77,6 +77,7 @@ describe("offer export fixtures", () => {
       FB-TURN-019 | Minimum order adjustment applied.
 
       Revision history
+      Current revision: Revision 1 (2026-06-19) by FactoryBid OS: Initial draft
       Rev | Date | By | Reason
       1 | 2026-06-19 | FactoryBid OS | Initial draft
 
