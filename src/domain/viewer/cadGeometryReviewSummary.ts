@@ -1,4 +1,4 @@
-import type { CadGeometryPreviewResult } from "./cadGeometryPreview"
+import type { CadGeometryPreviewKind, CadGeometryPreviewResult } from "./cadGeometryPreview"
 
 export const CAD_GEOMETRY_REVIEW_SUMMARY_VERSION = "cad-geometry-review-summary.v1"
 
@@ -87,62 +87,88 @@ function boundsCheck(preview: CadGeometryPreviewResult): CadGeometryReviewCheck 
   }
 
   const hasFlatBounds = positiveFinite(bounds.lengthMm) && positiveFinite(bounds.widthMm)
-  const hasStepDepth = preview.previewKind !== "step_bounding_box" || positiveFinite(bounds.heightMm) || positiveFinite(bounds.thicknessMm)
-  if (!hasFlatBounds || !hasStepDepth) {
-    return {
-      key: "bounds",
-      status: "blocked",
-      label: "Bounds",
-      message: "Geometry bounds are incomplete.",
-      warnings: ["Geometry bounds must include positive length and width; STEP bounds also need height or thickness."],
-    }
-  }
 
-  if (preview.previewKind === "dxf_flat_pattern" && !positiveFinite(bounds.thicknessMm)) {
-    return {
-      key: "bounds",
-      status: "needs_review",
-      label: "Bounds",
-      message: "Flat pattern length and width are available, but thickness is missing.",
-      warnings: ["DXF flat pattern thickness should be confirmed from drawing or material metadata."],
+  switch (preview.previewKind) {
+    case "step_bounding_box": {
+      const hasDepth = positiveFinite(bounds.heightMm) || positiveFinite(bounds.thicknessMm)
+      if (!hasFlatBounds || !hasDepth) {
+        return incompleteBoundsCheck()
+      }
+      return readyBoundsCheck()
     }
+    case "dxf_flat_pattern":
+      if (!hasFlatBounds) {
+        return incompleteBoundsCheck()
+      }
+      if (!positiveFinite(bounds.thicknessMm)) {
+        return {
+          key: "bounds",
+          status: "needs_review",
+          label: "Bounds",
+          message: "Flat pattern length and width are available, but thickness is missing.",
+          warnings: ["DXF flat pattern thickness should be confirmed from drawing or material metadata."],
+        }
+      }
+      return readyBoundsCheck()
+    case "metadata_card":
+      if (!hasFlatBounds) {
+        return incompleteBoundsCheck()
+      }
+      return readyBoundsCheck()
+    default:
+      return assertNeverPreviewKind(preview.previewKind)
   }
+}
 
+function outlineCheck(preview: CadGeometryPreviewResult): CadGeometryReviewCheck {
+  switch (preview.previewKind) {
+    case "step_bounding_box":
+    case "dxf_flat_pattern":
+      if (preview.outlineSegments.length < 4) {
+        return {
+          key: "outline",
+          status: "blocked",
+          label: "Outline",
+          message: "Geometry outline is incomplete.",
+          warnings: ["Geometry outline needs at least four deterministic segments for the preview surface."],
+        }
+      }
+      return {
+        key: "outline",
+        status: "ready",
+        label: "Outline",
+        message: "Geometry outline is available.",
+        warnings: [],
+      }
+    case "metadata_card":
+      return {
+        key: "outline",
+        status: "blocked",
+        label: "Outline",
+        message: "Geometry outline is unavailable for metadata-only preview.",
+        warnings: ["No geometry outline segments were available from the preview descriptor."],
+      }
+    default:
+      return assertNeverPreviewKind(preview.previewKind)
+    }
+}
+
+function incompleteBoundsCheck(): CadGeometryReviewCheck {
+  return {
+    key: "bounds",
+    status: "blocked",
+    label: "Bounds",
+    message: "Geometry bounds are incomplete.",
+    warnings: ["Geometry bounds must include positive length and width; STEP bounds also need height or thickness."],
+  }
+}
+
+function readyBoundsCheck(): CadGeometryReviewCheck {
   return {
     key: "bounds",
     status: "ready",
     label: "Bounds",
     message: "Geometry bounds are available.",
-    warnings: [],
-  }
-}
-
-function outlineCheck(preview: CadGeometryPreviewResult): CadGeometryReviewCheck {
-  if (preview.previewKind === "metadata_card") {
-    return {
-      key: "outline",
-      status: "blocked",
-      label: "Outline",
-      message: "Geometry outline is unavailable for metadata-only preview.",
-      warnings: ["No geometry outline segments were available from the preview descriptor."],
-    }
-  }
-
-  if (preview.outlineSegments.length < 4) {
-    return {
-      key: "outline",
-      status: "blocked",
-      label: "Outline",
-      message: "Geometry outline is incomplete.",
-      warnings: ["Geometry outline needs at least four deterministic segments for the preview surface."],
-    }
-  }
-
-  return {
-    key: "outline",
-    status: "ready",
-    label: "Outline",
-    message: "Geometry outline is available.",
     warnings: [],
   }
 }
@@ -216,6 +242,11 @@ function nextActionFor(status: CadGeometryReviewStatus) {
 
 function positiveFinite(value: number | undefined): boolean {
   return typeof value === "number" && Number.isFinite(value) && value > 0
+}
+
+function assertNeverPreviewKind(previewKind: never): never {
+  const unexpectedPreviewKind: CadGeometryPreviewKind = previewKind
+  throw new Error(`Unhandled CAD geometry preview kind: ${unexpectedPreviewKind}`)
 }
 
 function unique(values: string[]): string[] {
