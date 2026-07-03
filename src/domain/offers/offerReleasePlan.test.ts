@@ -51,6 +51,25 @@ describe("offer release command plan", () => {
       },
       status: "ready",
     })
+    expect(plan.sendSummary).toEqual({
+      attachmentFileName: "OFFER-204-rev1.pdf",
+      blockerLabels: [],
+      commandLabels: [
+        "Draft offer email",
+        "Mark offer sent",
+        "Move RFQ to sent",
+        "Track offer follow-up",
+        "Create follow-up calendar event",
+        "Record workspace follow-up",
+      ],
+      followUpDueAt: "2026-06-24T06:00:00.000Z",
+      headline:
+        "Offer OFFER-204 is ready to send to nora@example.test with OFFER-204-rev1.pdf. Follow-up is scheduled for 2026-06-24T06:00:00.000Z.",
+      recipient: "nora@example.test",
+      status: "ready",
+      summaryVersion: "offer-release-send-summary.v1",
+      warningLabels: [],
+    })
     expect(plan.lifecyclePreview).toMatchObject({
       offerNumber: "OFFER-204",
       status: "sent",
@@ -182,6 +201,46 @@ describe("offer release command plan", () => {
     ])
     expect(plan.nextActions).toContain("Customer email is required before offer release.")
     expect(plan.nextActions).toContain("RFQ status must be ready before offer release; current status is estimating.")
+    expect(plan.sendSummary).toEqual({
+      blockerLabels: [
+        "Customer email is required before offer release.",
+        "RFQ status must be ready before offer release; current status is estimating.",
+      ],
+      commandLabels: ["Resolve release blockers"],
+      headline:
+        "Offer OFFER-204 release is blocked: Customer email is required before offer release. RFQ status must be ready before offer release; current status is estimating.",
+      status: "blocked",
+      summaryVersion: "offer-release-send-summary.v1",
+      warningLabels: [],
+    })
+  })
+
+  it("summarizes manager-review warning copy before release commands are built", () => {
+    const plan = buildOfferReleasePlan({
+      actor: "sales",
+      currentRfqStatus: "ready",
+      exportPackage: offerExportPackage(offerDraft()),
+      offer: offerDraft(),
+      offerId: "offer-204",
+      releaseGate: releaseGate({
+        issues: [releaseIssue("approval_needs_review", "Quote approval policy needs manager review.")],
+        nextActions: ["Quote approval policy needs manager review."],
+        status: "needs_review",
+        warningCount: 1,
+      }),
+      rfqId: "rfq-204",
+      timezone: "Europe/Helsinki",
+    })
+
+    expect(plan.sendSummary).toEqual({
+      blockerLabels: [],
+      commandLabels: ["Manager release review"],
+      headline: "Offer OFFER-204 needs manager review before sending: Quote approval policy needs manager review.",
+      recipient: "nora@example.test",
+      status: "needs_review",
+      summaryVersion: "offer-release-send-summary.v1",
+      warningLabels: ["Quote approval policy needs manager review."],
+    })
   })
 
   it("rejects release gates for a different offer", () => {
