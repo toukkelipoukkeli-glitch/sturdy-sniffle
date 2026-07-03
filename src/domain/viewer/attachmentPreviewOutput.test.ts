@@ -97,6 +97,11 @@ describe("attachment preview output", () => {
         },
         {
           adapterVersion: "cad-metadata.v1",
+          dimensions: {
+            lengthMm: 120,
+            widthMm: 80,
+            heightMm: 6,
+          },
           fileName: "housing.step",
           format: "step",
           metadataOnly: false,
@@ -108,6 +113,22 @@ describe("attachment preview output", () => {
         },
       ),
     ).toMatchObject({
+      geometryPreview: {
+        adapterVersion: "cad-geometry-preview.v1",
+        bounds: {
+          lengthMm: 120,
+          widthMm: 80,
+          heightMm: 6,
+        },
+        fileName: "housing.step",
+        format: "step",
+        previewKind: "step_bounding_box",
+        provider: "metadata_geometry",
+        renderer: "step-metadata-bounds",
+        status: "ready",
+        units: "mm",
+        warnings: [],
+      },
       kind: "step_model",
       label: "3D CAD preview",
       renderer: "step-metadata-card",
@@ -125,6 +146,11 @@ describe("attachment preview output", () => {
         },
         {
           adapterVersion: "cad-metadata.v1",
+          dimensions: {
+            lengthMm: 250,
+            widthMm: 120,
+            thicknessMm: 2,
+          },
           fileName: "flat-pattern.dxf",
           format: "dxf",
           metadataOnly: false,
@@ -136,6 +162,23 @@ describe("attachment preview output", () => {
         },
       ),
     ).toMatchObject({
+      geometryPreview: {
+        adapterVersion: "cad-geometry-preview.v1",
+        bounds: {
+          lengthMm: 250,
+          widthMm: 120,
+          thicknessMm: 2,
+        },
+        fileName: "flat-pattern.dxf",
+        format: "dxf",
+        layerCount: 1,
+        previewKind: "dxf_flat_pattern",
+        provider: "metadata_geometry",
+        renderer: "dxf-metadata-outline",
+        status: "ready",
+        units: "mm",
+        warnings: ["Check bend relief manually."],
+      },
       kind: "dxf_drawing",
       label: "DXF drawing preview",
       renderer: "dxf-metadata-card",
@@ -146,30 +189,30 @@ describe("attachment preview output", () => {
   })
 
   it("keeps deterministic fallbacks when CAD metadata is unsuitable", () => {
-    expect(
-      buildAttachmentPreviewOutput(
-        {
-          fileName: "ab-c.step",
-          kind: "cad",
-          contentType: "model/step",
-        },
-        {
-          adapterVersion: "cad-metadata.v1",
-          fileName: "a-bc.step",
-          format: "step",
-          metadataOnly: false,
-          previewKind: "cad",
-          provider: "heuristic",
-          status: "succeeded",
-          units: "mm",
-          warnings: [],
-        },
-      ),
-    ).toMatchObject({
+    const mismatchedStep = buildAttachmentPreviewOutput(
+      {
+        fileName: "ab-c.step",
+        kind: "cad",
+        contentType: "model/step",
+      },
+      {
+        adapterVersion: "cad-metadata.v1",
+        fileName: "a-bc.step",
+        format: "step",
+        metadataOnly: false,
+        previewKind: "cad",
+        provider: "heuristic",
+        status: "succeeded",
+        units: "mm",
+        warnings: [],
+      },
+    )
+    expect(mismatchedStep).toMatchObject({
       kind: "step_model",
       renderer: "step-viewer",
       status: "fallback",
     })
+    expect(mismatchedStep.geometryPreview).toBeUndefined()
 
     expect(
       buildAttachmentPreviewOutput(

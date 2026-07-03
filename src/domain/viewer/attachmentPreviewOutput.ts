@@ -1,5 +1,6 @@
 import type { RfqAttachmentDraft } from "../rfq/intake"
 import type { CadMetadataResult } from "../integrations/cadMetadata"
+import { createCadGeometryPreviewAdapter, type CadGeometryPreviewResult } from "./cadGeometryPreview"
 import { cadMetadataFileMatches } from "./cadMetadataFileMatch"
 
 export const ATTACHMENT_PREVIEW_OUTPUT_VERSION = "attachment-preview-output.v1"
@@ -24,8 +25,11 @@ export interface AttachmentPreviewOutput {
   thumbnailLabel: string
   renderer: string
   summary: string
+  geometryPreview?: CadGeometryPreviewResult
   warnings: string[]
 }
+
+const cadGeometryPreviewAdapter = createCadGeometryPreviewAdapter()
 
 export function buildAttachmentPreviewOutput(
   attachment: RfqAttachmentDraft,
@@ -114,6 +118,7 @@ function stepOutput(fileName: string, cadMetadata: CadMetadataResult | undefined
       renderer: "step-metadata-card",
       summary: "STEP metadata preview descriptor",
       thumbnailLabel: "3D CAD model",
+      geometryPreview: cadGeometryPreviewAdapter.build({ fileName, cadMetadata }),
       warnings: [...cadMetadata.warnings],
     }
   }
@@ -140,6 +145,7 @@ function dxfOutput(fileName: string, cadMetadata: CadMetadataResult | undefined)
       renderer: "dxf-metadata-card",
       summary: "DXF metadata preview descriptor",
       thumbnailLabel: "DXF drawing",
+      geometryPreview: cadGeometryPreviewAdapter.build({ fileName, cadMetadata }),
       warnings: [...cadMetadata.warnings],
     }
   }
