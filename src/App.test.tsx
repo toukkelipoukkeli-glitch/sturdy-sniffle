@@ -1585,6 +1585,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(history).toHaveTextContent("Confirm flat-pattern thickness")
     expect(history).toHaveTextContent("Review geometry provider warnings")
 
+    const pdfRow = within(screen.getByLabelText("Attachments")).getByText("FB-204-A.pdf").closest(".attachment-row")
+    expect(pdfRow).not.toBeNull()
+    await user.click(within(pdfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+    const pdfOverride = screen.getByLabelText("CAD review override")
+    await user.type(within(pdfOverride).getByLabelText("Material correction note"), "Use the same Al 6082 stock.")
+    await user.click(within(pdfOverride).getByRole("button", { name: "Save corrections" }))
+    expect(screen.getByLabelText("CAD geometry review action history")).toHaveTextContent("FB-204-A-flat.dxf")
+
     await waitFor(() => {
       const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
       const snapshot = stored.cadReviewOverridesById?.[stored.selectedId]?.geometryReviewActionSnapshot

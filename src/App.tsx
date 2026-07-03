@@ -1278,7 +1278,7 @@ function App() {
       [selectedId]: {
         acknowledgedFlags: current[selectedId]?.acknowledgedFlags ?? [],
         correctionNotes,
-        geometryReviewActionSnapshot,
+        geometryReviewActionSnapshot: geometryReviewActionSnapshot ?? current[selectedId]?.geometryReviewActionSnapshot,
         note: current[selectedId]?.note ?? "",
         reviewedAt: workspaceNow,
         reviewedBy: workspaceOperatorName,
@@ -1295,7 +1295,7 @@ function App() {
       [selectedId]: {
         acknowledgedFlags: [...partPreview.manufacturabilityFlags],
         correctionNotes: normalizeCadReviewCorrectionNotes(selectedCadCorrectionDraft) ?? current[selectedId]?.correctionNotes,
-        geometryReviewActionSnapshot,
+        geometryReviewActionSnapshot: geometryReviewActionSnapshot ?? current[selectedId]?.geometryReviewActionSnapshot,
         note:
           selectedCadReviewDraft.trim() ||
           `Operator acknowledged ${partPreview.manufacturabilityFlags.length} manufacturability flag${partPreview.manufacturabilityFlags.length === 1 ? "" : "s"}.`,
@@ -7506,7 +7506,7 @@ function PartPreviewPanel({
             ))}
           </div>
         ) : null}
-        {preview.manufacturabilityFlags.length > 0 ? (
+        {preview.manufacturabilityFlags.length > 0 || geometryReviewActionSnapshot ? (
           <div className="cad-review-override" aria-label="CAD review override">
             {override ? (
               <div className="cad-review-summary">
