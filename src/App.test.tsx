@@ -1565,7 +1565,6 @@ describe("FactoryBid workspace (component)", () => {
   })
 
   it("persists CAD geometry review action history with operator corrections", async () => {
-    const user = userEvent.setup()
     window.localStorage.clear()
     const { unmount } = render(<App />)
 
@@ -1573,11 +1572,11 @@ describe("FactoryBid workspace (component)", () => {
     const attachments = within(preview).getByLabelText("Attachments")
     const dxfRow = within(attachments).getByText("FB-204-A-flat.dxf").closest(".attachment-row")
     expect(dxfRow).not.toBeNull()
-    await user.click(within(dxfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+    fireEvent.click(within(dxfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
 
     const override = screen.getByLabelText("CAD review override")
-    await user.type(within(override).getByLabelText("Dimension correction note"), "Confirm 6 mm plate thickness before quoting.")
-    await user.click(within(override).getByRole("button", { name: "Save corrections" }))
+    fireEvent.change(within(override).getByLabelText("Dimension correction note"), { target: { value: "Confirm 6 mm plate thickness before quoting." } })
+    fireEvent.click(within(override).getByRole("button", { name: "Save corrections" }))
 
     const history = screen.getByLabelText("CAD geometry review action history")
     expect(history).toHaveTextContent("FB-204-A-flat.dxf")
@@ -1587,10 +1586,10 @@ describe("FactoryBid workspace (component)", () => {
 
     const pdfRow = within(screen.getByLabelText("Attachments")).getByText("FB-204-A.pdf").closest(".attachment-row")
     expect(pdfRow).not.toBeNull()
-    await user.click(within(pdfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
+    fireEvent.click(within(pdfRow as HTMLElement).getByRole("button", { name: "Set primary" }))
     const pdfOverride = screen.getByLabelText("CAD review override")
-    await user.type(within(pdfOverride).getByLabelText("Material correction note"), "Use the same Al 6082 stock.")
-    await user.click(within(pdfOverride).getByRole("button", { name: "Save corrections" }))
+    fireEvent.change(within(pdfOverride).getByLabelText("Material correction note"), { target: { value: "Use the same Al 6082 stock." } })
+    fireEvent.click(within(pdfOverride).getByRole("button", { name: "Save corrections" }))
     expect(screen.getByLabelText("CAD geometry review action history")).toHaveTextContent("FB-204-A-flat.dxf")
 
     await waitFor(() => {
