@@ -76,6 +76,7 @@ export interface OfferReleaseSendSummary {
   blockerLabels: string[]
   warningLabels: string[]
   attachmentFileName?: string
+  attachmentFileNames?: string[]
   followUpDueAt?: string
   recipient?: string
 }
@@ -232,7 +233,8 @@ export function buildOfferReleaseSendSummary(input: {
   const offerNumber = nonBlank(input.offer.offerNumber, "offer.offerNumber")
   const emailCommand = input.commands.find((command) => command.kind === "email_draft")
   const recipient = stringPayload(emailCommand, "to") ?? optionalTrim(input.offer.customer.email)
-  const attachmentFileName = firstStringPayload(emailCommand, "attachments")
+  const attachmentFileNames = stringArrayPayload(emailCommand, "attachments")
+  const attachmentFileName = attachmentFileNames[0]
   const followUpDueAt = input.followUpDueAt ? normalizeIsoTimestamp(input.followUpDueAt, "followUpDueAt") : undefined
   const commandLabels = input.commands.map((command) => nonBlank(command.label, "command.label"))
   const blockerLabels = input.status === "blocked" ? uniqueNonBlank(input.nextActions ?? []) : []
@@ -254,6 +256,7 @@ export function buildOfferReleaseSendSummary(input: {
     status: input.status,
     warningLabels,
     ...(attachmentFileName ? { attachmentFileName } : {}),
+    ...(attachmentFileNames.length > 0 ? { attachmentFileNames } : {}),
     ...(followUpDueAt ? { followUpDueAt } : {}),
     ...(recipient ? { recipient } : {}),
   }
@@ -286,9 +289,9 @@ function stringPayload(command: OfferReleaseCommand | undefined, key: string): s
   return typeof value === "string" ? optionalTrim(value) : undefined
 }
 
-function firstStringPayload(command: OfferReleaseCommand | undefined, key: string): string | undefined {
+function stringArrayPayload(command: OfferReleaseCommand | undefined, key: string): string[] {
   const value = command?.payload?.[key]
-  return Array.isArray(value) && typeof value[0] === "string" ? optionalTrim(value[0]) : undefined
+  return Array.isArray(value) ? value.flatMap((item) => (typeof item === "string" && optionalTrim(item) ? [item.trim()] : [])) : []
 }
 
 function uniqueNonBlank(values: string[]): string[] {

@@ -6,7 +6,7 @@ import type { QuoteReleaseGateDecision, QuoteReleaseGateIssue } from "../workspa
 import { QUOTE_RELEASE_GATE_VERSION } from "../workspace/quoteReleaseGate"
 import { buildCncOfferDraft, type OfferDraft } from "./offer"
 import { buildOfferExportPackage, type OfferExportPackage } from "./offerExportPackage"
-import { buildOfferReleasePlan } from "./offerReleasePlan"
+import { buildOfferReleasePlan, buildOfferReleaseSendSummary } from "./offerReleasePlan"
 
 describe("offer release command plan", () => {
   it("plans deterministic email, lifecycle, calendar, and workspace commands for a clean release gate", () => {
@@ -53,6 +53,7 @@ describe("offer release command plan", () => {
     })
     expect(plan.sendSummary).toEqual({
       attachmentFileName: "OFFER-204-rev1.pdf",
+      attachmentFileNames: ["OFFER-204-rev1.pdf"],
       blockerLabels: [],
       commandLabels: [
         "Draft offer email",
@@ -240,6 +241,34 @@ describe("offer release command plan", () => {
       status: "needs_review",
       summaryVersion: "offer-release-send-summary.v1",
       warningLabels: ["Quote approval policy needs manager review."],
+    })
+  })
+
+  it("preserves every email attachment name in send-summary metadata", () => {
+    expect(
+      buildOfferReleaseSendSummary({
+        commands: [
+          {
+            detail: "Draft customer email to nora@example.test.",
+            key: "email-draft",
+            kind: "email_draft",
+            label: "Draft offer email",
+            payload: {
+              attachments: ["OFFER-204-rev1.pdf", "terms-appendix.pdf"],
+              to: "nora@example.test",
+            },
+            status: "ready",
+          },
+        ],
+        offer: offerDraft(),
+        status: "ready",
+      }),
+    ).toMatchObject({
+      attachmentFileName: "OFFER-204-rev1.pdf",
+      attachmentFileNames: ["OFFER-204-rev1.pdf", "terms-appendix.pdf"],
+      headline: "Offer OFFER-204 is ready to send to nora@example.test with OFFER-204-rev1.pdf.",
+      recipient: "nora@example.test",
+      status: "ready",
     })
   })
 
