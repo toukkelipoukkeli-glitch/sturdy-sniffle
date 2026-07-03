@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-02 Europe/Helsinki.
+Last refreshed: 2026-07-03 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `35f85a2` (`Render browser image attachment previews (#226)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F browser-PDF preview surface for drawing attachments.
-- In-flight PR at this checkpoint: `codex/pdf-attachment-preview` renders safe browser-native PDF drawing previews in the part review viewport while STEP/DXF parsing remains behind deterministic fallback descriptors.
+- Main branch checkpoint: `0e229f7` (`Render browser PDF attachment previews (#227)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F STEP/DXF adapter-backed preview status surface.
+- In-flight PR at this checkpoint: `codex/cad-adapter-preview-status` lets successful CAD metadata adapter results mark STEP/DXF preview descriptors ready while parser failures remain deterministic nonfatal fallbacks.
 - Latest merged sequence:
+  - `#227` part review attachments now render safe browser-native PDF drawing previews with a deterministic load-time fallback watchdog.
   - `#226` part review attachments now render safe browser-native image previews with deterministic load-failure fallback handling.
   - `#225` non-CNC registry previews now surface local mutation apply execution history with Browser/Playwright QA fallback evidence and stabilized long App component tests.
   - `#224` non-CNC application mutation apply execution audit records now have deterministic local persistence snapshots with seeded-record validation and deduplication.
@@ -203,9 +204,9 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Operators can choose the primary preview attachment and persist that choice.
    - Operators can save durable dimension/material/process correction notes; those notes now appear as explicit quote assumptions without changing quote math or raw RFQ inputs.
    - Deterministic per-type preview and thumbnail labels distinguish CAD models, drawings, photos, spreadsheets, and metadata-only attachments.
-   - Safe browser-native image attachments now render from inline/blob preview sources in the part review viewport.
-   - Current branch adds browser-native PDF drawing previews from safe inline/blob sources while keeping parser failures nonfatal.
-   - Next steps: add richer thumbnail/preview adapter outputs for real STEP/DXF handling while keeping parser failures nonfatal.
+   - Safe browser-native image and PDF drawing attachments now render from inline/blob preview sources in the part review viewport.
+   - Current branch marks STEP/DXF preview descriptors ready when the CAD metadata adapter succeeds, while parser failures remain deterministic placeholders.
+   - Next steps: add richer thumbnail or geometry preview adapters for real STEP/DXF rendering while keeping parser failures nonfatal.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.
 
