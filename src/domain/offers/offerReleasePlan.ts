@@ -9,6 +9,7 @@ import type { OfferExportPackage } from "./offerExportPackage"
 import { buildOfferLifecycleTimeline, type OfferLifecycleEventInput, type OfferLifecycleTimeline } from "./offerLifecycle"
 
 export const OFFER_RELEASE_PLAN_VERSION = "offer-release-plan.v1"
+export const OFFER_RELEASE_SEND_SUMMARY_VERSION = "offer-release-send-summary.v1"
 
 export type OfferReleasePlanStatus = "blocked" | "needs_review" | "ready"
 export type OfferReleasePlanMode = "automatic" | "blocked" | "manager_review_required" | "manager_reviewed"
@@ -61,9 +62,23 @@ export interface OfferReleasePlan {
   lifecycleEvents: OfferLifecycleEventInput[]
   workspaceActions: WorkspaceActionRecord[]
   nextActions: string[]
+  sendSummary: OfferReleaseSendSummary
   warnings: string[]
   calendarPlan?: CalendarRfqPlan
   lifecyclePreview?: OfferLifecycleTimeline
+}
+
+export interface OfferReleaseSendSummary {
+  summaryVersion: typeof OFFER_RELEASE_SEND_SUMMARY_VERSION
+  status: OfferReleasePlanStatus
+  headline: string
+  commandLabels: string[]
+  blockerLabels: string[]
+  warningLabels: string[]
+  attachmentFileName?: string
+  attachmentFileNames?: string[]
+  followUpDueAt?: string
+  recipient?: string
 }
 
 export function buildOfferReleasePlan(input: BuildOfferReleasePlanInput): OfferReleasePlan {
@@ -193,10 +208,94 @@ function basePlan(input: {
     offerNumber: input.input.offer.offerNumber,
     releaseAt: input.releaseAt,
     rfqId: input.input.rfqId.trim(),
+    sendSummary: buildOfferReleaseSendSummary({
+      commands: input.commands,
+      followUpDueAt: input.input.followUpDueAt,
+      nextActions: input.nextActions,
+      offer: input.input.offer,
+      status: input.status,
+      warnings: input.warnings ?? [],
+    }),
     status: input.status,
     warnings: input.warnings ?? [],
     workspaceActions: [],
   }
+}
+
+export function buildOfferReleaseSendSummary(input: {
+  commands: OfferReleaseCommand[]
+  offer: OfferDraft
+  status: OfferReleasePlanStatus
+  followUpDueAt?: string
+  nextActions?: string[]
+  warnings?: string[]
+}): OfferReleaseSendSummary {
+  const offerNumber = nonBlank(input.offer.offerNumber, "offer.offerNumber")
+  const emailCommand = input.commands.find((command) => command.kind === "email_draft")
+  const recipient = stringPayload(emailCommand, "to") ?? optionalTrim(input.offer.customer.email)
+  const attachmentFileNames = stringArrayPayload(emailCommand, "attachments")
+  const attachmentFileName = attachmentFileNames[0]
+  const followUpDueAt = input.followUpDueAt ? normalizeIsoTimestamp(input.followUpDueAt, "followUpDueAt") : undefined
+  const commandLabels = input.commands.map((command) => nonBlank(command.label, "command.label"))
+  const blockerLabels = input.status === "blocked" ? uniqueNonBlank(input.nextActions ?? []) : []
+  const warningLabels = input.status === "needs_review" || input.status === "ready" ? uniqueNonBlank(input.warnings ?? []) : []
+
+  return {
+    summaryVersion: OFFER_RELEASE_SEND_SUMMARY_VERSION,
+    blockerLabels,
+    commandLabels,
+    headline: releaseSendHeadline({
+      attachmentFileName,
+      blockerLabels,
+      followUpDueAt,
+      offerNumber,
+      recipient,
+      status: input.status,
+      warningLabels,
+    }),
+    status: input.status,
+    warningLabels,
+    ...(attachmentFileName ? { attachmentFileName } : {}),
+    ...(attachmentFileNames.length > 0 ? { attachmentFileNames } : {}),
+    ...(followUpDueAt ? { followUpDueAt } : {}),
+    ...(recipient ? { recipient } : {}),
+  }
+}
+
+function releaseSendHeadline(input: {
+  offerNumber: string
+  status: OfferReleasePlanStatus
+  attachmentFileName?: string
+  blockerLabels: string[]
+  followUpDueAt?: string
+  recipient?: string
+  warningLabels: string[]
+}): string {
+  if (input.status === "blocked") {
+    return `Offer ${input.offerNumber} release is blocked: ${input.blockerLabels.join(" ") || "resolve release blockers."}`
+  }
+  if (input.status === "needs_review") {
+    return `Offer ${input.offerNumber} needs manager review before sending: ${input.warningLabels.join(" ") || "review release warnings."}`
+  }
+
+  const recipient = input.recipient ?? "the customer"
+  const attachment = input.attachmentFileName ? ` with ${input.attachmentFileName}` : ""
+  const followUp = input.followUpDueAt ? ` Follow-up is scheduled for ${input.followUpDueAt}.` : ""
+  return `Offer ${input.offerNumber} is ready to send to ${recipient}${attachment}.${followUp}`.trim()
+}
+
+function stringPayload(command: OfferReleaseCommand | undefined, key: string): string | undefined {
+  const value = command?.payload?.[key]
+  return typeof value === "string" ? optionalTrim(value) : undefined
+}
+
+function stringArrayPayload(command: OfferReleaseCommand | undefined, key: string): string[] {
+  const value = command?.payload?.[key]
+  return Array.isArray(value) ? value.flatMap((item) => (typeof item === "string" && optionalTrim(item) ? [item.trim()] : [])) : []
+}
+
+function uniqueNonBlank(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))]
 }
 
 function validateReleaseReferences(input: BuildOfferReleasePlanInput, rfqId: string) {
