@@ -21,6 +21,7 @@ export interface OfferAlternateQuoteInput {
 }
 
 export interface OfferAlternate {
+  customerSummary: string
   id: string
   label: string
   partNumber: string
@@ -82,6 +83,11 @@ export interface OfferExportPackage {
   revisionSummary: OfferRevisionSummary
   pdf: OfferPdfExportVerification
 }
+
+type AlternateCustomerSummaryInput = Pick<
+  OfferAlternate,
+  "label" | "leadTimeDeltaLabel" | "leadTimeLabel" | "priceDeltaLabel" | "recommendation" | "totalLabel"
+>
 
 const requiredPdfSections: OfferDocumentSectionKind[] = ["summary", "pricing", "assumptions", "revision_history", "terms"]
 
@@ -155,24 +161,37 @@ function buildOfferAlternates(
 
     const priceDeltaCents = input.quote.totalCents - baseItem.totalCents
     const leadTimeDeltaDays = input.quote.leadTimeDays - baseItem.leadTimeDays
+    const totalLabel = formatOfferMoney(input.quote.totalCents, input.quote.currency)
+    const priceDeltaLabel = formatMoneyDelta(priceDeltaCents, input.quote.currency)
+    const leadTimeLabel = `${input.quote.leadTimeDays} working days`
+    const leadTimeDeltaLabel = formatDayDelta(leadTimeDeltaDays)
+    const recommendation = buildRecommendation(priceDeltaCents, leadTimeDeltaDays, input.quote.warnings.length)
 
     return {
+      customerSummary: buildAlternateCustomerSummary({
+        label,
+        totalLabel,
+        priceDeltaLabel,
+        leadTimeLabel,
+        leadTimeDeltaLabel,
+        recommendation,
+      }),
       id,
       label,
       partNumber: input.quote.partNumber,
       quantity: input.quote.quantity,
       currency: input.quote.currency,
       totalCents: input.quote.totalCents,
-      totalLabel: formatOfferMoney(input.quote.totalCents, input.quote.currency),
+      totalLabel,
       unitPriceCents: input.quote.unitPriceCents,
       priceDeltaCents,
-      priceDeltaLabel: formatMoneyDelta(priceDeltaCents, input.quote.currency),
+      priceDeltaLabel,
       leadTimeDays: input.quote.leadTimeDays,
-      leadTimeLabel: `${input.quote.leadTimeDays} working days`,
+      leadTimeLabel,
       leadTimeDeltaDays,
-      leadTimeDeltaLabel: formatDayDelta(leadTimeDeltaDays),
+      leadTimeDeltaLabel,
       warningCount: input.quote.warnings.length,
-      recommendation: buildRecommendation(priceDeltaCents, leadTimeDeltaDays, input.quote.warnings.length),
+      recommendation,
       note: optionalTrim(input.note),
     }
   })
@@ -180,6 +199,7 @@ function buildOfferAlternates(
 
 function toDocumentAlternate(alternate: OfferAlternate): OfferDocumentAlternate {
   return {
+    customerSummary: alternate.customerSummary,
     label: alternate.label,
     totalLabel: alternate.totalLabel,
     priceDeltaLabel: alternate.priceDeltaLabel,
@@ -188,6 +208,17 @@ function toDocumentAlternate(alternate: OfferAlternate): OfferDocumentAlternate 
     recommendation: alternate.recommendation,
     note: alternate.note,
   }
+}
+
+function buildAlternateCustomerSummary({
+  label,
+  leadTimeDeltaLabel,
+  leadTimeLabel,
+  priceDeltaLabel,
+  recommendation,
+  totalLabel,
+}: AlternateCustomerSummaryInput): string {
+  return `${label}: ${totalLabel} (${priceDeltaLabel} vs base), ${leadTimeLabel} (${leadTimeDeltaLabel} vs base). ${recommendation}`
 }
 
 function buildRevisionSummary(revisions: OfferRevision[]): OfferRevisionSummary {
