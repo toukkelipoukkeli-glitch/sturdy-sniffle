@@ -213,7 +213,12 @@ import {
   type ManualMaterialKey,
   type ManualPriority,
 } from "./domain/rfq/manualRfq"
-import { buildPartPreviewModel, type PartPreviewModel, type PartPreviewMode } from "./domain/viewer/partPreview"
+import {
+  buildPartPreviewModel,
+  type PartPreviewCadMetadata,
+  type PartPreviewModel,
+  type PartPreviewMode,
+} from "./domain/viewer/partPreview"
 import {
   buildCapacityCommitmentPlan,
   type CapacityCommitmentPlan,
@@ -7255,6 +7260,18 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
   )
 }
 
+function normalizePreviewFileToken(fileName: string) {
+  return fileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
+function metadataFileMatches(metadataFileName: string, attachmentFileName: string) {
+  return normalizePreviewFileToken(metadataFileName) === normalizePreviewFileToken(attachmentFileName)
+}
+
+function isCadMetadataPreviewRenderer(renderer: string) {
+  return renderer === "step-metadata-card" || renderer === "dxf-metadata-card"
+}
+
 function PartPreviewPanel({
   cadCorrectionDraft,
   cadReviewDraft,
@@ -7291,6 +7308,12 @@ function PartPreviewPanel({
     primaryAttachment?.previewOutput.renderer === "browser-pdf" && primaryAttachment.previewOutput.status === "ready"
       ? primaryAttachment.previewOutput.sourceUrl
       : undefined
+  const primaryCadMetadata =
+    primaryAttachment &&
+    primaryAttachment.previewOutput.status === "ready" &&
+    isCadMetadataPreviewRenderer(primaryAttachment.previewOutput.renderer)
+      ? preview.cadMetadata.find((metadata) => metadataFileMatches(metadata.fileName, primaryAttachment.fileName))
+      : undefined
   const [failedPrimaryPreviewSource, setFailedPrimaryPreviewSource] = useState<string | undefined>()
   const [loadedPrimaryPdfSource, setLoadedPrimaryPdfSource] = useState<string | undefined>()
   const canRenderPrimaryImage = Boolean(primaryImageSource && failedPrimaryPreviewSource !== primaryImageSource)
@@ -7326,6 +7349,8 @@ function PartPreviewPanel({
             src={primaryPdfSource}
             title={`${preview.primaryAttachmentName ?? preview.partNumber} PDF preview`}
           />
+        ) : primaryAttachment && primaryCadMetadata ? (
+          <CadMetadataPreviewCard attachmentFileName={primaryAttachment.fileName} metadata={primaryCadMetadata} preview={preview} />
         ) : (
           <div className="preview-icon" aria-hidden="true">
             <Cuboid />
@@ -7494,6 +7519,39 @@ function PartPreviewPanel({
         ) : null}
       </div>
     </section>
+  )
+}
+
+function CadMetadataPreviewCard({
+  attachmentFileName,
+  metadata,
+  preview,
+}: {
+  attachmentFileName: string
+  metadata: PartPreviewCadMetadata
+  preview: PartPreviewModel
+}) {
+  return (
+    <div className="preview-metadata-card" aria-label={`${attachmentFileName} adapter preview`}>
+      <div className="preview-metadata-card-heading">
+        <span>{metadata.format.toUpperCase()}</span>
+        <strong>{humanizeKey(metadata.status)}</strong>
+      </div>
+      <dl className="preview-metadata-grid">
+        <div>
+          <dt>Material</dt>
+          <dd>{metadata.materialText ?? preview.metadata.materialText ?? "Unknown"}</dd>
+        </div>
+        <div>
+          <dt>Process</dt>
+          <dd>{metadata.process ? humanizeKey(metadata.process) : preview.metadata.process ? humanizeKey(preview.metadata.process) : "Unknown"}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>{humanizeKey(metadata.provider)}</dd>
+        </div>
+      </dl>
+    </div>
   )
 }
 
