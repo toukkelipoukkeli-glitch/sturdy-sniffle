@@ -7,7 +7,15 @@ import { pomGuideFixture } from "../quoting/plastics.fixtures"
 import { calculateQuote, type QuoteEngineResult } from "../quoting/registry"
 import { laserBentBracketFixture } from "../quoting/sheetMetal.fixtures"
 import { toolSteelKeywayFixture } from "../quoting/wireEdm.fixtures"
-import { appendOfferRevision, buildCncOfferDraft, buildOfferDraft, formatOfferMoney, formatOfferRevisionSummary, renderOfferText } from "./offer"
+import {
+  appendOfferRevision,
+  buildCncOfferDraft,
+  buildOfferDraft,
+  formatOfferMoney,
+  formatOfferRevisionSummary,
+  formatOfferRevisionTimeline,
+  renderOfferText,
+} from "./offer"
 
 const quoteEngineOfferCases: Array<{ quote: QuoteEngineResult; processLabel: string }> = [
   {
@@ -175,6 +183,28 @@ describe("offer builder", () => {
         },
       ]),
     ).toBe("Revision 4 (2026-06-24) by Sari: Imported customer-requested validity update.")
+  })
+
+  it("formats deterministic customer revision timeline copy", () => {
+    expect(
+      formatOfferRevisionTimeline([
+        {
+          revision: 3,
+          createdAt: "2026-06-22",
+          createdBy: "Mika",
+          reason: "Updated machining assumptions after drawing review.",
+        },
+        {
+          revision: 1,
+          createdAt: "2026-06-19",
+          createdBy: "FactoryBid OS",
+          reason: "Initial draft",
+        },
+      ]),
+    ).toEqual([
+      "Revision 1: Initial draft (2026-06-19, FactoryBid OS)",
+      "Revision 3: Updated machining assumptions after drawing review. (2026-06-22, Mika)",
+    ])
   })
 
   it("rejects impossible validity windows", () => {

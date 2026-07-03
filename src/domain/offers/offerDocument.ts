@@ -1,4 +1,4 @@
-import { formatOfferMoney, formatOfferRevisionSummary, type OfferDraft, type OfferLineItem } from "./offer"
+import { formatOfferMoney, formatOfferRevisionSummary, formatOfferRevisionTimeline, type OfferDraft, type OfferLineItem } from "./offer"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 
 export const OFFER_DOCUMENT_VERSION = "offer-document.v1"
@@ -229,6 +229,7 @@ function buildRevisionHistorySection(offer: OfferDraft): OfferDocumentSection {
         value: formatOfferRevisionSummary(offer.revisionHistory),
       },
     ],
+    body: formatOfferRevisionTimeline(offer.revisionHistory).map((line) => `- ${line}`),
     table: {
       columns: ["Rev", "Date", "By", "Reason"],
       rows: offer.revisionHistory.map((revision) => [

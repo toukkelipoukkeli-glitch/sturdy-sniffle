@@ -80,6 +80,7 @@ describe("offer export fixtures", () => {
       Current revision: Revision 1 (2026-06-19) by FactoryBid OS: Initial draft
       Rev | Date | By | Reason
       1 | 2026-06-19 | FactoryBid OS | Initial draft
+      - Revision 1: Initial draft (2026-06-19, FactoryBid OS)
 
       Notes
       Rush lead time included.

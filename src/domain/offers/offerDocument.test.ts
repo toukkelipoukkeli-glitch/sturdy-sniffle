@@ -74,6 +74,9 @@ describe("offer document", () => {
         value: "Revision 1 (2026-06-19) by FactoryBid OS: Initial draft",
       },
     ])
+    expect(document.sections.find((section) => section.key === "revision_history")?.body).toEqual([
+      "- Revision 1: Initial draft (2026-06-19, FactoryBid OS)",
+    ])
     expect(document.footerLines).toEqual([
       "Prices exclude VAT unless otherwise stated.",
       "Lead times start after written approval and final drawing release.",

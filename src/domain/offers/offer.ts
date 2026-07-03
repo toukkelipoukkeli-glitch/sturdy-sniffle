@@ -232,11 +232,22 @@ export function renderOfferText(offer: OfferDraft): string {
 }
 
 export function formatOfferRevisionSummary(revisions: OfferRevision[]): string {
+  assertHasRevisions(revisions)
+  const latest = revisions.reduce((currentLatest, revision) => (revision.revision >= currentLatest.revision ? revision : currentLatest))
+  return `Revision ${latest.revision} (${latest.createdAt}) by ${latest.createdBy}: ${latest.reason}`
+}
+
+export function formatOfferRevisionTimeline(revisions: OfferRevision[]): string[] {
+  assertHasRevisions(revisions)
+  return [...revisions]
+    .sort((left, right) => left.revision - right.revision)
+    .map((revision) => `Revision ${revision.revision}: ${revision.reason} (${revision.createdAt}, ${revision.createdBy})`)
+}
+
+function assertHasRevisions(revisions: OfferRevision[]): void {
   if (revisions.length === 0) {
     throw new Error("offer must include at least one revision")
   }
-  const latest = revisions.reduce((currentLatest, revision) => (revision.revision >= currentLatest.revision ? revision : currentLatest))
-  return `Revision ${latest.revision} (${latest.createdAt}) by ${latest.createdBy}: ${latest.reason}`
 }
 
 export function formatOfferMoney(cents: number, currency: QuoteEngineCurrencyCode): string {

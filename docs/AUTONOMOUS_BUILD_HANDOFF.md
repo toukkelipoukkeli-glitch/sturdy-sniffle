@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5e734ba` (`Persist CAD review action history (#238)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow CAD review override event-history and offer summary follow-up.
-- In-flight PR at this checkpoint: `codex/cad-override-events-offer-summary` persists compact CAD override audit events for saved corrections, acknowledged flags, and reopened review state, and adds deterministic customer-facing offer revision summary metadata/text while quote math, real parsers, and release behavior stay unchanged.
+- Main branch checkpoint: `c9bd21e` (`Add CAD override events and offer revision summaries (#239)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing a narrow offer revision-history copy follow-up.
+- In-flight PR at this checkpoint: `codex/offer-revision-history-copy` adds deterministic multi-revision customer copy to offer documents/export metadata while quote math and release behavior stay unchanged.
 - Latest merged sequence:
+  - `#239` persists compact CAD override audit events for saved corrections, acknowledged flags, and reopened review state, and adds deterministic customer-facing offer revision summary metadata/text.
   - `#238` persists CAD geometry review action context into operator override history so saved CAD corrections can be traced after reloads while real parsers stay deferred.
   - `#237` adds deterministic operator action hints for CAD geometry review warnings/blockers, including a DXF needs-review fixture.
   - `#236` surfaces deterministic geometry review summaries in the part preview viewport and attachment thumbnail surfaces.
@@ -227,8 +228,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - `#236` surfaces those geometry review summaries in the viewport and attachment thumbnails.
    - `#237` adds operator action hints for geometry review warnings/blockers and a DXF needs-review preview fixture.
    - `#238` wires selected action hints into persisted operator override history.
-   - Current branch persists compact operator override event history and adds customer-facing offer revision summary metadata/text.
-   - Next steps: eventually swap in real parser providers and add richer multi-revision customer copy.
+   - `#239` persists compact operator override event history and adds customer-facing offer revision summary metadata/text.
+   - Next steps: eventually swap in real parser providers.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA for UI-facing follow-up slices.
 
@@ -247,6 +248,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Keep deterministic plain-text and PDF-ready content as source of truth.
    - Add render/export verification without making AI required.
    - Record export warnings and assumptions in offer history.
+   - Current branch adds deterministic multi-revision customer copy to the revision history section/export metadata.
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
