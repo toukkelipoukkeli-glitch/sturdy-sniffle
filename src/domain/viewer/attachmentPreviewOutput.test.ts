@@ -149,6 +149,31 @@ describe("attachment preview output", () => {
     expect(
       buildAttachmentPreviewOutput(
         {
+          fileName: "ab-c.step",
+          kind: "cad",
+          contentType: "model/step",
+        },
+        {
+          adapterVersion: "cad-metadata.v1",
+          fileName: "a-bc.step",
+          format: "step",
+          metadataOnly: false,
+          previewKind: "cad",
+          provider: "heuristic",
+          status: "succeeded",
+          units: "mm",
+          warnings: [],
+        },
+      ),
+    ).toMatchObject({
+      kind: "step_model",
+      renderer: "step-viewer",
+      status: "fallback",
+    })
+
+    expect(
+      buildAttachmentPreviewOutput(
+        {
           fileName: "housing.step",
           kind: "cad",
           contentType: "model/step",

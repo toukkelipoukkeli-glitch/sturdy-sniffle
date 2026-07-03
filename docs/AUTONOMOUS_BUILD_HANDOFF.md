@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `856792d` (`Mark CAD metadata previews ready (#228)`).
-- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F STEP/DXF adapter-backed viewport surface.
-- In-flight PR at this checkpoint: `codex/cad-metadata-preview-card` surfaces successful STEP/DXF metadata adapter results as compact primary viewport preview cards while parser failures remain deterministic placeholders.
+- Main branch checkpoint: `3e5c2a4` (`Surface CAD metadata preview cards (#229)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing the follow-up Slice F CAD metadata filename-matching hardening.
+- In-flight PR at this checkpoint: `codex/cad-metadata-filename-matching` consolidates STEP/DXF metadata filename matching into a shared boundary-aware helper for descriptor readiness, part preview metadata selection, and the viewport metadata card.
 - Latest merged sequence:
+  - `#229` ready STEP/DXF metadata adapter results now render compact primary viewport metadata cards.
   - `#228` successful CAD metadata adapter results now mark STEP/DXF preview descriptors ready while parser failures remain deterministic nonfatal fallbacks.
   - `#227` part review attachments now render safe browser-native PDF drawing previews with a deterministic load-time fallback watchdog.
   - `#226` part review attachments now render safe browser-native image previews with deterministic load-failure fallback handling.
@@ -207,7 +208,8 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
    - Deterministic per-type preview and thumbnail labels distinguish CAD models, drawings, photos, spreadsheets, and metadata-only attachments.
    - Safe browser-native image and PDF drawing attachments now render from inline/blob preview sources in the part review viewport.
    - Successful CAD metadata adapter results now mark STEP/DXF preview descriptors ready, while parser failures remain deterministic placeholders.
-   - Current branch surfaces ready STEP/DXF metadata adapter results as compact primary viewport metadata cards.
+   - Ready STEP/DXF metadata adapter results now render as compact primary viewport metadata cards.
+   - Current branch hardens CAD metadata filename matching with a shared boundary-aware helper so distinct filename segments cannot collapse into the same attachment.
    - Next steps: add richer thumbnail or geometry preview adapters for real STEP/DXF rendering while keeping parser failures nonfatal.
    - Keep real geometry parsing behind adapter boundaries and use deterministic fallback states.
    - Include Browser/Playwright desktop and mobile QA because this is UI-facing.

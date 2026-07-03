@@ -1,5 +1,6 @@
 import type { RfqAttachmentDraft } from "../rfq/intake"
 import type { CadMetadataResult } from "../integrations/cadMetadata"
+import { cadMetadataFileMatches } from "./cadMetadataFileMatch"
 
 export const ATTACHMENT_PREVIEW_OUTPUT_VERSION = "attachment-preview-output.v1"
 
@@ -161,15 +162,11 @@ function cadMetadataReadyFor(
 ): metadata is CadMetadataResult {
   return Boolean(
     metadata &&
-      normalizeFileToken(metadata.fileName) === normalizeFileToken(fileName) &&
+      cadMetadataFileMatches(metadata.fileName, fileName) &&
       metadata.status === "succeeded" &&
       !metadata.metadataOnly &&
       metadata.format === format,
   )
-}
-
-function normalizeFileToken(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
 }
 
 function imageOutput(attachment: RfqAttachmentDraft, fileName: string): AttachmentPreviewOutput {
