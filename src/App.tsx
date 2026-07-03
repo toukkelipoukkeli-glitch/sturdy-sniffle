@@ -7260,12 +7260,31 @@ function ScenarioComparisonPanel({ comparison }: { comparison: QuoteComparisonRe
   )
 }
 
-function normalizePreviewFileToken(fileName: string) {
-  return fileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "")
+function splitPreviewFileName(fileName: string) {
+  const normalizedFileName = fileName.trim().toLowerCase()
+  const extensionStart = normalizedFileName.lastIndexOf(".")
+  const stem = extensionStart > 0 ? normalizedFileName.slice(0, extensionStart) : normalizedFileName
+  const extension = extensionStart > 0 ? normalizedFileName.slice(extensionStart + 1) : ""
+
+  return {
+    extension,
+    normalizedFileName,
+    stemSegments: stem.split(/[^a-z0-9]+/).filter(Boolean),
+  }
 }
 
 function metadataFileMatches(metadataFileName: string, attachmentFileName: string) {
-  return normalizePreviewFileToken(metadataFileName) === normalizePreviewFileToken(attachmentFileName)
+  const metadataFile = splitPreviewFileName(metadataFileName)
+  const attachmentFile = splitPreviewFileName(attachmentFileName)
+  if (metadataFile.normalizedFileName === attachmentFile.normalizedFileName) {
+    return true
+  }
+
+  return (
+    metadataFile.extension === attachmentFile.extension &&
+    metadataFile.stemSegments.length === attachmentFile.stemSegments.length &&
+    metadataFile.stemSegments.every((segment, index) => segment === attachmentFile.stemSegments[index])
+  )
 }
 
 function isCadMetadataPreviewRenderer(renderer: string) {
@@ -7531,6 +7550,12 @@ function CadMetadataPreviewCard({
   metadata: PartPreviewCadMetadata
   preview: PartPreviewModel
 }) {
+  const processLabel = metadata.process
+    ? humanizeKey(metadata.process)
+    : preview.metadata.process
+      ? humanizeKey(preview.metadata.process)
+      : "Unknown"
+
   return (
     <div className="preview-metadata-card" aria-label={`${attachmentFileName} adapter preview`}>
       <div className="preview-metadata-card-heading">
@@ -7544,7 +7569,7 @@ function CadMetadataPreviewCard({
         </div>
         <div>
           <dt>Process</dt>
-          <dd>{metadata.process ? humanizeKey(metadata.process) : preview.metadata.process ? humanizeKey(preview.metadata.process) : "Unknown"}</dd>
+          <dd>{processLabel}</dd>
         </div>
         <div>
           <dt>Provider</dt>
