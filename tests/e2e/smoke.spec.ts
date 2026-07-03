@@ -372,6 +372,8 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(offerLifecycle.getByRole("button", { name: "Complete follow-up" })).toBeDisabled()
   await expect(offerLifecycle.getByRole("button", { name: "Mark declined" })).toBeDisabled()
   await expect(page.getByLabel("Offer release command plan")).toContainText("Blocked before release")
+  await expect(page.getByLabel("Offer release send summary")).toContainText("Offer OFFER-019 release is blocked")
+  await expect(page.getByLabel("Offer release send summary")).toContainText("0 attachments")
   await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Mode" })).toContainText("blocked")
   await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Commands" })).toContainText("1")
   await expect(page.getByLabel("Offer release command plan").locator(".metric", { hasText: "Follow-ups" })).toContainText("0")
@@ -441,6 +443,11 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
 
   await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
+  await expect(page.getByLabel("Offer release send summary")).toContainText(
+    "Offer OFFER-204 is ready to send to sari.virtanen@example.test with OFFER-204-rev1.pdf.",
+  )
+  await expect(page.getByLabel("Offer release send summary")).toContainText("1 attachment")
+  await expect(page.getByLabel("Offer release send summary")).toContainText("Follow-up 2026-07-03T07:00:00.000Z")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Follow up: OFFER-204")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("03 Jul, 10.00 - 03 Jul, 10.30")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")

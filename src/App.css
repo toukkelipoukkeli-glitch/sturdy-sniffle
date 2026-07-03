@@ -5470,6 +5470,7 @@
 .offer-lifecycle-actions,
 .offer-lifecycle-grid,
 .offer-release-plan-summary,
+.offer-release-send-summary,
 .offer-release-command-list,
 .offer-release-calendar-drafts,
 .offer-release-next-actions,
@@ -5601,6 +5602,70 @@
 
 .offer-release-plan-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.offer-release-send-summary {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.offer-release-send-summary[data-status="ready"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.offer-release-send-summary[data-status="needs_review"] {
+  border-color: oklch(0.82 0.09 82);
+}
+
+.offer-release-send-summary[data-status="blocked"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
+.offer-release-send-summary > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.offer-release-send-summary strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.offer-release-send-summary span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.offer-release-send-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.offer-release-send-tags span {
+  background: oklch(0.96 0.018 178);
+  border: 1px solid oklch(0.84 0.05 178);
+  border-radius: 999px;
+  color: oklch(0.32 0.06 178);
+  font-size: 0.68rem;
+  padding: 4px 7px;
+}
+
+.offer-release-send-tags span[data-kind="blocker"] {
+  background: oklch(0.96 0.04 35);
+  border-color: oklch(0.78 0.1 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.offer-release-send-tags span[data-kind="warning"] {
+  background: oklch(0.96 0.05 82);
+  border-color: oklch(0.82 0.09 82);
+  color: oklch(0.36 0.09 75);
 }
 
 .offer-release-execution-summary {
@@ -6488,6 +6553,7 @@
   .offer-lifecycle-summary,
   .offer-lifecycle-grid,
   .offer-release-plan-summary,
+  .offer-release-send-summary,
   .offer-release-command-list,
   .offer-release-execution-summary,
   .offer-release-execution-command-list,

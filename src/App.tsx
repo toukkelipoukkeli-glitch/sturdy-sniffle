@@ -8727,6 +8727,8 @@ function offerLifecycleEventLabel(kind: OfferLifecycleEventInput["kind"]) {
 
 function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan }) {
   const statusLabel = offerReleasePlanStatusLabel(releasePlan.status)
+  const sendSummary = releasePlan.sendSummary
+  const attachmentCount = sendSummary.attachmentFileNames?.length ?? 0
 
   return (
     <section className="offer-release-plan-panel" aria-label="Offer release command plan">
@@ -8746,6 +8748,33 @@ function OfferReleasePlanPanel({ releasePlan }: { releasePlan: OfferReleasePlan 
         <Metric label="Mode" value={humanizeKey(releasePlan.mode)} />
         <Metric label="Commands" value={String(releasePlan.commands.length)} />
         <Metric label="Follow-ups" value={String(releasePlan.calendarPlan?.events.length ?? 0)} />
+      </div>
+      <div className="offer-release-send-summary" data-status={sendSummary.status} aria-label="Offer release send summary">
+        <div>
+          <strong>{sendSummary.headline}</strong>
+          <span>
+            {sendSummary.recipient ?? "Recipient pending"} · {attachmentCount} attachment
+            {attachmentCount === 1 ? "" : "s"}
+            {sendSummary.followUpDueAt ? ` · Follow-up ${sendSummary.followUpDueAt}` : ""}
+          </span>
+        </div>
+        <div className="offer-release-send-tags" aria-label="Offer send detail tags">
+          {sendSummary.attachmentFileNames?.map((attachment) => (
+            <span data-kind="attachment" key={attachment}>
+              {attachment}
+            </span>
+          ))}
+          {sendSummary.blockerLabels.map((label) => (
+            <span data-kind="blocker" key={label}>
+              {label}
+            </span>
+          ))}
+          {sendSummary.warningLabels.map((label) => (
+            <span data-kind="warning" key={label}>
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="offer-release-command-list">
         {releasePlan.commands.map((command) => (
