@@ -84,6 +84,11 @@ export interface OfferExportPackage {
   pdf: OfferPdfExportVerification
 }
 
+type AlternateCustomerSummaryInput = Pick<
+  OfferAlternate,
+  "label" | "leadTimeDeltaLabel" | "leadTimeLabel" | "priceDeltaLabel" | "recommendation" | "totalLabel"
+>
+
 const requiredPdfSections: OfferDocumentSectionKind[] = ["summary", "pricing", "assumptions", "revision_history", "terms"]
 
 export function buildOfferExportPackage(input: OfferExportPackageInput): OfferExportPackage {
@@ -212,7 +217,7 @@ function buildAlternateCustomerSummary({
   priceDeltaLabel,
   recommendation,
   totalLabel,
-}: Pick<OfferAlternate, "label" | "leadTimeDeltaLabel" | "leadTimeLabel" | "priceDeltaLabel" | "recommendation" | "totalLabel">): string {
+}: AlternateCustomerSummaryInput): string {
   return `${label}: ${totalLabel} (${priceDeltaLabel} vs base), ${leadTimeLabel} (${leadTimeDeltaLabel} vs base). ${recommendation}`
 }
 
