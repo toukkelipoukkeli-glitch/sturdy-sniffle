@@ -4431,6 +4431,9 @@
 }
 
 .cad-geometry-review-actions {
+  --cad-geometry-review-action-border: oklch(0.72 0.095 75);
+  --cad-geometry-review-action-border-primary: oklch(0.57 0.13 42);
+
   display: grid;
   gap: 5px;
   list-style: none;
@@ -4439,14 +4442,14 @@
 }
 
 .cad-geometry-review-actions li {
-  border-left: 2px solid oklch(0.72 0.095 75);
+  border-left: 2px solid var(--cad-geometry-review-action-border);
   display: grid;
   gap: 1px;
   padding-left: 7px;
 }
 
 .cad-geometry-review-actions li[data-priority="primary"] {
-  border-left-color: oklch(0.57 0.13 42);
+  border-left-color: var(--cad-geometry-review-action-border-primary);
 }
 
 .cad-geometry-review-actions strong {

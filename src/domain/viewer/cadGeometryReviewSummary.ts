@@ -273,6 +273,12 @@ function buildCadGeometryReviewActions(
       actions.push(action)
     }
   }
+  const requestGeometryParserReviewAction: CadGeometryReviewAction = {
+    key: "request_geometry_parser_review",
+    priority: "primary",
+    label: "Request geometry parser review",
+    detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
+  }
 
   if (status === "blocked") {
     addAction({
@@ -299,12 +305,7 @@ function buildCadGeometryReviewActions(
         break
       case "bounds":
         if (check.status === "blocked") {
-          addAction({
-            key: "request_geometry_parser_review",
-            priority: "primary",
-            label: "Request geometry parser review",
-            detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
-          })
+          addAction(requestGeometryParserReviewAction)
         } else if (preview.previewKind === "dxf_flat_pattern" && !positiveFinite(preview.bounds?.thicknessMm)) {
           addAction({
             key: "confirm_flat_pattern_thickness",
@@ -322,12 +323,7 @@ function buildCadGeometryReviewActions(
         }
         break
       case "outline":
-        addAction({
-          key: "request_geometry_parser_review",
-          priority: "primary",
-          label: "Request geometry parser review",
-          detail: "Route this file for parser/provider review so geometry bounds and outlines can be extracted.",
-        })
+        addAction(requestGeometryParserReviewAction)
         break
       case "units":
         addAction({
