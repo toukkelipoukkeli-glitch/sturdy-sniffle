@@ -58,6 +58,10 @@ describe("offer export package", () => {
       },
       revisionSummary: {
         customerSummary: "Revision 2 (2026-06-21) by Sari: Added expedited delivery alternate requested by buyer.",
+        customerTimeline: [
+          "Revision 1: Initial draft (2026-06-20, FactoryBid OS)",
+          "Revision 2: Added expedited delivery alternate requested by buyer. (2026-06-21, Sari)",
+        ],
         latestReason: "Added expedited delivery alternate requested by buyer.",
         latestRevision: 2,
       },
@@ -110,6 +114,8 @@ describe("offer export package", () => {
     expect(exportPackage.plainText).toContain(
       "Current revision: Revision 2 (2026-06-21) by Sari: Added expedited delivery alternate requested by buyer.",
     )
+    expect(exportPackage.plainText).toContain("- Revision 1: Initial draft (2026-06-20, FactoryBid OS)")
+    expect(exportPackage.plainText).toContain("- Revision 2: Added expedited delivery alternate requested by buyer. (2026-06-21, Sari)")
     expect(exportPackage.pdf.contentFingerprint).toMatch(/^[a-f0-9]{8}$/)
   })
 
