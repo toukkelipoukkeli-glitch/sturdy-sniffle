@@ -219,6 +219,7 @@ import {
   type PartPreviewModel,
   type PartPreviewMode,
 } from "./domain/viewer/partPreview"
+import { buildCadGeometryReviewSummary, type CadGeometryReviewSummary } from "./domain/viewer/cadGeometryReviewSummary"
 import { cadMetadataFileMatches } from "./domain/viewer/cadMetadataFileMatch"
 import {
   buildCapacityCommitmentPlan,
@@ -7594,9 +7595,15 @@ function CadGeometryPreviewCard({
   geometryPreview: AttachmentGeometryPreview
 }) {
   const outlineStyle = geometryOutlineStyle(geometryPreview)
+  const reviewSummary = buildCadGeometryReviewSummary(geometryPreview)
 
   return (
-    <div className="cad-geometry-card" aria-label={`${attachmentFileName} geometry preview`} data-status={geometryPreview.status}>
+    <div
+      className="cad-geometry-card"
+      aria-label={`${attachmentFileName} geometry preview`}
+      data-review-status={reviewSummary.status}
+      data-status={geometryPreview.status}
+    >
       <div className="cad-geometry-heading">
         <span>{geometryPreview.format.toUpperCase()}</span>
         <strong>{humanizeKey(geometryPreview.status)}</strong>
@@ -7618,6 +7625,35 @@ function CadGeometryPreviewCard({
       {geometryPreview.warnings.length > 0 ? (
         <p className="cad-geometry-warning">{geometryPreview.warnings.join(" ")}</p>
       ) : null}
+      <CadGeometryReviewSummaryPanel attachmentFileName={attachmentFileName} summary={reviewSummary} />
+    </div>
+  )
+}
+
+function CadGeometryReviewSummaryPanel({
+  attachmentFileName,
+  summary,
+}: {
+  attachmentFileName: string
+  summary: CadGeometryReviewSummary
+}) {
+  return (
+    <div className="cad-geometry-review" aria-label={`${attachmentFileName} geometry review summary`} data-status={summary.status}>
+      <div className="cad-geometry-review-heading">
+        <span>Review</span>
+        <strong>{humanizeKey(summary.status)}</strong>
+      </div>
+      <dl className="cad-geometry-review-grid">
+        <div>
+          <dt>Checks</dt>
+          <dd>{geometryReviewCountsLabel(summary)}</dd>
+        </div>
+        <div>
+          <dt>Warnings</dt>
+          <dd>{summary.warningCount}</dd>
+        </div>
+      </dl>
+      <p>{summary.blockers[0] ?? summary.nextAction}</p>
     </div>
   )
 }
@@ -7653,11 +7689,20 @@ function CadGeometryThumbnailCard({
   attachmentFileName: string
   geometryPreview: AttachmentGeometryPreview
 }) {
+  const reviewSummary = buildCadGeometryReviewSummary(geometryPreview)
+
   return (
-    <div className="attachment-geometry-thumbnail" aria-label={`${attachmentFileName} geometry thumbnail`} data-status={geometryPreview.status}>
+    <div
+      className="attachment-geometry-thumbnail"
+      aria-label={`${attachmentFileName} geometry thumbnail`}
+      data-review-status={reviewSummary.status}
+      data-status={geometryPreview.status}
+    >
       <span>{geometryPreview.format.toUpperCase()}</span>
       <strong>{geometryBoundsLabel(geometryPreview)}</strong>
-      <small>{geometryThumbnailKindLabel(geometryPreview)}</small>
+      <small>
+        {geometryThumbnailKindLabel(geometryPreview)} · {humanizeKey(reviewSummary.status)}
+      </small>
     </div>
   )
 }
@@ -9633,10 +9678,21 @@ function geometryThumbnailKindLabel(geometryPreview: AttachmentGeometryPreview) 
 }
 
 function geometryPreviewSummary(geometryPreview: AttachmentGeometryPreview) {
+  const reviewSummary = buildCadGeometryReviewSummary(geometryPreview)
+  const reviewLabel = `review ${humanizeKey(reviewSummary.status)}`
+
   if (geometryPreview.status === "ready") {
-    return `Geometry ${geometryBoundsLabel(geometryPreview)}`
+    return `Geometry ${geometryBoundsLabel(geometryPreview)} · ${reviewLabel}`
   }
-  return `Geometry fallback ${geometryBoundsLabel(geometryPreview)}`
+  return `Geometry fallback ${geometryBoundsLabel(geometryPreview)} · ${reviewLabel}`
+}
+
+function geometryReviewCountsLabel(summary: CadGeometryReviewSummary) {
+  const labels = (["blocked", "needs_review", "ready"] as const).flatMap((status) => {
+    const count = summary.checkCounts[status] ?? 0
+    return count > 0 ? [`${count} ${humanizeKey(status)}`] : []
+  })
+  return labels.join(" / ")
 }
 
 function geometryOutlineStyle(geometryPreview: AttachmentGeometryPreview) {
