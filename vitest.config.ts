@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     exclude: ["tests/e2e/**", "node_modules/**", "dist/**"],
+    // The large App/jsdom suite uses shared browser globals; serial files avoid cross-file timer interference.
+    fileParallelism: false,
     setupFiles: "./src/test/setup.ts",
   },
 })

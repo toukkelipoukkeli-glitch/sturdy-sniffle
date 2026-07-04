@@ -71,6 +71,8 @@ const offerReleaseCommandExecutionStatus = v.union(
   v.literal("requires_review"),
 );
 
+const offerProviderOutcomeReadinessStatus = v.union(v.literal("blocked"), v.literal("ready"));
+
 const offerReleaseExecutionCommand = v.object({
   key: v.string(),
   kind: offerReleaseCommandKind,
@@ -394,6 +396,32 @@ export default defineSchema({
     .index("by_tenant_offer_time", ["tenantId", "offerId", "createdAt"])
     .index("by_status_time", ["status", "createdAt"])
     .index("by_tenant_status_time", ["tenantId", "status", "createdAt"]),
+
+  offerProviderOutcomeReadiness: defineTable({
+    tenantId,
+    readinessKey: v.string(),
+    readinessVersion: v.string(),
+    offerId: v.id("offers"),
+    quoteId: v.id("quoteScenarios"),
+    rfqId: v.id("rfqs"),
+    offerNumber: v.string(),
+    status: offerProviderOutcomeReadinessStatus,
+    expectedCommandCount: v.number(),
+    latestCommandCount: v.number(),
+    appliedCommandCount: v.number(),
+    failedCommandCount: v.number(),
+    missingCommandCount: v.number(),
+    blockerLabels: v.array(v.string()),
+    nextActions: v.array(v.string()),
+    latestOutcomeFingerprint: v.optional(v.string()),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  })
+    .index("by_tenant_offer_readiness_key", ["tenantId", "offerId", "readinessKey"])
+    .index("by_offer_time", ["offerId", "updatedAt"])
+    .index("by_tenant_offer_time", ["tenantId", "offerId", "updatedAt"])
+    .index("by_status_time", ["status", "updatedAt"])
+    .index("by_tenant_status_time", ["tenantId", "status", "updatedAt"]),
 
   integrationLinks: defineTable({
     tenantId,
