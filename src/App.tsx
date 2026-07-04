@@ -1608,7 +1608,10 @@ function App() {
       cancelled = true
     }
   }, [convexOfferReleaseExecutionOfferId, offer.offerNumber, offerReleaseExecutionBridge, selectedId])
-  const offerReleaseHistory = releaseExecutionHistoryById[selectedId] ?? localOfferReleaseHistory
+  const offerReleaseHistory = mergeOfferReleaseExecutionHistories(
+    releaseExecutionHistoryById[selectedId],
+    localOfferReleaseHistory,
+  )
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
   const offerEmailDraftPackageHistory = useMemo(
     () =>
@@ -9833,6 +9836,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric">
       <span>{label}</span>
+      {" "}
       <strong>{value}</strong>
     </div>
   )
@@ -10504,6 +10508,112 @@ function createBrowserConvexOfferReleaseExecutionBridge(): BrowserConvexOfferRel
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     runQuery: bridge.runQuery,
   }
+}
+
+const OFFER_RELEASE_EXECUTION_STATUSES = [
+  "blocked",
+  "failed",
+  "needs_review",
+  "partial",
+  "pending",
+  "prepared",
+  "succeeded",
+] as const satisfies readonly OfferReleaseExecutionRun["status"][]
+
+function mergeOfferReleaseExecutionHistories(
+  remoteHistory: OfferReleaseExecutionHistorySummary | undefined,
+  localHistory: OfferReleaseExecutionHistorySummary,
+): OfferReleaseExecutionHistorySummary {
+  if (!remoteHistory || remoteHistory.totalRuns === 0) {
+    return localHistory
+  }
+  if (localHistory.totalRuns === 0) {
+    return remoteHistory
+  }
+
+  return {
+    historyVersion: localHistory.historyVersion,
+    totalRuns: remoteHistory.totalRuns + localHistory.totalRuns,
+    latestRun: newestOfferReleaseExecutionRun(remoteHistory.latestRun, localHistory.latestRun),
+    statusCounts: mergeOfferReleaseExecutionStatusCounts(remoteHistory.statusCounts, localHistory.statusCounts),
+    repeatedFingerprints: mergeOfferReleaseExecutionRepeatedFingerprints(
+      remoteHistory.repeatedFingerprints,
+      localHistory.repeatedFingerprints,
+    ),
+    warningCount: remoteHistory.warningCount + localHistory.warningCount,
+    pendingActionCount: remoteHistory.pendingActionCount + localHistory.pendingActionCount,
+  }
+}
+
+function newestOfferReleaseExecutionRun(
+  remoteRun: OfferReleaseExecutionHistorySummary["latestRun"],
+  localRun: OfferReleaseExecutionHistorySummary["latestRun"],
+): OfferReleaseExecutionHistorySummary["latestRun"] {
+  if (!remoteRun) {
+    return localRun
+  }
+  if (!localRun) {
+    return remoteRun
+  }
+  return compareText(localRun.executedAt, remoteRun.executedAt) > 0 ? localRun : remoteRun
+}
+
+function mergeOfferReleaseExecutionStatusCounts(
+  remoteCounts: OfferReleaseExecutionHistorySummary["statusCounts"],
+  localCounts: OfferReleaseExecutionHistorySummary["statusCounts"],
+): OfferReleaseExecutionHistorySummary["statusCounts"] {
+  return OFFER_RELEASE_EXECUTION_STATUSES.reduce<OfferReleaseExecutionHistorySummary["statusCounts"]>((counts, status) => {
+    const count = (remoteCounts[status] ?? 0) + (localCounts[status] ?? 0)
+    if (count > 0) {
+      counts[status] = count
+    }
+    return counts
+  }, {})
+}
+
+function mergeOfferReleaseExecutionRepeatedFingerprints(
+  remoteFingerprints: OfferReleaseExecutionHistorySummary["repeatedFingerprints"],
+  localFingerprints: OfferReleaseExecutionHistorySummary["repeatedFingerprints"],
+): OfferReleaseExecutionHistorySummary["repeatedFingerprints"] {
+  const byFingerprint = new Map<
+    string,
+    {
+      count: number
+      latestExecutedAt: string
+      statuses: Set<OfferReleaseExecutionRun["status"]>
+    }
+  >()
+  for (const fingerprint of [...remoteFingerprints, ...localFingerprints]) {
+    const existing = byFingerprint.get(fingerprint.executionFingerprint)
+    if (existing) {
+      existing.count += fingerprint.count
+      if (compareText(fingerprint.latestExecutedAt, existing.latestExecutedAt) > 0) {
+        existing.latestExecutedAt = fingerprint.latestExecutedAt
+      }
+      for (const status of fingerprint.statuses) {
+        existing.statuses.add(status)
+      }
+    } else {
+      byFingerprint.set(fingerprint.executionFingerprint, {
+        count: fingerprint.count,
+        latestExecutedAt: fingerprint.latestExecutedAt,
+        statuses: new Set(fingerprint.statuses),
+      })
+    }
+  }
+
+  return [...byFingerprint.entries()]
+    .map(([executionFingerprint, fingerprint]) => ({
+      executionFingerprint,
+      count: fingerprint.count,
+      latestExecutedAt: fingerprint.latestExecutedAt,
+      statuses: [...fingerprint.statuses].sort(compareText),
+    }))
+    .sort((left, right) => compareText(right.latestExecutedAt, left.latestExecutedAt) || compareText(left.executionFingerprint, right.executionFingerprint))
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0
 }
 
 function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {
