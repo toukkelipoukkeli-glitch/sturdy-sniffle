@@ -84,6 +84,7 @@ import {
   summarizeOfferReleaseExecutionHistory,
   type OfferReleaseExecutionHistorySummary,
 } from "./domain/offers/offerReleaseExecutionHistory"
+import { createConvexOfferReleaseExecutionReader } from "./domain/offers/offerReleaseExecutionReadPersistence"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
 import {
   summarizeOfferEmailDraftPackageHistory,
@@ -1010,6 +1011,7 @@ function App() {
   const [releaseExecutionRunsById, setReleaseExecutionRunsById] = useState<Record<string, OfferReleaseExecutionRun[]>>(
     workspaceLocalState?.releaseExecutionRunsById ?? {},
   )
+  const [releaseExecutionHistoryById, setReleaseExecutionHistoryById] = useState<Record<string, OfferReleaseExecutionHistorySummary>>({})
   const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
     workspaceLocalState?.releaseReviewsById ?? {},
   )
@@ -1019,6 +1021,7 @@ function App() {
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const releaseExecutionLocksRef = useRef(new Set<string>())
+  const releaseExecutionQueryKeysRef = useRef(new Map<string, Promise<OfferReleaseExecutionHistorySummary>>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
@@ -1552,9 +1555,62 @@ function App() {
     [offerReleasePlan, workspaceNow, workspaceOperatorName],
   )
   const offerReleaseExecution = selectedReleaseExecutionRuns.at(-1) ?? offerReleaseExecutionPreview
-  const offerReleaseHistory = useMemo(
+  const localOfferReleaseHistory = useMemo(
     () => summarizeOfferReleaseExecutionHistory([offerReleaseExecutionPreview, ...selectedReleaseExecutionRuns]),
     [offerReleaseExecutionPreview, selectedReleaseExecutionRuns],
+  )
+  const offerReleaseExecutionBridge = useMemo(() => createBrowserConvexOfferReleaseExecutionBridge(), [])
+  const convexOfferReleaseExecutionOfferId = offerReleaseExecutionBridge?.resolveOfferId(offer.offerNumber.toLowerCase())
+  useEffect(() => {
+    let cancelled = false
+    const releaseExecutionQueries = releaseExecutionQueryKeysRef.current
+    const queryKey =
+      offerReleaseExecutionBridge?.queryRef && convexOfferReleaseExecutionOfferId
+        ? `${selectedId}::${convexOfferReleaseExecutionOfferId}`
+        : undefined
+    if (!queryKey || !offerReleaseExecutionBridge) {
+      return () => {
+        cancelled = true
+      }
+    }
+    let historyPromise = releaseExecutionQueries.get(queryKey)
+    if (!historyPromise) {
+      const queryRef = offerReleaseExecutionBridge.queryRef
+      const runQuery = offerReleaseExecutionBridge.runQuery
+
+      const reader = createConvexOfferReleaseExecutionReader({
+        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        queryRef,
+        runQuery,
+      })
+      historyPromise = reader.listExecutions({
+        limit: 20,
+        offerId: convexOfferReleaseExecutionOfferId,
+        offerNumber: offer.offerNumber,
+      })
+      releaseExecutionQueries.set(queryKey, historyPromise)
+    }
+
+    void historyPromise
+      .then((history) => {
+        if (!cancelled && history.totalRuns > 0) {
+          setReleaseExecutionHistoryById((current) => ({ ...current, [selectedId]: history }))
+        }
+      })
+      .catch(() => {
+        releaseExecutionQueries.delete(queryKey)
+        if (!cancelled) {
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [convexOfferReleaseExecutionOfferId, offer.offerNumber, offerReleaseExecutionBridge, selectedId])
+  const offerReleaseHistory = mergeOfferReleaseExecutionHistories(
+    releaseExecutionHistoryById[selectedId],
+    localOfferReleaseHistory,
   )
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
   const offerEmailDraftPackageHistory = useMemo(
@@ -9780,6 +9836,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric">
       <span>{label}</span>
+      {" "}
       <strong>{value}</strong>
     </div>
   )
@@ -10354,6 +10411,7 @@ function providerOutcomeReadinessPersistenceKey(
 
 interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
+  offerReleaseExecutionsQueryRef?: unknown
   offerReplyMutationRef?: unknown
   offerProviderOutcomeReadinessMutationRef?: unknown
   offerProviderOutcomeReadinessQueryRef?: unknown
@@ -10379,6 +10437,12 @@ interface BrowserConvexOfferProviderOutcomeReadinessBridge {
   resolveRfqId: (rfqId: string) => string | undefined
   runMutation: WorkspacePersistenceBridge["runMutation"]
   runQuery?: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
+}
+
+interface BrowserConvexOfferReleaseExecutionBridge {
+  queryRef: unknown
+  resolveOfferId: (offerId: string) => string | undefined
+  runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
 }
 
 declare global {
@@ -10431,6 +10495,125 @@ function createBrowserConvexOfferProviderOutcomeReadinessBridge(): BrowserConvex
     runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
+}
+
+function createBrowserConvexOfferReleaseExecutionBridge(): BrowserConvexOfferReleaseExecutionBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.offerReleaseExecutionsQueryRef || !bridge.runQuery) {
+    return undefined
+  }
+
+  return {
+    queryRef: bridge.offerReleaseExecutionsQueryRef,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    runQuery: bridge.runQuery,
+  }
+}
+
+const OFFER_RELEASE_EXECUTION_STATUSES = [
+  "blocked",
+  "failed",
+  "needs_review",
+  "partial",
+  "pending",
+  "prepared",
+  "succeeded",
+] as const satisfies readonly OfferReleaseExecutionRun["status"][]
+
+function mergeOfferReleaseExecutionHistories(
+  remoteHistory: OfferReleaseExecutionHistorySummary | undefined,
+  localHistory: OfferReleaseExecutionHistorySummary,
+): OfferReleaseExecutionHistorySummary {
+  if (!remoteHistory || remoteHistory.totalRuns === 0) {
+    return localHistory
+  }
+  if (localHistory.totalRuns === 0) {
+    return remoteHistory
+  }
+
+  return {
+    historyVersion: localHistory.historyVersion,
+    totalRuns: remoteHistory.totalRuns + localHistory.totalRuns,
+    latestRun: newestOfferReleaseExecutionRun(remoteHistory.latestRun, localHistory.latestRun),
+    statusCounts: mergeOfferReleaseExecutionStatusCounts(remoteHistory.statusCounts, localHistory.statusCounts),
+    repeatedFingerprints: mergeOfferReleaseExecutionRepeatedFingerprints(
+      remoteHistory.repeatedFingerprints,
+      localHistory.repeatedFingerprints,
+    ),
+    warningCount: remoteHistory.warningCount + localHistory.warningCount,
+    pendingActionCount: remoteHistory.pendingActionCount + localHistory.pendingActionCount,
+  }
+}
+
+function newestOfferReleaseExecutionRun(
+  remoteRun: OfferReleaseExecutionHistorySummary["latestRun"],
+  localRun: OfferReleaseExecutionHistorySummary["latestRun"],
+): OfferReleaseExecutionHistorySummary["latestRun"] {
+  if (!remoteRun) {
+    return localRun
+  }
+  if (!localRun) {
+    return remoteRun
+  }
+  return compareText(localRun.executedAt, remoteRun.executedAt) > 0 ? localRun : remoteRun
+}
+
+function mergeOfferReleaseExecutionStatusCounts(
+  remoteCounts: OfferReleaseExecutionHistorySummary["statusCounts"],
+  localCounts: OfferReleaseExecutionHistorySummary["statusCounts"],
+): OfferReleaseExecutionHistorySummary["statusCounts"] {
+  return OFFER_RELEASE_EXECUTION_STATUSES.reduce<OfferReleaseExecutionHistorySummary["statusCounts"]>((counts, status) => {
+    const count = (remoteCounts[status] ?? 0) + (localCounts[status] ?? 0)
+    if (count > 0) {
+      counts[status] = count
+    }
+    return counts
+  }, {})
+}
+
+function mergeOfferReleaseExecutionRepeatedFingerprints(
+  remoteFingerprints: OfferReleaseExecutionHistorySummary["repeatedFingerprints"],
+  localFingerprints: OfferReleaseExecutionHistorySummary["repeatedFingerprints"],
+): OfferReleaseExecutionHistorySummary["repeatedFingerprints"] {
+  const byFingerprint = new Map<
+    string,
+    {
+      count: number
+      latestExecutedAt: string
+      statuses: Set<OfferReleaseExecutionRun["status"]>
+    }
+  >()
+  for (const fingerprint of [...remoteFingerprints, ...localFingerprints]) {
+    const existing = byFingerprint.get(fingerprint.executionFingerprint)
+    if (existing) {
+      existing.count += fingerprint.count
+      if (compareText(fingerprint.latestExecutedAt, existing.latestExecutedAt) > 0) {
+        existing.latestExecutedAt = fingerprint.latestExecutedAt
+      }
+      for (const status of fingerprint.statuses) {
+        existing.statuses.add(status)
+      }
+    } else {
+      byFingerprint.set(fingerprint.executionFingerprint, {
+        count: fingerprint.count,
+        latestExecutedAt: fingerprint.latestExecutedAt,
+        statuses: new Set(fingerprint.statuses),
+      })
+    }
+  }
+
+  return [...byFingerprint.entries()]
+    .map(([executionFingerprint, fingerprint]) => ({
+      executionFingerprint,
+      count: fingerprint.count,
+      latestExecutedAt: fingerprint.latestExecutedAt,
+      statuses: [...fingerprint.statuses].sort(compareText),
+    }))
+    .sort((left, right) => compareText(right.latestExecutedAt, left.latestExecutedAt) || compareText(left.executionFingerprint, right.executionFingerprint))
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0
 }
 
 function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {

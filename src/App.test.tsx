@@ -731,9 +731,75 @@ describe("FactoryBid workspace (component)", () => {
     const readinessPersistence = screen.getByLabelText("Readiness persistence history")
     await waitFor(() => {
       expect(readinessPersistence).toHaveTextContent("2 readiness records")
-      expect(readinessPersistence).toHaveTextContent("Ready1")
-      expect(readinessPersistence).toHaveTextContent("Blocked1")
+      expect(readinessPersistence).toHaveTextContent("Ready 1")
+      expect(readinessPersistence).toHaveTextContent("Blocked 1")
       expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    })
+  })
+
+  it("hydrates offer release execution history through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            executedAt: "2026-06-20T08:55:00+03:00",
+            executionFingerprint: "offer-release-execution-persisted",
+            executionKey: "offer-release-execution:convex-offer-204:persisted",
+            mode: "commit",
+            nextActions: [],
+            offerId: "convex-offer-204",
+            status: "succeeded",
+            warningCount: 0,
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            offerId: "convex-offer-204",
+          },
+          queryRef: "listOfferReleaseExecutions",
+        },
+      ])
+    })
+    const releaseHistory = screen.getByLabelText("Offer release execution history")
+    await waitFor(() => {
+      expect(releaseHistory).toHaveTextContent("2 recorded runs")
+    })
+
+    const releaseGate = screen.getByLabelText("Quote release gate")
+    await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+    const executionAudit = screen.getByLabelText("Offer release execution audit")
+    await user.click(within(executionAudit).getByRole("button", { name: "Execute release" }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("3 recorded runs")
+      expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("Latest succeeded")
     })
   })
 
@@ -748,7 +814,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessPersistence).toHaveTextContent("1 readiness record")
       expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
     })
-    expect(readinessPersistence).toHaveTextContent("Currentblocked")
+    expect(readinessPersistence).toHaveTextContent("Current blocked")
     expect(readinessPersistence).toHaveTextContent("0/0 command outcomes recorded")
     expect(readinessPersistence).toHaveTextContent("offer-204:rfq-204")
   })
