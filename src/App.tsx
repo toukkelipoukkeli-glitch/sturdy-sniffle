@@ -2082,7 +2082,10 @@ function App() {
         plan: offerReleasePlan,
       })
 
-      for (const action of run.workspaceActions) {
+      const workspaceActionsToRecord = run.workspaceActions.filter((action) =>
+        shouldRecordReleaseWorkspaceAction(action, offerFollowUpActivitySummary),
+      )
+      for (const action of workspaceActionsToRecord) {
         await recordWorkspaceAction(action)
       }
       setReleaseExecutionRunsById((current) => ({
@@ -3170,7 +3173,8 @@ function isWorkspaceActionRecord(value: unknown): value is WorkspaceActionRecord
       value.activityKind === "quote_update" ||
       value.activityKind === "calendar_event" ||
       value.activityKind === "note") &&
-    typeof value.activityMessage === "string"
+    typeof value.activityMessage === "string" &&
+    (value.followUpTaskId === undefined || typeof value.followUpTaskId === "string")
   )
 }
 
@@ -10491,6 +10495,17 @@ function latestOfferFollowUpScheduledAt(actions: WorkspaceActionRecord[], offer:
     )
 
   return latest?.followUpDueAt
+}
+
+function shouldRecordReleaseWorkspaceAction(
+  action: WorkspaceActionRecord,
+  followUpActivitySummary: OfferFollowUpActivityReadSummary,
+) {
+  return (
+    action.kind !== "follow_up_created" ||
+    !action.followUpTaskId ||
+    !followUpActivitySummary.recordedFollowUpTaskIds.includes(action.followUpTaskId)
+  )
 }
 
 function nextStatusFor(status: QuoteQueueStatus): QuoteQueueStatus | undefined {

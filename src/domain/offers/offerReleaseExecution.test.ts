@@ -25,7 +25,7 @@ describe("offer release execution audit", () => {
     expect(run).toMatchObject({
       actor: "Sari",
       executedAt: "2026-06-20T06:00:00.000Z",
-      executionFingerprint: "offer-release-execution-7045cd6a",
+      executionFingerprint: "offer-release-execution-ea0f1634",
       executionVersion: OFFER_RELEASE_EXECUTION_VERSION,
       mode: "dry_run",
       offerId: "offer-204",

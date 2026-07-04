@@ -93,7 +93,7 @@ function taskFromAction(input: {
 }
 
 function followUpTaskIdFor(action: WorkspaceActionRecord, rfqId: string): string {
-  return optionalTrim(action.note) ?? `follow-up-${rfqId}`
+  return optionalTrim(action.followUpTaskId) ?? optionalTrim(action.note) ?? `follow-up-${rfqId}`
 }
 
 function completedFollowUps(replySync: GmailOfferReplySyncResult | undefined): Map<string, string> {

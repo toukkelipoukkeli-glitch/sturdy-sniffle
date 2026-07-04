@@ -144,6 +144,24 @@ describe("workspace actions", () => {
     ).toThrow("followUpDueAt is required")
   })
 
+  it("includes explicit follow-up task ids in scheduled follow-up activity records", () => {
+    expect(
+      buildWorkspaceAction({
+        actor: "Sari",
+        followUpDueAt: "2026-06-27T09:00:00+03:00",
+        followUpTaskId: "follow-up-rfq-019",
+        kind: "follow_up_created",
+        occurredAt: "2026-06-20T10:10:00+03:00",
+        offerId: "offer-019",
+        rfqId: "rfq-019",
+      }),
+    ).toMatchObject({
+      activityMessage: "Scheduled offer follow-up follow-up-rfq-019 for offer-019 at 2026-06-27T06:00:00.000Z.",
+      followUpTaskId: "follow-up-rfq-019",
+      key: "rfq-019:follow_up_created:offer-019:2026-06-27T06:00:00.000Z:follow-up-rfq-019:2026-06-20T07:10:00.000Z",
+    })
+  })
+
   it("rejects missing scenario quote IDs", () => {
     expect(() =>
       buildWorkspaceAction({

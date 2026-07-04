@@ -16,6 +16,7 @@ export interface WorkspaceActionInput {
   toStatus?: QuoteQueueStatus
   scenarioId?: string
   followUpDueAt?: string
+  followUpTaskId?: string
   note?: string
 }
 
@@ -32,6 +33,7 @@ export interface WorkspaceActionRecord {
   toStatus?: QuoteQueueStatus
   scenarioId?: string
   followUpDueAt?: string
+  followUpTaskId?: string
   note?: string
   activityKind: "status_change" | "quote_update" | "calendar_event" | "note"
   activityMessage: string
@@ -116,13 +118,17 @@ function buildScenarioSavedAction(base: ActionBase, input: WorkspaceActionInput)
 function buildFollowUpCreatedAction(base: ActionBase, input: WorkspaceActionInput): WorkspaceActionRecord {
   const offerId = nonBlank(optionalTrim(input.offerId) ?? "", "offerId")
   const followUpDueAt = normalizeIsoTimestamp(input.followUpDueAt ?? "", "followUpDueAt")
+  const followUpTaskId = optionalTrim(input.followUpTaskId)
   const quoteId = optionalTrim(input.quoteId)
   return finalizeAction({
     ...base,
     activityKind: "calendar_event",
-    activityMessage: `Created offer follow-up for ${offerId}.`,
+    activityMessage: followUpTaskId
+      ? `Scheduled offer follow-up ${followUpTaskId} for ${offerId} at ${followUpDueAt}.`
+      : `Created offer follow-up for ${offerId}.`,
     offerId,
     followUpDueAt,
+    followUpTaskId,
     quoteId,
   })
 }
@@ -146,6 +152,7 @@ function finalizeAction(action: Omit<WorkspaceActionRecord, "actionVersion" | "k
     action.scenarioId,
     action.toStatus,
     action.followUpDueAt,
+    action.followUpTaskId,
     action.occurredAt,
   ].filter((part): part is string => Boolean(part))
 
