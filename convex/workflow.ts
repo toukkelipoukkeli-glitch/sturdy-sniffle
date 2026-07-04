@@ -949,11 +949,25 @@ export const recordOfferProviderOutcomeReadiness = mutation({
     validateProviderOutcomeReadinessCounts(payload);
 
     if (existingReadiness) {
+      if (existingReadiness.readinessVersion !== payload.readinessVersion) {
+        throw new Error("readinessVersion must match existing provider outcome readiness record");
+      }
       await ctx.db.patch(existingReadiness._id, {
         ...payload,
         updatedAt: now,
       });
+      const activityId = await recordOfferProviderOutcomeReadinessActivity(ctx, {
+        actor,
+        appliedCommandCount: payload.appliedCommandCount,
+        failedCommandCount: payload.failedCommandCount,
+        now,
+        offer,
+        offerId: args.offerId,
+        offerNumber: payload.offerNumber,
+        status: payload.status,
+      });
       return {
+        activityId,
         offerId: args.offerId,
         readinessId: existingReadiness._id,
         reused: true,
@@ -971,21 +985,15 @@ export const recordOfferProviderOutcomeReadiness = mutation({
       tenantId: actor.tenantId,
       updatedAt: now,
     });
-    const activityId = await ctx.db.insert("activities", {
-      actorName: nonBlank(actor.displayName, "actor.displayName"),
-      actorType: "system",
-      createdAt: now,
-      kind: "calculation",
-      message: offerProviderOutcomeReadinessActivityMessage({
-        appliedCommandCount: payload.appliedCommandCount,
-        failedCommandCount: payload.failedCommandCount,
-        offerNumber: payload.offerNumber,
-        status: payload.status,
-      }),
+    const activityId = await recordOfferProviderOutcomeReadinessActivity(ctx, {
+      actor,
+      appliedCommandCount: payload.appliedCommandCount,
+      failedCommandCount: payload.failedCommandCount,
+      now,
+      offer,
       offerId: args.offerId,
-      quoteId: offer.quoteId,
-      rfqId: offer.rfqId,
-      tenantId: actor.tenantId,
+      offerNumber: payload.offerNumber,
+      status: payload.status,
     });
 
     return {
@@ -1724,6 +1732,7 @@ function validateProviderOutcomeReadinessCounts(input: {
   failedCommandCount: number;
   latestCommandCount: number;
   missingCommandCount: number;
+  status: OfferProviderOutcomeReadinessStatus;
 }) {
   if (input.appliedCommandCount + input.failedCommandCount !== input.latestCommandCount) {
     throw new Error("applied and failed provider outcome counts must equal latestCommandCount");
@@ -1731,6 +1740,40 @@ function validateProviderOutcomeReadinessCounts(input: {
   if (input.latestCommandCount + input.missingCommandCount !== input.expectedCommandCount) {
     throw new Error("latest and missing provider outcome counts must equal expectedCommandCount");
   }
+  if (input.status === "ready" && (input.failedCommandCount > 0 || input.missingCommandCount > 0)) {
+    throw new Error("provider outcome readiness cannot be ready while failed or missing commands remain");
+  }
+}
+
+async function recordOfferProviderOutcomeReadinessActivity(
+  ctx: MutationCtx,
+  input: {
+    actor: FactoryBidActor;
+    appliedCommandCount: number;
+    failedCommandCount: number;
+    now: number;
+    offer: OfferDocument;
+    offerId: GenericId<"offers">;
+    offerNumber: string;
+    status: OfferProviderOutcomeReadinessStatus;
+  },
+) {
+  return await ctx.db.insert("activities", {
+    actorName: nonBlank(input.actor.displayName, "actor.displayName"),
+    actorType: "system",
+    createdAt: input.now,
+    kind: "calculation",
+    message: offerProviderOutcomeReadinessActivityMessage({
+      appliedCommandCount: input.appliedCommandCount,
+      failedCommandCount: input.failedCommandCount,
+      offerNumber: input.offerNumber,
+      status: input.status,
+    }),
+    offerId: input.offerId,
+    quoteId: input.offer.quoteId,
+    rfqId: input.offer.rfqId,
+    tenantId: input.actor.tenantId,
+  });
 }
 
 function offerReleaseExecutionActivityMessage(input: {
