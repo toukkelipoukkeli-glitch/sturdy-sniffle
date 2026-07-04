@@ -870,6 +870,24 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
   })
 
+  it("surfaces pending follow-up activity reads when no persisted records exist", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    expect(followUpActivity).toHaveTextContent("0 persisted activities")
+    expect(followUpActivity).toHaveTextContent("Pending")
+    expect(followUpActivity).toHaveTextContent("Task IDs 0")
+    expect(followUpActivity).toHaveTextContent("Latest None")
+    expect(followUpActivity).toHaveTextContent("No persisted calendar follow-up activity records are available yet.")
+    expect(followUpActivity).not.toHaveTextContent("activity-follow-up")
+    expect(within(followUpActivity).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-review")
+    expect(followUpActivity.querySelector(".offer-follow-up-activity-latest")).not.toBeInTheDocument()
+    expect(within(followUpActivity).queryByLabelText("Recorded follow-up task ids")).not.toBeInTheDocument()
+  })
+
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
     render(<App />)
