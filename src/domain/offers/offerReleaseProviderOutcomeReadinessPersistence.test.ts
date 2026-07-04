@@ -6,7 +6,9 @@ import {
 } from "./offerReleaseProviderOutcomeReadiness"
 import {
   createConvexOfferReleaseProviderOutcomeReadinessPersistence,
+  createConvexOfferReleaseProviderOutcomeReadinessReader,
   createLocalOfferReleaseProviderOutcomeReadinessPersistence,
+  createLocalOfferReleaseProviderOutcomeReadinessReader,
 } from "./offerReleaseProviderOutcomeReadinessPersistence"
 
 describe("offer release provider outcome readiness persistence", () => {
@@ -104,6 +106,93 @@ describe("offer release provider outcome readiness persistence", () => {
     expect(snapshot).toMatchObject({
       blockedReadinessKeys: ["readiness:offer-019:blocked"],
       recordCount: 1,
+    })
+  })
+
+  it("lists readiness records through the configured Convex query", async () => {
+    const calls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    const reader = createConvexOfferReleaseProviderOutcomeReadinessReader({
+      queryRef: "listOfferProviderOutcomeReadiness",
+      runQuery: async (queryRef, args) => {
+        calls.push({ args, queryRef })
+        return [
+          {
+            ...readinessPayload({
+              offerId: "convex-offer-019",
+              readinessKey: "readiness:convex-offer-019:ready",
+              rfqId: "convex-rfq-019",
+              status: "ready",
+            }),
+            _id: "readiness-doc-1",
+            createdAt: 1_789_000_000_000,
+            quoteId: "quote-019",
+            tenantId: "tenant-1",
+            updatedAt: 1_789_000_000_500,
+          },
+        ]
+      },
+    })
+
+    const snapshot = await reader.listReadiness({ limit: 5, offerId: "convex-offer-019" })
+
+    expect(calls).toEqual([
+      {
+        args: {
+          limit: 5,
+          offerId: "convex-offer-019",
+        },
+        queryRef: "listOfferProviderOutcomeReadiness",
+      },
+    ])
+    expect(snapshot).toMatchObject({
+      blockedReadinessKeys: [],
+      readyReadinessKeys: ["readiness:convex-offer-019:ready"],
+      recordCount: 1,
+      statusCounts: {
+        ready: 1,
+      },
+    })
+    expect(snapshot.records[0]).toMatchObject({
+      offerId: "convex-offer-019",
+      readinessKey: "readiness:convex-offer-019:ready",
+      rfqId: "convex-rfq-019",
+      status: "ready",
+    })
+  })
+
+  it("falls back to local readiness records when the Convex query fails", async () => {
+    const errors: string[] = []
+    const fallback = createLocalOfferReleaseProviderOutcomeReadinessReader({
+      initialSnapshot: {
+        records: [
+          readinessPayload({
+            offerId: "offer-019",
+            readinessKey: "readiness:offer-019:blocked",
+            status: "blocked",
+          }),
+        ],
+      },
+    })
+    const reader = createConvexOfferReleaseProviderOutcomeReadinessReader({
+      fallback,
+      onQueryError: (error, args) => {
+        errors.push(`${error instanceof Error ? error.message : String(error)}:${args.offerId}`)
+      },
+      queryRef: "listOfferProviderOutcomeReadiness",
+      runQuery: async () => {
+        throw new Error("Convex query unavailable")
+      },
+    })
+
+    const snapshot = await reader.listReadiness({ offerId: "offer-019" })
+
+    expect(errors).toEqual(["Convex query unavailable:offer-019"])
+    expect(snapshot).toMatchObject({
+      blockedReadinessKeys: ["readiness:offer-019:blocked"],
+      recordCount: 1,
+      statusCounts: {
+        blocked: 1,
+      },
     })
   })
 
