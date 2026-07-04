@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0854a6c` (`Add release execution Convex list adapter (#263)`).
-- Open PRs at this checkpoint: none on `main`; this branch is wiring persisted offer release execution reads into the React runtime bridge.
-- In-flight PR at this checkpoint: `codex/release-execution-runtime-read` hydrates the offer release execution history panel from `listOfferReleaseExecutions` when the browser Convex bridge is available, while keeping the local deterministic history fallback.
+- Main branch checkpoint: `92964f2` (`Hydrate release execution history from Convex (#264)`).
+- Open PRs at this checkpoint: none on `main`; this branch is preparing deterministic reads for persisted offer follow-up calendar activities.
+- In-flight PR at this checkpoint: `codex/offer-followup-read-adapter` adds a local/Convex read adapter for `listOfferFollowUpActivities`, including seeded-record validation and local fallback summaries of recorded follow-up task IDs.
 - Latest merged sequence:
+  - `#264` hydrates the offer release execution history panel from `listOfferReleaseExecutions` through the optional browser Convex bridge, merges persisted reads with local preview/commit runs, and keeps StrictMode query caching deterministic.
   - `#263` adds a local/Convex query-side adapter around `listOfferReleaseExecutions` so runtime/UI slices can hydrate persisted release execution history from workflow reads.
   - `#262` wires the optional browser Convex readiness query bridge into the React workspace and merges persisted readiness reads with local write snapshots.
   - `#261` adds local/Convex query-side adapters for offer provider outcome readiness records with deterministic fallback reads.
@@ -164,7 +165,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter and in-flight runtime hydration, and persistence adapters.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and in-flight follow-up activity read adapters.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.
