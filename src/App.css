@@ -5220,6 +5220,7 @@
 .offer-release-execution-panel,
 .offer-email-draft-history-panel,
 .offer-provider-outcome-history-panel,
+.offer-provider-readiness-history-panel,
 .offer-release-history-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -5238,6 +5239,7 @@
 .offer-release-execution-heading,
 .offer-email-draft-history-heading,
 .offer-provider-outcome-history-heading,
+.offer-provider-readiness-history-heading,
 .offer-release-history-heading,
 .offer-reply-heading,
 .offer-reply-card {
@@ -5256,6 +5258,7 @@
 .offer-release-execution-heading > div,
 .offer-email-draft-history-heading > div,
 .offer-provider-outcome-history-heading > div,
+.offer-provider-readiness-history-heading > div,
 .offer-release-history-heading > div,
 .offer-reply-heading > div,
 .offer-reply-card > div {
@@ -5273,6 +5276,7 @@
 .offer-release-execution-heading strong,
 .offer-email-draft-history-heading strong,
 .offer-provider-outcome-history-heading strong,
+.offer-provider-readiness-history-heading strong,
 .offer-release-history-heading strong,
 .offer-reply-heading strong {
   font-size: 0.92rem;
@@ -5502,6 +5506,24 @@
   color: oklch(0.36 0.09 75);
 }
 
+.offer-provider-readiness-history-status {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 8px;
+}
+
+.offer-provider-readiness-history-status-ready {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.offer-provider-readiness-history-status-review {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
 .offer-export-summary,
 .quote-approval-summary,
 .quote-approval-checks,
@@ -5528,6 +5550,8 @@
 .offer-provider-outcome-history-summary,
 .offer-provider-outcome-history-latest,
 .offer-provider-outcome-history-commands,
+.offer-provider-readiness-history-summary,
+.offer-provider-readiness-history-current,
 .offer-release-history-summary,
 .offer-release-history-retries,
 .offer-reply-summary,
@@ -5748,6 +5772,10 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.offer-provider-readiness-history-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .offer-email-draft-history-latest {
   background: oklch(0.985 0.004 240);
   border: 1px solid oklch(0.9 0.016 235);
@@ -5812,6 +5840,41 @@
 
 .offer-provider-outcome-history-latest span,
 .offer-provider-outcome-history-latest small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.offer-provider-readiness-history-current {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 10px;
+}
+
+.offer-provider-readiness-history-current[data-status="ready"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.offer-provider-readiness-history-current[data-status="blocked"] {
+  border-color: oklch(0.78 0.1 35);
+}
+
+.offer-provider-readiness-history-current > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.offer-provider-readiness-history-current strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.offer-provider-readiness-history-current span,
+.offer-provider-readiness-history-current small {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
   font-weight: 700;
@@ -6691,6 +6754,8 @@
   .offer-provider-outcome-history-summary,
   .offer-provider-outcome-history-latest,
   .offer-provider-outcome-history-commands,
+  .offer-provider-readiness-history-summary,
+  .offer-provider-readiness-history-current,
   .offer-release-history-summary,
   .offer-release-history-retries,
   .offer-reply-summary,
