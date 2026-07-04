@@ -60,6 +60,7 @@ import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
   type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence"
+import { OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -229,6 +230,7 @@ function emptyPromotedQuoteApplicationOutcomeCommitSnapshot(): NonCncPromotedQuo
 describe("FactoryBid workspace (component)", () => {
   beforeEach(() => {
     window.localStorage.clear()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = undefined
     vi.restoreAllMocks()
   })
 
@@ -630,6 +632,42 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationExecutionHistory).toHaveTextContent("Status counts: blocked 2")
     // The deterministic engine produces a quote on first render (no AI required).
     expect(totalText(container)).toMatch(/€\d/)
+  })
+
+  it("routes provider outcome readiness through the Convex browser bridge", async () => {
+    const calls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async (mutationRef, args) => {
+        calls.push({ args, mutationRef })
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(calls.some((call) => call.mutationRef === "recordOfferProviderOutcomeReadiness")).toBe(true)
+    })
+    const readinessCall = calls.find((call) => call.mutationRef === "recordOfferProviderOutcomeReadiness")
+    expect(readinessCall?.args).toMatchObject({
+      offerId: "convex-offer-204",
+      offerNumber: "OFFER-204",
+      readinessKey:
+        "offer-provider-outcome-readiness:convex-offer-204:convex-rfq-204:offer-release-provider-outcome-readiness-v1:blocked",
+      readinessVersion: OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION,
+      status: "blocked",
+    })
+    expect(readinessCall?.args).not.toHaveProperty("rfqId")
   })
 
   it("previews non-CNC registry process quotes without enabling fake edits", async () => {
