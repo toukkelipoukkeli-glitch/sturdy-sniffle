@@ -85,6 +85,11 @@ import {
   type OfferReleaseExecutionHistorySummary,
 } from "./domain/offers/offerReleaseExecutionHistory"
 import { createConvexOfferReleaseExecutionReader } from "./domain/offers/offerReleaseExecutionReadPersistence"
+import {
+  createConvexOfferFollowUpActivityReader,
+  summarizeOfferFollowUpActivities,
+  type OfferFollowUpActivityReadSummary,
+} from "./domain/offers/offerFollowUpActivityReadPersistence"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
 import {
   summarizeOfferEmailDraftPackageHistory,
@@ -1012,6 +1017,7 @@ function App() {
     workspaceLocalState?.releaseExecutionRunsById ?? {},
   )
   const [releaseExecutionHistoryById, setReleaseExecutionHistoryById] = useState<Record<string, OfferReleaseExecutionHistorySummary>>({})
+  const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>({})
   const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
     workspaceLocalState?.releaseReviewsById ?? {},
   )
@@ -1022,6 +1028,7 @@ function App() {
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const releaseExecutionLocksRef = useRef(new Set<string>())
   const releaseExecutionQueryKeysRef = useRef(new Map<string, Promise<OfferReleaseExecutionHistorySummary>>())
+  const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
@@ -1612,6 +1619,59 @@ function App() {
     releaseExecutionHistoryById[selectedId],
     localOfferReleaseHistory,
   )
+  const localFollowUpActivitySummary = useMemo(
+    () => summarizeOfferFollowUpActivities([], { offerId: offer.offerNumber.toLowerCase() }),
+    [offer.offerNumber],
+  )
+  const offerFollowUpActivityBridge = useMemo(() => createBrowserConvexOfferFollowUpActivityBridge(), [])
+  const convexOfferFollowUpActivityOfferId = offerFollowUpActivityBridge?.resolveOfferId(offer.offerNumber.toLowerCase())
+  useEffect(() => {
+    let cancelled = false
+    const followUpActivityQueries = followUpActivityQueryKeysRef.current
+    const queryKey =
+      offerFollowUpActivityBridge?.queryRef && convexOfferFollowUpActivityOfferId
+        ? `${selectedId}::${convexOfferFollowUpActivityOfferId}`
+        : undefined
+    if (!queryKey || !offerFollowUpActivityBridge) {
+      return () => {
+        cancelled = true
+      }
+    }
+    let activityPromise = followUpActivityQueries.get(queryKey)
+    if (!activityPromise) {
+      const queryRef = offerFollowUpActivityBridge.queryRef
+      const runQuery = offerFollowUpActivityBridge.runQuery
+
+      const reader = createConvexOfferFollowUpActivityReader({
+        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        queryRef,
+        runQuery,
+      })
+      activityPromise = reader.listActivities({
+        limit: 20,
+        offerId: convexOfferFollowUpActivityOfferId,
+      })
+      followUpActivityQueries.set(queryKey, activityPromise)
+    }
+
+    void activityPromise
+      .then((summary) => {
+        if (!cancelled && summary.totalActivities > 0) {
+          setFollowUpActivitySummaryById((current) => ({ ...current, [selectedId]: summary }))
+        }
+      })
+      .catch(() => {
+        followUpActivityQueries.delete(queryKey)
+        if (!cancelled) {
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [convexOfferFollowUpActivityOfferId, offerFollowUpActivityBridge, selectedId])
+  const offerFollowUpActivitySummary = followUpActivitySummaryById[selectedId] ?? localFollowUpActivitySummary
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
   const offerEmailDraftPackageHistory = useMemo(
     () =>
@@ -2428,6 +2488,7 @@ function App() {
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
+              releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
@@ -8394,6 +8455,7 @@ function OfferView({
   releaseGate,
   releaseExecution,
   releaseEmailDraftHistory,
+  releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
   releaseProviderOutcomeHistory,
@@ -8423,6 +8485,7 @@ function OfferView({
   releaseGate: QuoteReleaseGateDecision
   releaseExecution: OfferReleaseExecutionRun
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
+  releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
@@ -8564,6 +8627,7 @@ function OfferView({
         onScheduleFollowUp={onScheduleFollowUp}
       />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
+      <OfferFollowUpActivityReadPanel summary={releaseFollowUpActivitySummary} />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
@@ -8763,6 +8827,65 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
           ))}
         </div>
       )}
+    </section>
+  )
+}
+
+function OfferFollowUpActivityReadPanel({ summary }: { summary: OfferFollowUpActivityReadSummary }) {
+  const latest = summary.latestActivity
+  const taskCount = summary.recordedFollowUpTaskIds.length
+
+  return (
+    <section className="offer-follow-up-activity-panel" aria-label="Offer follow-up activity reads">
+      <div className="offer-follow-up-activity-heading">
+        <div>
+          <span className="eyebrow">
+            <CalendarDays aria-hidden="true" />
+            Follow-up activity
+          </span>
+          <strong>
+            {summary.totalActivities === 1 ? "1 persisted activity" : `${summary.totalActivities} persisted activities`}
+          </strong>
+        </div>
+        <span
+          className={
+            summary.totalActivities > 0
+              ? "offer-follow-up-activity-status offer-follow-up-activity-status-ready"
+              : "offer-follow-up-activity-status offer-follow-up-activity-status-review"
+          }
+        >
+          {summary.totalActivities > 0 ? "Recorded" : "Pending"}
+        </span>
+      </div>
+      <div className="offer-follow-up-activity-summary">
+        <Metric label="Activities" value={String(summary.totalActivities)} />
+        <Metric label="Task IDs" value={String(taskCount)} />
+        <Metric label="Latest" value={latest ? formatAuditTimestamp(new Date(latest.createdAt).toISOString()) : "None"} />
+      </div>
+      {latest ? (
+        <div className="offer-follow-up-activity-latest">
+          <div>
+            <strong>{latest.followUpTaskId ?? "Follow-up activity recorded"}</strong>
+            <span>{latest.message}</span>
+          </div>
+          <small>{latest.activityId ?? latest.offerId}</small>
+        </div>
+      ) : (
+        <div className="flag">
+          <AlertTriangle aria-hidden="true" />
+          <span>No persisted calendar follow-up activity records are available yet.</span>
+        </div>
+      )}
+      {summary.recordedFollowUpTaskIds.length > 0 ? (
+        <div className="offer-follow-up-activity-tasks" aria-label="Recorded follow-up task ids">
+          {summary.recordedFollowUpTaskIds.slice(0, 6).map((taskId) => (
+            <div className="flag ok" key={taskId}>
+              <CheckCircle2 aria-hidden="true" />
+              <span>{taskId}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -10411,6 +10534,7 @@ function providerOutcomeReadinessPersistenceKey(
 
 interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
+  offerFollowUpActivitiesQueryRef?: unknown
   offerReleaseExecutionsQueryRef?: unknown
   offerReplyMutationRef?: unknown
   offerProviderOutcomeReadinessMutationRef?: unknown
@@ -10440,6 +10564,12 @@ interface BrowserConvexOfferProviderOutcomeReadinessBridge {
 }
 
 interface BrowserConvexOfferReleaseExecutionBridge {
+  queryRef: unknown
+  resolveOfferId: (offerId: string) => string | undefined
+  runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
+}
+
+interface BrowserConvexOfferFollowUpActivityBridge {
   queryRef: unknown
   resolveOfferId: (offerId: string) => string | undefined
   runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
@@ -10505,6 +10635,19 @@ function createBrowserConvexOfferReleaseExecutionBridge(): BrowserConvexOfferRel
 
   return {
     queryRef: bridge.offerReleaseExecutionsQueryRef,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    runQuery: bridge.runQuery,
+  }
+}
+
+function createBrowserConvexOfferFollowUpActivityBridge(): BrowserConvexOfferFollowUpActivityBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.offerFollowUpActivitiesQueryRef || !bridge.runQuery) {
+    return undefined
+  }
+
+  return {
+    queryRef: bridge.offerFollowUpActivitiesQueryRef,
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     runQuery: bridge.runQuery,
   }

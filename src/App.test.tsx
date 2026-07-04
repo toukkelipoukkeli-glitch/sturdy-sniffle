@@ -803,6 +803,91 @@ describe("FactoryBid workspace (component)", () => {
     })
   })
 
+  it("hydrates offer follow-up activity reads through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            _id: "activity-follow-up-2",
+            actorName: "Sari",
+            createdAt: Date.parse("2026-07-03T07:05:00.000Z"),
+            kind: "calendar_event",
+            message: "Follow-up calendar hold updated for customer reply.",
+            offerId: "convex-offer-204",
+            rfqId: "convex-rfq-204",
+          },
+          {
+            _id: "activity-follow-up-1",
+            actorName: "Sari",
+            createdAt: Date.parse("2026-07-03T07:00:00.000Z"),
+            kind: "calendar_event",
+            message: "Scheduled offer follow-up follow-up-rfq-204 for OFFER-204 at 2026-07-03T07:00:00.000Z.",
+            offerId: "convex-offer-204",
+            quoteId: "convex-quote-204",
+            rfqId: "convex-rfq-204",
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            offerId: "convex-offer-204",
+          },
+          queryRef: "listOfferFollowUpActivities",
+        },
+      ])
+    })
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    await waitFor(() => {
+      expect(followUpActivity).toHaveTextContent("2 persisted activities")
+      expect(followUpActivity).toHaveTextContent("Recorded")
+      expect(followUpActivity).toHaveTextContent("Task IDs 1")
+      expect(followUpActivity).toHaveTextContent("Follow-up calendar hold updated for customer reply.")
+      expect(followUpActivity).toHaveTextContent("activity-follow-up-2")
+    })
+    expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
+  })
+
+  it("surfaces pending follow-up activity reads when no persisted records exist", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    expect(followUpActivity).toHaveTextContent("0 persisted activities")
+    expect(followUpActivity).toHaveTextContent("Pending")
+    expect(followUpActivity).toHaveTextContent("Task IDs 0")
+    expect(followUpActivity).toHaveTextContent("Latest None")
+    expect(followUpActivity).toHaveTextContent("No persisted calendar follow-up activity records are available yet.")
+    expect(followUpActivity).not.toHaveTextContent("activity-follow-up")
+    expect(within(followUpActivity).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-review")
+    expect(followUpActivity.querySelector(".offer-follow-up-activity-latest")).not.toBeInTheDocument()
+    expect(within(followUpActivity).queryByLabelText("Recorded follow-up task ids")).not.toBeInTheDocument()
+  })
+
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
     render(<App />)
