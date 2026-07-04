@@ -870,6 +870,64 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
   })
 
+  it("skips duplicate Convex follow-up activity writes during release execution", async () => {
+    const user = userEvent.setup()
+    const mutationCalls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        createOfferFollowUpActivity: "createOfferFollowUpActivity",
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async (mutationRef, args) => {
+        mutationCalls.push({ args, mutationRef })
+      },
+      runQuery: async () => [
+        {
+          _id: "activity-follow-up-1",
+          actorName: "Sari",
+          createdAt: Date.parse("2026-07-03T07:00:00.000Z"),
+          kind: "calendar_event",
+          message: "Scheduled offer follow-up follow-up-rfq-204 for OFFER-204 at 2026-07-03T07:00:00.000Z.",
+          offerId: "convex-offer-204",
+          rfqId: "convex-rfq-204",
+        },
+      ],
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("follow-up-rfq-204")
+    })
+
+    const releaseGate = screen.getByLabelText("Quote release gate")
+    await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await waitFor(() => {
+      expect(mutationCalls.some((call) => call.mutationRef === "createOfferFollowUpActivity")).toBe(true)
+    })
+    mutationCalls.length = 0
+
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await user.click(within(screen.getByLabelText("Offer release execution audit")).getByRole("button", { name: "Execute release" }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("Latest succeeded")
+    })
+    expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([])
+    expect(mutationCalls.some((call) => call.mutationRef === "transitionRfqStatus")).toBe(true)
+  })
+
   it("surfaces pending follow-up activity reads when no persisted records exist", async () => {
     const user = userEvent.setup()
     render(<App />)

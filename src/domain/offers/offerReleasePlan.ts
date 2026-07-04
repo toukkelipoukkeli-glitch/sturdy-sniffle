@@ -387,8 +387,8 @@ function buildReleaseWorkspaceActions(input: {
       buildWorkspaceAction({
         actor: input.actor,
         followUpDueAt,
+        followUpTaskId: input.followUpTaskId,
         kind: "follow_up_created",
-        note: input.followUpTaskId,
         occurredAt: input.releaseAt,
         offerId: input.offerId,
         quoteId: input.quoteId,

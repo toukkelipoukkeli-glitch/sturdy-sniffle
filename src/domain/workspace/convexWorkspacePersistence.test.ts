@@ -122,6 +122,7 @@ describe("convex workspace persistence", () => {
       buildWorkspaceAction({
         actor: "Sari",
         followUpDueAt: "2026-06-27T09:00:00+03:00",
+        followUpTaskId: "follow-up-rfq-019",
         kind: "follow_up_created",
         occurredAt: "2026-06-20T10:10:00+03:00",
         offerId: "offer-019",
@@ -134,7 +135,7 @@ describe("convex workspace persistence", () => {
       {
         args: {
           actorName: "Sari",
-          message: "Created offer follow-up for offer-019.",
+          message: "Scheduled offer follow-up follow-up-rfq-019 for offer-019 at 2026-06-27T06:00:00.000Z.",
           offerId: "convex-offer-019",
           quoteId: "convex-quote-019",
           rfqId: "convex-rfq-019",
