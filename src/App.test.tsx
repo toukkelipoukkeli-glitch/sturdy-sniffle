@@ -737,6 +737,60 @@ describe("FactoryBid workspace (component)", () => {
     })
   })
 
+  it("hydrates offer release execution history through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            executedAt: "2026-06-20T09:05:00+03:00",
+            executionFingerprint: "offer-release-execution-persisted",
+            executionKey: "offer-release-execution:convex-offer-204:persisted",
+            mode: "commit",
+            nextActions: [],
+            offerId: "convex-offer-204",
+            status: "succeeded",
+            warningCount: 0,
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            offerId: "convex-offer-204",
+          },
+          queryRef: "listOfferReleaseExecutions",
+        },
+      ])
+    })
+    const releaseHistory = screen.getByLabelText("Offer release execution history")
+    await waitFor(() => {
+      expect(releaseHistory).toHaveTextContent("1 recorded run")
+      expect(releaseHistory).toHaveTextContent("Latestsucceeded")
+    })
+  })
+
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
     render(<App />)
