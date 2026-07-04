@@ -118,6 +118,8 @@ const offerReleaseCommandExecutionStatus = v.union(
   v.literal("requires_review"),
 );
 
+const offerProviderOutcomeReadinessStatus = v.union(v.literal("blocked"), v.literal("ready"));
+
 const offerReleaseExecutionCommand = v.object({
   key: v.string(),
   kind: offerReleaseCommandKind,
@@ -129,6 +131,8 @@ const offerReleaseExecutionCommand = v.object({
   message: v.optional(v.string()),
   warnings: v.array(v.string()),
 });
+
+type OfferProviderOutcomeReadinessStatus = Infer<typeof offerProviderOutcomeReadinessStatus>;
 
 const defaultLimit = 50;
 
@@ -560,6 +564,31 @@ export const listOfferReleaseExecutions = query({
   },
 });
 
+export const listOfferProviderOutcomeReadiness = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const records = offer.tenantId
+      ? await ctx.db
+          .query("offerProviderOutcomeReadiness")
+          .withIndex("by_tenant_offer_time", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("offerProviderOutcomeReadiness")
+          .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+
+    return records.filter((record) => childBelongsToActorTenant(record, offer, actor));
+  },
+});
+
 export const listProviderRuns = query({
   args: {
     status: v.optional(providerRunStatus),
@@ -867,6 +896,104 @@ export const recordOfferReleaseExecution = mutation({
       offerId: args.offerId,
       reused: false,
       status: args.status,
+    };
+  },
+});
+
+export const recordOfferProviderOutcomeReadiness = mutation({
+  args: {
+    offerId: v.id("offers"),
+    readinessKey: v.string(),
+    readinessVersion: v.string(),
+    status: offerProviderOutcomeReadinessStatus,
+    offerNumber: v.string(),
+    expectedCommandCount: v.number(),
+    latestCommandCount: v.number(),
+    appliedCommandCount: v.number(),
+    failedCommandCount: v.number(),
+    missingCommandCount: v.number(),
+    blockerLabels: v.array(v.string()),
+    nextActions: v.array(v.string()),
+    latestOutcomeFingerprint: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const now = Date.now();
+    const readinessKey = nonBlank(args.readinessKey, "readinessKey");
+    const existingReadiness = await ctx.db
+      .query("offerProviderOutcomeReadiness")
+      .withIndex("by_tenant_offer_readiness_key", (q) =>
+        q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId).eq("readinessKey", readinessKey),
+      )
+      .unique();
+
+    const offerNumber = nonBlank(args.offerNumber, "offerNumber");
+    if (offerNumber !== offer.offerNumber) {
+      throw new Error("offerNumber must match offer");
+    }
+
+    const payload = {
+      appliedCommandCount: nonNegativeInteger(args.appliedCommandCount, "appliedCommandCount"),
+      blockerLabels: normalizeTextList(args.blockerLabels),
+      expectedCommandCount: nonNegativeInteger(args.expectedCommandCount, "expectedCommandCount"),
+      failedCommandCount: nonNegativeInteger(args.failedCommandCount, "failedCommandCount"),
+      latestCommandCount: nonNegativeInteger(args.latestCommandCount, "latestCommandCount"),
+      latestOutcomeFingerprint: optionalNonBlank(args.latestOutcomeFingerprint),
+      missingCommandCount: nonNegativeInteger(args.missingCommandCount, "missingCommandCount"),
+      nextActions: normalizeTextList(args.nextActions),
+      offerNumber,
+      readinessVersion: nonBlank(args.readinessVersion, "readinessVersion"),
+      status: normalizeProviderOutcomeReadinessStatus(args.status),
+    };
+    validateProviderOutcomeReadinessCounts(payload);
+
+    if (existingReadiness) {
+      await ctx.db.patch(existingReadiness._id, {
+        ...payload,
+        updatedAt: now,
+      });
+      return {
+        offerId: args.offerId,
+        readinessId: existingReadiness._id,
+        reused: true,
+        status: payload.status,
+      };
+    }
+
+    const readinessId = await ctx.db.insert("offerProviderOutcomeReadiness", {
+      ...payload,
+      createdAt: now,
+      offerId: args.offerId,
+      quoteId: offer.quoteId,
+      readinessKey,
+      rfqId: offer.rfqId,
+      tenantId: actor.tenantId,
+      updatedAt: now,
+    });
+    const activityId = await ctx.db.insert("activities", {
+      actorName: nonBlank(actor.displayName, "actor.displayName"),
+      actorType: "system",
+      createdAt: now,
+      kind: "calculation",
+      message: offerProviderOutcomeReadinessActivityMessage({
+        appliedCommandCount: payload.appliedCommandCount,
+        failedCommandCount: payload.failedCommandCount,
+        offerNumber: payload.offerNumber,
+        status: payload.status,
+      }),
+      offerId: args.offerId,
+      quoteId: offer.quoteId,
+      rfqId: offer.rfqId,
+      tenantId: actor.tenantId,
+    });
+
+    return {
+      activityId,
+      offerId: args.offerId,
+      readinessId,
+      reused: false,
+      status: payload.status,
     };
   },
 });
@@ -1582,6 +1709,30 @@ function normalizeTextList(values: string[]): string[] {
   return values.map((value) => optionalNonBlank(value)).filter((value): value is string => Boolean(value));
 }
 
+function normalizeProviderOutcomeReadinessStatus(
+  status: OfferProviderOutcomeReadinessStatus,
+): OfferProviderOutcomeReadinessStatus {
+  if (status !== "blocked" && status !== "ready") {
+    throw new Error("provider outcome readiness status must be blocked or ready");
+  }
+  return status;
+}
+
+function validateProviderOutcomeReadinessCounts(input: {
+  appliedCommandCount: number;
+  expectedCommandCount: number;
+  failedCommandCount: number;
+  latestCommandCount: number;
+  missingCommandCount: number;
+}) {
+  if (input.appliedCommandCount + input.failedCommandCount !== input.latestCommandCount) {
+    throw new Error("applied and failed provider outcome counts must equal latestCommandCount");
+  }
+  if (input.latestCommandCount + input.missingCommandCount !== input.expectedCommandCount) {
+    throw new Error("latest and missing provider outcome counts must equal expectedCommandCount");
+  }
+}
+
 function offerReleaseExecutionActivityMessage(input: {
   commandCount: number;
   mode: "commit" | "dry_run";
@@ -1590,6 +1741,15 @@ function offerReleaseExecutionActivityMessage(input: {
 }): string {
   const modeLabel = input.mode === "dry_run" ? "dry-run" : "commit";
   return `Recorded ${modeLabel} release execution audit for ${input.offerNumber}: ${input.status} (${input.commandCount} commands).`;
+}
+
+function offerProviderOutcomeReadinessActivityMessage(input: {
+  appliedCommandCount: number;
+  failedCommandCount: number;
+  offerNumber: string;
+  status: OfferProviderOutcomeReadinessStatus;
+}): string {
+  return `Recorded provider outcome readiness for ${input.offerNumber}: ${input.status} (${input.appliedCommandCount} applied, ${input.failedCommandCount} failed).`;
 }
 
 function providerRunActivityMessage(input: { provider: string; purpose: string; status: string }): string {
