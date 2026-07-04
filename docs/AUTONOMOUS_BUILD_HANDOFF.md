@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9614e7e` (`Add offer follow-up activity reader (#265)`).
-- Open PRs at this checkpoint: none on `main`; this branch is wiring persisted offer follow-up calendar activity reads into the React runtime bridge and Offer workspace panel.
-- In-flight PR at this checkpoint: `codex/followup-activity-runtime-read` hydrates follow-up activity summaries from `listOfferFollowUpActivities` through the optional browser Convex bridge, keeps a local empty fallback, and surfaces persisted activity counts/task IDs in the Offer workspace.
+- Main branch checkpoint: `36cdd29` (`Surface follow-up activity reads in offer workspace (#266)`).
+- Open PRs at this checkpoint: none on `main`; this branch is wiring persisted offer follow-up activity read summaries into the deterministic Convex activity payload builder so already recorded follow-up task IDs do not produce duplicate write payloads.
+- In-flight PR at this checkpoint: `codex/followup-activity-write-plan` uses the persisted follow-up activity summary from the read adapter as an optional duplicate-suppression input for future follow-up activity writes, while keeping legacy/unknown activity messages nonfatal.
 - Latest merged sequence:
+  - `#266` hydrates follow-up activity summaries from `listOfferFollowUpActivities` through the optional browser Convex bridge, keeps a local empty fallback, and surfaces persisted activity counts/task IDs in the Offer workspace.
   - `#265` adds a local/Convex read adapter for `listOfferFollowUpActivities`, including seeded-record validation and local fallback summaries of recorded follow-up task IDs.
   - `#264` hydrates the offer release execution history panel from `listOfferReleaseExecutions` through the optional browser Convex bridge, merges persisted reads with local preview/commit runs, and keeps StrictMode query caching deterministic.
   - `#263` adds a local/Convex query-side adapter around `listOfferReleaseExecutions` so runtime/UI slices can hydrate persisted release execution history from workflow reads.
@@ -166,7 +167,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration in flight.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning in flight.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.

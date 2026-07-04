@@ -9,6 +9,10 @@ import {
   type ConvexOfferFollowUpActivityPayload,
 } from "./convexOfferFollowUp"
 import { buildOfferLifecycleTimeline, type OfferLifecycleTimeline } from "./offerLifecycle"
+import {
+  OFFER_FOLLOW_UP_ACTIVITY_READ_VERSION,
+  type OfferFollowUpActivityReadSummary,
+} from "./offerFollowUpActivityReadPersistence"
 
 const offer = buildCncOfferDraft({
   customer: {
@@ -81,6 +85,47 @@ describe("Convex offer follow-up persistence", () => {
         recordedFollowUpTaskIds: ["follow-first", "follow-later"],
       }),
     ).toThrow("offerId is required")
+  })
+
+  it("skips persisted follow-up activity task ids without suppressing unknown legacy activity reads", () => {
+    const timeline = followUpTimeline()
+    const persistedActivitySummary = followUpActivitySummary(["follow-first"])
+
+    expect(
+      buildConvexOfferFollowUpActivityPayloads(timeline, {
+        offerId: "convex-offer-204",
+        persistedActivitySummary,
+      }),
+    ).toEqual([
+      {
+        message: "Scheduled offer follow-up follow-later for OFFER-204 at 2026-07-03T07:00:00.000Z.",
+        offerId: "convex-offer-204",
+      },
+    ])
+
+    expect(
+      buildConvexOfferFollowUpActivityPayloads(timeline, {
+        offerId: "convex-offer-204",
+        persistedActivitySummary: followUpActivitySummary([]),
+      }),
+    ).toHaveLength(2)
+  })
+
+  it("combines explicit and persisted follow-up task ids before planning writes", () => {
+    expect(
+      buildConvexOfferFollowUpActivityPayloads(followUpTimeline(), {
+        offerId: "convex-offer-204",
+        persistedActivitySummary: followUpActivitySummary(["follow-first"]),
+        recordedFollowUpTaskIds: ["follow-later"],
+      }),
+    ).toEqual([])
+
+    expect(() =>
+      buildConvexOfferFollowUpActivityPayloads(followUpTimeline(), {
+        offerId: "convex-offer-204",
+        persistedActivitySummary: followUpActivitySummary([" "]),
+      }),
+    ).toThrow("persistedActivitySummary.recordedFollowUpTaskIds[0] is required")
   })
 
   it("rejects unsafe follow-up task and calendar metadata", () => {
@@ -183,4 +228,25 @@ function followUpTimeline(): OfferLifecycleTimeline {
       occurredAt: "2026-06-27T11:00:00+03:00",
     },
   ])
+}
+
+function followUpActivitySummary(recordedFollowUpTaskIds: string[]): OfferFollowUpActivityReadSummary {
+  const followUpTaskId = recordedFollowUpTaskIds[0]?.trim()
+  return {
+    latestActivity: {
+      activityId: "activity-follow-first",
+      createdAt: 1_782_920_400_000,
+      ...(followUpTaskId ? { followUpTaskId } : {}),
+      message: "Scheduled offer follow-up follow-first for OFFER-204 at 2026-07-02T07:00:00.000Z.",
+      offerId: "convex-offer-204",
+    },
+    messages: [
+      recordedFollowUpTaskIds.length
+        ? "Scheduled offer follow-up follow-first for OFFER-204 at 2026-07-02T07:00:00.000Z."
+        : "Imported legacy offer follow-up calendar activity.",
+    ],
+    readVersion: OFFER_FOLLOW_UP_ACTIVITY_READ_VERSION,
+    recordedFollowUpTaskIds,
+    totalActivities: 1,
+  }
 }
