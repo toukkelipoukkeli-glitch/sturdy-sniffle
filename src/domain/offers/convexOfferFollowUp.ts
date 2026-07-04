@@ -2,6 +2,7 @@ import type { CalendarRfqPlan } from "../integrations/calendarRfq"
 import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import type { OfferFollowUpTask, OfferLifecycleTimeline } from "./offerLifecycle"
+import type { OfferFollowUpActivityReadSummary } from "./offerFollowUpActivityReadPersistence"
 
 export interface ConvexOfferFollowUpActivityPayload {
   offerId: string
@@ -15,6 +16,7 @@ export interface BuildConvexOfferFollowUpActivityPayloadsOptions {
   offerId: string
   actorName?: string
   calendarPlan?: CalendarRfqPlan
+  persistedActivitySummary?: OfferFollowUpActivityReadSummary
   quoteId?: string
   recordedFollowUpTaskIds?: string[]
   rfqId?: string
@@ -27,7 +29,13 @@ export function buildConvexOfferFollowUpActivityPayloads(
   const offerId = nonBlank(options.offerId, "offerId")
   const actorName = optionalTrim(options.actorName)
   const quoteId = optionalTrim(options.quoteId)
-  const recordedTaskIds = normalizeRecordedTaskIds(options.recordedFollowUpTaskIds ?? [])
+  const recordedTaskIds = new Set([
+    ...normalizeRecordedTaskIds(options.recordedFollowUpTaskIds ?? [], "recordedFollowUpTaskIds"),
+    ...normalizeRecordedTaskIds(
+      options.persistedActivitySummary?.recordedFollowUpTaskIds ?? [],
+      "persistedActivitySummary.recordedFollowUpTaskIds",
+    ),
+  ])
   const rfqId = optionalTrim(options.rfqId)
   const offerNumber = nonBlank(timeline.offerNumber, "timeline.offerNumber")
   const calendarEventsByTaskId = calendarFollowUpEventsByTaskId(options.calendarPlan, offerNumber)
@@ -98,6 +106,6 @@ function calendarFollowUpEventsByTaskId(calendarPlan: CalendarRfqPlan | undefine
   return eventsByTaskId
 }
 
-function normalizeRecordedTaskIds(values: string[]): Set<string> {
-  return new Set(values.map((value, index) => nonBlank(value, `recordedFollowUpTaskIds[${index}]`)))
+function normalizeRecordedTaskIds(values: string[], fieldName: string): Set<string> {
+  return new Set(values.map((value, index) => nonBlank(value, `${fieldName}[${index}]`)))
 }
