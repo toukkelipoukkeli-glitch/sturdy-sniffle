@@ -100,6 +100,11 @@ import {
   type OfferReleaseProviderOutcomeReadiness,
 } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import {
+  createConvexOfferReleaseProviderOutcomeReadinessPersistence,
+  createLocalOfferReleaseProviderOutcomeReadinessPersistence,
+  type OfferReleaseProviderOutcomeReadinessPersistenceSnapshot,
+} from "./domain/offers/offerReleaseProviderOutcomeReadinessPersistence"
+import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
   type OfferReleasePlan,
@@ -987,6 +992,10 @@ function App() {
   )
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
+  const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
+    Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
+  >({})
+  const offerProviderReadinessSnapshotsRef = useRef<Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>>({})
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
   )
@@ -1003,6 +1012,7 @@ function App() {
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const releaseExecutionLocksRef = useRef(new Set<string>())
+  const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const [workspacePersistenceRuntime] = useState(() =>
     createWorkspacePersistenceRuntime({
       convex: createBrowserConvexWorkspaceBridge(),
@@ -1014,6 +1024,10 @@ function App() {
     }),
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
+  useEffect(() => {
+    offerProviderReadinessSnapshotsRef.current = offerProviderReadinessSnapshotsById
+  }, [offerProviderReadinessSnapshotsById])
+
   useEffect(() => {
     writeWorkspaceLocalState({
       actionsById,
@@ -1577,6 +1591,62 @@ function App() {
       }),
     [offerReleasePlan, offerReleaseProviderOutcomeHistory],
   )
+  const offerReleaseProviderOutcomeReadinessPersistenceKey = useMemo(
+    () => providerOutcomeReadinessPersistenceKey(selectedId, offerReleaseProviderOutcomeReadiness),
+    [offerReleaseProviderOutcomeReadiness, selectedId],
+  )
+  useEffect(() => {
+    let cancelled = false
+    if (providerReadinessPersistenceKeysRef.current.has(offerReleaseProviderOutcomeReadinessPersistenceKey)) {
+      return () => {
+        cancelled = true
+      }
+    }
+    providerReadinessPersistenceKeysRef.current.add(offerReleaseProviderOutcomeReadinessPersistenceKey)
+
+    const previousSnapshot = offerProviderReadinessSnapshotsRef.current[selectedId]
+    const localPersistence = createLocalOfferReleaseProviderOutcomeReadinessPersistence({
+      initialSnapshot: previousSnapshot,
+    })
+    const convexBridge = createBrowserConvexOfferProviderOutcomeReadinessBridge()
+    const convexOfferId = convexBridge?.resolveOfferId(offerReleaseProviderOutcomeReadiness.offerId)
+    const convexRfqId = convexBridge?.resolveRfqId(offerReleaseProviderOutcomeReadiness.rfqId)
+    const persistence =
+      convexBridge && convexOfferId && convexRfqId
+        ? createConvexOfferReleaseProviderOutcomeReadinessPersistence({
+            fallback: localPersistence,
+            mutationRef: convexBridge.mutationRef,
+            onPersistError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            runMutation: convexBridge.runMutation,
+          })
+        : localPersistence
+
+    void persistence
+      .recordReadiness(
+        offerReleaseProviderOutcomeReadiness,
+        convexOfferId && convexRfqId
+          ? {
+              offerId: convexOfferId,
+              rfqId: convexRfqId,
+            }
+          : undefined,
+      )
+      .then((snapshot) => {
+        if (!cancelled) {
+          setOfferProviderReadinessSnapshotsById((current) => ({ ...current, [selectedId]: snapshot }))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          providerReadinessPersistenceKeysRef.current.delete(offerReleaseProviderOutcomeReadinessPersistenceKey)
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [offerReleaseProviderOutcomeReadiness, offerReleaseProviderOutcomeReadinessPersistenceKey, selectedId])
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
@@ -10084,9 +10154,31 @@ function followUpDueAtFor(item: QuoteWorkItem) {
   return due.toISOString()
 }
 
+function providerOutcomeReadinessPersistenceKey(
+  rfqId: string,
+  readiness: OfferReleaseProviderOutcomeReadiness,
+): string {
+  return [
+    rfqId,
+    readiness.offerId,
+    readiness.rfqId,
+    readiness.readinessVersion,
+    readiness.status,
+    readiness.expectedCommandCount,
+    readiness.latestCommandCount,
+    readiness.appliedCommandCount,
+    readiness.failedCommandCount,
+    readiness.missingCommandCount,
+    readiness.latestOutcomeFingerprint ?? "",
+    readiness.blockerLabels.join("|"),
+    readiness.nextActions.join("|"),
+  ].join("::")
+}
+
 interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
   offerReplyMutationRef?: unknown
+  offerProviderOutcomeReadinessMutationRef?: unknown
   offerIdsByLocalId?: Record<string, string>
   quoteIdsByLocalId?: Record<string, string>
   rfqIdsByLocalId?: Record<string, string>
@@ -10097,6 +10189,13 @@ interface BrowserConvexOfferReplyBridge {
   mutationRef: unknown
   resolveOfferId: (offerId: string) => string | undefined
   resolveQuoteId: (quoteId: string) => string | undefined
+  resolveRfqId: (rfqId: string) => string | undefined
+  runMutation: WorkspacePersistenceBridge["runMutation"]
+}
+
+interface BrowserConvexOfferProviderOutcomeReadinessBridge {
+  mutationRef: unknown
+  resolveOfferId: (offerId: string) => string | undefined
   resolveRfqId: (rfqId: string) => string | undefined
   runMutation: WorkspacePersistenceBridge["runMutation"]
 }
@@ -10132,6 +10231,20 @@ function createBrowserConvexOfferReplyBridge(): BrowserConvexOfferReplyBridge | 
     mutationRef: bridge.offerReplyMutationRef,
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    runMutation: bridge.runMutation,
+  }
+}
+
+function createBrowserConvexOfferProviderOutcomeReadinessBridge(): BrowserConvexOfferProviderOutcomeReadinessBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.offerProviderOutcomeReadinessMutationRef) {
+    return undefined
+  }
+
+  return {
+    mutationRef: bridge.offerProviderOutcomeReadinessMutationRef,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
     resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
     runMutation: bridge.runMutation,
   }

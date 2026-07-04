@@ -25,6 +25,7 @@ export interface ConvexOfferReleaseProviderOutcomeReadinessPayload {
 export interface BuildConvexOfferReleaseProviderOutcomeReadinessPayloadOptions {
   readinessKey?: string
   offerId?: string
+  rfqId?: string
 }
 
 export type ConvexOfferReleaseProviderOutcomeReadinessRecord = ConvexOfferReleaseProviderOutcomeReadinessPayload
@@ -35,7 +36,7 @@ export function buildConvexOfferReleaseProviderOutcomeReadinessPayload(
 ): ConvexOfferReleaseProviderOutcomeReadinessPayload {
   const offerId = nonBlank(options.offerId ?? readiness.offerId, "offerId")
   const offerNumber = nonBlank(readiness.offerNumber, "readiness.offerNumber")
-  const rfqId = nonBlank(readiness.rfqId, "readiness.rfqId")
+  const rfqId = nonBlank(options.rfqId ?? readiness.rfqId, "rfqId")
   const status = normalizeStatus(readiness.status)
   const latestOutcomeFingerprint = optionalTrim(readiness.latestOutcomeFingerprint)
 
