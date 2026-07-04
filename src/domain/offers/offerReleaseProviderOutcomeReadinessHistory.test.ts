@@ -45,6 +45,22 @@ describe("offer release provider outcome readiness history", () => {
       totalReadinessRecords: 0,
     })
   })
+
+  it("uses the last seeded record as the fallback current readiness when no key is provided", () => {
+    const seededSnapshot = snapshot()
+    const summary = summarizeOfferReleaseProviderOutcomeReadinessHistory({
+      records: [...seededSnapshot.records].reverse(),
+    })
+
+    expect(summary.currentReadiness).toMatchObject({
+      readinessKey: "readiness:offer-204:blocked",
+      status: "blocked",
+    })
+    expect(summary.statusCounts).toEqual({
+      blocked: 1,
+      ready: 1,
+    })
+  })
 })
 
 function snapshot(): OfferReleaseProviderOutcomeReadinessPersistenceSnapshot {

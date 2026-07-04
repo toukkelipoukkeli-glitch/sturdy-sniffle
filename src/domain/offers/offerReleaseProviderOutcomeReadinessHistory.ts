@@ -36,13 +36,16 @@ export function summarizeOfferReleaseProviderOutcomeReadinessHistory(
   snapshot: Pick<OfferReleaseProviderOutcomeReadinessPersistenceSnapshot, "records"> | undefined,
   currentReadinessKey?: string,
 ): OfferReleaseProviderOutcomeReadinessHistorySummary {
-  const records = (snapshot?.records ?? []).map(normalizeRecordSummary).sort(sortRecords)
+  const recordsInSnapshotOrder = (snapshot?.records ?? []).map(normalizeRecordSummary)
+  const records = [...recordsInSnapshotOrder].sort(sortRecords)
   const statusCounts = countStatuses(records)
   const currentKey = currentReadinessKey?.trim()
 
   return {
     blockedRecordCount: statusCounts.blocked ?? 0,
-    currentReadiness: currentKey ? records.find((record) => record.readinessKey === currentKey) : records.at(-1),
+    currentReadiness: currentKey
+      ? records.find((record) => record.readinessKey === currentKey)
+      : recordsInSnapshotOrder.at(-1),
     historyVersion: OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_HISTORY_VERSION,
     readyRecordCount: statusCounts.ready ?? 0,
     statusCounts,
