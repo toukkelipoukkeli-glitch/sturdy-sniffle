@@ -100,10 +100,15 @@ import {
   type OfferReleaseProviderOutcomeReadiness,
 } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import {
+  summarizeOfferReleaseProviderOutcomeReadinessHistory,
+  type OfferReleaseProviderOutcomeReadinessHistorySummary,
+} from "./domain/offers/offerReleaseProviderOutcomeReadinessHistory"
+import {
   createConvexOfferReleaseProviderOutcomeReadinessPersistence,
   createLocalOfferReleaseProviderOutcomeReadinessPersistence,
   type OfferReleaseProviderOutcomeReadinessPersistenceSnapshot,
 } from "./domain/offers/offerReleaseProviderOutcomeReadinessPersistence"
+import { buildConvexOfferReleaseProviderOutcomeReadinessPayload } from "./domain/offers/convexOfferReleaseProviderOutcomeReadiness"
 import {
   buildOfferReleasePlan,
   type OfferReleaseCommandStatus,
@@ -1591,62 +1596,98 @@ function App() {
       }),
     [offerReleasePlan, offerReleaseProviderOutcomeHistory],
   )
+  const offerProviderReadinessBridge = useMemo(() => createBrowserConvexOfferProviderOutcomeReadinessBridge(), [])
+  const convexOfferProviderReadinessOfferId = offerProviderReadinessBridge?.resolveOfferId(offerReleaseProviderOutcomeReadiness.offerId)
+  const convexOfferProviderReadinessRfqId = offerProviderReadinessBridge?.resolveRfqId(offerReleaseProviderOutcomeReadiness.rfqId)
+  const offerReleaseProviderOutcomeReadinessRecordKey = useMemo(
+    () =>
+      buildConvexOfferReleaseProviderOutcomeReadinessPayload(
+        offerReleaseProviderOutcomeReadiness,
+        convexOfferProviderReadinessOfferId && convexOfferProviderReadinessRfqId
+          ? {
+              offerId: convexOfferProviderReadinessOfferId,
+              rfqId: convexOfferProviderReadinessRfqId,
+            }
+          : undefined,
+      ).readinessKey,
+    [convexOfferProviderReadinessOfferId, convexOfferProviderReadinessRfqId, offerReleaseProviderOutcomeReadiness],
+  )
   const offerReleaseProviderOutcomeReadinessPersistenceKey = useMemo(
     () => providerOutcomeReadinessPersistenceKey(selectedId, offerReleaseProviderOutcomeReadiness),
     [offerReleaseProviderOutcomeReadiness, selectedId],
   )
+  const selectedOfferProviderReadinessSnapshot = offerProviderReadinessSnapshotsById[selectedId]
+  const offerReleaseProviderOutcomeReadinessHistory = useMemo(
+    () =>
+      summarizeOfferReleaseProviderOutcomeReadinessHistory(
+        selectedOfferProviderReadinessSnapshot,
+        offerReleaseProviderOutcomeReadinessRecordKey,
+      ),
+    [offerReleaseProviderOutcomeReadinessRecordKey, selectedOfferProviderReadinessSnapshot],
+  )
   useEffect(() => {
     let cancelled = false
-    if (providerReadinessPersistenceKeysRef.current.has(offerReleaseProviderOutcomeReadinessPersistenceKey)) {
+    let settled = false
+    const persistedReadinessKeys = providerReadinessPersistenceKeysRef.current
+    if (persistedReadinessKeys.has(offerReleaseProviderOutcomeReadinessPersistenceKey)) {
       return () => {
         cancelled = true
       }
     }
-    providerReadinessPersistenceKeysRef.current.add(offerReleaseProviderOutcomeReadinessPersistenceKey)
+    persistedReadinessKeys.add(offerReleaseProviderOutcomeReadinessPersistenceKey)
 
     const previousSnapshot = offerProviderReadinessSnapshotsRef.current[selectedId]
     const localPersistence = createLocalOfferReleaseProviderOutcomeReadinessPersistence({
       initialSnapshot: previousSnapshot,
     })
-    const convexBridge = createBrowserConvexOfferProviderOutcomeReadinessBridge()
-    const convexOfferId = convexBridge?.resolveOfferId(offerReleaseProviderOutcomeReadiness.offerId)
-    const convexRfqId = convexBridge?.resolveRfqId(offerReleaseProviderOutcomeReadiness.rfqId)
     const persistence =
-      convexBridge && convexOfferId && convexRfqId
+      offerProviderReadinessBridge && convexOfferProviderReadinessOfferId && convexOfferProviderReadinessRfqId
         ? createConvexOfferReleaseProviderOutcomeReadinessPersistence({
             fallback: localPersistence,
-            mutationRef: convexBridge.mutationRef,
+            mutationRef: offerProviderReadinessBridge.mutationRef,
             onPersistError: () => setPersistenceSyncErrorCount((count) => count + 1),
-            runMutation: convexBridge.runMutation,
+            runMutation: offerProviderReadinessBridge.runMutation,
           })
         : localPersistence
 
     void persistence
       .recordReadiness(
         offerReleaseProviderOutcomeReadiness,
-        convexOfferId && convexRfqId
+        convexOfferProviderReadinessOfferId && convexOfferProviderReadinessRfqId
           ? {
-              offerId: convexOfferId,
-              rfqId: convexRfqId,
+              offerId: convexOfferProviderReadinessOfferId,
+              rfqId: convexOfferProviderReadinessRfqId,
             }
           : undefined,
       )
       .then((snapshot) => {
+        settled = true
         if (!cancelled) {
           setOfferProviderReadinessSnapshotsById((current) => ({ ...current, [selectedId]: snapshot }))
         }
       })
       .catch(() => {
+        settled = true
         if (!cancelled) {
-          providerReadinessPersistenceKeysRef.current.delete(offerReleaseProviderOutcomeReadinessPersistenceKey)
+          persistedReadinessKeys.delete(offerReleaseProviderOutcomeReadinessPersistenceKey)
           setPersistenceSyncErrorCount((count) => count + 1)
         }
       })
 
     return () => {
       cancelled = true
+      if (!settled) {
+        persistedReadinessKeys.delete(offerReleaseProviderOutcomeReadinessPersistenceKey)
+      }
     }
-  }, [offerReleaseProviderOutcomeReadiness, offerReleaseProviderOutcomeReadinessPersistenceKey, selectedId])
+  }, [
+    convexOfferProviderReadinessOfferId,
+    convexOfferProviderReadinessRfqId,
+    offerProviderReadinessBridge,
+    offerReleaseProviderOutcomeReadiness,
+    offerReleaseProviderOutcomeReadinessPersistenceKey,
+    selectedId,
+  ])
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const integrationStatus = useMemo(
@@ -2274,6 +2315,7 @@ function App() {
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
+              releaseProviderOutcomeReadinessHistory={offerReleaseProviderOutcomeReadinessHistory}
               releaseProviderOutcomeReadiness={offerReleaseProviderOutcomeReadiness}
               releaseReview={selectedReleaseReview}
               replySnapshot={offerReplySnapshot}
@@ -8239,6 +8281,7 @@ function OfferView({
   releaseHistory,
   releasePlan,
   releaseProviderOutcomeHistory,
+  releaseProviderOutcomeReadinessHistory,
   releaseProviderOutcomeReadiness,
   releaseReview,
   replySnapshot,
@@ -8267,6 +8310,7 @@ function OfferView({
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
+  releaseProviderOutcomeReadinessHistory: OfferReleaseProviderOutcomeReadinessHistorySummary
   releaseProviderOutcomeReadiness: OfferReleaseProviderOutcomeReadiness
   releaseReview?: ReleaseReviewState
   replySnapshot?: OfferReplySyncPersistenceSnapshot
@@ -8406,6 +8450,7 @@ function OfferView({
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
+      <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
       <OfferReleaseExecutionPanel
         execution={releaseExecution}
         onExecuteRelease={onExecuteRelease}
@@ -8742,6 +8787,63 @@ function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferRe
   )
 }
 
+function OfferReleaseProviderOutcomeReadinessHistoryPanel({
+  history,
+}: {
+  history: OfferReleaseProviderOutcomeReadinessHistorySummary
+}) {
+  const current = history.currentReadiness
+  const statusLabel = history.totalReadinessRecords === 0 ? "Pending" : current ? "Recorded" : "Historical"
+
+  return (
+    <section className="offer-provider-readiness-history-panel" aria-label="Readiness persistence history">
+      <div className="offer-provider-readiness-history-heading">
+        <div>
+          <span className="eyebrow">
+            <Database aria-hidden="true" />
+            Readiness persistence
+          </span>
+          <strong>
+            {history.totalReadinessRecords === 1 ? "1 readiness record" : `${history.totalReadinessRecords} readiness records`}
+          </strong>
+        </div>
+        <span
+          className={
+            current?.status === "ready"
+              ? "offer-provider-readiness-history-status offer-provider-readiness-history-status-ready"
+              : "offer-provider-readiness-history-status offer-provider-readiness-history-status-review"
+          }
+        >
+          {statusLabel}
+        </span>
+      </div>
+      <div className="offer-provider-readiness-history-summary">
+        <Metric label="Records" value={String(history.totalReadinessRecords)} />
+        <Metric label="Ready" value={String(history.readyRecordCount)} />
+        <Metric label="Blocked" value={String(history.blockedRecordCount)} />
+        <Metric label="Current" value={current ? humanizeKey(current.status) : "Pending"} />
+      </div>
+      {current ? (
+        <div className="offer-provider-readiness-history-current" data-status={current.status}>
+          <div>
+            <strong>{current.status === "ready" ? "Current readiness recorded" : "Current readiness needs review"}</strong>
+            <span>
+              {current.latestCommandCount}/{current.expectedCommandCount} command outcomes recorded · {current.nextActionCount} next
+              action{current.nextActionCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <small>{shortProviderReadinessKey(current.readinessKey)}</small>
+        </div>
+      ) : (
+        <div className="flag">
+          <AlertTriangle aria-hidden="true" />
+          <span>Current provider readiness record is pending local or Convex persistence.</span>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function OfferReleaseExecutionPanel({
   execution,
   onExecuteRelease,
@@ -8900,6 +9002,10 @@ function shortEmailDraftPackageFingerprint(fingerprint: string) {
 
 function shortProviderOutcomeFingerprint(fingerprint: string) {
   return fingerprint.replace(/^offer-release-provider-outcomes-/, "")
+}
+
+function shortProviderReadinessKey(readinessKey: string) {
+  return readinessKey.replace(/^offer-provider-outcome-readiness:/, "")
 }
 
 function providerOutcomeCommandLabel(commandKey: string) {

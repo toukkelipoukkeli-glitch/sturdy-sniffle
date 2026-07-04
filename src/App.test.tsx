@@ -670,6 +670,22 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessCall?.args).not.toHaveProperty("rfqId")
   })
 
+  it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Offer" }))
+
+    const readinessPersistence = await screen.findByLabelText("Readiness persistence history")
+    await waitFor(() => {
+      expect(readinessPersistence).toHaveTextContent("1 readiness record")
+      expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    })
+    expect(readinessPersistence).toHaveTextContent("Currentblocked")
+    expect(readinessPersistence).toHaveTextContent("0/0 command outcomes recorded")
+    expect(readinessPersistence).toHaveTextContent("offer-204:rfq-204")
+  })
+
   it("previews non-CNC registry process quotes without enabling fake edits", async () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)
