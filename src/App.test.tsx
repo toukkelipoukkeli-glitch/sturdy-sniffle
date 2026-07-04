@@ -670,6 +670,73 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessCall?.args).not.toHaveProperty("rfqId")
   })
 
+  it("hydrates provider outcome readiness snapshots through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const mutationCalls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      offerProviderOutcomeReadinessQueryRef: "listOfferProviderOutcomeReadiness",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async (mutationRef, args) => {
+        mutationCalls.push({ args, mutationRef })
+      },
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            appliedCommandCount: 6,
+            blockerLabels: [],
+            expectedCommandCount: 6,
+            failedCommandCount: 0,
+            latestCommandCount: 6,
+            missingCommandCount: 0,
+            nextActions: ["Provider outcomes are ready for release execution."],
+            offerId: "convex-offer-204",
+            offerNumber: "OFFER-204",
+            readinessKey:
+              "offer-provider-outcome-readiness:convex-offer-204:convex-rfq-204:offer-release-provider-outcome-readiness-v1:ready",
+            readinessVersion: OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION,
+            rfqId: "convex-rfq-204",
+            status: "ready",
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            offerId: "convex-offer-204",
+          },
+          queryRef: "listOfferProviderOutcomeReadiness",
+        },
+      ])
+      expect(mutationCalls.some((call) => call.mutationRef === "recordOfferProviderOutcomeReadiness")).toBe(true)
+    })
+    const readinessPersistence = screen.getByLabelText("Readiness persistence history")
+    await waitFor(() => {
+      expect(readinessPersistence).toHaveTextContent("2 readiness records")
+      expect(readinessPersistence).toHaveTextContent("Ready1")
+      expect(readinessPersistence).toHaveTextContent("Blocked1")
+      expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    })
+  })
+
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
     render(<App />)
