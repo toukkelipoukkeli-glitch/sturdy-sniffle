@@ -5487,7 +5487,22 @@
   color: oklch(0.31 0.08 155);
 }
 
+.offer-follow-up-activity-status-recorded {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
 .offer-follow-up-activity-status-review {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.offer-follow-up-activity-status-pending {
+  background: oklch(0.95 0.018 250);
+  color: oklch(0.35 0.055 250);
+}
+
+.offer-follow-up-activity-status-partial {
   background: oklch(0.96 0.05 82);
   color: oklch(0.36 0.09 75);
 }
@@ -5577,6 +5592,7 @@
 .offer-release-history-summary,
 .offer-release-history-retries,
 .offer-follow-up-activity-summary,
+.offer-follow-up-activity-actions,
 .offer-follow-up-activity-latest,
 .offer-follow-up-activity-tasks,
 .offer-reply-summary,
@@ -5790,7 +5806,11 @@
 }
 
 .offer-follow-up-activity-summary {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.offer-follow-up-activity-actions {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .offer-follow-up-activity-latest {
@@ -6819,6 +6839,7 @@
   .offer-release-history-summary,
   .offer-release-history-retries,
   .offer-follow-up-activity-summary,
+  .offer-follow-up-activity-actions,
   .offer-follow-up-activity-latest,
   .offer-follow-up-activity-tasks,
   .offer-reply-summary,
