@@ -88,6 +88,7 @@ import { createConvexOfferReleaseExecutionReader } from "./domain/offers/offerRe
 import {
   createConvexOfferFollowUpActivityReader,
   summarizeOfferFollowUpActivities,
+  type ConvexOfferFollowUpActivityRecord,
   type OfferFollowUpActivityReadSummary,
 } from "./domain/offers/offerFollowUpActivityReadPersistence"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
@@ -1665,7 +1666,10 @@ function App() {
     void activityPromise
       .then((summary) => {
         if (!cancelled && summary.totalActivities > 0) {
-          setFollowUpActivitySummaryById((current) => ({ ...current, [selectedId]: summary }))
+          setFollowUpActivitySummaryById((current) => {
+            const nextSummary = mergeOfferFollowUpActivitySummaries(current[selectedId], summary)
+            return { ...current, [selectedId]: nextSummary }
+          })
         }
       })
       .catch(() => {
@@ -1997,7 +2001,7 @@ function App() {
             })
           : localPersistence
       const result = await adapter.sync({
-        followUpTaskIds: [`follow-up-${selectedItem.id}`],
+        followUpTaskIds: [workspaceFollowUpTaskId(selectedItem.id)],
         maxResults: 5,
         offerNumber: offer.offerNumber,
         query: `offer ${offer.offerNumber}`,
@@ -2113,6 +2117,17 @@ function App() {
   }
   const recordWorkspaceAction = async (action: WorkspaceActionRecord) => {
     applyWorkspaceSnapshot(await workspacePersistence.recordAction(action))
+    rememberFollowUpActivityWrite(action)
+  }
+  const rememberFollowUpActivityWrite = (action: WorkspaceActionRecord) => {
+    const actionSummary = summarizeFollowUpActivityWrite(action)
+    if (!actionSummary) {
+      return
+    }
+    setFollowUpActivitySummaryById((currentById) => {
+      const nextSummary = mergeOfferFollowUpActivitySummaries(currentById[action.rfqId], actionSummary)
+      return nextSummary === currentById[action.rfqId] ? currentById : { ...currentById, [action.rfqId]: nextSummary }
+    })
   }
   const advanceStatus = async () => {
     const toStatus = nextStatusFor(selectedStatus)
@@ -10518,6 +10533,73 @@ function shouldPersistWorkspaceActionToConvex(
   )
 }
 
+function summarizeFollowUpActivityWrite(action: WorkspaceActionRecord): OfferFollowUpActivityReadSummary | undefined {
+  if (
+    action.kind !== "follow_up_created" ||
+    !action.followUpTaskId ||
+    !action.offerId ||
+    !action.followUpDueAt
+  ) {
+    return undefined
+  }
+
+  const createdAt = Date.parse(action.occurredAt)
+  if (!Number.isFinite(createdAt)) {
+    return undefined
+  }
+
+  const record: ConvexOfferFollowUpActivityRecord = {
+    actorName: action.actor,
+    createdAt,
+    kind: "calendar_event",
+    message: action.activityMessage,
+    offerId: action.offerId,
+    ...(action.quoteId ? { quoteId: action.quoteId } : {}),
+    rfqId: action.rfqId,
+  }
+
+  return summarizeOfferFollowUpActivities([record], { offerId: action.offerId })
+}
+
+function mergeOfferFollowUpActivitySummaries(
+  current: OfferFollowUpActivityReadSummary | undefined,
+  incoming: OfferFollowUpActivityReadSummary,
+): OfferFollowUpActivityReadSummary {
+  if (!current || current.totalActivities === 0) {
+    return incoming
+  }
+  if (incoming.totalActivities === 0) {
+    return current
+  }
+
+  const currentTaskIds = new Set(current.recordedFollowUpTaskIds)
+  const duplicateTaskCount = incoming.recordedFollowUpTaskIds.filter((taskId) => currentTaskIds.has(taskId)).length
+  const recordedFollowUpTaskIds = [...new Set([...current.recordedFollowUpTaskIds, ...incoming.recordedFollowUpTaskIds])].sort(compareText)
+  const messages = [...new Set([...incoming.messages, ...current.messages])]
+  const latestActivity = newerFollowUpActivity(current.latestActivity, incoming.latestActivity)
+
+  return {
+    readVersion: incoming.readVersion,
+    totalActivities: current.totalActivities + incoming.totalActivities - duplicateTaskCount,
+    latestActivity,
+    recordedFollowUpTaskIds,
+    messages,
+  }
+}
+
+function newerFollowUpActivity(
+  current: OfferFollowUpActivityReadSummary["latestActivity"],
+  incoming: OfferFollowUpActivityReadSummary["latestActivity"],
+) {
+  if (!current) {
+    return incoming
+  }
+  if (!incoming) {
+    return current
+  }
+  return incoming.createdAt > current.createdAt ? incoming : current
+}
+
 function nextStatusFor(status: QuoteQueueStatus): QuoteQueueStatus | undefined {
   const transitions: Partial<Record<QuoteQueueStatus, QuoteQueueStatus>> = {
     new: "triage",
@@ -10785,7 +10867,7 @@ function compareText(left: string, right: string): number {
 }
 
 function buildOfferReplyMessages(item: QuoteWorkItem, offer: OfferDraft): GmailRfqMessage[] {
-  const followUpTaskId = `follow-up-${item.id}`
+  const followUpTaskId = workspaceFollowUpTaskId(item.id)
   const accepted = item.priority === "rush"
   const replyText = accepted
     ? `We accept offer ${offer.offerNumber}. Please proceed and close follow-up ${followUpTaskId}.`
