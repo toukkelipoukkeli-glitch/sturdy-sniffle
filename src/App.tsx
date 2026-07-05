@@ -430,6 +430,7 @@ interface WorkspaceLocalState {
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  followUpActivityReadinessHistoryById: Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
   primaryAttachmentById: Record<string, string>
   releaseExecutionRunsById: Record<string, OfferReleaseExecutionRun[]>
   releaseReviewsById: Record<string, ReleaseReviewState>
@@ -1034,7 +1035,7 @@ function App() {
   const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>({})
   const [followUpActivityReadinessHistoryById, setFollowUpActivityReadinessHistoryById] = useState<
     Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
-  >({})
+  >(workspaceLocalState?.followUpActivityReadinessHistoryById ?? {})
   const followUpActivityReadinessHistoryRef = useRef<Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>>({})
   const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
     workspaceLocalState?.releaseReviewsById ?? {},
@@ -1086,6 +1087,7 @@ function App() {
       offerDraftEditsById,
       offerExportEventsById,
       offerLifecycleEventsById,
+      followUpActivityReadinessHistoryById,
       primaryAttachmentById,
       releaseExecutionRunsById,
       releaseReviewsById,
@@ -1103,6 +1105,7 @@ function App() {
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    followUpActivityReadinessHistoryById,
     primaryAttachmentById,
     releaseExecutionRunsById,
     releaseReviewsById,
@@ -2744,6 +2747,9 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const followUpActivityReadinessHistoryById = optionalFollowUpActivityReadinessHistoryById(
+    value.followUpActivityReadinessHistoryById,
+  )
   const primaryAttachmentById = value.primaryAttachmentById === undefined ? {} : isRecordOfStrings(value.primaryAttachmentById) ? value.primaryAttachmentById : undefined
   const releaseExecutionRunsById = optionalRecordOfArrays(value.releaseExecutionRunsById, isOfferReleaseExecutionRun)
   const releaseReviewsById = optionalRecordOfValues(value.releaseReviewsById, isReleaseReviewState)
@@ -2756,6 +2762,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !offerDraftEditsById ||
     !offerExportEventsById ||
     !offerLifecycleEventsById ||
+    !followUpActivityReadinessHistoryById ||
     !primaryAttachmentById ||
     !releaseReviewsById ||
     !statusById
@@ -2779,6 +2786,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    followUpActivityReadinessHistoryById,
     primaryAttachmentById,
     releaseExecutionRunsById: releaseExecutionRunsById ?? {},
     releaseReviewsById,
@@ -2852,6 +2860,32 @@ function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => i
     return undefined
   }
   return Object.fromEntries(entries) as Record<string, T[]>
+}
+
+function optionalFollowUpActivityReadinessHistoryById(
+  value: unknown,
+): Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const normalized: Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot> = {}
+  for (const [rfqId, snapshot] of Object.entries(value)) {
+    if (!isObjectRecord(snapshot)) {
+      return undefined
+    }
+    try {
+      normalized[rfqId] = createLocalOfferFollowUpActivityReadinessHistoryPersistence({
+        initialSnapshot: snapshot as Partial<OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>,
+      }).snapshot()
+    } catch {
+      return undefined
+    }
+  }
+  return normalized
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
