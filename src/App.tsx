@@ -2263,11 +2263,14 @@ function App() {
     )
   }
   const createFollowUp = async () => {
+    const followUpSequence =
+      (actionsById[selectedItem.id] ?? []).filter((action) => action.kind === "follow_up_created").length + 1
     await recordWorkspaceAction(
       buildWorkspaceAction({
         actor: workspaceOperatorName,
         followUpDueAt: followUpDueAtFor(selectedItem),
         followUpTaskId: workspaceFollowUpTaskId(selectedItem.id),
+        keySuffix: `manual-${String(followUpSequence).padStart(3, "0")}`,
         kind: "follow_up_created",
         occurredAt: workspaceNow,
         offerId: offerNumberFor(selectedItem).toLowerCase(),
