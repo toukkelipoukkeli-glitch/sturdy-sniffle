@@ -1,4 +1,5 @@
 import { compareLex } from "../shared/deterministic"
+import { nonNegativeInteger } from "../shared/numberValidation"
 import { nonBlank } from "../shared/stringValidation"
 import {
   OFFER_FOLLOW_UP_ACTIVITY_READ_VERSION,
@@ -129,13 +130,6 @@ function nextActionsForStatus(input: {
 
 function uniqueSorted(values: string[], fieldName: string): string[] {
   return [...new Set(values.map((value, index) => nonBlank(value, `${fieldName}[${index}]`)))].sort(compareLex)
-}
-
-function nonNegativeInteger(value: number, fieldName: string): number {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${fieldName} must be a non-negative integer`)
-  }
-  return value
 }
 
 function plural(count: number, singular: string): string {
