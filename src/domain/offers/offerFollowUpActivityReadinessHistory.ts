@@ -1,4 +1,5 @@
 import { compareLex } from "../shared/deterministic"
+import { nonNegativeInteger } from "../shared/numberValidation"
 import { nonBlank } from "../shared/stringValidation"
 import {
   OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION,
@@ -37,7 +38,7 @@ export interface OfferFollowUpActivityReadinessRecordSummary {
   nextActionCount: number
   offerId: string
   readinessKey: string
-  readinessVersion: string
+  readinessVersion: typeof OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION
   recordedAt: string
   recordedTaskCount: number
   rfqId: string
@@ -54,14 +55,15 @@ export function summarizeOfferFollowUpActivityReadinessHistory(
   const normalizedRecords = normalizeRecords(records ?? [])
   const statusCounts = countStatuses(normalizedRecords)
   const currentKey = currentReadinessKey?.trim()
+  const newest = newestRecord(normalizedRecords)
   const currentReadiness = currentKey
     ? normalizedRecords.find((record) => record.readinessKey === currentKey)
-    : newestRecord(normalizedRecords)
+    : newest
 
   return {
     currentReadiness,
     historyVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION,
-    latestRecordedAt: newestRecord(normalizedRecords)?.recordedAt,
+    latestRecordedAt: newest?.recordedAt,
     missingTaskTotal: sumRecords(normalizedRecords, (record) => record.missingTaskCount),
     partialRecordCount: statusCounts.partial ?? 0,
     pendingRecordCount: statusCounts.pending ?? 0,
@@ -80,7 +82,7 @@ function normalizeRecords(records: OfferFollowUpActivityReadinessHistoryRecord[]
     const normalized = normalizeRecord(record)
     recordsByKey.set(normalized.readinessKey, normalized)
   }
-  return [...recordsByKey.values()].sort(sortRecords)
+  return [...recordsByKey.values()]
 }
 
 function normalizeRecord(record: OfferFollowUpActivityReadinessHistoryRecord): OfferFollowUpActivityReadinessRecordSummary {
@@ -147,7 +149,15 @@ function countStatuses(
 }
 
 function newestRecord(records: OfferFollowUpActivityReadinessRecordSummary[]): OfferFollowUpActivityReadinessRecordSummary | undefined {
-  return [...records].sort((left, right) => compareLex(right.recordedAt, left.recordedAt) || compareLex(left.readinessKey, right.readinessKey))[0]
+  return records.reduce<OfferFollowUpActivityReadinessRecordSummary | undefined>((newest, record) => {
+    if (!newest) {
+      return record
+    }
+    return compareLex(record.recordedAt, newest.recordedAt) > 0 ||
+      (record.recordedAt === newest.recordedAt && compareLex(record.readinessKey, newest.readinessKey) < 0)
+      ? record
+      : newest
+  }, undefined)
 }
 
 function normalizeRecordedAt(value: string): string {
@@ -171,28 +181,9 @@ function assertListCount(values: string[], expectedCount: number, fieldName: str
   }
 }
 
-function nonNegativeInteger(value: number, fieldName: string): number {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${fieldName} must be a non-negative integer`)
-  }
-  return value
-}
-
 function sumRecords(
   records: OfferFollowUpActivityReadinessRecordSummary[],
   select: (record: OfferFollowUpActivityReadinessRecordSummary) => number,
 ): number {
   return records.reduce((total, record) => total + select(record), 0)
-}
-
-function sortRecords(
-  left: OfferFollowUpActivityReadinessRecordSummary,
-  right: OfferFollowUpActivityReadinessRecordSummary,
-): number {
-  return (
-    compareLex(left.offerId, right.offerId) ||
-    compareLex(left.rfqId, right.rfqId) ||
-    compareLex(left.recordedAt, right.recordedAt) ||
-    compareLex(left.readinessKey, right.readinessKey)
-  )
 }
