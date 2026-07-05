@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `cdbfc1c` (`[codex] Add follow-up readiness history summary (#272)`).
-- Open PRs at this checkpoint: none on `main`; this branch is adding deterministic local persistence for follow-up activity readiness history records.
-- In-flight PR at this checkpoint: `codex/followup-readiness-history-persistence` normalizes and dedupes persisted follow-up activity readiness records by stable readiness key, keeps cloned local snapshots, and exposes current-key summary metadata for future runtime/UI surfaces.
+- Main branch checkpoint: `e22122a` (`Add follow-up readiness history persistence (#273)`).
+- Open PRs at this checkpoint: none on `main`; this branch is surfacing follow-up activity readiness history in the Offer workspace.
+- In-flight PR at this checkpoint: `codex/followup-readiness-history-ui` records the current follow-up readiness snapshot into local history, surfaces current/history counts in the offer UI, and aligns unmatched persisted activities with review-state readiness.
 - Latest merged sequence:
+  - `#273` adds deterministic local persistence for follow-up activity readiness history records with stable-key dedupe, cloned snapshots, seeded-record validation, and current-key summary metadata.
   - `#272` adds deterministic follow-up activity readiness history summaries with stable-key dedupe, current-record lookup, status counts, and validation for future persistence/UI surfaces.
   - `#271` surfaces pending/partial/recorded/review follow-up activity coverage in the Offer workspace with expected/recorded/missing task counts, operator next actions, and Browser/Playwright QA fallback evidence.
   - `#270` turns follow-up activity read summaries into pending/partial/recorded/review readiness metadata with normalized expected/recorded/missing/unexpected task IDs and operator next actions.
@@ -173,7 +174,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel and history summaries/local persistence in flight.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel/history summaries/local persistence and readiness-history UI in flight.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.

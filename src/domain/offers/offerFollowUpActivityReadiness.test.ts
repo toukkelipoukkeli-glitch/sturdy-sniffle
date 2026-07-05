@@ -115,6 +115,26 @@ describe("offer follow-up activity readiness", () => {
       status: "review",
       unmatchedActivityCount: 1,
     })
+
+    expect(
+      buildOfferFollowUpActivityReadiness({
+        summary: followUpSummary([
+          followUpRecord({
+            _id: "activity-first",
+            message: "Scheduled offer follow-up follow-first for OFFER-204 at 2026-07-02T07:00:00.000Z.",
+          }),
+          followUpRecord({
+            _id: "activity-legacy",
+            message: "Legacy calendar activity without a task id.",
+          }),
+        ]),
+      }),
+    ).toMatchObject({
+      nextActions: ["Review 1 persisted follow-up activity message without a recognized task id."],
+      recordedFollowUpTaskIds: ["follow-first"],
+      status: "review",
+      unmatchedActivityCount: 1,
+    })
   })
 
   it("rejects malformed readiness inputs", () => {
