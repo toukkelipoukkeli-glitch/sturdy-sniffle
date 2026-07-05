@@ -22,6 +22,7 @@ export interface ConvexWorkspacePersistenceOptions {
   resolveOfferId?: (offerId: string) => string | undefined
   resolveQuoteId?: (quoteId: string) => string | undefined
   resolveRfqId: (rfqId: string) => string | undefined
+  shouldPersistAction?: (action: WorkspaceActionRecord) => boolean
   onSyncError?: (error: unknown, action: WorkspaceActionRecord) => void
 }
 
@@ -33,20 +34,23 @@ export function createConvexWorkspacePersistence({
   resolveQuoteId,
   resolveRfqId,
   runMutation,
+  shouldPersistAction = () => true,
 }: ConvexWorkspacePersistenceOptions): WorkspacePersistenceAdapter {
   return {
     async recordAction(action) {
-      try {
-        await persistActionToConvex({
-          action,
-          mutationRefs,
-          resolveOfferId,
-          resolveQuoteId,
-          resolveRfqId,
-          runMutation,
-        })
-      } catch (error) {
-        onSyncError?.(error, action)
+      if (shouldPersistAction(action)) {
+        try {
+          await persistActionToConvex({
+            action,
+            mutationRefs,
+            resolveOfferId,
+            resolveQuoteId,
+            resolveRfqId,
+            runMutation,
+          })
+        } catch (error) {
+          onSyncError?.(error, action)
+        }
       }
 
       return await fallback.recordAction(action)

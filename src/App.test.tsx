@@ -870,9 +870,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
   })
 
-  it("skips duplicate Convex follow-up activity writes during release execution", async () => {
+  it("skips duplicate Convex follow-up activity writes after a manual write in the same session", async () => {
     const user = userEvent.setup()
     const mutationCalls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    const persistedActivities: Array<Record<string, unknown>> = []
     window.__FACTORYBID_WORKSPACE_CONVEX__ = {
       mutationRefs: {
         createOfferFollowUpActivity: "createOfferFollowUpActivity",
@@ -888,34 +889,55 @@ describe("FactoryBid workspace (component)", () => {
       },
       runMutation: async (mutationRef, args) => {
         mutationCalls.push({ args, mutationRef })
+        if (mutationRef === "createOfferFollowUpActivity") {
+          persistedActivities.push({
+            _id: `activity-follow-up-${persistedActivities.length + 1}`,
+            createdAt: Date.parse("2026-07-03T07:00:00.000Z") + persistedActivities.length,
+            kind: "calendar_event",
+            ...args,
+          })
+        }
       },
-      runQuery: async () => [
-        {
-          _id: "activity-follow-up-1",
-          actorName: "Sari",
-          createdAt: Date.parse("2026-07-03T07:00:00.000Z"),
-          kind: "calendar_event",
-          message: "Scheduled offer follow-up follow-up-rfq-204 for OFFER-204 at 2026-07-03T07:00:00.000Z.",
-          offerId: "convex-offer-204",
-          rfqId: "convex-rfq-204",
-        },
-      ],
+      runQuery: async () => persistedActivities,
     }
 
     render(<App />)
     await user.click(screen.getByRole("button", { name: /^Offer$/ }))
     await waitFor(() => {
-      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("follow-up-rfq-204")
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("0 persisted activities")
     })
 
     const releaseGate = screen.getByLabelText("Quote release gate")
     await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
     await user.click(screen.getByRole("button", { name: "Triage" }))
+    mutationCalls.length = 0
     await user.click(screen.getByRole("button", { name: "Create follow-up" }))
     await waitFor(() => {
-      expect(mutationCalls.some((call) => call.mutationRef === "createOfferFollowUpActivity")).toBe(true)
+      expect(screen.getByLabelText("Action timeline")).toHaveTextContent("Scheduled offer follow-up follow-up-rfq-204")
     })
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("follow-up-rfq-204")
+    })
+    expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([
+      {
+        args: {
+          actorName: "Sari",
+          message: "Scheduled offer follow-up follow-up-rfq-204 for offer-204 at 2026-07-03T07:00:00.000Z.",
+          offerId: "convex-offer-204",
+          rfqId: "convex-rfq-204",
+        },
+        mutationRef: "createOfferFollowUpActivity",
+      },
+    ])
     mutationCalls.length = 0
+
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Action timeline").querySelectorAll(".action-row")).toHaveLength(2)
+    })
+    expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([])
 
     await user.click(screen.getByRole("button", { name: "Move to ready" }))
     await user.click(screen.getByRole("button", { name: /^Offer$/ }))

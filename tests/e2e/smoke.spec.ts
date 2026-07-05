@@ -293,7 +293,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await page.getByRole("button", { name: "Save scenario" }).click()
   await expect(page.getByLabel("Action timeline")).toContainText("Saved quote scenario rfq-019-current-edits.")
   await page.getByRole("button", { name: "Create follow-up" }).click()
-  await expect(page.getByLabel("Action timeline")).toContainText("Created offer follow-up for offer-019.")
+  await expect(page.getByLabel("Action timeline")).toContainText("Scheduled offer follow-up follow-up-rfq-019 for offer-019")
   await expect(page.getByLabel("Integration health")).toContainText("scheduled")
   const followUpStatus = page.getByLabel("Calendar follow-up status")
   await expect(followUpStatus).toContainText("Follow-up scheduled")

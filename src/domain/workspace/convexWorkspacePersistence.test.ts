@@ -145,6 +145,39 @@ describe("convex workspace persistence", () => {
     ])
   })
 
+  it("can skip Convex writes while still updating the local fallback snapshot", async () => {
+    const calls: Array<{ mutationRef: unknown; args: Record<string, unknown> }> = []
+    const adapter = createConvexWorkspacePersistence({
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      resolveRfqId: (rfqId) => `convex-${rfqId}`,
+      runMutation: async (mutationRef, args) => {
+        calls.push({ args, mutationRef })
+      },
+      shouldPersistAction: (action) => action.kind !== "follow_up_created",
+    })
+
+    const snapshot = await adapter.recordAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        followUpDueAt: "2026-06-27T09:00:00+03:00",
+        followUpTaskId: "follow-up-rfq-019",
+        kind: "follow_up_created",
+        occurredAt: "2026-06-20T10:10:00+03:00",
+        offerId: "offer-019",
+        rfqId: "rfq-019",
+      }),
+    )
+
+    expect(calls).toEqual([])
+    expect(snapshot.actionsById["rfq-019"]?.[0]).toMatchObject({
+      followUpTaskId: "follow-up-rfq-019",
+      kind: "follow_up_created",
+    })
+  })
+
   it("keeps the local fallback usable when Convex persistence fails", async () => {
     const errors: unknown[] = []
     const adapter = createConvexWorkspacePersistence({
