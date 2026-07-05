@@ -862,15 +862,22 @@ describe("FactoryBid workspace (component)", () => {
     const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
     await waitFor(() => {
       expect(followUpActivity).toHaveTextContent("2 persisted activities")
-      expect(followUpActivity).toHaveTextContent("Recorded")
+      expect(followUpActivity).toHaveTextContent("Review")
       expect(followUpActivity).toHaveTextContent("Task IDs 1")
       expect(followUpActivity).toHaveTextContent("Expected 0")
       expect(followUpActivity).toHaveTextContent("Missing 0")
-      expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
+      expect(followUpActivity).toHaveTextContent("Review 1 persisted follow-up activity message without a recognized task id.")
       expect(followUpActivity).toHaveTextContent("Follow-up calendar hold updated for customer reply.")
       expect(followUpActivity).toHaveTextContent("activity-follow-up-2")
     })
     expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("2 readiness snapshots")
+      expect(readinessHistory).toHaveTextContent("Current review readiness")
+      expect(readinessHistory).toHaveTextContent("1/0 follow-up task IDs recorded")
+      expect(readinessHistory).toHaveTextContent("Review 1")
+    })
   })
 
   it("skips duplicate Convex follow-up activity writes after a manual write in the same session", async () => {
@@ -977,6 +984,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(followUpActivity).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
     expect(followUpActivity.querySelector(".offer-follow-up-activity-latest")).not.toBeInTheDocument()
     expect(within(followUpActivity).queryByLabelText("Recorded follow-up task ids")).not.toBeInTheDocument()
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("1 readiness snapshot")
+      expect(readinessHistory).toHaveTextContent("Current pending readiness")
+      expect(readinessHistory).toHaveTextContent("0/0 follow-up task IDs recorded")
+      expect(readinessHistory).toHaveTextContent("Records 1")
+    })
+    expect(within(readinessHistory).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
   })
 
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {

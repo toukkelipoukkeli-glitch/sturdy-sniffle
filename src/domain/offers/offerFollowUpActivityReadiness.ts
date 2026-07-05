@@ -97,7 +97,7 @@ function activityReadinessStatus(input: {
   if (input.expectedIds.length === 0 && input.recordedIds.length === 0) {
     return input.totalActivities > 0 ? "review" : "pending"
   }
-  if (input.unmatchedActivityCount > 0 && input.expectedIds.length > 0) {
+  if (input.unmatchedActivityCount > 0) {
     return "review"
   }
   return "recorded"

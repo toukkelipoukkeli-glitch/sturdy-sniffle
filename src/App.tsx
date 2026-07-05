@@ -96,6 +96,14 @@ import {
   type OfferFollowUpActivityReadiness,
   type OfferFollowUpActivityReadinessStatus,
 } from "./domain/offers/offerFollowUpActivityReadiness"
+import {
+  summarizeOfferFollowUpActivityReadinessHistory,
+  type OfferFollowUpActivityReadinessHistorySummary,
+} from "./domain/offers/offerFollowUpActivityReadinessHistory"
+import {
+  createLocalOfferFollowUpActivityReadinessHistoryPersistence,
+  type OfferFollowUpActivityReadinessHistoryPersistenceSnapshot,
+} from "./domain/offers/offerFollowUpActivityReadinessHistoryPersistence"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
 import {
   summarizeOfferEmailDraftPackageHistory,
@@ -1024,6 +1032,10 @@ function App() {
   )
   const [releaseExecutionHistoryById, setReleaseExecutionHistoryById] = useState<Record<string, OfferReleaseExecutionHistorySummary>>({})
   const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>({})
+  const [followUpActivityReadinessHistoryById, setFollowUpActivityReadinessHistoryById] = useState<
+    Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
+  >({})
+  const followUpActivityReadinessHistoryRef = useRef<Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>>({})
   const [releaseReviewsById, setReleaseReviewsById] = useState<Record<string, ReleaseReviewState>>(
     workspaceLocalState?.releaseReviewsById ?? {},
   )
@@ -1035,6 +1047,7 @@ function App() {
   const releaseExecutionLocksRef = useRef(new Set<string>())
   const releaseExecutionQueryKeysRef = useRef(new Map<string, Promise<OfferReleaseExecutionHistorySummary>>())
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
+  const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1059,6 +1072,9 @@ function App() {
   useEffect(() => {
     offerProviderReadinessSnapshotsRef.current = offerProviderReadinessSnapshotsById
   }, [offerProviderReadinessSnapshotsById])
+  useEffect(() => {
+    followUpActivityReadinessHistoryRef.current = followUpActivityReadinessHistoryById
+  }, [followUpActivityReadinessHistoryById])
 
   useEffect(() => {
     writeWorkspaceLocalState({
@@ -1698,6 +1714,79 @@ function App() {
       }),
     [expectedFollowUpActivityTaskIds, offerFollowUpActivitySummary],
   )
+  const offerFollowUpActivityReadinessRecordKey = useMemo(
+    () => followUpActivityReadinessRecordKey(selectedId, offer.offerNumber.toLowerCase(), offerFollowUpActivityReadiness),
+    [offer.offerNumber, offerFollowUpActivityReadiness, selectedId],
+  )
+  const offerFollowUpActivityReadinessRecord = useMemo(
+    () => ({
+      offerId: offer.offerNumber.toLowerCase(),
+      readiness: offerFollowUpActivityReadiness,
+      readinessKey: offerFollowUpActivityReadinessRecordKey,
+      recordedAt: workspaceNow,
+      rfqId: selectedId,
+    }),
+    [offer.offerNumber, offerFollowUpActivityReadiness, offerFollowUpActivityReadinessRecordKey, selectedId, workspaceNow],
+  )
+  const offerFollowUpActivityReadinessPersistenceKey = useMemo(
+    () => `${selectedId}::${offerFollowUpActivityReadinessRecordKey}`,
+    [offerFollowUpActivityReadinessRecordKey, selectedId],
+  )
+  const selectedFollowUpActivityReadinessHistory = followUpActivityReadinessHistoryById[selectedId]
+  const offerFollowUpActivityReadinessHistory = useMemo(
+    () =>
+      summarizeOfferFollowUpActivityReadinessHistory(
+        selectedFollowUpActivityReadinessHistory?.records,
+        offerFollowUpActivityReadinessRecordKey,
+      ),
+    [offerFollowUpActivityReadinessRecordKey, selectedFollowUpActivityReadinessHistory],
+  )
+  useEffect(() => {
+    let cancelled = false
+    let settled = false
+    const persistedReadinessKeys = followUpActivityReadinessPersistenceKeysRef.current
+    if (persistedReadinessKeys.has(offerFollowUpActivityReadinessPersistenceKey)) {
+      return () => {
+        cancelled = true
+      }
+    }
+    persistedReadinessKeys.add(offerFollowUpActivityReadinessPersistenceKey)
+
+    const previousSnapshot = followUpActivityReadinessHistoryRef.current[selectedId]
+    const persistence = createLocalOfferFollowUpActivityReadinessHistoryPersistence({
+      initialSnapshot: previousSnapshot,
+    })
+
+    void persistence
+      .recordReadiness(offerFollowUpActivityReadinessRecord)
+      .then((snapshot) => {
+        settled = true
+        if (!cancelled) {
+          setFollowUpActivityReadinessHistoryById((current) => ({
+            ...current,
+            [selectedId]: mergeFollowUpActivityReadinessHistorySnapshots(current[selectedId], snapshot),
+          }))
+        }
+      })
+      .catch(() => {
+        settled = true
+        if (!cancelled) {
+          persistedReadinessKeys.delete(offerFollowUpActivityReadinessPersistenceKey)
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      if (!settled) {
+        persistedReadinessKeys.delete(offerFollowUpActivityReadinessPersistenceKey)
+      }
+    }
+  }, [
+    offerFollowUpActivityReadinessPersistenceKey,
+    offerFollowUpActivityReadinessRecord,
+    selectedId,
+  ])
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
   const offerEmailDraftPackageHistory = useMemo(
     () =>
@@ -2527,6 +2616,7 @@ function App() {
               releaseExecution={offerReleaseExecution}
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
+              releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -4609,8 +4699,8 @@ function ActionTimeline({ actions }: { actions: WorkspaceActionRecord[] }) {
         <div className="empty-action-state">No operator actions recorded for this RFQ.</div>
       ) : (
         <div className="action-list">
-          {actions.map((action) => (
-            <article className="action-row" data-kind={action.activityKind} key={action.key}>
+          {actions.map((action, index) => (
+            <article className="action-row" data-kind={action.activityKind} key={`${action.key}:${index}`}>
               <div>
                 <strong>{humanizeKey(action.kind)}</strong>
                 <span>{action.activityMessage}</span>
@@ -8496,6 +8586,7 @@ function OfferView({
   releaseExecution,
   releaseEmailDraftHistory,
   releaseFollowUpActivityReadiness,
+  releaseFollowUpActivityReadinessHistory,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
@@ -8527,6 +8618,7 @@ function OfferView({
   releaseExecution: OfferReleaseExecutionRun
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
   releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
+  releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
@@ -8673,6 +8765,7 @@ function OfferView({
         readiness={releaseFollowUpActivityReadiness}
         summary={releaseFollowUpActivitySummary}
       />
+      <OfferFollowUpActivityReadinessHistoryPanel history={releaseFollowUpActivityReadinessHistory} />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
@@ -8943,6 +9036,59 @@ function OfferFollowUpActivityReadPanel({
           ))}
         </div>
       ) : null}
+    </section>
+  )
+}
+
+function OfferFollowUpActivityReadinessHistoryPanel({
+  history,
+}: {
+  history: OfferFollowUpActivityReadinessHistorySummary
+}) {
+  const current = history.currentReadiness
+  const status = current?.status ?? "pending"
+  const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
+
+  return (
+    <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
+      <div className="offer-follow-up-readiness-history-heading">
+        <div>
+          <span className="eyebrow">
+            <Database aria-hidden="true" />
+            Activity readiness history
+          </span>
+          <strong>
+            {history.totalReadinessRecords === 1 ? "1 readiness snapshot" : `${history.totalReadinessRecords} readiness snapshots`}
+          </strong>
+        </div>
+        <span className={`offer-follow-up-activity-status offer-follow-up-activity-status-${status}`}>
+          {statusLabel}
+        </span>
+      </div>
+      <div className="offer-follow-up-readiness-history-summary">
+        <Metric label="Records" value={String(history.totalReadinessRecords)} />
+        <Metric label="Recorded" value={String(history.recordedRecordCount)} />
+        <Metric label="Partial" value={String(history.partialRecordCount)} />
+        <Metric label="Review" value={String(history.reviewRecordCount)} />
+        <Metric label="Missing" value={String(history.missingTaskTotal)} />
+      </div>
+      {current ? (
+        <div className="offer-follow-up-readiness-history-current" data-status={current.status}>
+          <div>
+            <strong>Current {statusLabel.toLowerCase()} readiness</strong>
+            <span>
+              {current.recordedTaskCount}/{current.expectedTaskCount} follow-up task IDs recorded · {current.nextActionCount} next
+              action{current.nextActionCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <small>{shortFollowUpActivityReadinessKey(current.readinessKey)}</small>
+        </div>
+      ) : (
+        <div className="flag">
+          <AlertTriangle aria-hidden="true" />
+          <span>Current follow-up readiness snapshot is pending local persistence.</span>
+        </div>
+      )}
     </section>
   )
 }
@@ -9315,6 +9461,22 @@ function shortProviderOutcomeFingerprint(fingerprint: string) {
 
 function shortProviderReadinessKey(readinessKey: string) {
   return readinessKey.replace(/^offer-provider-outcome-readiness:/, "")
+}
+
+function shortFollowUpActivityReadinessKey(readinessKey: string) {
+  return readinessKey.replace(/^offer-follow-up-activity-readiness:/, "")
+}
+
+function mergeFollowUpActivityReadinessHistorySnapshots(
+  current: OfferFollowUpActivityReadinessHistoryPersistenceSnapshot | undefined,
+  incoming: OfferFollowUpActivityReadinessHistoryPersistenceSnapshot,
+): OfferFollowUpActivityReadinessHistoryPersistenceSnapshot {
+  return createLocalOfferFollowUpActivityReadinessHistoryPersistence({
+    initialSnapshot: {
+      currentReadinessKey: incoming.currentReadinessKey ?? current?.currentReadinessKey,
+      records: [...(current?.records ?? []), ...incoming.records],
+    },
+  }).snapshot()
 }
 
 function mergeOfferProviderReadinessSnapshots(
@@ -10692,6 +10854,34 @@ function providerOutcomeReadinessPersistenceKey(
     readiness.blockerLabels.join("|"),
     readiness.nextActions.join("|"),
   ].join("::")
+}
+
+function followUpActivityReadinessRecordKey(
+  rfqId: string,
+  offerId: string,
+  readiness: OfferFollowUpActivityReadiness,
+): string {
+  return [
+    "offer-follow-up-activity-readiness",
+    offerId,
+    rfqId,
+    readiness.readinessVersion,
+    readiness.status,
+    String(readiness.expectedTaskCount),
+    String(readiness.recordedTaskCount),
+    String(readiness.missingTaskCount),
+    String(readiness.unexpectedTaskCount),
+    String(readiness.unmatchedActivityCount),
+    String(readiness.totalActivities),
+    ...readiness.expectedFollowUpTaskIds,
+    ...readiness.recordedFollowUpTaskIds,
+    ...readiness.missingFollowUpTaskIds,
+    ...readiness.unexpectedFollowUpTaskIds,
+  ].map(stableKeySegment).join(":")
+}
+
+function stableKeySegment(value: string): string {
+  return encodeURIComponent(value.trim())
 }
 
 interface BrowserConvexWorkspaceBridge {
