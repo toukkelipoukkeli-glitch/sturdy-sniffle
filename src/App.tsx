@@ -8912,8 +8912,8 @@ function OfferFollowUpActivityReadPanel({
         <Metric label="Latest" value={latest ? formatAuditTimestamp(new Date(latest.createdAt).toISOString()) : "None"} />
       </div>
       <div className="offer-follow-up-activity-actions" aria-label="Follow-up activity readiness actions">
-        {readiness.nextActions.slice(0, 3).map((action) => (
-          <div className={readiness.status === "recorded" ? "flag ok" : "flag"} key={action}>
+        {readiness.nextActions.slice(0, 3).map((action, index) => (
+          <div className={readiness.status === "recorded" ? "flag ok" : "flag"} key={`${action}:${index}`}>
             {readiness.status === "recorded" ? <CheckCircle2 aria-hidden="true" /> : <AlertTriangle aria-hidden="true" />}
             <span>{action}</span>
           </div>

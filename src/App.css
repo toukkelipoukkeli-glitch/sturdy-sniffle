@@ -5493,11 +5493,15 @@
 }
 
 .offer-follow-up-activity-status-review {
-  background: oklch(0.96 0.05 82);
-  color: oklch(0.36 0.09 75);
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
 }
 
-.offer-follow-up-activity-status-pending,
+.offer-follow-up-activity-status-pending {
+  background: oklch(0.95 0.018 250);
+  color: oklch(0.35 0.055 250);
+}
+
 .offer-follow-up-activity-status-partial {
   background: oklch(0.96 0.05 82);
   color: oklch(0.36 0.09 75);
