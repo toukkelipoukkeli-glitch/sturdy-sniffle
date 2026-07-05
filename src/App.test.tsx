@@ -952,6 +952,11 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Action timeline").querySelectorAll(".action-row")).toHaveLength(2)
     })
+    const storedAfterDuplicateFollowUp = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    const followUpActionKeys = storedAfterDuplicateFollowUp.actionsById?.[storedAfterDuplicateFollowUp.selectedId]
+      ?.filter((action: { kind: string }) => action.kind === "follow_up_created")
+      .map((action: { key: string }) => action.key)
+    expect(new Set(followUpActionKeys).size).toBe(followUpActionKeys.length)
     expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([])
 
     await user.click(screen.getByRole("button", { name: "Move to ready" }))

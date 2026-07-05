@@ -17,6 +17,7 @@ export interface WorkspaceActionInput {
   scenarioId?: string
   followUpDueAt?: string
   followUpTaskId?: string
+  keySuffix?: string
   note?: string
 }
 
@@ -120,17 +121,20 @@ function buildFollowUpCreatedAction(base: ActionBase, input: WorkspaceActionInpu
   const followUpDueAt = normalizeIsoTimestamp(input.followUpDueAt ?? "", "followUpDueAt")
   const followUpTaskId = optionalTrim(input.followUpTaskId)
   const quoteId = optionalTrim(input.quoteId)
-  return finalizeAction({
-    ...base,
-    activityKind: "calendar_event",
-    activityMessage: followUpTaskId
-      ? `Scheduled offer follow-up ${followUpTaskId} for ${offerId} at ${followUpDueAt}.`
-      : `Created offer follow-up for ${offerId}.`,
-    offerId,
-    followUpDueAt,
-    followUpTaskId,
-    quoteId,
-  })
+  return finalizeAction(
+    {
+      ...base,
+      activityKind: "calendar_event",
+      activityMessage: followUpTaskId
+        ? `Scheduled offer follow-up ${followUpTaskId} for ${offerId} at ${followUpDueAt}.`
+        : `Created offer follow-up for ${offerId}.`,
+      offerId,
+      followUpDueAt,
+      followUpTaskId,
+      quoteId,
+    },
+    optionalTrim(input.keySuffix),
+  )
 }
 
 function buildHandoffNoteAction(base: ActionBase): WorkspaceActionRecord {
@@ -143,7 +147,10 @@ function buildHandoffNoteAction(base: ActionBase): WorkspaceActionRecord {
   })
 }
 
-function finalizeAction(action: Omit<WorkspaceActionRecord, "actionVersion" | "key"> & { actionVersion?: never; key?: never }): WorkspaceActionRecord {
+function finalizeAction(
+  action: Omit<WorkspaceActionRecord, "actionVersion" | "key"> & { actionVersion?: never; key?: never },
+  keySuffix?: string,
+): WorkspaceActionRecord {
   const keyParts = [
     action.rfqId,
     action.kind,
@@ -154,6 +161,7 @@ function finalizeAction(action: Omit<WorkspaceActionRecord, "actionVersion" | "k
     action.followUpDueAt,
     action.followUpTaskId,
     action.occurredAt,
+    keySuffix,
   ].filter((part): part is string => Boolean(part))
 
   return {

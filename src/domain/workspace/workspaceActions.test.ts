@@ -162,6 +162,36 @@ describe("workspace actions", () => {
     })
   })
 
+  it("supports explicit follow-up key suffixes for repeated local audit actions", () => {
+    const first = buildWorkspaceAction({
+      actor: "Sari",
+      followUpDueAt: "2026-06-27T09:00:00+03:00",
+      followUpTaskId: "follow-up-rfq-019",
+      keySuffix: "manual-001",
+      kind: "follow_up_created",
+      occurredAt: "2026-06-20T10:10:00+03:00",
+      offerId: "offer-019",
+      rfqId: "rfq-019",
+    })
+    const second = buildWorkspaceAction({
+      actor: "Sari",
+      followUpDueAt: "2026-06-27T09:00:00+03:00",
+      followUpTaskId: "follow-up-rfq-019",
+      keySuffix: "manual-002",
+      kind: "follow_up_created",
+      occurredAt: "2026-06-20T10:10:00+03:00",
+      offerId: "offer-019",
+      rfqId: "rfq-019",
+    })
+
+    expect(first.key).toBe(
+      "rfq-019:follow_up_created:offer-019:2026-06-27T06:00:00.000Z:follow-up-rfq-019:2026-06-20T07:10:00.000Z:manual-001",
+    )
+    expect(second.key).toBe(
+      "rfq-019:follow_up_created:offer-019:2026-06-27T06:00:00.000Z:follow-up-rfq-019:2026-06-20T07:10:00.000Z:manual-002",
+    )
+  })
+
   it("rejects missing scenario quote IDs", () => {
     expect(() =>
       buildWorkspaceAction({
