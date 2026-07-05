@@ -911,10 +911,12 @@ describe("FactoryBid workspace (component)", () => {
     const releaseGate = screen.getByLabelText("Quote release gate")
     await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
     await user.click(screen.getByRole("button", { name: "Triage" }))
+    mutationCalls.length = 0
     await user.click(screen.getByRole("button", { name: "Create follow-up" }))
     await waitFor(() => {
-      expect(mutationCalls.some((call) => call.mutationRef === "createOfferFollowUpActivity")).toBe(true)
+      expect(screen.getByLabelText("Action timeline")).toHaveTextContent("Scheduled offer follow-up follow-up-rfq-204")
     })
+    expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([])
     mutationCalls.length = 0
 
     await user.click(screen.getByRole("button", { name: "Move to ready" }))

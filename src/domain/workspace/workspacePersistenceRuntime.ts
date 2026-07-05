@@ -18,6 +18,7 @@ export interface WorkspacePersistenceBridge {
   resolveOfferId?: ConvexWorkspacePersistenceOptions["resolveOfferId"]
   resolveQuoteId?: ConvexWorkspacePersistenceOptions["resolveQuoteId"]
   resolveRfqId: ConvexWorkspacePersistenceOptions["resolveRfqId"]
+  shouldPersistAction?: ConvexWorkspacePersistenceOptions["shouldPersistAction"]
 }
 
 export interface WorkspacePersistenceRuntime {
@@ -58,6 +59,7 @@ export function createWorkspacePersistenceRuntime({
       resolveQuoteId: convex.resolveQuoteId,
       resolveRfqId: convex.resolveRfqId,
       runMutation: convex.runMutation,
+      shouldPersistAction: convex.shouldPersistAction,
     }),
     label: "Convex sync",
     mode: "convex",

@@ -1031,15 +1031,23 @@ function App() {
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
-  const [workspacePersistenceRuntime] = useState(() =>
-    createWorkspacePersistenceRuntime({
-      convex: createBrowserConvexWorkspaceBridge(),
-      initialSnapshot: {
-        actionsById: workspaceLocalState?.actionsById ?? {},
-        statusById: workspaceLocalState?.statusById ?? {},
-      },
-      onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
-    }),
+  const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
+  const workspacePersistenceRuntime = useMemo(
+    () =>
+      createWorkspacePersistenceRuntime({
+        convex: workspaceConvexBridge
+          ? {
+              ...workspaceConvexBridge,
+              shouldPersistAction: (action) => shouldPersistWorkspaceActionToConvex(action, followUpActivitySummaryById[action.rfqId]),
+            }
+          : undefined,
+        initialSnapshot: {
+          actionsById,
+          statusById,
+        },
+        onSyncError: () => setPersistenceSyncErrorCount((count) => count + 1),
+      }),
+    [actionsById, followUpActivitySummaryById, statusById, workspaceConvexBridge],
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
   useEffect(() => {
@@ -1530,7 +1538,7 @@ function App() {
         currentRfqStatus: selectedStatus,
         exportPackage: offerExportPackage,
         followUpDueAt: offerFollowUpScheduledAt,
-        followUpTaskId: `follow-up-${selectedItem.id}`,
+        followUpTaskId: workspaceFollowUpTaskId(selectedItem.id),
         offer,
         offerId: offer.offerNumber.toLowerCase(),
         releaseGate: quoteReleaseGate,
@@ -2082,10 +2090,7 @@ function App() {
         plan: offerReleasePlan,
       })
 
-      const workspaceActionsToRecord = run.workspaceActions.filter((action) =>
-        shouldRecordReleaseWorkspaceAction(action, offerFollowUpActivitySummary),
-      )
-      for (const action of workspaceActionsToRecord) {
+      for (const action of run.workspaceActions) {
         await recordWorkspaceAction(action)
       }
       setReleaseExecutionRunsById((current) => ({
@@ -2141,6 +2146,7 @@ function App() {
       buildWorkspaceAction({
         actor: workspaceOperatorName,
         followUpDueAt: followUpDueAtFor(selectedItem),
+        followUpTaskId: workspaceFollowUpTaskId(selectedItem.id),
         kind: "follow_up_created",
         occurredAt: workspaceNow,
         offerId: offerNumberFor(selectedItem).toLowerCase(),
@@ -10480,6 +10486,10 @@ function offerLifecycleFollowUpTaskId(rfqId: string) {
   return `offer-lifecycle-follow-up-${rfqId}`
 }
 
+function workspaceFollowUpTaskId(rfqId: string) {
+  return `follow-up-${rfqId}`
+}
+
 function contactEmailFor(item: QuoteWorkItem) {
   const local = item.contact.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "")
   return `${local || "buyer"}@example.test`
@@ -10497,14 +10507,14 @@ function latestOfferFollowUpScheduledAt(actions: WorkspaceActionRecord[], offer:
   return latest?.followUpDueAt
 }
 
-function shouldRecordReleaseWorkspaceAction(
+function shouldPersistWorkspaceActionToConvex(
   action: WorkspaceActionRecord,
-  followUpActivitySummary: OfferFollowUpActivityReadSummary,
+  followUpActivitySummary: OfferFollowUpActivityReadSummary | undefined,
 ) {
   return (
     action.kind !== "follow_up_created" ||
     !action.followUpTaskId ||
-    !followUpActivitySummary.recordedFollowUpTaskIds.includes(action.followUpTaskId)
+    !followUpActivitySummary?.recordedFollowUpTaskIds.includes(action.followUpTaskId)
   )
 }
 

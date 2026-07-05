@@ -67,6 +67,38 @@ describe("workspace persistence runtime", () => {
     expect(snapshot.statusById["rfq-019"]).toBe("estimating")
   })
 
+  it("passes Convex write predicates through while keeping local fallback state", async () => {
+    const calls: Array<{ mutationRef: unknown; args: Record<string, unknown> }> = []
+    const runtime = createWorkspacePersistenceRuntime({
+      convex: {
+        mutationRefs: {
+          recordWorkspaceActivity: "recordWorkspaceActivity",
+          transitionRfqStatus: "transitionRfqStatus",
+        },
+        resolveRfqId: (rfqId) => `convex-${rfqId}`,
+        runMutation: async (mutationRef, args) => {
+          calls.push({ args, mutationRef })
+        },
+        shouldPersistAction: (action) => action.kind !== "follow_up_created",
+      },
+    })
+
+    const snapshot = await runtime.adapter.recordAction(
+      buildWorkspaceAction({
+        actor: "Sari",
+        followUpDueAt: "2026-06-27T09:00:00+03:00",
+        followUpTaskId: "follow-up-rfq-019",
+        kind: "follow_up_created",
+        occurredAt: "2026-06-20T10:10:00+03:00",
+        offerId: "offer-019",
+        rfqId: "rfq-019",
+      }),
+    )
+
+    expect(calls).toEqual([])
+    expect(snapshot.actionsById["rfq-019"]?.[0]?.followUpTaskId).toBe("follow-up-rfq-019")
+  })
+
   it("keeps the local snapshot hot when Convex sync fails", async () => {
     const errors: unknown[] = []
     const runtime = createWorkspacePersistenceRuntime({
