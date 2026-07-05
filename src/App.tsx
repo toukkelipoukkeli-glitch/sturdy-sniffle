@@ -91,6 +91,11 @@ import {
   type ConvexOfferFollowUpActivityRecord,
   type OfferFollowUpActivityReadSummary,
 } from "./domain/offers/offerFollowUpActivityReadPersistence"
+import {
+  buildOfferFollowUpActivityReadiness,
+  type OfferFollowUpActivityReadiness,
+  type OfferFollowUpActivityReadinessStatus,
+} from "./domain/offers/offerFollowUpActivityReadiness"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
 import {
   summarizeOfferEmailDraftPackageHistory,
@@ -1684,6 +1689,15 @@ function App() {
     }
   }, [convexOfferFollowUpActivityOfferId, offerFollowUpActivityBridge, selectedId])
   const offerFollowUpActivitySummary = followUpActivitySummaryById[selectedId] ?? localFollowUpActivitySummary
+  const expectedFollowUpActivityTaskIds = useMemo(() => expectedWorkspaceFollowUpTaskIds(selectedActions), [selectedActions])
+  const offerFollowUpActivityReadiness = useMemo(
+    () =>
+      buildOfferFollowUpActivityReadiness({
+        expectedFollowUpTaskIds: expectedFollowUpActivityTaskIds,
+        summary: offerFollowUpActivitySummary,
+      }),
+    [expectedFollowUpActivityTaskIds, offerFollowUpActivitySummary],
+  )
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
   const offerEmailDraftPackageHistory = useMemo(
     () =>
@@ -2512,6 +2526,7 @@ function App() {
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
+              releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -8480,6 +8495,7 @@ function OfferView({
   releaseGate,
   releaseExecution,
   releaseEmailDraftHistory,
+  releaseFollowUpActivityReadiness,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
@@ -8510,6 +8526,7 @@ function OfferView({
   releaseGate: QuoteReleaseGateDecision
   releaseExecution: OfferReleaseExecutionRun
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
+  releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
@@ -8652,7 +8669,10 @@ function OfferView({
         onScheduleFollowUp={onScheduleFollowUp}
       />
       <OfferReleasePlanPanel releasePlan={releasePlan} />
-      <OfferFollowUpActivityReadPanel summary={releaseFollowUpActivitySummary} />
+      <OfferFollowUpActivityReadPanel
+        readiness={releaseFollowUpActivityReadiness}
+        summary={releaseFollowUpActivitySummary}
+      />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
@@ -8856,7 +8876,13 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
   )
 }
 
-function OfferFollowUpActivityReadPanel({ summary }: { summary: OfferFollowUpActivityReadSummary }) {
+function OfferFollowUpActivityReadPanel({
+  readiness,
+  summary,
+}: {
+  readiness: OfferFollowUpActivityReadiness
+  summary: OfferFollowUpActivityReadSummary
+}) {
   const latest = summary.latestActivity
   const taskCount = summary.recordedFollowUpTaskIds.length
 
@@ -8873,19 +8899,25 @@ function OfferFollowUpActivityReadPanel({ summary }: { summary: OfferFollowUpAct
           </strong>
         </div>
         <span
-          className={
-            summary.totalActivities > 0
-              ? "offer-follow-up-activity-status offer-follow-up-activity-status-ready"
-              : "offer-follow-up-activity-status offer-follow-up-activity-status-review"
-          }
+          className={`offer-follow-up-activity-status offer-follow-up-activity-status-${readiness.status}`}
         >
-          {summary.totalActivities > 0 ? "Recorded" : "Pending"}
+          {followUpActivityReadinessLabel(readiness.status)}
         </span>
       </div>
       <div className="offer-follow-up-activity-summary">
         <Metric label="Activities" value={String(summary.totalActivities)} />
         <Metric label="Task IDs" value={String(taskCount)} />
+        <Metric label="Expected" value={String(readiness.expectedTaskCount)} />
+        <Metric label="Missing" value={String(readiness.missingTaskCount)} />
         <Metric label="Latest" value={latest ? formatAuditTimestamp(new Date(latest.createdAt).toISOString()) : "None"} />
+      </div>
+      <div className="offer-follow-up-activity-actions" aria-label="Follow-up activity readiness actions">
+        {readiness.nextActions.slice(0, 3).map((action) => (
+          <div className={readiness.status === "recorded" ? "flag ok" : "flag"} key={action}>
+            {readiness.status === "recorded" ? <CheckCircle2 aria-hidden="true" /> : <AlertTriangle aria-hidden="true" />}
+            <span>{action}</span>
+          </div>
+        ))}
       </div>
       {latest ? (
         <div className="offer-follow-up-activity-latest">
@@ -8913,6 +8945,19 @@ function OfferFollowUpActivityReadPanel({ summary }: { summary: OfferFollowUpAct
       ) : null}
     </section>
   )
+}
+
+function followUpActivityReadinessLabel(status: OfferFollowUpActivityReadinessStatus): string {
+  switch (status) {
+    case "partial":
+      return "Partial"
+    case "pending":
+      return "Pending"
+    case "recorded":
+      return "Recorded"
+    case "review":
+      return "Review"
+  }
 }
 
 function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDraftPackageHistorySummary }) {
@@ -10520,6 +10565,16 @@ function latestOfferFollowUpScheduledAt(actions: WorkspaceActionRecord[], offer:
     )
 
   return latest?.followUpDueAt
+}
+
+function expectedWorkspaceFollowUpTaskIds(actions: WorkspaceActionRecord[]): string[] {
+  return [
+    ...new Set(
+      actions.flatMap((action) =>
+        action.kind === "follow_up_created" && action.followUpTaskId ? [action.followUpTaskId] : [],
+      ),
+    ),
+  ].sort(compareText)
 }
 
 function shouldPersistWorkspaceActionToConvex(

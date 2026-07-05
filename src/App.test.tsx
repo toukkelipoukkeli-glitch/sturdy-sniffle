@@ -864,6 +864,9 @@ describe("FactoryBid workspace (component)", () => {
       expect(followUpActivity).toHaveTextContent("2 persisted activities")
       expect(followUpActivity).toHaveTextContent("Recorded")
       expect(followUpActivity).toHaveTextContent("Task IDs 1")
+      expect(followUpActivity).toHaveTextContent("Expected 0")
+      expect(followUpActivity).toHaveTextContent("Missing 0")
+      expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
       expect(followUpActivity).toHaveTextContent("Follow-up calendar hold updated for customer reply.")
       expect(followUpActivity).toHaveTextContent("activity-follow-up-2")
     })
@@ -918,6 +921,11 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(screen.getByRole("button", { name: /^Offer$/ }))
     await waitFor(() => {
       expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("follow-up-rfq-204")
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("Expected 1")
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent("Missing 0")
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent(
+        "Persisted follow-up activity coverage is complete.",
+      )
     })
     expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([
       {
@@ -960,10 +968,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent("0 persisted activities")
     expect(followUpActivity).toHaveTextContent("Pending")
     expect(followUpActivity).toHaveTextContent("Task IDs 0")
+    expect(followUpActivity).toHaveTextContent("Expected 0")
+    expect(followUpActivity).toHaveTextContent("Missing 0")
     expect(followUpActivity).toHaveTextContent("Latest None")
     expect(followUpActivity).toHaveTextContent("No persisted calendar follow-up activity records are available yet.")
+    expect(followUpActivity).toHaveTextContent("No persisted follow-up activities have been recorded yet.")
     expect(followUpActivity).not.toHaveTextContent("activity-follow-up")
-    expect(within(followUpActivity).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-review")
+    expect(within(followUpActivity).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
     expect(followUpActivity.querySelector(".offer-follow-up-activity-latest")).not.toBeInTheDocument()
     expect(within(followUpActivity).queryByLabelText("Recorded follow-up task ids")).not.toBeInTheDocument()
   })
