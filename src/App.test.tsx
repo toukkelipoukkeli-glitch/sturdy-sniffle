@@ -1022,6 +1022,38 @@ describe("FactoryBid workspace (component)", () => {
     expect(restoredHistory).toHaveTextContent("Current pending readiness")
   })
 
+  it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Action timeline")).toHaveTextContent("Scheduled offer follow-up follow-up-rfq-204")
+    })
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Offer follow-up activity reads")).toHaveTextContent(
+        "Persisted follow-up activity coverage is complete.",
+      )
+    })
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    await waitFor(() => {
+      expect(followUpActivity).toHaveTextContent("1 persisted activity")
+      expect(followUpActivity).toHaveTextContent("Expected 1")
+      expect(followUpActivity).toHaveTextContent("Missing 0")
+      expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
+    })
+    expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("Current recorded readiness")
+  })
+
   it("rejects malformed restored follow-up activity readiness history snapshots", async () => {
     const user = userEvent.setup()
     const { unmount } = render(<App />)
