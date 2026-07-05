@@ -994,6 +994,53 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(readinessHistory).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
   })
 
+  it("restores follow-up activity readiness history snapshots from local storage", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("1 readiness snapshot")
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      expect(stored.followUpActivityReadinessHistoryById?.[stored.selectedId]?.recordCount).toBe(1)
+    })
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    const restoredHistory = screen.getByLabelText("Follow-up activity readiness history")
+    expect(restoredHistory).toHaveTextContent("1 readiness snapshot")
+    expect(restoredHistory).toHaveTextContent("Current pending readiness")
+  })
+
+  it("rejects malformed restored follow-up activity readiness history snapshots", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      expect(stored.followUpActivityReadinessHistoryById?.[stored.selectedId]?.recordCount).toBe(1)
+    })
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
+    stored.followUpActivityReadinessHistoryById[stored.selectedId].records[0].readiness.recordedTaskCount = 99
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    expect(screen.queryByRole("heading", { name: "Offer draft" })).toBeNull()
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("1 readiness snapshot")
+    })
+  })
+
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
     render(<App />)
