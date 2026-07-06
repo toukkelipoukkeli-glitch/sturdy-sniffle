@@ -99,6 +99,45 @@ describe("convex offer follow-up activity readiness payload", () => {
       }),
     ).toThrow("record.recordedFollowUpTaskIds[0] is required")
   })
+
+  it("rejects missing or malformed array payload fields with domain errors", () => {
+    expect(() =>
+      buildOfferFollowUpActivityReadinessHistoryRecordFromConvex({
+        ...buildConvexOfferFollowUpActivityReadinessPayload(historyRecord()),
+        recordedFollowUpTaskIds: undefined as never,
+      }),
+    ).toThrow("record.recordedFollowUpTaskIds must be an array")
+
+    expect(() =>
+      buildOfferFollowUpActivityReadinessHistoryRecordFromConvex({
+        ...buildConvexOfferFollowUpActivityReadinessPayload(historyRecord()),
+        nextActions: null as never,
+      }),
+    ).toThrow("record.nextActions must be an array")
+
+    expect(() =>
+      buildOfferFollowUpActivityReadinessHistoryRecordFromConvex({
+        ...buildConvexOfferFollowUpActivityReadinessPayload(historyRecord()),
+        expectedFollowUpTaskIds: [42] as never,
+      }),
+    ).toThrow("record.expectedFollowUpTaskIds[0] must be a string")
+  })
+
+  it("requires strict ISO timestamps for portable Convex persistence", () => {
+    expect(() =>
+      buildOfferFollowUpActivityReadinessHistoryRecordFromConvex({
+        ...buildConvexOfferFollowUpActivityReadinessPayload(historyRecord()),
+        recordedAt: "2026-07-03",
+      }),
+    ).toThrow("record.recordedAt must be a strict ISO timestamp")
+
+    expect(() =>
+      buildConvexOfferFollowUpActivityReadinessPayload({
+        ...historyRecord(),
+        recordedAt: "2026-07-03T07:10:00Z",
+      }),
+    ).toThrow("record.recordedAt must be a strict ISO timestamp")
+  })
 })
 
 function historyRecord(
