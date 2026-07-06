@@ -120,6 +120,13 @@ const offerReleaseCommandExecutionStatus = v.union(
 
 const offerProviderOutcomeReadinessStatus = v.union(v.literal("blocked"), v.literal("ready"));
 
+const offerFollowUpActivityReadinessStatus = v.union(
+  v.literal("partial"),
+  v.literal("pending"),
+  v.literal("recorded"),
+  v.literal("review"),
+);
+
 const offerReleaseExecutionCommand = v.object({
   key: v.string(),
   kind: offerReleaseCommandKind,
@@ -133,6 +140,7 @@ const offerReleaseExecutionCommand = v.object({
 });
 
 type OfferProviderOutcomeReadinessStatus = Infer<typeof offerProviderOutcomeReadinessStatus>;
+type OfferFollowUpActivityReadinessStatus = Infer<typeof offerFollowUpActivityReadinessStatus>;
 
 const defaultLimit = 50;
 
@@ -589,6 +597,31 @@ export const listOfferProviderOutcomeReadiness = query({
   },
 });
 
+export const listOfferFollowUpActivityReadiness = query({
+  args: {
+    offerId: v.id("offers"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:read");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const limit = boundedLimit(args.limit);
+    const records = offer.tenantId
+      ? await ctx.db
+          .query("offerFollowUpActivityReadiness")
+          .withIndex("by_tenant_offer_time", (q) => q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit)
+      : await ctx.db
+          .query("offerFollowUpActivityReadiness")
+          .withIndex("by_offer_time", (q) => q.eq("offerId", args.offerId))
+          .order("desc")
+          .take(limit);
+
+    return records.filter((record) => childBelongsToActorTenant(record, offer, actor));
+  },
+});
+
 export const listProviderRuns = query({
   args: {
     status: v.optional(providerRunStatus),
@@ -993,6 +1026,118 @@ export const recordOfferProviderOutcomeReadiness = mutation({
       offer,
       offerId: args.offerId,
       offerNumber: payload.offerNumber,
+      status: payload.status,
+    });
+
+    return {
+      activityId,
+      offerId: args.offerId,
+      readinessId,
+      reused: false,
+      status: payload.status,
+    };
+  },
+});
+
+export const recordOfferFollowUpActivityReadiness = mutation({
+  args: {
+    offerId: v.id("offers"),
+    readinessKey: v.string(),
+    readinessVersion: v.string(),
+    readinessHistoryVersion: v.string(),
+    status: offerFollowUpActivityReadinessStatus,
+    recordedAt: v.number(),
+    expectedTaskCount: v.number(),
+    recordedTaskCount: v.number(),
+    missingTaskCount: v.number(),
+    unexpectedTaskCount: v.number(),
+    unmatchedActivityCount: v.number(),
+    totalActivities: v.number(),
+    expectedFollowUpTaskIds: v.array(v.string()),
+    recordedFollowUpTaskIds: v.array(v.string()),
+    missingFollowUpTaskIds: v.array(v.string()),
+    unexpectedFollowUpTaskIds: v.array(v.string()),
+    nextActions: v.array(v.string()),
+    latestActivityMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const actor = await requireFactoryBidActor(ctx, "workspace:write");
+    const offer = await requireTenantDocument<OfferDocument>(ctx, args.offerId, "offerId", actor);
+    const now = Date.now();
+    const readinessKey = nonBlank(args.readinessKey, "readinessKey");
+    const existingReadiness = await ctx.db
+      .query("offerFollowUpActivityReadiness")
+      .withIndex("by_tenant_offer_readiness_key", (q) =>
+        q.eq("tenantId", actor.tenantId).eq("offerId", args.offerId).eq("readinessKey", readinessKey),
+      )
+      .unique();
+
+    const payload = {
+      expectedFollowUpTaskIds: normalizeTextList(args.expectedFollowUpTaskIds),
+      expectedTaskCount: nonNegativeInteger(args.expectedTaskCount, "expectedTaskCount"),
+      latestActivityMessage: optionalNonBlank(args.latestActivityMessage),
+      missingFollowUpTaskIds: normalizeTextList(args.missingFollowUpTaskIds),
+      missingTaskCount: nonNegativeInteger(args.missingTaskCount, "missingTaskCount"),
+      nextActions: normalizeTextList(args.nextActions),
+      readinessHistoryVersion: nonBlank(args.readinessHistoryVersion, "readinessHistoryVersion"),
+      readinessVersion: nonBlank(args.readinessVersion, "readinessVersion"),
+      recordedAt: nonNegativeInteger(args.recordedAt, "recordedAt"),
+      recordedFollowUpTaskIds: normalizeTextList(args.recordedFollowUpTaskIds),
+      recordedTaskCount: nonNegativeInteger(args.recordedTaskCount, "recordedTaskCount"),
+      status: normalizeFollowUpActivityReadinessStatus(args.status),
+      totalActivities: nonNegativeInteger(args.totalActivities, "totalActivities"),
+      unexpectedFollowUpTaskIds: normalizeTextList(args.unexpectedFollowUpTaskIds),
+      unexpectedTaskCount: nonNegativeInteger(args.unexpectedTaskCount, "unexpectedTaskCount"),
+      unmatchedActivityCount: nonNegativeInteger(args.unmatchedActivityCount, "unmatchedActivityCount"),
+    };
+    validateFollowUpActivityReadinessCounts(payload);
+
+    if (existingReadiness) {
+      if (existingReadiness.readinessVersion !== payload.readinessVersion) {
+        throw new Error("readinessVersion must match existing follow-up activity readiness record");
+      }
+      if (existingReadiness.readinessHistoryVersion !== payload.readinessHistoryVersion) {
+        throw new Error("readinessHistoryVersion must match existing follow-up activity readiness record");
+      }
+      await ctx.db.patch(existingReadiness._id, {
+        ...payload,
+        updatedAt: now,
+      });
+      const activityId = await recordOfferFollowUpActivityReadinessActivity(ctx, {
+        actor,
+        missingTaskCount: payload.missingTaskCount,
+        now,
+        offer,
+        offerId: args.offerId,
+        recordedTaskCount: payload.recordedTaskCount,
+        status: payload.status,
+      });
+      return {
+        activityId,
+        offerId: args.offerId,
+        readinessId: existingReadiness._id,
+        reused: true,
+        status: payload.status,
+      };
+    }
+
+    const readinessId = await ctx.db.insert("offerFollowUpActivityReadiness", {
+      ...payload,
+      createdAt: now,
+      offerId: args.offerId,
+      quoteId: offer.quoteId,
+      readinessKey,
+      rfqId: offer.rfqId,
+      tenantId: actor.tenantId,
+      updatedAt: now,
+    });
+    const activityId = await recordOfferFollowUpActivityReadinessActivity(ctx, {
+      actor,
+      missingTaskCount: payload.missingTaskCount,
+      now,
+      offer,
+      offerId: args.offerId,
+      recordedTaskCount: payload.recordedTaskCount,
       status: payload.status,
     });
 
@@ -1726,6 +1871,15 @@ function normalizeProviderOutcomeReadinessStatus(
   return status;
 }
 
+function normalizeFollowUpActivityReadinessStatus(
+  status: OfferFollowUpActivityReadinessStatus,
+): OfferFollowUpActivityReadinessStatus {
+  if (status !== "partial" && status !== "pending" && status !== "recorded" && status !== "review") {
+    throw new Error("follow-up activity readiness status must be partial pending recorded or review");
+  }
+  return status;
+}
+
 function validateProviderOutcomeReadinessCounts(input: {
   appliedCommandCount: number;
   expectedCommandCount: number;
@@ -1742,6 +1896,39 @@ function validateProviderOutcomeReadinessCounts(input: {
   }
   if (input.status === "ready" && (input.failedCommandCount > 0 || input.missingCommandCount > 0)) {
     throw new Error("provider outcome readiness cannot be ready while failed or missing commands remain");
+  }
+}
+
+function validateFollowUpActivityReadinessCounts(input: {
+  expectedFollowUpTaskIds: string[];
+  expectedTaskCount: number;
+  missingFollowUpTaskIds: string[];
+  missingTaskCount: number;
+  recordedFollowUpTaskIds: string[];
+  recordedTaskCount: number;
+  status: OfferFollowUpActivityReadinessStatus;
+  totalActivities: number;
+  unexpectedFollowUpTaskIds: string[];
+  unexpectedTaskCount: number;
+  unmatchedActivityCount: number;
+}) {
+  if (input.expectedFollowUpTaskIds.length !== input.expectedTaskCount) {
+    throw new Error("expectedFollowUpTaskIds length must match expectedTaskCount");
+  }
+  if (input.recordedFollowUpTaskIds.length !== input.recordedTaskCount) {
+    throw new Error("recordedFollowUpTaskIds length must match recordedTaskCount");
+  }
+  if (input.missingFollowUpTaskIds.length !== input.missingTaskCount) {
+    throw new Error("missingFollowUpTaskIds length must match missingTaskCount");
+  }
+  if (input.unexpectedFollowUpTaskIds.length !== input.unexpectedTaskCount) {
+    throw new Error("unexpectedFollowUpTaskIds length must match unexpectedTaskCount");
+  }
+  if (input.totalActivities < input.recordedTaskCount) {
+    throw new Error("totalActivities cannot be less than recordedTaskCount");
+  }
+  if (input.status === "recorded" && (input.missingTaskCount > 0 || input.unexpectedTaskCount > 0 || input.unmatchedActivityCount > 0)) {
+    throw new Error("follow-up activity readiness cannot be recorded while review work remains");
   }
 }
 
@@ -1776,6 +1963,36 @@ async function recordOfferProviderOutcomeReadinessActivity(
   });
 }
 
+async function recordOfferFollowUpActivityReadinessActivity(
+  ctx: MutationCtx,
+  input: {
+    actor: FactoryBidActor;
+    missingTaskCount: number;
+    now: number;
+    offer: OfferDocument;
+    offerId: GenericId<"offers">;
+    recordedTaskCount: number;
+    status: OfferFollowUpActivityReadinessStatus;
+  },
+) {
+  return await ctx.db.insert("activities", {
+    actorName: nonBlank(input.actor.displayName, "actor.displayName"),
+    actorType: "system",
+    createdAt: input.now,
+    kind: "calculation",
+    message: offerFollowUpActivityReadinessActivityMessage({
+      missingTaskCount: input.missingTaskCount,
+      offerNumber: input.offer.offerNumber,
+      recordedTaskCount: input.recordedTaskCount,
+      status: input.status,
+    }),
+    offerId: input.offerId,
+    quoteId: input.offer.quoteId,
+    rfqId: input.offer.rfqId,
+    tenantId: input.actor.tenantId,
+  });
+}
+
 function offerReleaseExecutionActivityMessage(input: {
   commandCount: number;
   mode: "commit" | "dry_run";
@@ -1793,6 +2010,15 @@ function offerProviderOutcomeReadinessActivityMessage(input: {
   status: OfferProviderOutcomeReadinessStatus;
 }): string {
   return `Recorded provider outcome readiness for ${input.offerNumber}: ${input.status} (${input.appliedCommandCount} applied, ${input.failedCommandCount} failed).`;
+}
+
+function offerFollowUpActivityReadinessActivityMessage(input: {
+  missingTaskCount: number;
+  offerNumber: string;
+  recordedTaskCount: number;
+  status: OfferFollowUpActivityReadinessStatus;
+}): string {
+  return `Recorded follow-up activity readiness for ${input.offerNumber}: ${input.status} (${input.recordedTaskCount} recorded, ${input.missingTaskCount} missing).`;
 }
 
 function providerRunActivityMessage(input: { provider: string; purpose: string; status: string }): string {

@@ -73,6 +73,13 @@ const offerReleaseCommandExecutionStatus = v.union(
 
 const offerProviderOutcomeReadinessStatus = v.union(v.literal("blocked"), v.literal("ready"));
 
+const offerFollowUpActivityReadinessStatus = v.union(
+  v.literal("partial"),
+  v.literal("pending"),
+  v.literal("recorded"),
+  v.literal("review"),
+);
+
 const offerReleaseExecutionCommand = v.object({
   key: v.string(),
   kind: offerReleaseCommandKind,
@@ -414,6 +421,37 @@ export default defineSchema({
     blockerLabels: v.array(v.string()),
     nextActions: v.array(v.string()),
     latestOutcomeFingerprint: v.optional(v.string()),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  })
+    .index("by_tenant_offer_readiness_key", ["tenantId", "offerId", "readinessKey"])
+    .index("by_offer_time", ["offerId", "updatedAt"])
+    .index("by_tenant_offer_time", ["tenantId", "offerId", "updatedAt"])
+    .index("by_status_time", ["status", "updatedAt"])
+    .index("by_tenant_status_time", ["tenantId", "status", "updatedAt"]),
+
+  offerFollowUpActivityReadiness: defineTable({
+    tenantId,
+    readinessKey: v.string(),
+    readinessVersion: v.string(),
+    readinessHistoryVersion: v.string(),
+    offerId: v.id("offers"),
+    quoteId: v.id("quoteScenarios"),
+    rfqId: v.id("rfqs"),
+    status: offerFollowUpActivityReadinessStatus,
+    recordedAt: timestamp,
+    expectedTaskCount: v.number(),
+    recordedTaskCount: v.number(),
+    missingTaskCount: v.number(),
+    unexpectedTaskCount: v.number(),
+    unmatchedActivityCount: v.number(),
+    totalActivities: v.number(),
+    expectedFollowUpTaskIds: v.array(v.string()),
+    recordedFollowUpTaskIds: v.array(v.string()),
+    missingFollowUpTaskIds: v.array(v.string()),
+    unexpectedFollowUpTaskIds: v.array(v.string()),
+    nextActions: v.array(v.string()),
+    latestActivityMessage: v.optional(v.string()),
     createdAt: timestamp,
     updatedAt: timestamp,
   })
