@@ -328,6 +328,7 @@ import {
 import { rankQuoteQueue, type QuoteQueueStatus, type RankedQuoteQueueItem } from "./domain/workspace/quoteQueue"
 import { summarizeProcessWorkload, type ProcessWorkloadSummary } from "./domain/workspace/processWorkload"
 import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
+import { normalizedWorkspaceTimestamp } from "./domain/workspace/workspaceTimestamp"
 import { buildWorkspaceAction, type WorkspaceActionRecord } from "./domain/workspace/workspaceActions"
 import type { WorkspacePersistenceSnapshot } from "./domain/workspace/workspacePersistence"
 import {
@@ -9604,14 +9605,6 @@ function shortProviderReadinessKey(readinessKey: string) {
 
 function shortFollowUpActivityReadinessKey(readinessKey: string) {
   return readinessKey.replace(/^offer-follow-up-activity-readiness:/, "")
-}
-
-function normalizedWorkspaceTimestamp(value: string): string {
-  const timestamp = Date.parse(value)
-  if (!Number.isFinite(timestamp)) {
-    throw new Error("workspace timestamp must be a valid date string")
-  }
-  return new Date(timestamp).toISOString()
 }
 
 function mergeFollowUpActivityReadinessHistorySnapshots(

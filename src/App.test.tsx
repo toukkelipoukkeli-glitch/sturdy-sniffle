@@ -67,6 +67,7 @@ import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
 import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
+import { normalizedWorkspaceTimestamp } from "./domain/workspace/workspaceTimestamp"
 
 function totalText(container: HTMLElement): string {
   return container.querySelector(".total-box span")?.textContent ?? ""
@@ -242,6 +243,11 @@ describe("FactoryBid workspace (component)", () => {
       configurable: true,
       value: originalClipboard,
     })
+  })
+
+  it("normalizes workspace timestamps for strict readiness persistence", () => {
+    expect(normalizedWorkspaceTimestamp("2026-06-20T09:00:00+03:00")).toBe("2026-06-20T06:00:00.000Z")
+    expect(() => normalizedWorkspaceTimestamp("not-a-date")).toThrow("workspace timestamp must be a valid date string")
   })
 
   it("renders the dense operator workspace with the first RFQ selected and a computed quote", async () => {
