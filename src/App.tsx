@@ -1058,6 +1058,7 @@ function App() {
   )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
+  const [followUpActivityReadinessSyncErrorCount, setFollowUpActivityReadinessSyncErrorCount] = useState(0)
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
@@ -1796,6 +1797,10 @@ function App() {
       selectedId,
     ],
   )
+  const recordFollowUpActivityReadinessSyncError = useCallback(() => {
+    setPersistenceSyncErrorCount((count) => count + 1)
+    setFollowUpActivityReadinessSyncErrorCount((count) => count + 1)
+  }, [])
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -1818,7 +1823,7 @@ function App() {
       offerFollowUpActivityReadinessBridge?.queryRef && offerFollowUpActivityReadinessBridge.runQuery
         ? createConvexOfferFollowUpActivityReadinessReader({
             fallback: localReader,
-            onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            onQueryError: recordFollowUpActivityReadinessSyncError,
             queryRef: offerFollowUpActivityReadinessBridge.queryRef,
             runQuery: offerFollowUpActivityReadinessBridge.runQuery,
           })
@@ -1842,7 +1847,7 @@ function App() {
         settled = true
         if (!cancelled) {
           queriedReadinessKeys.delete(queryKey)
-          setPersistenceSyncErrorCount((count) => count + 1)
+          recordFollowUpActivityReadinessSyncError()
         }
       })
 
@@ -1852,7 +1857,12 @@ function App() {
         queriedReadinessKeys.delete(queryKey)
       }
     }
-  }, [convexOfferFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessBridge, selectedId])
+  }, [
+    convexOfferFollowUpActivityReadinessOfferId,
+    offerFollowUpActivityReadinessBridge,
+    recordFollowUpActivityReadinessSyncError,
+    selectedId,
+  ])
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -1873,7 +1883,7 @@ function App() {
         ? createConvexOfferFollowUpActivityReadinessPersistence({
             fallback: localPersistence,
             mutationRef: offerFollowUpActivityReadinessBridge.mutationRef,
-            onPersistError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            onPersistError: recordFollowUpActivityReadinessSyncError,
             runMutation: offerFollowUpActivityReadinessBridge.runMutation,
           })
         : localPersistence
@@ -1896,7 +1906,7 @@ function App() {
         settled = true
         if (!cancelled) {
           persistedReadinessKeys.delete(offerFollowUpActivityReadinessPersistenceKey)
-          setPersistenceSyncErrorCount((count) => count + 1)
+          recordFollowUpActivityReadinessSyncError()
         }
       })
 
@@ -1912,6 +1922,7 @@ function App() {
     offerFollowUpActivityReadinessBridge,
     offerFollowUpActivityReadinessPersistenceKey,
     offerFollowUpActivityReadinessRecord,
+    recordFollowUpActivityReadinessSyncError,
     selectedId,
   ])
   const offerEmailDraftPackage = useMemo(() => buildOfferEmailDraftPackage(offerReleasePlan), [offerReleasePlan])
@@ -2748,7 +2759,7 @@ function App() {
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
-              releaseFollowUpActivityReadinessSyncErrorCount={persistenceSyncErrorCount}
+              releaseFollowUpActivityReadinessSyncErrorCount={followUpActivityReadinessSyncErrorCount}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -9256,13 +9267,17 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Local" value={String(sync.localRecordCount)} />
         <Metric label="Other" value={String(sync.otherRecordCount)} />
       </div>
-      <div className="offer-follow-up-readiness-sync-health" data-status={syncErrorCount > 0 ? "fallback" : "healthy"}>
+      <div
+        aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${syncErrorCount} fallback${syncErrorCount === 1 ? "" : "s"}`}
+        className="offer-follow-up-readiness-sync-health"
+        data-status={syncErrorCount > 0 ? "fallback" : "healthy"}
+      >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
           <span>
             {syncErrorCount > 0
-              ? `${syncErrorCount} workspace persistence fallback${syncErrorCount === 1 ? "" : "s"} recorded.`
-              : "No workspace persistence fallbacks recorded."}
+              ? `${syncErrorCount} follow-up readiness persistence fallback${syncErrorCount === 1 ? "" : "s"} recorded.`
+              : "No follow-up readiness persistence fallbacks recorded."}
           </span>
         </div>
       </div>
