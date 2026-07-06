@@ -5600,6 +5600,7 @@
 .offer-follow-up-activity-latest,
 .offer-follow-up-activity-tasks,
 .offer-follow-up-readiness-history-summary,
+.offer-follow-up-readiness-sync-summary,
 .offer-follow-up-readiness-history-current,
 .offer-reply-summary,
 .offer-reply-state-panel,
@@ -5817,6 +5818,10 @@
 
 .offer-follow-up-readiness-history-summary {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.offer-follow-up-readiness-sync-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .offer-follow-up-activity-actions {
@@ -6893,6 +6898,7 @@
   .offer-follow-up-activity-latest,
   .offer-follow-up-activity-tasks,
   .offer-follow-up-readiness-history-summary,
+  .offer-follow-up-readiness-sync-summary,
   .offer-follow-up-readiness-history-current,
   .offer-reply-summary,
   .offer-reply-state-summary,
