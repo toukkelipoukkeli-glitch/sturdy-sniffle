@@ -863,8 +863,41 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Sync source Convex")
       expect(readinessHistory).toHaveTextContent("Convex 2")
       expect(readinessHistory).toHaveTextContent("Local 0")
+      expect(readinessHistory).toHaveTextContent("Sync health Healthy")
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
       expect(readinessHistory).toHaveTextContent("Convex snapshot")
+    })
+  })
+
+  it("surfaces follow-up readiness sync fallback health after a Convex read fails", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivityReadinessMutationRef: "recordOfferFollowUpActivityReadiness",
+      offerFollowUpActivityReadinessQueryRef: "listOfferFollowUpActivityReadiness",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("Sync health Fallback active")
+      expect(readinessHistory).toHaveTextContent("1 workspace persistence fallback recorded.")
+      expect(readinessHistory).toHaveTextContent("Current pending readiness")
     })
   })
 
@@ -1129,6 +1162,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Sync source Local fallback")
       expect(readinessHistory).toHaveTextContent("Local 1")
       expect(readinessHistory).toHaveTextContent("Convex 0")
+      expect(readinessHistory).toHaveTextContent("Sync health Healthy")
     })
     expect(within(readinessHistory).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
   })

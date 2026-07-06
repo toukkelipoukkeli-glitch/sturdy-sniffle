@@ -2748,6 +2748,7 @@ function App() {
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
+              releaseFollowUpActivityReadinessSyncErrorCount={persistenceSyncErrorCount}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -8750,6 +8751,7 @@ function OfferView({
   releaseFollowUpActivityReadiness,
   releaseFollowUpActivityReadinessHistory,
   releaseFollowUpActivityReadinessSync,
+  releaseFollowUpActivityReadinessSyncErrorCount,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
@@ -8783,6 +8785,7 @@ function OfferView({
   releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
   releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
   releaseFollowUpActivityReadinessSync: OfferFollowUpActivityReadinessSyncSummary
+  releaseFollowUpActivityReadinessSyncErrorCount: number
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
@@ -8932,6 +8935,7 @@ function OfferView({
       <OfferFollowUpActivityReadinessHistoryPanel
         history={releaseFollowUpActivityReadinessHistory}
         sync={releaseFollowUpActivityReadinessSync}
+        syncErrorCount={releaseFollowUpActivityReadinessSyncErrorCount}
       />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
@@ -9210,15 +9214,18 @@ function OfferFollowUpActivityReadPanel({
 function OfferFollowUpActivityReadinessHistoryPanel({
   history,
   sync,
+  syncErrorCount,
 }: {
   history: OfferFollowUpActivityReadinessHistorySummary
   sync: OfferFollowUpActivityReadinessSyncSummary
+  syncErrorCount: number
 }) {
   const current = history.currentReadiness
   const status = current?.status ?? "pending"
   const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
   const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
+  const syncHealthLabel = syncErrorCount > 0 ? "Fallback active" : "Healthy"
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9248,6 +9255,16 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Convex" value={String(sync.convexRecordCount)} />
         <Metric label="Local" value={String(sync.localRecordCount)} />
         <Metric label="Other" value={String(sync.otherRecordCount)} />
+      </div>
+      <div className="offer-follow-up-readiness-sync-health" data-status={syncErrorCount > 0 ? "fallback" : "healthy"}>
+        <div>
+          <strong>Sync health {syncHealthLabel}</strong>
+          <span>
+            {syncErrorCount > 0
+              ? `${syncErrorCount} workspace persistence fallback${syncErrorCount === 1 ? "" : "s"} recorded.`
+              : "No workspace persistence fallbacks recorded."}
+          </span>
+        </div>
       </div>
       {current ? (
         <div className="offer-follow-up-readiness-history-current" data-status={current.status}>

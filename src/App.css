@@ -5601,6 +5601,7 @@
 .offer-follow-up-activity-tasks,
 .offer-follow-up-readiness-history-summary,
 .offer-follow-up-readiness-sync-summary,
+.offer-follow-up-readiness-sync-health,
 .offer-follow-up-readiness-history-current,
 .offer-reply-summary,
 .offer-reply-state-panel,
@@ -5822,6 +5823,39 @@
 
 .offer-follow-up-readiness-sync-summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.offer-follow-up-readiness-sync-health {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.offer-follow-up-readiness-sync-health[data-status="healthy"] {
+  border-color: oklch(0.84 0.05 155);
+}
+
+.offer-follow-up-readiness-sync-health[data-status="fallback"] {
+  border-color: oklch(0.82 0.09 82);
+}
+
+.offer-follow-up-readiness-sync-health > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.offer-follow-up-readiness-sync-health strong {
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.offer-follow-up-readiness-sync-health span {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.74rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .offer-follow-up-activity-actions {
@@ -6899,6 +6933,7 @@
   .offer-follow-up-activity-tasks,
   .offer-follow-up-readiness-history-summary,
   .offer-follow-up-readiness-sync-summary,
+  .offer-follow-up-readiness-sync-health,
   .offer-follow-up-readiness-history-current,
   .offer-reply-summary,
   .offer-reply-state-summary,
