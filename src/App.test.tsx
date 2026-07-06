@@ -61,6 +61,8 @@ import {
   type NonCncPromotedQuoteApplicationMutationOutcomeCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitPersistence"
 import { OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
+import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION } from "./domain/offers/offerFollowUpActivityReadiness"
+import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -734,6 +736,125 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessPersistence).toHaveTextContent("Ready 1")
       expect(readinessPersistence).toHaveTextContent("Blocked 1")
       expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    })
+  })
+
+  it("routes follow-up activity readiness through the Convex browser bridge", async () => {
+    const calls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivityReadinessMutationRef: "recordOfferFollowUpActivityReadiness",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async (mutationRef, args) => {
+        calls.push({ args, mutationRef })
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(calls.some((call) => call.mutationRef === "recordOfferFollowUpActivityReadiness")).toBe(true)
+    })
+    const readinessCall = calls.find((call) => call.mutationRef === "recordOfferFollowUpActivityReadiness")
+    expect(readinessCall?.args).toMatchObject({
+      expectedFollowUpTaskIds: [],
+      expectedTaskCount: 0,
+      missingFollowUpTaskIds: [],
+      missingTaskCount: 0,
+      nextActions: ["No persisted follow-up activities have been recorded yet."],
+      offerId: "convex-offer-204",
+      readinessHistoryVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION,
+      readinessVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION,
+      recordedFollowUpTaskIds: [],
+      recordedTaskCount: 0,
+      status: "pending",
+      totalActivities: 0,
+      unexpectedFollowUpTaskIds: [],
+      unexpectedTaskCount: 0,
+      unmatchedActivityCount: 0,
+    })
+    expect(readinessCall?.args.readinessKey).toContain("convex-offer-204:convex-rfq-204")
+    expect(readinessCall?.args.recordedAt).toEqual(expect.any(Number))
+    expect(readinessCall?.args).not.toHaveProperty("rfqId")
+  })
+
+  it("hydrates follow-up activity readiness snapshots through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const mutationCalls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivityReadinessMutationRef: "recordOfferFollowUpActivityReadiness",
+      offerFollowUpActivityReadinessQueryRef: "listOfferFollowUpActivityReadiness",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async (mutationRef, args) => {
+        mutationCalls.push({ args, mutationRef })
+      },
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            expectedFollowUpTaskIds: ["follow-up-rfq-204"],
+            expectedTaskCount: 1,
+            latestActivityMessage: "Scheduled offer follow-up follow-up-rfq-204 for OFFER-204 at 2026-07-03T07:00:00.000Z.",
+            missingFollowUpTaskIds: [],
+            missingTaskCount: 0,
+            nextActions: ["Persisted follow-up activity coverage is complete."],
+            offerId: "convex-offer-204",
+            readinessHistoryVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION,
+            readinessKey: "offer-follow-up-activity-readiness:convex-offer-204:convex-rfq-204:recorded",
+            readinessVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION,
+            recordedAt: Date.parse("2026-07-03T07:10:00.000Z"),
+            recordedFollowUpTaskIds: ["follow-up-rfq-204"],
+            recordedTaskCount: 1,
+            rfqId: "convex-rfq-204",
+            status: "recorded",
+            totalActivities: 1,
+            unexpectedFollowUpTaskIds: [],
+            unexpectedTaskCount: 0,
+            unmatchedActivityCount: 0,
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            offerId: "convex-offer-204",
+          },
+          queryRef: "listOfferFollowUpActivityReadiness",
+        },
+      ])
+      expect(mutationCalls.some((call) => call.mutationRef === "recordOfferFollowUpActivityReadiness")).toBe(true)
+    })
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("2 readiness snapshots")
+      expect(readinessHistory).toHaveTextContent("Records 2")
+      expect(readinessHistory).toHaveTextContent("Recorded 1")
+      expect(readinessHistory).toHaveTextContent("Current pending readiness")
     })
   })
 

@@ -104,6 +104,17 @@ import {
   createLocalOfferFollowUpActivityReadinessHistoryPersistence,
   type OfferFollowUpActivityReadinessHistoryPersistenceSnapshot,
 } from "./domain/offers/offerFollowUpActivityReadinessHistoryPersistence"
+import {
+  buildConvexOfferFollowUpActivityReadinessPayload,
+  buildOfferFollowUpActivityReadinessHistoryRecordFromConvex,
+} from "./domain/offers/convexOfferFollowUpActivityReadiness"
+import {
+  createConvexOfferFollowUpActivityReadinessPersistence,
+  createConvexOfferFollowUpActivityReadinessReader,
+  createLocalOfferFollowUpActivityReadinessPersistence,
+  createLocalOfferFollowUpActivityReadinessReader,
+  type OfferFollowUpActivityReadinessPersistenceSnapshot,
+} from "./domain/offers/offerFollowUpActivityReadinessPersistence"
 import { buildOfferEmailDraftPackage } from "./domain/offers/offerEmailDraftPackage"
 import {
   summarizeOfferEmailDraftPackageHistory,
@@ -1051,6 +1062,7 @@ function App() {
   const releaseExecutionQueryKeysRef = useRef(new Map<string, Promise<OfferReleaseExecutionHistorySummary>>())
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
+  const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1719,19 +1731,35 @@ function App() {
       }),
     [expectedFollowUpActivityTaskIds, offerFollowUpActivitySummary],
   )
+  const offerFollowUpActivityReadinessBridge = useMemo(() => createBrowserConvexOfferFollowUpActivityReadinessBridge(), [])
+  const convexOfferFollowUpActivityReadinessOfferId = offerFollowUpActivityReadinessBridge?.resolveOfferId(offer.offerNumber.toLowerCase())
+  const convexOfferFollowUpActivityReadinessRfqId = offerFollowUpActivityReadinessBridge?.resolveRfqId(selectedId)
+  const offerFollowUpActivityReadinessOfferId = convexOfferFollowUpActivityReadinessOfferId ?? offer.offerNumber.toLowerCase()
+  const offerFollowUpActivityReadinessRfqId = convexOfferFollowUpActivityReadinessRfqId ?? selectedId
   const offerFollowUpActivityReadinessRecordKey = useMemo(
-    () => followUpActivityReadinessRecordKey(selectedId, offer.offerNumber.toLowerCase(), offerFollowUpActivityReadiness),
-    [offer.offerNumber, offerFollowUpActivityReadiness, selectedId],
+    () =>
+      followUpActivityReadinessRecordKey(
+        offerFollowUpActivityReadinessRfqId,
+        offerFollowUpActivityReadinessOfferId,
+        offerFollowUpActivityReadiness,
+      ),
+    [offerFollowUpActivityReadiness, offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId],
   )
   const offerFollowUpActivityReadinessRecord = useMemo(
     () => ({
-      offerId: offer.offerNumber.toLowerCase(),
+      offerId: offerFollowUpActivityReadinessOfferId,
       readiness: offerFollowUpActivityReadiness,
       readinessKey: offerFollowUpActivityReadinessRecordKey,
-      recordedAt: workspaceNow,
-      rfqId: selectedId,
+      recordedAt: normalizedWorkspaceTimestamp(workspaceNow),
+      rfqId: offerFollowUpActivityReadinessRfqId,
     }),
-    [offer.offerNumber, offerFollowUpActivityReadiness, offerFollowUpActivityReadinessRecordKey, selectedId, workspaceNow],
+    [
+      offerFollowUpActivityReadiness,
+      offerFollowUpActivityReadinessOfferId,
+      offerFollowUpActivityReadinessRecordKey,
+      offerFollowUpActivityReadinessRfqId,
+      workspaceNow,
+    ],
   )
   const offerFollowUpActivityReadinessPersistenceKey = useMemo(
     () => `${selectedId}::${offerFollowUpActivityReadinessRecordKey}`,
@@ -1749,6 +1777,63 @@ function App() {
   useEffect(() => {
     let cancelled = false
     let settled = false
+    const queriedReadinessKeys = followUpActivityReadinessQueryKeysRef.current
+    const queryKey =
+      offerFollowUpActivityReadinessBridge?.queryRef && convexOfferFollowUpActivityReadinessOfferId
+        ? `${selectedId}::${convexOfferFollowUpActivityReadinessOfferId}`
+        : undefined
+    if (!queryKey || queriedReadinessKeys.has(queryKey)) {
+      return () => {
+        cancelled = true
+      }
+    }
+    queriedReadinessKeys.add(queryKey)
+
+    const localReader = createLocalOfferFollowUpActivityReadinessReader({
+      initialSnapshot: followUpActivityReadinessConvexSnapshotFromHistory(followUpActivityReadinessHistoryRef.current[selectedId]),
+    })
+    const reader =
+      offerFollowUpActivityReadinessBridge?.queryRef && offerFollowUpActivityReadinessBridge.runQuery
+        ? createConvexOfferFollowUpActivityReadinessReader({
+            fallback: localReader,
+            onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            queryRef: offerFollowUpActivityReadinessBridge.queryRef,
+            runQuery: offerFollowUpActivityReadinessBridge.runQuery,
+          })
+        : localReader
+
+    void reader
+      .listReadiness({ limit: 20, offerId: convexOfferFollowUpActivityReadinessOfferId })
+      .then((snapshot) => {
+        settled = true
+        if (!cancelled) {
+          setFollowUpActivityReadinessHistoryById((current) => ({
+            ...current,
+            [selectedId]: mergeFollowUpActivityReadinessHistorySnapshots(
+              current[selectedId],
+              followUpActivityReadinessHistorySnapshotFromConvex(snapshot),
+            ),
+          }))
+        }
+      })
+      .catch(() => {
+        settled = true
+        if (!cancelled) {
+          queriedReadinessKeys.delete(queryKey)
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      if (!settled) {
+        queriedReadinessKeys.delete(queryKey)
+      }
+    }
+  }, [convexOfferFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessBridge, selectedId])
+  useEffect(() => {
+    let cancelled = false
+    let settled = false
     const persistedReadinessKeys = followUpActivityReadinessPersistenceKeysRef.current
     if (persistedReadinessKeys.has(offerFollowUpActivityReadinessPersistenceKey)) {
       return () => {
@@ -1758,9 +1843,18 @@ function App() {
     persistedReadinessKeys.add(offerFollowUpActivityReadinessPersistenceKey)
 
     const previousSnapshot = followUpActivityReadinessHistoryRef.current[selectedId]
-    const persistence = createLocalOfferFollowUpActivityReadinessHistoryPersistence({
-      initialSnapshot: previousSnapshot,
+    const localPersistence = createLocalOfferFollowUpActivityReadinessPersistence({
+      initialSnapshot: followUpActivityReadinessConvexSnapshotFromHistory(previousSnapshot),
     })
+    const persistence =
+      offerFollowUpActivityReadinessBridge && convexOfferFollowUpActivityReadinessOfferId && convexOfferFollowUpActivityReadinessRfqId
+        ? createConvexOfferFollowUpActivityReadinessPersistence({
+            fallback: localPersistence,
+            mutationRef: offerFollowUpActivityReadinessBridge.mutationRef,
+            onPersistError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            runMutation: offerFollowUpActivityReadinessBridge.runMutation,
+          })
+        : localPersistence
 
     void persistence
       .recordReadiness(offerFollowUpActivityReadinessRecord)
@@ -1769,7 +1863,10 @@ function App() {
         if (!cancelled) {
           setFollowUpActivityReadinessHistoryById((current) => ({
             ...current,
-            [selectedId]: mergeFollowUpActivityReadinessHistorySnapshots(current[selectedId], snapshot),
+            [selectedId]: mergeFollowUpActivityReadinessHistorySnapshots(
+              current[selectedId],
+              followUpActivityReadinessHistorySnapshotFromConvex(snapshot),
+            ),
           }))
         }
       })
@@ -1788,6 +1885,9 @@ function App() {
       }
     }
   }, [
+    convexOfferFollowUpActivityReadinessOfferId,
+    convexOfferFollowUpActivityReadinessRfqId,
+    offerFollowUpActivityReadinessBridge,
     offerFollowUpActivityReadinessPersistenceKey,
     offerFollowUpActivityReadinessRecord,
     selectedId,
@@ -9506,6 +9606,14 @@ function shortFollowUpActivityReadinessKey(readinessKey: string) {
   return readinessKey.replace(/^offer-follow-up-activity-readiness:/, "")
 }
 
+function normalizedWorkspaceTimestamp(value: string): string {
+  const timestamp = Date.parse(value)
+  if (!Number.isFinite(timestamp)) {
+    throw new Error("workspace timestamp must be a valid date string")
+  }
+  return new Date(timestamp).toISOString()
+}
+
 function mergeFollowUpActivityReadinessHistorySnapshots(
   current: OfferFollowUpActivityReadinessHistoryPersistenceSnapshot | undefined,
   incoming: OfferFollowUpActivityReadinessHistoryPersistenceSnapshot,
@@ -9514,6 +9622,24 @@ function mergeFollowUpActivityReadinessHistorySnapshots(
     initialSnapshot: {
       currentReadinessKey: incoming.currentReadinessKey ?? current?.currentReadinessKey,
       records: [...(current?.records ?? []), ...incoming.records],
+    },
+  }).snapshot()
+}
+
+function followUpActivityReadinessConvexSnapshotFromHistory(
+  snapshot: OfferFollowUpActivityReadinessHistoryPersistenceSnapshot | undefined,
+): Partial<OfferFollowUpActivityReadinessPersistenceSnapshot> {
+  return {
+    records: (snapshot?.records ?? []).map((record) => buildConvexOfferFollowUpActivityReadinessPayload(record)),
+  }
+}
+
+function followUpActivityReadinessHistorySnapshotFromConvex(
+  snapshot: OfferFollowUpActivityReadinessPersistenceSnapshot,
+): OfferFollowUpActivityReadinessHistoryPersistenceSnapshot {
+  return createLocalOfferFollowUpActivityReadinessHistoryPersistence({
+    initialSnapshot: {
+      records: snapshot.records.map((record) => buildOfferFollowUpActivityReadinessHistoryRecordFromConvex(record)),
     },
   }).snapshot()
 }
@@ -10941,6 +11067,8 @@ function stableKeySegment(value: string): string {
 interface BrowserConvexWorkspaceBridge {
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
   offerFollowUpActivitiesQueryRef?: unknown
+  offerFollowUpActivityReadinessMutationRef?: unknown
+  offerFollowUpActivityReadinessQueryRef?: unknown
   offerReleaseExecutionsQueryRef?: unknown
   offerReplyMutationRef?: unknown
   offerProviderOutcomeReadinessMutationRef?: unknown
@@ -10979,6 +11107,15 @@ interface BrowserConvexOfferFollowUpActivityBridge {
   queryRef: unknown
   resolveOfferId: (offerId: string) => string | undefined
   runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
+}
+
+interface BrowserConvexOfferFollowUpActivityReadinessBridge {
+  mutationRef: unknown
+  queryRef?: unknown
+  resolveOfferId: (offerId: string) => string | undefined
+  resolveRfqId: (rfqId: string) => string | undefined
+  runMutation: WorkspacePersistenceBridge["runMutation"]
+  runQuery?: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
 }
 
 declare global {
@@ -11055,6 +11192,22 @@ function createBrowserConvexOfferFollowUpActivityBridge(): BrowserConvexOfferFol
   return {
     queryRef: bridge.offerFollowUpActivitiesQueryRef,
     resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    runQuery: bridge.runQuery,
+  }
+}
+
+function createBrowserConvexOfferFollowUpActivityReadinessBridge(): BrowserConvexOfferFollowUpActivityReadinessBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.offerFollowUpActivityReadinessMutationRef) {
+    return undefined
+  }
+
+  return {
+    mutationRef: bridge.offerFollowUpActivityReadinessMutationRef,
+    queryRef: bridge.offerFollowUpActivityReadinessQueryRef,
+    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
 }
