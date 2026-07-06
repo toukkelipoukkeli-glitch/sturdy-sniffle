@@ -7,6 +7,7 @@ import {
   type OfferFollowUpActivityReadiness,
 } from "./offerFollowUpActivityReadiness"
 import {
+  summarizeOfferFollowUpActivityReadinessSync,
   summarizeOfferFollowUpActivityReadinessHistory,
   type OfferFollowUpActivityReadinessHistoryRecord,
 } from "./offerFollowUpActivityReadinessHistory"
@@ -64,6 +65,72 @@ describe("offer follow-up activity readiness history", () => {
       totalReadinessRecords: 0,
       unexpectedTaskTotal: 0,
       unmatchedActivityTotal: 0,
+    })
+  })
+
+  it("summarizes local fallback readiness sync records", () => {
+    expect(
+      summarizeOfferFollowUpActivityReadinessSync({
+        currentReadinessKey: "readiness:offer-204:pending",
+        localOfferId: "offer-204",
+        localRfqId: "rfq-204",
+        records: [
+          historyRecord({
+            readiness: readinessPending(),
+            readinessKey: "readiness:offer-204:pending",
+          }),
+        ],
+      }),
+    ).toEqual({
+      convexRecordCount: 0,
+      currentSource: "local",
+      localRecordCount: 1,
+      mode: "local",
+      otherRecordCount: 0,
+      totalReadinessRecords: 1,
+    })
+  })
+
+  it("summarizes mixed Convex and local readiness sync records after dedupe", () => {
+    expect(
+      summarizeOfferFollowUpActivityReadinessSync({
+        convexOfferId: "convex-offer-204",
+        convexRfqId: "convex-rfq-204",
+        currentReadinessKey: "readiness:convex-recorded",
+        localOfferId: "offer-204",
+        localRfqId: "rfq-204",
+        records: [
+          historyRecord({
+            readiness: readinessPending(),
+            readinessKey: "readiness:local-pending",
+          }),
+          historyRecord({
+            offerId: "convex-offer-204",
+            readiness: readinessRecorded(),
+            readinessKey: "readiness:convex-recorded",
+            rfqId: "convex-rfq-204",
+          }),
+          historyRecord({
+            offerId: "convex-offer-204",
+            readiness: readinessPartial(),
+            readinessKey: "readiness:convex-recorded",
+            rfqId: "convex-rfq-204",
+          }),
+          historyRecord({
+            offerId: "legacy-offer-204",
+            readiness: readinessReview(),
+            readinessKey: "readiness:legacy-review",
+            rfqId: "legacy-rfq-204",
+          }),
+        ],
+      }),
+    ).toEqual({
+      convexRecordCount: 1,
+      currentSource: "convex",
+      localRecordCount: 1,
+      mode: "mixed",
+      otherRecordCount: 1,
+      totalReadinessRecords: 3,
     })
   })
 

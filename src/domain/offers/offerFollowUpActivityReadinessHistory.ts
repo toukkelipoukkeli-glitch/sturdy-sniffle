@@ -32,6 +32,26 @@ export interface OfferFollowUpActivityReadinessHistorySummary {
   unmatchedActivityTotal: number
 }
 
+export type OfferFollowUpActivityReadinessSyncMode = "convex" | "local" | "mixed" | "none" | "other"
+
+export interface OfferFollowUpActivityReadinessSyncSummary {
+  convexRecordCount: number
+  currentSource: OfferFollowUpActivityReadinessSyncMode
+  localRecordCount: number
+  mode: OfferFollowUpActivityReadinessSyncMode
+  otherRecordCount: number
+  totalReadinessRecords: number
+}
+
+export interface OfferFollowUpActivityReadinessSyncSummaryInput {
+  convexOfferId?: string
+  convexRfqId?: string
+  currentReadinessKey?: string
+  localOfferId: string
+  localRfqId: string
+  records?: OfferFollowUpActivityReadinessHistoryRecord[]
+}
+
 export interface OfferFollowUpActivityReadinessRecordSummary {
   expectedTaskCount: number
   missingTaskCount: number
@@ -73,6 +93,46 @@ export function summarizeOfferFollowUpActivityReadinessHistory(
     totalReadinessRecords: normalizedRecords.length,
     unexpectedTaskTotal: sumRecords(normalizedRecords, (record) => record.unexpectedTaskCount),
     unmatchedActivityTotal: sumRecords(normalizedRecords, (record) => record.unmatchedActivityCount),
+  }
+}
+
+export function summarizeOfferFollowUpActivityReadinessSync({
+  convexOfferId,
+  convexRfqId,
+  currentReadinessKey,
+  localOfferId,
+  localRfqId,
+  records,
+}: OfferFollowUpActivityReadinessSyncSummaryInput): OfferFollowUpActivityReadinessSyncSummary {
+  const localIds = normalizeIdPair(localOfferId, localRfqId, "local")
+  const convexIds = convexOfferId && convexRfqId ? normalizeIdPair(convexOfferId, convexRfqId, "convex") : undefined
+  const normalizedRecords = normalizeRecords(records ?? [])
+  const currentKey = currentReadinessKey?.trim()
+  const currentReadiness = currentKey
+    ? normalizedRecords.find((record) => record.readinessKey === currentKey)
+    : newestRecord(normalizedRecords)
+  let convexRecordCount = 0
+  let localRecordCount = 0
+  let otherRecordCount = 0
+
+  for (const record of normalizedRecords) {
+    const source = recordSyncSource(record, localIds, convexIds)
+    if (source === "convex") {
+      convexRecordCount += 1
+    } else if (source === "local") {
+      localRecordCount += 1
+    } else {
+      otherRecordCount += 1
+    }
+  }
+
+  return {
+    convexRecordCount,
+    currentSource: currentReadiness ? recordSyncSource(currentReadiness, localIds, convexIds) : "none",
+    localRecordCount,
+    mode: syncMode(convexRecordCount, localRecordCount, otherRecordCount),
+    otherRecordCount,
+    totalReadinessRecords: normalizedRecords.length,
   }
 }
 
@@ -186,4 +246,46 @@ function sumRecords(
   select: (record: OfferFollowUpActivityReadinessRecordSummary) => number,
 ): number {
   return records.reduce((total, record) => total + select(record), 0)
+}
+
+function normalizeIdPair(offerId: string, rfqId: string, source: string): { offerId: string; rfqId: string } {
+  return {
+    offerId: nonBlank(offerId, `${source}.offerId`),
+    rfqId: nonBlank(rfqId, `${source}.rfqId`),
+  }
+}
+
+function recordSyncSource(
+  record: OfferFollowUpActivityReadinessRecordSummary,
+  localIds: { offerId: string; rfqId: string },
+  convexIds: { offerId: string; rfqId: string } | undefined,
+): OfferFollowUpActivityReadinessSyncMode {
+  if (convexIds && record.offerId === convexIds.offerId && record.rfqId === convexIds.rfqId) {
+    return "convex"
+  }
+  if (record.offerId === localIds.offerId && record.rfqId === localIds.rfqId) {
+    return "local"
+  }
+  return "other"
+}
+
+function syncMode(
+  convexRecordCount: number,
+  localRecordCount: number,
+  otherRecordCount: number,
+): OfferFollowUpActivityReadinessSyncMode {
+  const sourceCount = Number(convexRecordCount > 0) + Number(localRecordCount > 0) + Number(otherRecordCount > 0)
+  if (sourceCount === 0) {
+    return "none"
+  }
+  if (sourceCount > 1) {
+    return "mixed"
+  }
+  if (convexRecordCount > 0) {
+    return "convex"
+  }
+  if (localRecordCount > 0) {
+    return "local"
+  }
+  return "other"
 }

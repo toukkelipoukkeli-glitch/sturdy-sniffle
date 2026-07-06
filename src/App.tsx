@@ -97,8 +97,10 @@ import {
   type OfferFollowUpActivityReadinessStatus,
 } from "./domain/offers/offerFollowUpActivityReadiness"
 import {
+  summarizeOfferFollowUpActivityReadinessSync,
   summarizeOfferFollowUpActivityReadinessHistory,
   type OfferFollowUpActivityReadinessHistorySummary,
+  type OfferFollowUpActivityReadinessSyncSummary,
 } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import {
   createLocalOfferFollowUpActivityReadinessHistoryPersistence,
@@ -1775,6 +1777,25 @@ function App() {
       ),
     [offerFollowUpActivityReadinessRecordKey, selectedFollowUpActivityReadinessHistory],
   )
+  const offerFollowUpActivityReadinessSync = useMemo(
+    () =>
+      summarizeOfferFollowUpActivityReadinessSync({
+        convexOfferId: convexOfferFollowUpActivityReadinessOfferId,
+        convexRfqId: convexOfferFollowUpActivityReadinessRfqId,
+        currentReadinessKey: offerFollowUpActivityReadinessRecordKey,
+        localOfferId: offer.offerNumber.toLowerCase(),
+        localRfqId: selectedId,
+        records: selectedFollowUpActivityReadinessHistory?.records,
+      }),
+    [
+      convexOfferFollowUpActivityReadinessOfferId,
+      convexOfferFollowUpActivityReadinessRfqId,
+      offer.offerNumber,
+      offerFollowUpActivityReadinessRecordKey,
+      selectedFollowUpActivityReadinessHistory,
+      selectedId,
+    ],
+  )
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -2726,6 +2747,7 @@ function App() {
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
+              releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -8727,6 +8749,7 @@ function OfferView({
   releaseEmailDraftHistory,
   releaseFollowUpActivityReadiness,
   releaseFollowUpActivityReadinessHistory,
+  releaseFollowUpActivityReadinessSync,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
@@ -8759,6 +8782,7 @@ function OfferView({
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
   releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
   releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
+  releaseFollowUpActivityReadinessSync: OfferFollowUpActivityReadinessSyncSummary
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
@@ -8905,7 +8929,10 @@ function OfferView({
         readiness={releaseFollowUpActivityReadiness}
         summary={releaseFollowUpActivitySummary}
       />
-      <OfferFollowUpActivityReadinessHistoryPanel history={releaseFollowUpActivityReadinessHistory} />
+      <OfferFollowUpActivityReadinessHistoryPanel
+        history={releaseFollowUpActivityReadinessHistory}
+        sync={releaseFollowUpActivityReadinessSync}
+      />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
@@ -9182,12 +9209,16 @@ function OfferFollowUpActivityReadPanel({
 
 function OfferFollowUpActivityReadinessHistoryPanel({
   history,
+  sync,
 }: {
   history: OfferFollowUpActivityReadinessHistorySummary
+  sync: OfferFollowUpActivityReadinessSyncSummary
 }) {
   const current = history.currentReadiness
   const status = current?.status ?? "pending"
   const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
+  const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
+  const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9212,13 +9243,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Review" value={String(history.reviewRecordCount)} />
         <Metric label="Missing" value={String(history.missingTaskTotal)} />
       </div>
+      <div className="offer-follow-up-readiness-sync-summary" aria-label="Follow-up readiness sync source">
+        <Metric label="Sync source" value={syncLabel} />
+        <Metric label="Convex" value={String(sync.convexRecordCount)} />
+        <Metric label="Local" value={String(sync.localRecordCount)} />
+        <Metric label="Other" value={String(sync.otherRecordCount)} />
+      </div>
       {current ? (
         <div className="offer-follow-up-readiness-history-current" data-status={current.status}>
           <div>
             <strong>Current {statusLabel.toLowerCase()} readiness</strong>
             <span>
               {current.recordedTaskCount}/{current.expectedTaskCount} follow-up task IDs recorded · {current.nextActionCount} next
-              action{current.nextActionCount === 1 ? "" : "s"}
+              action{current.nextActionCount === 1 ? "" : "s"} · {currentSourceLabel} snapshot
             </span>
           </div>
           <small>{shortFollowUpActivityReadinessKey(current.readinessKey)}</small>
@@ -9231,6 +9268,21 @@ function OfferFollowUpActivityReadinessHistoryPanel({
       )}
     </section>
   )
+}
+
+function followUpActivityReadinessSyncLabel(syncMode: OfferFollowUpActivityReadinessSyncSummary["mode"]): string {
+  switch (syncMode) {
+    case "convex":
+      return "Convex"
+    case "local":
+      return "Local fallback"
+    case "mixed":
+      return "Mixed sync"
+    case "none":
+      return "Pending"
+    case "other":
+      return "Unmatched"
+  }
 }
 
 function followUpActivityReadinessLabel(status: OfferFollowUpActivityReadinessStatus): string {

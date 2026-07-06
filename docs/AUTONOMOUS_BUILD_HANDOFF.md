@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-03 Europe/Helsinki.
+Last refreshed: 2026-07-06 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5b19a3b` (`Add follow-up readiness client adapter (#280)`).
-- Open PRs at this checkpoint: none on `main`; this branch is wiring follow-up activity readiness persistence into the React runtime bridge.
-- In-flight PR at this checkpoint: `codex/followup-readiness-runtime-bridge` records and hydrates follow-up activity readiness snapshots through optional browser Convex refs while preserving the local history fallback and strict timestamp normalization.
+- Main branch checkpoint: `e0618ef` (`[codex] Wire follow-up readiness runtime bridge (#281)`).
+- Open PRs at this checkpoint: none on `main`; this branch is surfacing follow-up activity readiness sync source visibility in the Offer workspace.
+- In-flight PR at this checkpoint: `codex/followup-readiness-persisted-panel` adds deterministic local/Convex/other source summaries for persisted readiness history without changing workflow persistence or quote math.
 - Latest merged sequence:
+  - `#281` records and hydrates follow-up activity readiness snapshots through optional browser Convex refs while preserving the local history fallback and strict timestamp normalization.
   - `#280` adds deterministic local/Convex client adapters for follow-up activity readiness snapshots, including ISO-to-Convex timestamp conversion, query validation, dedupe, and local fallback snapshots.
   - `#279` persists follow-up activity readiness snapshots in Convex with tenant-safe workflow APIs, count validation, and audit activities.
   - `#278` maps follow-up activity readiness history records into validated Convex payload/read records so future workflow persistence can reject malformed shapes before writes.
