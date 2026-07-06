@@ -1032,7 +1032,9 @@ function App() {
     workspaceLocalState?.releaseExecutionRunsById ?? {},
   )
   const [releaseExecutionHistoryById, setReleaseExecutionHistoryById] = useState<Record<string, OfferReleaseExecutionHistorySummary>>({})
-  const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>({})
+  const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>(
+    () => replayFollowUpActivitySummaries(actionsById),
+  )
   const [followUpActivityReadinessHistoryById, setFollowUpActivityReadinessHistoryById] = useState<
     Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
   >(workspaceLocalState?.followUpActivityReadinessHistoryById ?? {})
@@ -10813,6 +10815,21 @@ function summarizeFollowUpActivityWrite(action: WorkspaceActionRecord): OfferFol
   }
 
   return summarizeOfferFollowUpActivities([record], { offerId: action.offerId })
+}
+
+function replayFollowUpActivitySummaries(
+  actionsById: Record<string, WorkspaceActionRecord[]>,
+): Record<string, OfferFollowUpActivityReadSummary> {
+  const summariesById: Record<string, OfferFollowUpActivityReadSummary> = {}
+  for (const [rfqId, actions] of Object.entries(actionsById)) {
+    for (const action of actions) {
+      const actionSummary = summarizeFollowUpActivityWrite(action)
+      if (actionSummary) {
+        summariesById[rfqId] = mergeOfferFollowUpActivitySummaries(summariesById[rfqId], actionSummary)
+      }
+    }
+  }
+  return summariesById
 }
 
 function mergeOfferFollowUpActivitySummaries(
