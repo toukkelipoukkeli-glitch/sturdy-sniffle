@@ -103,6 +103,13 @@ import {
   type OfferFollowUpActivityReadinessSyncSummary,
 } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import {
+  buildOfferFollowUpActivityReadinessSyncHealthEvent,
+  summarizeOfferFollowUpActivityReadinessSyncHealth,
+  type OfferFollowUpActivityReadinessSyncHealthEvent,
+  type OfferFollowUpActivityReadinessSyncHealthSummary,
+  type OfferFollowUpActivityReadinessSyncOperation,
+} from "./domain/offers/offerFollowUpActivityReadinessSyncHealth"
+import {
   createLocalOfferFollowUpActivityReadinessHistoryPersistence,
   type OfferFollowUpActivityReadinessHistoryPersistenceSnapshot,
 } from "./domain/offers/offerFollowUpActivityReadinessHistoryPersistence"
@@ -1058,7 +1065,9 @@ function App() {
   )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
-  const [followUpActivityReadinessSyncErrorCount, setFollowUpActivityReadinessSyncErrorCount] = useState(0)
+  const [followUpActivityReadinessSyncEvents, setFollowUpActivityReadinessSyncEvents] = useState<
+    OfferFollowUpActivityReadinessSyncHealthEvent[]
+  >([])
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
@@ -1067,6 +1076,7 @@ function App() {
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
+  const followUpActivityReadinessSyncEventCounterRef = useRef(0)
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1797,10 +1807,33 @@ function App() {
       selectedId,
     ],
   )
-  const recordFollowUpActivityReadinessSyncError = useCallback(() => {
+  const followUpActivityReadinessSyncHealth = useMemo(
+    () =>
+      summarizeOfferFollowUpActivityReadinessSyncHealth(
+        followUpActivityReadinessSyncEvents.filter(
+          (event) =>
+            event.offerId === offerFollowUpActivityReadinessOfferId && event.rfqId === offerFollowUpActivityReadinessRfqId,
+        ),
+      ),
+    [offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId, followUpActivityReadinessSyncEvents],
+  )
+  const recordFollowUpActivityReadinessSyncError = useCallback((operation: OfferFollowUpActivityReadinessSyncOperation) => {
     setPersistenceSyncErrorCount((count) => count + 1)
-    setFollowUpActivityReadinessSyncErrorCount((count) => count + 1)
-  }, [])
+    followUpActivityReadinessSyncEventCounterRef.current += 1
+    const nonce = String(followUpActivityReadinessSyncEventCounterRef.current)
+    setFollowUpActivityReadinessSyncEvents((current) =>
+      [
+        ...current,
+        buildOfferFollowUpActivityReadinessSyncHealthEvent({
+          nonce,
+          offerId: offerFollowUpActivityReadinessOfferId,
+          operation,
+          recordedAt: workspaceNow,
+          rfqId: offerFollowUpActivityReadinessRfqId,
+        }),
+      ].slice(-12),
+    )
+  }, [offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId, workspaceNow])
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -1823,7 +1856,7 @@ function App() {
       offerFollowUpActivityReadinessBridge?.queryRef && offerFollowUpActivityReadinessBridge.runQuery
         ? createConvexOfferFollowUpActivityReadinessReader({
             fallback: localReader,
-            onQueryError: recordFollowUpActivityReadinessSyncError,
+            onQueryError: () => recordFollowUpActivityReadinessSyncError("read"),
             queryRef: offerFollowUpActivityReadinessBridge.queryRef,
             runQuery: offerFollowUpActivityReadinessBridge.runQuery,
           })
@@ -1847,7 +1880,7 @@ function App() {
         settled = true
         if (!cancelled) {
           queriedReadinessKeys.delete(queryKey)
-          recordFollowUpActivityReadinessSyncError()
+          recordFollowUpActivityReadinessSyncError("read")
         }
       })
 
@@ -1883,7 +1916,7 @@ function App() {
         ? createConvexOfferFollowUpActivityReadinessPersistence({
             fallback: localPersistence,
             mutationRef: offerFollowUpActivityReadinessBridge.mutationRef,
-            onPersistError: recordFollowUpActivityReadinessSyncError,
+            onPersistError: () => recordFollowUpActivityReadinessSyncError("write"),
             runMutation: offerFollowUpActivityReadinessBridge.runMutation,
           })
         : localPersistence
@@ -1906,7 +1939,7 @@ function App() {
         settled = true
         if (!cancelled) {
           persistedReadinessKeys.delete(offerFollowUpActivityReadinessPersistenceKey)
-          recordFollowUpActivityReadinessSyncError()
+          recordFollowUpActivityReadinessSyncError("write")
         }
       })
 
@@ -2759,7 +2792,7 @@ function App() {
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
-              releaseFollowUpActivityReadinessSyncErrorCount={followUpActivityReadinessSyncErrorCount}
+              releaseFollowUpActivityReadinessSyncHealth={followUpActivityReadinessSyncHealth}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releasePlan={offerReleasePlan}
@@ -8762,7 +8795,7 @@ function OfferView({
   releaseFollowUpActivityReadiness,
   releaseFollowUpActivityReadinessHistory,
   releaseFollowUpActivityReadinessSync,
-  releaseFollowUpActivityReadinessSyncErrorCount,
+  releaseFollowUpActivityReadinessSyncHealth,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releasePlan,
@@ -8796,7 +8829,7 @@ function OfferView({
   releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
   releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
   releaseFollowUpActivityReadinessSync: OfferFollowUpActivityReadinessSyncSummary
-  releaseFollowUpActivityReadinessSyncErrorCount: number
+  releaseFollowUpActivityReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releasePlan: OfferReleasePlan
@@ -8946,7 +8979,7 @@ function OfferView({
       <OfferFollowUpActivityReadinessHistoryPanel
         history={releaseFollowUpActivityReadinessHistory}
         sync={releaseFollowUpActivityReadinessSync}
-        syncErrorCount={releaseFollowUpActivityReadinessSyncErrorCount}
+        syncHealth={releaseFollowUpActivityReadinessSyncHealth}
       />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
@@ -9225,18 +9258,20 @@ function OfferFollowUpActivityReadPanel({
 function OfferFollowUpActivityReadinessHistoryPanel({
   history,
   sync,
-  syncErrorCount,
+  syncHealth,
 }: {
   history: OfferFollowUpActivityReadinessHistorySummary
   sync: OfferFollowUpActivityReadinessSyncSummary
-  syncErrorCount: number
+  syncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
 }) {
   const current = history.currentReadiness
   const status = current?.status ?? "pending"
   const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
   const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
-  const syncHealthLabel = syncErrorCount > 0 ? "Fallback active" : "Healthy"
+  const totalFallbackCount = syncHealth.totalFallbackCount
+  const syncHealthLabel = totalFallbackCount > 0 ? "Fallback active" : "Healthy"
+  const latestFallback = syncHealth.latestFallback
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9268,17 +9303,23 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Other" value={String(sync.otherRecordCount)} />
       </div>
       <div
-        aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${syncErrorCount} fallback${syncErrorCount === 1 ? "" : "s"}`}
+        aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
         className="offer-follow-up-readiness-sync-health"
-        data-status={syncErrorCount > 0 ? "fallback" : "healthy"}
+        data-status={totalFallbackCount > 0 ? "fallback" : "healthy"}
       >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
           <span>
-            {syncErrorCount > 0
-              ? `${syncErrorCount} follow-up readiness persistence fallback${syncErrorCount === 1 ? "" : "s"} recorded.`
+            {totalFallbackCount > 0
+              ? `${totalFallbackCount} follow-up readiness persistence fallback${totalFallbackCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
               : "No follow-up readiness persistence fallbacks recorded."}
           </span>
+          {latestFallback ? (
+            <small>
+              Latest {followUpActivityReadinessSyncOperationLabel(latestFallback.operation).toLowerCase()} fallback ·{" "}
+              {formatShortDateTime(latestFallback.recordedAt)}
+            </small>
+          ) : null}
         </div>
       </div>
       {current ? (
@@ -9300,6 +9341,15 @@ function OfferFollowUpActivityReadinessHistoryPanel({
       )}
     </section>
   )
+}
+
+function followUpActivityReadinessSyncOperationLabel(operation: OfferFollowUpActivityReadinessSyncOperation): string {
+  switch (operation) {
+    case "read":
+      return "Read"
+    case "write":
+      return "Write"
+  }
 }
 
 function followUpActivityReadinessSyncLabel(syncMode: OfferFollowUpActivityReadinessSyncSummary["mode"]): string {

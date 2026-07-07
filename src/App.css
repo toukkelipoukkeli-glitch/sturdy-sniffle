@@ -5851,7 +5851,8 @@
   overflow-wrap: anywhere;
 }
 
-.offer-follow-up-readiness-sync-health span {
+.offer-follow-up-readiness-sync-health span,
+.offer-follow-up-readiness-sync-health small {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
   font-weight: 700;
