@@ -1076,6 +1076,7 @@ function App() {
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
+  const followUpActivityReadinessSyncEventCounterRef = useRef(0)
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1807,15 +1808,24 @@ function App() {
     ],
   )
   const followUpActivityReadinessSyncHealth = useMemo(
-    () => summarizeOfferFollowUpActivityReadinessSyncHealth(followUpActivityReadinessSyncEvents),
-    [followUpActivityReadinessSyncEvents],
+    () =>
+      summarizeOfferFollowUpActivityReadinessSyncHealth(
+        followUpActivityReadinessSyncEvents.filter(
+          (event) =>
+            event.offerId === offerFollowUpActivityReadinessOfferId && event.rfqId === offerFollowUpActivityReadinessRfqId,
+        ),
+      ),
+    [offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId, followUpActivityReadinessSyncEvents],
   )
   const recordFollowUpActivityReadinessSyncError = useCallback((operation: OfferFollowUpActivityReadinessSyncOperation) => {
     setPersistenceSyncErrorCount((count) => count + 1)
+    followUpActivityReadinessSyncEventCounterRef.current += 1
+    const nonce = String(followUpActivityReadinessSyncEventCounterRef.current)
     setFollowUpActivityReadinessSyncEvents((current) =>
       [
         ...current,
         buildOfferFollowUpActivityReadinessSyncHealthEvent({
+          nonce,
           offerId: offerFollowUpActivityReadinessOfferId,
           operation,
           recordedAt: workspaceNow,
@@ -9259,8 +9269,8 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
   const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
-  const syncErrorCount = syncHealth.totalFallbackCount
-  const syncHealthLabel = syncErrorCount > 0 ? "Fallback active" : "Healthy"
+  const totalFallbackCount = syncHealth.totalFallbackCount
+  const syncHealthLabel = totalFallbackCount > 0 ? "Fallback active" : "Healthy"
   const latestFallback = syncHealth.latestFallback
 
   return (
@@ -9293,15 +9303,15 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Other" value={String(sync.otherRecordCount)} />
       </div>
       <div
-        aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${syncErrorCount} fallback${syncErrorCount === 1 ? "" : "s"}`}
+        aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
         className="offer-follow-up-readiness-sync-health"
-        data-status={syncErrorCount > 0 ? "fallback" : "healthy"}
+        data-status={totalFallbackCount > 0 ? "fallback" : "healthy"}
       >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
           <span>
-            {syncErrorCount > 0
-              ? `${syncErrorCount} follow-up readiness persistence fallback${syncErrorCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
+            {totalFallbackCount > 0
+              ? `${totalFallbackCount} follow-up readiness persistence fallback${totalFallbackCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
               : "No follow-up readiness persistence fallbacks recorded."}
           </span>
           {latestFallback ? (

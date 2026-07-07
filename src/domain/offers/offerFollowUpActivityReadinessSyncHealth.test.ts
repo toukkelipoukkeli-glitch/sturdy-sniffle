@@ -45,6 +45,23 @@ describe("offer follow-up activity readiness sync health", () => {
     })
   })
 
+  it("breaks latest fallback timestamp ties using stable event ids", () => {
+    const first = syncHealthEvent({
+      offerId: "offer-b",
+      operation: "read",
+      recordedAt: "2026-07-03T07:00:00.000Z",
+    })
+    const second = syncHealthEvent({
+      offerId: "offer-a",
+      operation: "write",
+      recordedAt: "2026-07-03T07:00:00.000Z",
+    })
+
+    const result = summarizeOfferFollowUpActivityReadinessSyncHealth([first, second])
+
+    expect(result.latestFallback?.eventId).toBe([first.eventId, second.eventId].sort()[0])
+  })
+
   it("returns an empty deterministic summary when no fallbacks are recorded", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth(undefined)).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,

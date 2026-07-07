@@ -6,6 +6,7 @@ export const OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION = "offer-fol
 export type OfferFollowUpActivityReadinessSyncOperation = "read" | "write"
 
 export interface OfferFollowUpActivityReadinessSyncHealthEventInput {
+  nonce?: string
   offerId: string
   operation: OfferFollowUpActivityReadinessSyncOperation
   recordedAt: string
@@ -15,6 +16,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthEventInput {
 export interface OfferFollowUpActivityReadinessSyncHealthEvent {
   eventId: string
   healthVersion: typeof OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION
+  nonce: string
   offerId: string
   operation: OfferFollowUpActivityReadinessSyncOperation
   recordedAt: string
@@ -36,10 +38,12 @@ export function buildOfferFollowUpActivityReadinessSyncHealthEvent(
   const rfqId = nonBlank(input.rfqId, "syncHealth.rfqId")
   const operation = normalizeOperation(input.operation)
   const recordedAt = normalizeIsoTimestamp(input.recordedAt, "syncHealth.recordedAt")
+  const nonce = nonBlank(input.nonce ?? "0", "syncHealth.nonce")
 
   return {
-    eventId: `offer-follow-up-activity-readiness-sync:${operation}:${offerId}:${rfqId}:${recordedAt}`,
+    eventId: `offer-follow-up-activity-readiness-sync:${operation}:${offerId}:${rfqId}:${recordedAt}:${nonce}`,
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
+    nonce,
     offerId,
     operation,
     recordedAt,
