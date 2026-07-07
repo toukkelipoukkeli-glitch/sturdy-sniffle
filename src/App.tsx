@@ -452,6 +452,7 @@ interface WorkspaceLocalState {
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
   followUpActivityReadinessHistoryById: Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
+  followUpActivityReadinessSyncEvents: OfferFollowUpActivityReadinessSyncHealthEvent[]
   primaryAttachmentById: Record<string, string>
   releaseExecutionRunsById: Record<string, OfferReleaseExecutionRun[]>
   releaseReviewsById: Record<string, ReleaseReviewState>
@@ -1067,7 +1068,7 @@ function App() {
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [followUpActivityReadinessSyncEvents, setFollowUpActivityReadinessSyncEvents] = useState<
     OfferFollowUpActivityReadinessSyncHealthEvent[]
-  >([])
+  >(workspaceLocalState?.followUpActivityReadinessSyncEvents ?? [])
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
@@ -1116,6 +1117,7 @@ function App() {
       offerExportEventsById,
       offerLifecycleEventsById,
       followUpActivityReadinessHistoryById,
+      followUpActivityReadinessSyncEvents,
       primaryAttachmentById,
       releaseExecutionRunsById,
       releaseReviewsById,
@@ -1134,6 +1136,7 @@ function App() {
     offerExportEventsById,
     offerLifecycleEventsById,
     followUpActivityReadinessHistoryById,
+    followUpActivityReadinessSyncEvents,
     primaryAttachmentById,
     releaseExecutionRunsById,
     releaseReviewsById,
@@ -1746,9 +1749,15 @@ function App() {
     [expectedFollowUpActivityTaskIds, offerFollowUpActivitySummary],
   )
   const offerFollowUpActivityReadinessBridge = useMemo(() => createBrowserConvexOfferFollowUpActivityReadinessBridge(), [])
-  const convexOfferFollowUpActivityReadinessOfferId = offerFollowUpActivityReadinessBridge?.resolveOfferId(offer.offerNumber.toLowerCase())
-  const convexOfferFollowUpActivityReadinessRfqId = offerFollowUpActivityReadinessBridge?.resolveRfqId(selectedId)
-  const offerFollowUpActivityReadinessOfferId = convexOfferFollowUpActivityReadinessOfferId ?? offer.offerNumber.toLowerCase()
+  const localOfferFollowUpActivityReadinessOfferId = offer.offerNumber.toLowerCase()
+  const localOfferFollowUpActivityReadinessRfqId = selectedId
+  const convexOfferFollowUpActivityReadinessOfferId = offerFollowUpActivityReadinessBridge?.resolveOfferId(
+    localOfferFollowUpActivityReadinessOfferId,
+  )
+  const convexOfferFollowUpActivityReadinessRfqId = offerFollowUpActivityReadinessBridge?.resolveRfqId(
+    localOfferFollowUpActivityReadinessRfqId,
+  )
+  const offerFollowUpActivityReadinessOfferId = convexOfferFollowUpActivityReadinessOfferId ?? localOfferFollowUpActivityReadinessOfferId
   const offerFollowUpActivityReadinessRfqId = convexOfferFollowUpActivityReadinessRfqId ?? selectedId
   const offerFollowUpActivityReadinessRecordKey = useMemo(
     () =>
@@ -1812,10 +1821,10 @@ function App() {
       summarizeOfferFollowUpActivityReadinessSyncHealth(
         followUpActivityReadinessSyncEvents.filter(
           (event) =>
-            event.offerId === offerFollowUpActivityReadinessOfferId && event.rfqId === offerFollowUpActivityReadinessRfqId,
+            event.offerId === localOfferFollowUpActivityReadinessOfferId && event.rfqId === localOfferFollowUpActivityReadinessRfqId,
         ),
       ),
-    [offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId, followUpActivityReadinessSyncEvents],
+    [followUpActivityReadinessSyncEvents, localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId],
   )
   const recordFollowUpActivityReadinessSyncError = useCallback((operation: OfferFollowUpActivityReadinessSyncOperation) => {
     setPersistenceSyncErrorCount((count) => count + 1)
@@ -1826,14 +1835,14 @@ function App() {
         ...current,
         buildOfferFollowUpActivityReadinessSyncHealthEvent({
           nonce,
-          offerId: offerFollowUpActivityReadinessOfferId,
+          offerId: localOfferFollowUpActivityReadinessOfferId,
           operation,
           recordedAt: workspaceNow,
-          rfqId: offerFollowUpActivityReadinessRfqId,
+          rfqId: localOfferFollowUpActivityReadinessRfqId,
         }),
       ].slice(-12),
     )
-  }, [offerFollowUpActivityReadinessOfferId, offerFollowUpActivityReadinessRfqId, workspaceNow])
+  }, [localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId, workspaceNow])
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -2923,6 +2932,9 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const followUpActivityReadinessHistoryById = optionalFollowUpActivityReadinessHistoryById(
     value.followUpActivityReadinessHistoryById,
   )
+  const followUpActivityReadinessSyncEvents = optionalFollowUpActivityReadinessSyncEvents(
+    value.followUpActivityReadinessSyncEvents,
+  )
   const primaryAttachmentById = value.primaryAttachmentById === undefined ? {} : isRecordOfStrings(value.primaryAttachmentById) ? value.primaryAttachmentById : undefined
   const releaseExecutionRunsById = optionalRecordOfArrays(value.releaseExecutionRunsById, isOfferReleaseExecutionRun)
   const releaseReviewsById = optionalRecordOfValues(value.releaseReviewsById, isReleaseReviewState)
@@ -2936,6 +2948,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !offerExportEventsById ||
     !offerLifecycleEventsById ||
     !followUpActivityReadinessHistoryById ||
+    !followUpActivityReadinessSyncEvents ||
     !primaryAttachmentById ||
     !releaseReviewsById ||
     !statusById
@@ -2960,6 +2973,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerExportEventsById,
     offerLifecycleEventsById,
     followUpActivityReadinessHistoryById,
+    followUpActivityReadinessSyncEvents,
     primaryAttachmentById,
     releaseExecutionRunsById: releaseExecutionRunsById ?? {},
     releaseReviewsById,
@@ -3054,6 +3068,49 @@ function optionalFollowUpActivityReadinessHistoryById(
       normalized[rfqId] = createLocalOfferFollowUpActivityReadinessHistoryPersistence({
         initialSnapshot: snapshot as Partial<OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>,
       }).snapshot()
+    } catch {
+      return undefined
+    }
+  }
+  return normalized
+}
+
+function optionalFollowUpActivityReadinessSyncEvents(
+  value: unknown,
+): OfferFollowUpActivityReadinessSyncHealthEvent[] | undefined {
+  if (value === undefined) {
+    return []
+  }
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const normalized: OfferFollowUpActivityReadinessSyncHealthEvent[] = []
+  for (const event of value) {
+    if (
+      !isObjectRecord(event) ||
+      typeof event.eventId !== "string" ||
+      typeof event.healthVersion !== "string" ||
+      typeof event.nonce !== "string" ||
+      typeof event.offerId !== "string" ||
+      typeof event.rfqId !== "string" ||
+      typeof event.recordedAt !== "string" ||
+      (event.operation !== "read" && event.operation !== "write")
+    ) {
+      return undefined
+    }
+    try {
+      const normalizedEvent = buildOfferFollowUpActivityReadinessSyncHealthEvent({
+        nonce: event.nonce,
+        offerId: event.offerId,
+        operation: event.operation,
+        recordedAt: event.recordedAt,
+        rfqId: event.rfqId,
+      })
+      if (event.healthVersion !== normalizedEvent.healthVersion || event.eventId !== normalizedEvent.eventId) {
+        return undefined
+      }
+      normalized.push(normalizedEvent)
     } catch {
       return undefined
     }
