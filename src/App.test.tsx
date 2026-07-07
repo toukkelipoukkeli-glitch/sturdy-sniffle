@@ -1192,6 +1192,51 @@ describe("FactoryBid workspace (component)", () => {
     expect(restoredHistory).toHaveTextContent("Current pending readiness")
   })
 
+  it("restores follow-up readiness sync fallback health from local storage", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivityReadinessMutationRef: "recordOfferFollowUpActivityReadiness",
+      offerFollowUpActivityReadinessQueryRef: "listOfferFollowUpActivityReadiness",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    const { unmount } = render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(readinessHistory).toHaveTextContent("Sync health Fallback active")
+      expect(readinessHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
+    })
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    expect(stored.followUpActivityReadinessSyncEvents).toHaveLength(1)
+    stored.activeView = "offer"
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = undefined
+    unmount()
+
+    render(<App />)
+    const restoredHistory = screen.getByLabelText("Follow-up activity readiness history")
+    await waitFor(() => {
+      expect(restoredHistory).toHaveTextContent("Sync health Fallback active")
+      expect(restoredHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
+      expect(restoredHistory).toHaveTextContent("Latest read fallback")
+    })
+  })
+
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
     const user = userEvent.setup()
     const { unmount } = render(<App />)
@@ -1245,6 +1290,39 @@ describe("FactoryBid workspace (component)", () => {
     await user.click(screen.getByRole("button", { name: /^Offer$/ }))
     await waitFor(() => {
       expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("1 readiness snapshot")
+    })
+  })
+
+  it("rejects malformed restored follow-up readiness sync health events", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("Sync health Healthy")
+    })
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.activeView = "offer"
+    stored.followUpActivityReadinessSyncEvents = [
+      {
+        eventId: "offer-follow-up-activity-readiness-sync:read:offer-204:rfq-204:2026-06-20T06:00:00.000Z:1",
+        healthVersion: "offer-follow-up-activity-readiness-sync-health.v1",
+        nonce: 1,
+        offerId: "offer-204",
+        operation: "read",
+        recordedAt: "2026-06-20T06:00:00.000Z",
+        rfqId: "rfq-204",
+      },
+    ]
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    expect(screen.queryByRole("heading", { name: "Offer draft" })).toBeNull()
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await waitFor(() => {
+      expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("Sync health Healthy")
     })
   })
 
