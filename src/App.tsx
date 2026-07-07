@@ -1065,10 +1065,12 @@ function App() {
     workspaceLocalState?.releaseReviewsById ?? {},
   )
   const [connectorSyncingById, setConnectorSyncingById] = useState<Record<string, boolean>>({})
-  const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(0)
   const [followUpActivityReadinessSyncEvents, setFollowUpActivityReadinessSyncEvents] = useState<
     OfferFollowUpActivityReadinessSyncHealthEvent[]
   >(workspaceLocalState?.followUpActivityReadinessSyncEvents ?? [])
+  const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(
+    () => workspaceLocalState?.followUpActivityReadinessSyncEvents.length ?? 0,
+  )
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))

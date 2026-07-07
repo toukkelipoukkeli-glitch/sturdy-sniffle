@@ -1235,6 +1235,11 @@ describe("FactoryBid workspace (component)", () => {
       expect(restoredHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
     })
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Persistence")
+    expect(integrationHealth).toHaveTextContent("1 operation used local fallback.")
+    expect(integrationHealth).toHaveTextContent("1 fallback")
   })
 
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
