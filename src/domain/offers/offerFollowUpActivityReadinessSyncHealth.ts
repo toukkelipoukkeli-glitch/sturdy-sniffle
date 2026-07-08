@@ -6,6 +6,7 @@ export const offerFollowUpActivityReadinessSyncHealthReadRecoveryAction =
   "Check Convex readiness reads before trusting remote follow-up history."
 export const offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction =
   "Retry readiness writes after Convex persistence recovers."
+export const offerFollowUpActivityReadinessSyncHealthStaleAfterHours = 24
 
 export type OfferFollowUpActivityReadinessSyncOperation = "read" | "write"
 export type OfferFollowUpActivityReadinessSyncHealthStatus =
@@ -13,6 +14,12 @@ export type OfferFollowUpActivityReadinessSyncHealthStatus =
   | "read_fallback"
   | "read_write_fallback"
   | "write_fallback"
+export type OfferFollowUpActivityReadinessSyncHealthRecency = "current" | "none" | "stale"
+
+export interface OfferFollowUpActivityReadinessSyncHealthSummaryOptions {
+  now?: string
+  staleAfterHours?: number
+}
 
 export interface OfferFollowUpActivityReadinessSyncHealthEventInput {
   nonce?: string
@@ -35,6 +42,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthEvent {
 export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   healthVersion: typeof OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION
   latestFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
+  latestFallbackRecency: OfferFollowUpActivityReadinessSyncHealthRecency
   latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   recoveryActionLabels: string[]
@@ -66,6 +74,7 @@ export function buildOfferFollowUpActivityReadinessSyncHealthEvent(
 
 export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   events: OfferFollowUpActivityReadinessSyncHealthEvent[] | undefined,
+  options: OfferFollowUpActivityReadinessSyncHealthSummaryOptions = {},
 ): OfferFollowUpActivityReadinessSyncHealthSummary {
   const normalizedEvents = normalizeEvents(events ?? [])
   const latestFallback = newestEvent(normalizedEvents)
@@ -76,6 +85,7 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
     latestFallback,
+    latestFallbackRecency: determineLatestFallbackRecency(latestFallback, options),
     latestReadFallback: newestEvent(readFallbacks),
     latestWriteFallback: newestEvent(writeFallbacks),
     recoveryActionLabels: recoveryActionsForStatus(status),
@@ -84,6 +94,24 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
     totalFallbackCount: normalizedEvents.length,
     writeFallbackCount: writeFallbacks.length,
   }
+}
+
+function determineLatestFallbackRecency(
+  latestFallback: OfferFollowUpActivityReadinessSyncHealthEvent | undefined,
+  options: OfferFollowUpActivityReadinessSyncHealthSummaryOptions,
+): OfferFollowUpActivityReadinessSyncHealthRecency {
+  if (!latestFallback) {
+    return "none"
+  }
+  if (!options.now) {
+    return "current"
+  }
+  const now = normalizeIsoTimestamp(options.now, "syncHealth.now")
+  const staleAfterHours = options.staleAfterHours ?? offerFollowUpActivityReadinessSyncHealthStaleAfterHours
+  if (!Number.isFinite(staleAfterHours) || staleAfterHours <= 0) {
+    throw new Error("syncHealth.staleAfterHours must be a positive number")
+  }
+  return Date.parse(now) - Date.parse(latestFallback.recordedAt) > staleAfterHours * 60 * 60 * 1000 ? "stale" : "current"
 }
 
 function recoveryActionsForStatus(status: OfferFollowUpActivityReadinessSyncHealthStatus): string[] {

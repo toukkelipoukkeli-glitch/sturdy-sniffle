@@ -106,6 +106,7 @@ import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
   type OfferFollowUpActivityReadinessSyncHealthEvent,
+  type OfferFollowUpActivityReadinessSyncHealthRecency,
   type OfferFollowUpActivityReadinessSyncHealthSummary,
   type OfferFollowUpActivityReadinessSyncHealthStatus,
   type OfferFollowUpActivityReadinessSyncOperation,
@@ -1827,8 +1828,9 @@ function App() {
           (event) =>
             event.offerId === localOfferFollowUpActivityReadinessOfferId && event.rfqId === localOfferFollowUpActivityReadinessRfqId,
         ),
+        { now: workspaceNow },
       ),
-    [followUpActivityReadinessSyncEvents, localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId],
+    [followUpActivityReadinessSyncEvents, localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId, workspaceNow],
   )
   const recordFollowUpActivityReadinessSyncError = useCallback((operation: OfferFollowUpActivityReadinessSyncOperation) => {
     setPersistenceSyncErrorCount((count) => count + 1)
@@ -9383,6 +9385,9 @@ function OfferFollowUpActivityReadinessHistoryPanel({
               {formatShortDateTime(fallback.recordedAt)}
             </small>
           ))}
+          {syncHealth.latestFallbackRecency !== "none" ? (
+            <small>Fallback recency · {followUpActivityReadinessSyncHealthRecencyLabel(syncHealth.latestFallbackRecency)}</small>
+          ) : null}
           {syncHealth.recoveryActionLabels.length > 0 ? (
             <ul
               aria-label="Follow-up readiness sync recovery actions"
@@ -9437,6 +9442,17 @@ function followUpActivityReadinessSyncHealthStatusLabel(
       return "Read/write fallback"
     case "write_fallback":
       return "Write fallback"
+  }
+}
+
+function followUpActivityReadinessSyncHealthRecencyLabel(recency: OfferFollowUpActivityReadinessSyncHealthRecency): string {
+  switch (recency) {
+    case "current":
+      return "Current"
+    case "none":
+      return "No fallbacks"
+    case "stale":
+      return "Stale"
   }
 }
 
