@@ -990,6 +990,35 @@ describe("FactoryBid workspace (component)", () => {
     })
   })
 
+  it("marks the persistence chip as warning when a generic Convex fallback is recorded", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+      expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
+    })
+  })
+
   it("hydrates offer follow-up activity reads through the Convex browser bridge", async () => {
     const user = userEvent.setup()
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []

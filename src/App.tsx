@@ -4171,9 +4171,11 @@ function PersistenceStatus({
       : syncErrorCount > 0
         ? `${syncErrorCount} sync fallback`
         : undefined
+  const severity =
+    syncHealth.totalFallbackCount > 0 ? syncHealth.severity : syncErrorCount > 0 ? "warning" : syncHealth.severity
 
   return (
-    <div className="persistence-chip" data-mode={mode} data-severity={syncHealth.severity} aria-label="Persistence status">
+    <div className="persistence-chip" data-mode={mode} data-severity={severity} aria-label="Persistence status">
       <Icon aria-hidden="true" />
       <span>{label}</span>
       {fallbackLabel ? <strong>{fallbackLabel}</strong> : null}
