@@ -21,6 +21,8 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth([readFallback, writeFallback])).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
       latestFallback: writeFallback,
+      latestReadFallback: readFallback,
+      latestWriteFallback: writeFallback,
       readFallbackCount: 1,
       totalFallbackCount: 2,
       writeFallbackCount: 1,
@@ -66,6 +68,8 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth(undefined)).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
       latestFallback: undefined,
+      latestReadFallback: undefined,
+      latestWriteFallback: undefined,
       readFallbackCount: 0,
       totalFallbackCount: 0,
       writeFallbackCount: 0,

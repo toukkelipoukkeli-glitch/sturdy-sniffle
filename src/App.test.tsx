@@ -1247,6 +1247,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(restoredHistory).toHaveTextContent("Sync health Fallback active")
       expect(restoredHistory).toHaveTextContent("12 follow-up readiness persistence fallbacks recorded · read 6 · write 6.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
+      expect(restoredHistory).toHaveTextContent("Latest write fallback")
     })
     expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
     const integrationHealth = screen.getByLabelText("Integration health")
