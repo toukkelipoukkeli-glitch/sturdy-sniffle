@@ -26,6 +26,8 @@ export interface OfferFollowUpActivityReadinessSyncHealthEvent {
 export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   healthVersion: typeof OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION
   latestFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
+  latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
+  latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   readFallbackCount: number
   totalFallbackCount: number
   writeFallbackCount: number
@@ -60,6 +62,8 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
     latestFallback,
+    latestReadFallback: newestEvent(normalizedEvents.filter((event) => event.operation === "read")),
+    latestWriteFallback: newestEvent(normalizedEvents.filter((event) => event.operation === "write")),
     readFallbackCount: normalizedEvents.filter((event) => event.operation === "read").length,
     totalFallbackCount: normalizedEvents.length,
     writeFallbackCount: normalizedEvents.filter((event) => event.operation === "write").length,

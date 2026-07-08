@@ -9331,7 +9331,9 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
   const totalFallbackCount = syncHealth.totalFallbackCount
   const syncHealthLabel = totalFallbackCount > 0 ? "Fallback active" : "Healthy"
-  const latestFallback = syncHealth.latestFallback
+  const latestFallbacks = [syncHealth.latestReadFallback, syncHealth.latestWriteFallback].filter(
+    (fallback): fallback is OfferFollowUpActivityReadinessSyncHealthEvent => Boolean(fallback),
+  )
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9374,12 +9376,12 @@ function OfferFollowUpActivityReadinessHistoryPanel({
               ? `${totalFallbackCount} follow-up readiness persistence fallback${totalFallbackCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
               : "No follow-up readiness persistence fallbacks recorded."}
           </span>
-          {latestFallback ? (
-            <small>
-              Latest {followUpActivityReadinessSyncOperationLabel(latestFallback.operation).toLowerCase()} fallback ·{" "}
-              {formatShortDateTime(latestFallback.recordedAt)}
+          {latestFallbacks.map((fallback) => (
+            <small key={fallback.eventId}>
+              Latest {followUpActivityReadinessSyncOperationLabel(fallback.operation).toLowerCase()} fallback ·{" "}
+              {formatShortDateTime(fallback.recordedAt)}
             </small>
-          ) : null}
+          ))}
         </div>
       </div>
       {current ? (
