@@ -23,6 +23,7 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth([readFallback, writeFallback])).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
       latestFallback: writeFallback,
+      latestFallbackRecency: "current",
       latestReadFallback: readFallback,
       latestWriteFallback: writeFallback,
       recoveryActionLabels: [
@@ -66,6 +67,29 @@ describe("offer follow-up activity readiness sync health", () => {
     })
   })
 
+  it("marks latest fallback recency using the injected clock", () => {
+    const latestFallback = syncHealthEvent({
+      operation: "write",
+      recordedAt: "2026-07-03T07:05:00.000Z",
+    })
+
+    expect(
+      summarizeOfferFollowUpActivityReadinessSyncHealth([latestFallback], {
+        now: "2026-07-03T20:05:00.000Z",
+      }),
+    ).toMatchObject({
+      latestFallbackRecency: "current",
+    })
+
+    expect(
+      summarizeOfferFollowUpActivityReadinessSyncHealth([latestFallback], {
+        now: "2026-07-04T08:05:01.000Z",
+      }),
+    ).toMatchObject({
+      latestFallbackRecency: "stale",
+    })
+  })
+
   it("dedupes stable fallback event ids and normalizes timestamp offsets", () => {
     const first = syncHealthEvent({
       operation: "read",
@@ -106,6 +130,7 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth(undefined)).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
       latestFallback: undefined,
+      latestFallbackRecency: "none",
       latestReadFallback: undefined,
       latestWriteFallback: undefined,
       recoveryActionLabels: [],
@@ -143,6 +168,13 @@ describe("offer follow-up activity readiness sync health", () => {
         rfqId: "rfq-204",
       }),
     ).toThrow("follow-up readiness sync operation is not supported")
+
+    expect(() =>
+      summarizeOfferFollowUpActivityReadinessSyncHealth([syncHealthEvent()], {
+        now: "2026-07-03T08:00:00.000Z",
+        staleAfterHours: 0,
+      }),
+    ).toThrow("syncHealth.staleAfterHours must be a positive number")
   })
 })
 
