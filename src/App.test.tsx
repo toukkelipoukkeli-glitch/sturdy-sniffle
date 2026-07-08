@@ -920,6 +920,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 follow-up readiness persistence fallback recorded (read 1, write 0); latest fallback is current.",
     )
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
   })
 
   it("hydrates offer release execution history through the Convex browser bridge", async () => {
@@ -985,6 +987,35 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("3 recorded runs")
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("Latest succeeded")
+    })
+  })
+
+  it("marks the persistence chip as warning when a generic Convex fallback is recorded", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+      expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
     })
   })
 
@@ -1275,7 +1306,8 @@ describe("FactoryBid workspace (component)", () => {
       "data-severity",
       "critical",
     )
-    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 stale fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "critical")
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Persistence")
     expect(integrationHealth).toHaveTextContent(

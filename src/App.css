@@ -205,6 +205,18 @@
   color: oklch(0.28 0.055 150);
 }
 
+.persistence-chip[data-severity="critical"] {
+  background: oklch(0.96 0.024 28);
+  border-color: oklch(0.72 0.13 24);
+  color: oklch(0.32 0.07 28);
+}
+
+.persistence-chip[data-severity="warning"] {
+  background: oklch(0.965 0.026 82);
+  border-color: oklch(0.78 0.09 82);
+  color: oklch(0.33 0.055 72);
+}
+
 .persistence-chip strong {
   background: oklch(1 0 0 / 70%);
   border-radius: 999px;
