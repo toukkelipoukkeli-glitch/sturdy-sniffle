@@ -32,6 +32,7 @@ describe("offer follow-up activity readiness sync health", () => {
         offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
       ],
       readFallbackCount: 1,
+      severity: "warning",
       status: "read_write_fallback",
       totalFallbackCount: 2,
       writeFallbackCount: 1,
@@ -80,6 +81,7 @@ describe("offer follow-up activity readiness sync health", () => {
       }),
     ).toMatchObject({
       latestFallbackRecency: "current",
+      severity: "warning",
     })
 
     expect(
@@ -89,6 +91,7 @@ describe("offer follow-up activity readiness sync health", () => {
     ).toMatchObject({
       latestFallbackRecency: "stale",
       operatorSummary: "Follow-up readiness persistence used 1 fallback (read 0, write 1); latest fallback is stale.",
+      severity: "critical",
     })
   })
 
@@ -138,6 +141,7 @@ describe("offer follow-up activity readiness sync health", () => {
       operatorSummary: "Follow-up readiness persistence is healthy with no local fallback operations recorded.",
       recoveryActionLabels: [],
       readFallbackCount: 0,
+      severity: "healthy",
       status: "healthy",
       totalFallbackCount: 0,
       writeFallbackCount: 0,
