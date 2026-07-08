@@ -463,6 +463,7 @@ interface WorkspaceLocalState {
 }
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
+const followUpActivityReadinessSyncHealthEventLimit = 12
 export const pdfPreviewLoadTimeoutMs = 8_000
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
@@ -1842,7 +1843,7 @@ function App() {
           recordedAt: workspaceNow,
           rfqId: localOfferFollowUpActivityReadinessRfqId,
         }),
-      ].slice(-12),
+      ].slice(-followUpActivityReadinessSyncHealthEventLimit),
     )
   }, [localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId, workspaceNow])
   useEffect(() => {
@@ -3117,7 +3118,7 @@ function optionalFollowUpActivityReadinessSyncEvents(
       return undefined
     }
   }
-  return normalized
+  return normalized.slice(-followUpActivityReadinessSyncHealthEventLimit)
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
