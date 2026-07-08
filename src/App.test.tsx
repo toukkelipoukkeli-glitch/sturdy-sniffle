@@ -63,6 +63,7 @@ import {
 import { OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION } from "./domain/offers/offerFollowUpActivityReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION } from "./domain/offers/offerFollowUpActivityReadinessHistory"
+import { buildOfferFollowUpActivityReadinessSyncHealthEvent } from "./domain/offers/offerFollowUpActivityReadinessSyncHealth"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -1224,6 +1225,18 @@ describe("FactoryBid workspace (component)", () => {
     const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
     expect(stored.followUpActivityReadinessSyncEvents).toHaveLength(1)
     stored.activeView = "offer"
+    stored.followUpActivityReadinessSyncEvents = [
+      ...Array.from({ length: 12 }, (_, index) =>
+        buildOfferFollowUpActivityReadinessSyncHealthEvent({
+          nonce: `seed-${index}`,
+          offerId: "offer-204",
+          operation: index % 2 === 0 ? "read" : "write",
+          recordedAt: `2026-06-20T05:${String(index).padStart(2, "0")}:00.000Z`,
+          rfqId: "rfq-204",
+        }),
+      ),
+      ...stored.followUpActivityReadinessSyncEvents,
+    ]
     window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
     window.__FACTORYBID_WORKSPACE_CONVEX__ = undefined
     unmount()
@@ -1232,14 +1245,14 @@ describe("FactoryBid workspace (component)", () => {
     const restoredHistory = screen.getByLabelText("Follow-up activity readiness history")
     await waitFor(() => {
       expect(restoredHistory).toHaveTextContent("Sync health Fallback active")
-      expect(restoredHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
+      expect(restoredHistory).toHaveTextContent("12 follow-up readiness persistence fallbacks recorded · read 6 · write 6.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
     })
-    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Persistence")
-    expect(integrationHealth).toHaveTextContent("1 operation used local fallback.")
-    expect(integrationHealth).toHaveTextContent("1 fallback")
+    expect(integrationHealth).toHaveTextContent("12 operations used local fallback.")
+    expect(integrationHealth).toHaveTextContent("12 fallback")
   })
 
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
