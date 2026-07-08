@@ -224,6 +224,25 @@
   padding: 2px 6px;
 }
 
+.persistence-chip-action {
+  background: oklch(1 0 0 / 78%);
+  border: 1px solid oklch(0.78 0.055 72);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  min-height: 22px;
+  padding: 3px 7px;
+}
+
+.persistence-chip-action:hover,
+.persistence-chip-action:focus-visible {
+  background: oklch(1 0 0 / 95%);
+  outline: 2px solid oklch(0.64 0.1 72);
+  outline-offset: 2px;
+}
+
 .workspace-grid {
   display: grid;
   gap: 16px;

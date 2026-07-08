@@ -924,6 +924,41 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
   })
 
+  it("drills down from the persistence chip to follow-up readiness sync details", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivityReadinessMutationRef: "recordOfferFollowUpActivityReadiness",
+      offerFollowUpActivityReadinessQueryRef: "listOfferFollowUpActivityReadiness",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+    })
+    expect(screen.queryByLabelText("Follow-up activity readiness history")).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Review sync health details" }))
+
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    expect(readinessHistory).toHaveTextContent("Sync health Read fallback")
+    expect(readinessHistory).toHaveTextContent("Persistence severity · Warning")
+  })
+
   it("hydrates offer release execution history through the Convex browser bridge", async () => {
     const user = userEvent.setup()
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []

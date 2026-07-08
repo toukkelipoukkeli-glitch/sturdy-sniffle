@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `7880ddc` (`Surface follow-up sync health in integrations (#294)`).
-- Open PRs at this checkpoint: none on `main`; this branch is lifting follow-up readiness sync-health alerts into the always-visible topbar persistence chip.
-- In-flight PR at this checkpoint: `codex/followup-sync-health-topbar-alert` surfaces warning/critical follow-up readiness persistence health in the topbar so stale fallback history is visible even before opening the Integration health panel.
+- Main branch checkpoint: `ee25166` (`Surface sync health in persistence chip (#295)`).
+- Open PRs at this checkpoint: none on `main`; this branch is adding a topbar sync-health drill-down so warning/critical persistence chips route operators to the detailed Offer sync panels.
+- In-flight PR at this checkpoint: `codex/followup-sync-health-drilldown` adds a guarded Review action to the topbar persistence chip when fallback health is visible.
 - Latest merged sequence:
+  - `#295` surfaces warning/critical follow-up readiness persistence health in the always-visible topbar persistence chip and keeps generic sync fallback severity aligned with the displayed fallback count.
   - `#294` surfaces warning/critical follow-up readiness persistence health in the Integration health panel so stale fallback history is visible without drilling into the Offer history card.
   - `#293` derives healthy/warning/critical follow-up readiness sync-health severity from fallback status and recency, then surfaces it in the Offer workspace sync-health panel.
   - `#292` adds deterministic operator summary copy for healthy/current/stale follow-up readiness sync-health fallback states and surfaces it in the Offer workspace.
