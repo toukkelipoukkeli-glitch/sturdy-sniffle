@@ -2539,6 +2539,7 @@ function App() {
           <PersistenceStatus
             label={workspacePersistenceRuntime.label}
             mode={workspacePersistenceRuntime.mode}
+            syncHealth={followUpActivityReadinessSyncHealth}
             syncErrorCount={persistenceSyncErrorCount}
           />
           <Button
@@ -4155,19 +4156,27 @@ function RfqCreateDialog({
 function PersistenceStatus({
   label,
   mode,
+  syncHealth,
   syncErrorCount,
 }: {
   label: string
   mode: WorkspacePersistenceMode
+  syncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
   syncErrorCount: number
 }) {
   const Icon = mode === "convex" ? Database : CloudOff
+  const fallbackLabel =
+    syncHealth.totalFallbackCount > 0
+      ? `${syncHealth.totalFallbackCount} ${syncHealth.latestFallbackRecency === "stale" ? "stale" : "sync"} fallback`
+      : syncErrorCount > 0
+        ? `${syncErrorCount} sync fallback`
+        : undefined
 
   return (
-    <div className="persistence-chip" data-mode={mode} aria-label="Persistence status">
+    <div className="persistence-chip" data-mode={mode} data-severity={syncHealth.severity} aria-label="Persistence status">
       <Icon aria-hidden="true" />
       <span>{label}</span>
-      {syncErrorCount > 0 ? <strong>{syncErrorCount} sync fallback</strong> : null}
+      {fallbackLabel ? <strong>{fallbackLabel}</strong> : null}
     </div>
   )
 }

@@ -920,6 +920,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 follow-up readiness persistence fallback recorded (read 1, write 0); latest fallback is current.",
     )
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
   })
 
   it("hydrates offer release execution history through the Convex browser bridge", async () => {
@@ -1275,7 +1277,8 @@ describe("FactoryBid workspace (component)", () => {
       "data-severity",
       "critical",
     )
-    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 stale fallback")
+    expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "critical")
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Persistence")
     expect(integrationHealth).toHaveTextContent(
