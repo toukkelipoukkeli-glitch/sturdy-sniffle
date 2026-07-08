@@ -2539,6 +2539,7 @@ function App() {
           <PersistenceStatus
             label={workspacePersistenceRuntime.label}
             mode={workspacePersistenceRuntime.mode}
+            onReviewSyncHealth={() => setActiveView("offer")}
             syncHealth={followUpActivityReadinessSyncHealth}
             syncErrorCount={persistenceSyncErrorCount}
           />
@@ -4156,11 +4157,13 @@ function RfqCreateDialog({
 function PersistenceStatus({
   label,
   mode,
+  onReviewSyncHealth,
   syncHealth,
   syncErrorCount,
 }: {
   label: string
   mode: WorkspacePersistenceMode
+  onReviewSyncHealth: () => void
   syncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
   syncErrorCount: number
 }) {
@@ -4179,6 +4182,16 @@ function PersistenceStatus({
       <Icon aria-hidden="true" />
       <span>{label}</span>
       {fallbackLabel ? <strong>{fallbackLabel}</strong> : null}
+      {fallbackLabel ? (
+        <button
+          aria-label="Review sync health details"
+          className="persistence-chip-action"
+          onClick={onReviewSyncHealth}
+          type="button"
+        >
+          Review
+        </button>
+      ) : null}
     </div>
   )
 }
