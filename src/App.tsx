@@ -9374,6 +9374,7 @@ function OfferFollowUpActivityReadinessHistoryPanel({
       >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
+          <span>{syncHealth.operatorSummary}</span>
           <span>
             {totalFallbackCount > 0
               ? `${totalFallbackCount} follow-up readiness persistence fallback${totalFallbackCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
