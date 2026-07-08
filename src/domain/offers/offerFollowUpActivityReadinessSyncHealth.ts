@@ -15,6 +15,7 @@ export type OfferFollowUpActivityReadinessSyncHealthStatus =
   | "read_write_fallback"
   | "write_fallback"
 export type OfferFollowUpActivityReadinessSyncHealthRecency = "current" | "none" | "stale"
+export type OfferFollowUpActivityReadinessSyncHealthSeverity = "critical" | "healthy" | "warning"
 
 export interface OfferFollowUpActivityReadinessSyncHealthSummaryOptions {
   now?: string
@@ -48,6 +49,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   operatorSummary: string
   recoveryActionLabels: string[]
   readFallbackCount: number
+  severity: OfferFollowUpActivityReadinessSyncHealthSeverity
   status: OfferFollowUpActivityReadinessSyncHealthStatus
   totalFallbackCount: number
   writeFallbackCount: number
@@ -98,6 +100,7 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
     }),
     recoveryActionLabels: recoveryActionsForStatus(status),
     readFallbackCount: readFallbacks.length,
+    severity: determineSummarySeverity(status, latestFallbackRecency),
     status,
     totalFallbackCount: normalizedEvents.length,
     writeFallbackCount: writeFallbacks.length,
@@ -135,6 +138,16 @@ function determineLatestFallbackRecency(
     throw new Error("syncHealth.staleAfterHours must be a positive number")
   }
   return Date.parse(now) - Date.parse(latestFallback.recordedAt) > staleAfterHours * 60 * 60 * 1000 ? "stale" : "current"
+}
+
+function determineSummarySeverity(
+  status: OfferFollowUpActivityReadinessSyncHealthStatus,
+  latestFallbackRecency: OfferFollowUpActivityReadinessSyncHealthRecency,
+): OfferFollowUpActivityReadinessSyncHealthSeverity {
+  if (status === "healthy") {
+    return "healthy"
+  }
+  return latestFallbackRecency === "stale" ? "critical" : "warning"
 }
 
 function recoveryActionsForStatus(status: OfferFollowUpActivityReadinessSyncHealthStatus): string[] {

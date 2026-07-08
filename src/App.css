@@ -5848,6 +5848,14 @@
   border-color: oklch(0.72 0.1 315);
 }
 
+.offer-follow-up-readiness-sync-health[data-severity="critical"] {
+  background: oklch(0.97 0.018 28);
+}
+
+.offer-follow-up-readiness-sync-health[data-severity="warning"] {
+  background: oklch(0.975 0.018 84);
+}
+
 .offer-follow-up-readiness-sync-health > div {
   display: grid;
   gap: 4px;

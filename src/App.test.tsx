@@ -869,6 +869,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Convex 2")
       expect(readinessHistory).toHaveTextContent("Local 0")
       expect(readinessHistory).toHaveTextContent("Sync health Healthy")
+      expect(readinessHistory).toHaveTextContent("Persistence severity · Healthy")
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
       expect(readinessHistory).toHaveTextContent("Convex snapshot")
     })
@@ -907,8 +908,12 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
       expect(readinessHistory).toHaveTextContent("Latest read fallback")
       expect(readinessHistory).toHaveTextContent("Fallback recency · Current")
+      expect(readinessHistory).toHaveTextContent("Persistence severity · Warning")
       expect(readinessHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
-      expect(screen.getByLabelText("Follow-up readiness sync health: Read fallback, 1 fallback")).toBeInTheDocument()
+      expect(screen.getByLabelText("Follow-up readiness sync health: Read fallback, 1 fallback")).toHaveAttribute(
+        "data-severity",
+        "warning",
+      )
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
     })
   })
@@ -1234,18 +1239,15 @@ describe("FactoryBid workspace (component)", () => {
     const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
     expect(stored.followUpActivityReadinessSyncEvents).toHaveLength(1)
     stored.activeView = "offer"
-    stored.followUpActivityReadinessSyncEvents = [
-      ...Array.from({ length: 12 }, (_, index) =>
-        buildOfferFollowUpActivityReadinessSyncHealthEvent({
-          nonce: `seed-${index}`,
-          offerId: "offer-204",
-          operation: index % 2 === 0 ? "read" : "write",
-          recordedAt: `2026-06-20T05:${String(index).padStart(2, "0")}:00.000Z`,
-          rfqId: "rfq-204",
-        }),
-      ),
-      ...stored.followUpActivityReadinessSyncEvents,
-    ]
+    stored.followUpActivityReadinessSyncEvents = Array.from({ length: 12 }, (_, index) =>
+      buildOfferFollowUpActivityReadinessSyncHealthEvent({
+        nonce: `seed-${index}`,
+        offerId: "offer-204",
+        operation: index % 2 === 0 ? "read" : "write",
+        recordedAt: `2026-06-18T05:${String(index).padStart(2, "0")}:00.000Z`,
+        rfqId: "rfq-204",
+      }),
+    )
     window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
     window.__FACTORYBID_WORKSPACE_CONVEX__ = undefined
     unmount()
@@ -1255,15 +1257,20 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(restoredHistory).toHaveTextContent("Sync health Read/write fallback")
       expect(restoredHistory).toHaveTextContent(
-        "Follow-up readiness persistence used 12 fallbacks (read 6, write 6); latest fallback is current.",
+        "Follow-up readiness persistence used 12 fallbacks (read 6, write 6); latest fallback is stale.",
       )
       expect(restoredHistory).toHaveTextContent("12 follow-up readiness persistence fallbacks recorded · read 6 · write 6.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
       expect(restoredHistory).toHaveTextContent("Latest write fallback")
-      expect(restoredHistory).toHaveTextContent("Fallback recency · Current")
+      expect(restoredHistory).toHaveTextContent("Fallback recency · Stale")
+      expect(restoredHistory).toHaveTextContent("Persistence severity · Critical")
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction)
     })
+    expect(screen.getByLabelText("Follow-up readiness sync health: Read/write fallback, 12 fallbacks")).toHaveAttribute(
+      "data-severity",
+      "critical",
+    )
     expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Persistence")

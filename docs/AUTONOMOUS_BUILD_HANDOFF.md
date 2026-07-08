@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-06 Europe/Helsinki.
+Last refreshed: 2026-07-08 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8af04de` (`Add follow-up sync health recency (#291)`).
-- Open PRs at this checkpoint: none on `main`; this branch is adding deterministic operator summary copy for follow-up readiness sync-health state.
-- In-flight PR at this checkpoint: `codex/followup-sync-health-operator-summary` surfaces a single summary sentence for healthy/current/stale fallback states in the Offer workspace sync-health panel.
+- Main branch checkpoint: `06abd1c` (`Add follow-up sync health operator summary (#292)`).
+- Open PRs at this checkpoint: none on `main`; this branch is adding deterministic severity labels for follow-up readiness sync-health state.
+- In-flight PR at this checkpoint: `codex/followup-sync-health-severity` derives healthy/warning/critical sync-health severity from fallback status and recency, then surfaces it in the Offer workspace sync-health panel.
 - Latest merged sequence:
+  - `#292` adds deterministic operator summary copy for healthy/current/stale follow-up readiness sync-health fallback states and surfaces it in the Offer workspace.
   - `#291` adds injected-clock current/stale recency to follow-up readiness sync-health summaries and surfaces fallback recency in the Offer workspace.
   - `#290` adds deterministic read/write recovery actions to follow-up readiness sync-health summaries and surfaces them in the Offer workspace fallback panel.
   - `#289` classifies follow-up readiness sync-health fallback state as healthy, read fallback, write fallback, or read/write fallback and surfaces operation-specific labels in the Offer workspace.
@@ -192,7 +193,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - RFQ intake models, Gmail RFQ adapter logic, attachment classification, intake readiness gates, and provenance handling.
 - Convex schema and workflow APIs for RFQs, quotes, offers, activities, provider runs, connector links, and workflow actions.
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
-- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel/history summaries/local persistence/readiness-history UI/local-state persistence/unique manual follow-up audit keys/restored-action readiness replay/Convex readiness payload contracts/workflow persistence/client adapter/runtime bridge, operator-visible sync-source summaries, scoped sync-health fallback visibility, read/write fallback history details, reload-safe sync-health replay, global fallback indicator alignment, restored sync-health retention capping, per-operation latest fallback visibility, per-operation sync-health status labels, sync-health recovery actions, and fallback recency state.
+- Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel/history summaries/local persistence/readiness-history UI/local-state persistence/unique manual follow-up audit keys/restored-action readiness replay/Convex readiness payload contracts/workflow persistence/client adapter/runtime bridge, operator-visible sync-source summaries, scoped sync-health fallback visibility, read/write fallback history details, reload-safe sync-health replay, global fallback indicator alignment, restored sync-health retention capping, per-operation latest fallback visibility, per-operation sync-health status labels, sync-health recovery actions, fallback recency state, and sync-health operator summaries.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records and query APIs.

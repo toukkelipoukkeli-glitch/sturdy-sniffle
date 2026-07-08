@@ -107,6 +107,7 @@ import {
   summarizeOfferFollowUpActivityReadinessSyncHealth,
   type OfferFollowUpActivityReadinessSyncHealthEvent,
   type OfferFollowUpActivityReadinessSyncHealthRecency,
+  type OfferFollowUpActivityReadinessSyncHealthSeverity,
   type OfferFollowUpActivityReadinessSyncHealthSummary,
   type OfferFollowUpActivityReadinessSyncHealthStatus,
   type OfferFollowUpActivityReadinessSyncOperation,
@@ -9334,6 +9335,7 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
   const totalFallbackCount = syncHealth.totalFallbackCount
   const syncHealthLabel = followUpActivityReadinessSyncHealthStatusLabel(syncHealth.status)
+  const syncHealthSeverityLabel = followUpActivityReadinessSyncHealthSeverityLabel(syncHealth.severity)
   const latestFallbacks = [syncHealth.latestReadFallback, syncHealth.latestWriteFallback].filter(
     (fallback): fallback is OfferFollowUpActivityReadinessSyncHealthEvent => Boolean(fallback),
   )
@@ -9370,11 +9372,13 @@ function OfferFollowUpActivityReadinessHistoryPanel({
       <div
         aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
         className="offer-follow-up-readiness-sync-health"
+        data-severity={syncHealth.severity}
         data-status={syncHealth.status}
       >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
           <span>{syncHealth.operatorSummary}</span>
+          <small>Persistence severity · {syncHealthSeverityLabel}</small>
           <span>
             {totalFallbackCount > 0
               ? `${totalFallbackCount} follow-up readiness persistence fallback${totalFallbackCount === 1 ? "" : "s"} recorded · read ${syncHealth.readFallbackCount} · write ${syncHealth.writeFallbackCount}.`
@@ -9454,6 +9458,17 @@ function followUpActivityReadinessSyncHealthRecencyLabel(recency: OfferFollowUpA
       return "No fallbacks"
     case "stale":
       return "Stale"
+  }
+}
+
+function followUpActivityReadinessSyncHealthSeverityLabel(severity: OfferFollowUpActivityReadinessSyncHealthSeverity): string {
+  switch (severity) {
+    case "critical":
+      return "Critical"
+    case "healthy":
+      return "Healthy"
+    case "warning":
+      return "Warning"
   }
 }
 
