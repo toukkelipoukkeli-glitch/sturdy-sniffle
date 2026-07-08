@@ -5836,8 +5836,16 @@
   border-color: oklch(0.84 0.05 155);
 }
 
-.offer-follow-up-readiness-sync-health[data-status="fallback"] {
+.offer-follow-up-readiness-sync-health[data-status="read_fallback"] {
   border-color: oklch(0.82 0.09 82);
+}
+
+.offer-follow-up-readiness-sync-health[data-status="write_fallback"] {
+  border-color: oklch(0.72 0.13 24);
+}
+
+.offer-follow-up-readiness-sync-health[data-status="read_write_fallback"] {
+  border-color: oklch(0.72 0.1 315);
 }
 
 .offer-follow-up-readiness-sync-health > div {
