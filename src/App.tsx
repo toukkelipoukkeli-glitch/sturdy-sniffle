@@ -9365,6 +9365,10 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const latestFallbacks = [syncHealth.latestReadFallback, syncHealth.latestWriteFallback].filter(
     (fallback): fallback is OfferFollowUpActivityReadinessSyncHealthEvent => Boolean(fallback),
   )
+  const [fallbackFilter, setFallbackFilter] = useState<OfferFollowUpReadinessSyncFallbackFilter>("all")
+  const filteredFallbacks = syncHealth.recentFallbacks
+    .filter((fallback) => fallbackFilter === "all" || fallback.operation === fallbackFilter)
+    .slice(0, 6)
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9429,6 +9433,38 @@ function OfferFollowUpActivityReadinessHistoryPanel({
               ))}
             </ul>
           ) : null}
+          {syncHealth.recentFallbacks.length > 0 ? (
+            <div className="offer-follow-up-readiness-sync-fallback-events">
+              <div className="offer-follow-up-readiness-sync-fallback-heading">
+                <strong>Recent fallbacks {syncHealth.recentFallbacks.length}</strong>
+                <div
+                  aria-label="Follow-up readiness sync fallback filters"
+                  className="offer-follow-up-readiness-sync-fallback-filters"
+                  role="group"
+                >
+                  {offerFollowUpReadinessSyncFallbackFilters.map((filter) => (
+                    <button
+                      aria-pressed={fallbackFilter === filter}
+                      key={filter}
+                      onClick={() => setFallbackFilter(filter)}
+                      type="button"
+                    >
+                      {followUpReadinessSyncFallbackFilterLabel(filter, syncHealth)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div aria-label="Follow-up readiness sync fallback events" className="offer-follow-up-readiness-sync-fallback-list">
+                {filteredFallbacks.map((fallback) => (
+                  <div className="offer-follow-up-readiness-sync-fallback-row" key={fallback.eventId}>
+                    <strong>{followUpActivityReadinessSyncOperationLabel(fallback.operation)} fallback</strong>
+                    <span>{formatShortDateTime(fallback.recordedAt)}</span>
+                    <small>{shortFollowUpActivityReadinessKey(fallback.eventId)}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
       {current ? (
@@ -9458,6 +9494,24 @@ function followUpActivityReadinessSyncOperationLabel(operation: OfferFollowUpAct
       return "Read"
     case "write":
       return "Write"
+  }
+}
+
+type OfferFollowUpReadinessSyncFallbackFilter = "all" | OfferFollowUpActivityReadinessSyncOperation
+
+const offerFollowUpReadinessSyncFallbackFilters: OfferFollowUpReadinessSyncFallbackFilter[] = ["all", "read", "write"]
+
+function followUpReadinessSyncFallbackFilterLabel(
+  filter: OfferFollowUpReadinessSyncFallbackFilter,
+  syncHealth: OfferFollowUpActivityReadinessSyncHealthSummary,
+): string {
+  switch (filter) {
+    case "all":
+      return `All ${syncHealth.totalFallbackCount}`
+    case "read":
+      return `Read ${syncHealth.readFallbackCount}`
+    case "write":
+      return `Write ${syncHealth.writeFallbackCount}`
   }
 }
 

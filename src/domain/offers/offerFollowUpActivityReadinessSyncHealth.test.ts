@@ -27,6 +27,7 @@ describe("offer follow-up activity readiness sync health", () => {
       latestReadFallback: readFallback,
       latestWriteFallback: writeFallback,
       operatorSummary: "Follow-up readiness persistence used 2 fallbacks (read 1, write 1); latest fallback is current.",
+      recentFallbacks: [writeFallback, readFallback],
       recoveryActionLabels: [
         offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
         offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
@@ -131,6 +132,29 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(result.latestFallback?.eventId).toBe([first.eventId, second.eventId].sort()[0])
   })
 
+  it("returns recent fallback events newest-first with stable tie ordering", () => {
+    const oldest = syncHealthEvent({
+      operation: "read",
+      recordedAt: "2026-07-03T06:00:00.000Z",
+    })
+    const tiedSecond = syncHealthEvent({
+      offerId: "offer-b",
+      operation: "write",
+      recordedAt: "2026-07-03T07:00:00.000Z",
+    })
+    const tiedFirst = syncHealthEvent({
+      offerId: "offer-a",
+      operation: "read",
+      recordedAt: "2026-07-03T07:00:00.000Z",
+    })
+
+    expect(summarizeOfferFollowUpActivityReadinessSyncHealth([oldest, tiedSecond, tiedFirst]).recentFallbacks).toEqual([
+      tiedFirst,
+      tiedSecond,
+      oldest,
+    ])
+  })
+
   it("returns an empty deterministic summary when no fallbacks are recorded", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth(undefined)).toEqual({
       healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
@@ -139,6 +163,7 @@ describe("offer follow-up activity readiness sync health", () => {
       latestReadFallback: undefined,
       latestWriteFallback: undefined,
       operatorSummary: "Follow-up readiness persistence is healthy with no local fallback operations recorded.",
+      recentFallbacks: [],
       recoveryActionLabels: [],
       readFallbackCount: 0,
       severity: "healthy",

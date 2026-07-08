@@ -1334,9 +1334,20 @@ describe("FactoryBid workspace (component)", () => {
       expect(restoredHistory).toHaveTextContent("Latest write fallback")
       expect(restoredHistory).toHaveTextContent("Fallback recency · Stale")
       expect(restoredHistory).toHaveTextContent("Persistence severity · Critical")
+      expect(restoredHistory).toHaveTextContent("Recent fallbacks 12")
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction)
     })
+    const fallbackFilters = within(restoredHistory).getByLabelText("Follow-up readiness sync fallback filters")
+    expect(within(fallbackFilters).getByRole("button", { name: "All 12" })).toHaveAttribute("aria-pressed", "true")
+    const fallbackEvents = within(restoredHistory).getByLabelText("Follow-up readiness sync fallback events")
+    expect(within(fallbackEvents).getAllByText(/fallback$/)).toHaveLength(6)
+
+    await user.click(within(fallbackFilters).getByRole("button", { name: "Write 6" }))
+
+    expect(within(fallbackFilters).getByRole("button", { name: "Write 6" })).toHaveAttribute("aria-pressed", "true")
+    expect(within(fallbackEvents).getAllByText("Write fallback")).toHaveLength(6)
+    expect(within(fallbackEvents).queryByText("Read fallback")).not.toBeInTheDocument()
     expect(screen.getByLabelText("Follow-up readiness sync health: Read/write fallback, 12 fallbacks")).toHaveAttribute(
       "data-severity",
       "critical",

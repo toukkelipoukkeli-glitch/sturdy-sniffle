@@ -47,6 +47,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   operatorSummary: string
+  recentFallbacks: OfferFollowUpActivityReadinessSyncHealthEvent[]
   recoveryActionLabels: string[]
   readFallbackCount: number
   severity: OfferFollowUpActivityReadinessSyncHealthSeverity
@@ -85,6 +86,7 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   const writeFallbacks = normalizedEvents.filter((event) => event.operation === "write")
   const status = determineSummaryStatus(readFallbacks.length, writeFallbacks.length)
   const latestFallbackRecency = determineLatestFallbackRecency(latestFallback, options)
+  const recentFallbacks = [...normalizedEvents].sort(compareEventsNewestFirst)
 
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
@@ -98,6 +100,7 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
       totalFallbackCount: normalizedEvents.length,
       writeFallbackCount: writeFallbacks.length,
     }),
+    recentFallbacks,
     recoveryActionLabels: recoveryActionsForStatus(status),
     readFallbackCount: readFallbacks.length,
     severity: determineSummarySeverity(status, latestFallbackRecency),
@@ -197,6 +200,14 @@ function normalizeEvents(
     eventsById.set(normalized.eventId, normalized)
   }
   return [...eventsById.values()]
+}
+
+function compareEventsNewestFirst(
+  left: OfferFollowUpActivityReadinessSyncHealthEvent,
+  right: OfferFollowUpActivityReadinessSyncHealthEvent,
+): number {
+  const recordedAtComparison = compareLex(right.recordedAt, left.recordedAt)
+  return recordedAtComparison === 0 ? compareLex(left.eventId, right.eventId) : recordedAtComparison
 }
 
 function newestEvent(
