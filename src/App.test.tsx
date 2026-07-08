@@ -916,6 +916,10 @@ describe("FactoryBid workspace (component)", () => {
       )
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
     })
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent(
+      "1 follow-up readiness persistence fallback recorded (read 1, write 0); latest fallback is current.",
+    )
   })
 
   it("hydrates offer release execution history through the Convex browser bridge", async () => {
@@ -1274,8 +1278,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Persistence")
-    expect(integrationHealth).toHaveTextContent("12 operations used local fallback.")
-    expect(integrationHealth).toHaveTextContent("12 fallback")
+    expect(integrationHealth).toHaveTextContent(
+      "12 follow-up readiness persistence fallbacks recorded (read 6, write 6); latest fallback is stale.",
+    )
+    expect(integrationHealth).toHaveTextContent("12 stale")
   })
 
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
