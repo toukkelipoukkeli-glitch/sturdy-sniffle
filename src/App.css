@@ -5867,6 +5867,22 @@
   overflow-wrap: anywhere;
 }
 
+.offer-follow-up-readiness-sync-recovery-actions {
+  color: oklch(0.33 0.03 250);
+  display: grid;
+  font-size: 0.72rem;
+  font-weight: 750;
+  gap: 3px;
+  line-height: 1.35;
+  list-style-position: inside;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+.offer-follow-up-readiness-sync-recovery-actions li {
+  overflow-wrap: anywhere;
+}
+
 .offer-follow-up-activity-actions {
   grid-template-columns: minmax(0, 1fr);
 }
