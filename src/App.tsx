@@ -2173,6 +2173,7 @@ function App() {
       summarizeWorkspaceIntegrationStatus({
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
+        followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
         providerRuns: selectedItem.providerRuns,
@@ -2181,6 +2182,7 @@ function App() {
         syncErrorCount: persistenceSyncErrorCount,
       }),
     [
+      followUpActivityReadinessSyncHealth,
       offerFollowUpScheduledAt,
       offerReplySync,
       persistenceSyncErrorCount,

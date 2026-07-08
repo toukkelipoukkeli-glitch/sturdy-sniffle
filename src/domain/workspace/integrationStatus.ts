@@ -1,5 +1,6 @@
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
+import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
@@ -40,6 +41,7 @@ export interface IntegrationStatusSource {
 export interface WorkspaceIntegrationStatusInput {
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
+  followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
   providerRuns: ProviderRunAudit[]
@@ -58,6 +60,7 @@ export interface WorkspaceIntegrationStatus {
 export function summarizeWorkspaceIntegrationStatus({
   connectorErrorCount = 0,
   connectorSnapshot,
+  followUpReadinessSyncHealth,
   followUpScheduledAt,
   persistenceMode,
   providerRuns,
@@ -66,7 +69,7 @@ export function summarizeWorkspaceIntegrationStatus({
   syncErrorCount,
 }: WorkspaceIntegrationStatusInput): WorkspaceIntegrationStatus {
   const sources = [
-    persistenceSource(persistenceMode, syncErrorCount),
+    persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns),
     offerReplySource(replySync),
@@ -84,7 +87,29 @@ export function summarizeWorkspaceIntegrationStatus({
   }
 }
 
-function persistenceSource(mode: WorkspacePersistenceMode, syncErrorCount: number): IntegrationStatusSource {
+function persistenceSource(
+  mode: WorkspacePersistenceMode,
+  syncErrorCount: number,
+  followUpReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary | undefined,
+): IntegrationStatusSource {
+  if (followUpReadinessSyncHealth && followUpReadinessSyncHealth.totalFallbackCount > 0) {
+    const fallbackCount = followUpReadinessSyncHealth.totalFallbackCount
+    const fallbackNoun = `fallback${fallbackCount === 1 ? "" : "s"}`
+    const latestRecency = followUpReadinessSyncHealth.latestFallbackRecency === "stale" ? "stale" : "current"
+    const operationText = `read ${followUpReadinessSyncHealth.readFallbackCount}, write ${followUpReadinessSyncHealth.writeFallbackCount}`
+    const totalFallbackText =
+      syncErrorCount > fallbackCount ? ` ${syncErrorCount} total workspace fallback operations recorded.` : ""
+
+    return {
+      detail: `${fallbackCount} follow-up readiness persistence ${fallbackNoun} recorded (${operationText}); latest fallback is ${latestRecency}.${totalFallbackText}`,
+      key: "persistence",
+      label: "Persistence",
+      severity: followUpReadinessSyncHealth.severity === "critical" ? "blocked" : "attention",
+      status: followUpReadinessSyncHealth.severity === "critical" ? "stale" : "fallback",
+      count: Math.max(syncErrorCount, fallbackCount),
+    }
+  }
+
   if (syncErrorCount > 0) {
     return {
       detail: `${syncErrorCount} operation${syncErrorCount === 1 ? "" : "s"} used local fallback.`,

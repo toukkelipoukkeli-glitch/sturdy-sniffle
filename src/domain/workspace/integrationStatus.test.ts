@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
+import {
+  buildOfferFollowUpActivityReadinessSyncHealthEvent,
+  summarizeOfferFollowUpActivityReadinessSyncHealth,
+} from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import { summarizeWorkspaceIntegrationStatus } from "./integrationStatus"
 
@@ -92,6 +96,49 @@ describe("workspace integration status", () => {
       status: "failed",
     })
     expect(status.warnings).not.toContain("Persistence: Workspace writes are routed through Convex.")
+  })
+
+  it("surfaces follow-up readiness sync health on the persistence source", () => {
+    const syncHealth = summarizeOfferFollowUpActivityReadinessSyncHealth(
+      [
+        buildOfferFollowUpActivityReadinessSyncHealthEvent({
+          offerId: "offer-204",
+          operation: "read",
+          recordedAt: "2026-06-18T05:00:00.000Z",
+          rfqId: "rfq-204",
+        }),
+        buildOfferFollowUpActivityReadinessSyncHealthEvent({
+          nonce: "write",
+          offerId: "offer-204",
+          operation: "write",
+          recordedAt: "2026-06-18T05:10:00.000Z",
+          rfqId: "rfq-204",
+        }),
+      ],
+      { now: "2026-06-20T06:00:00.000Z" },
+    )
+
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpReadinessSyncHealth: syncHealth,
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 2,
+    })
+
+    expect(status.status).toBe("blocked")
+    expect(status.sources.find((source) => source.key === "persistence")).toMatchObject({
+      count: 2,
+      detail: "2 follow-up readiness persistence fallbacks recorded (read 1, write 1); latest fallback is stale.",
+      severity: "blocked",
+      status: "stale",
+    })
+    expect(status.warnings).toContain(
+      "Persistence: 2 follow-up readiness persistence fallbacks recorded (read 1, write 1); latest fallback is stale.",
+    )
   })
 })
 
