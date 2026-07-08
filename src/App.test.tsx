@@ -901,6 +901,9 @@ describe("FactoryBid workspace (component)", () => {
     const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
     await waitFor(() => {
       expect(readinessHistory).toHaveTextContent("Sync health Read fallback")
+      expect(readinessHistory).toHaveTextContent(
+        "Follow-up readiness persistence used 1 fallback (read 1, write 0); latest fallback is current.",
+      )
       expect(readinessHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
       expect(readinessHistory).toHaveTextContent("Latest read fallback")
       expect(readinessHistory).toHaveTextContent("Fallback recency · Current")
@@ -1251,6 +1254,9 @@ describe("FactoryBid workspace (component)", () => {
     const restoredHistory = screen.getByLabelText("Follow-up activity readiness history")
     await waitFor(() => {
       expect(restoredHistory).toHaveTextContent("Sync health Read/write fallback")
+      expect(restoredHistory).toHaveTextContent(
+        "Follow-up readiness persistence used 12 fallbacks (read 6, write 6); latest fallback is current.",
+      )
       expect(restoredHistory).toHaveTextContent("12 follow-up readiness persistence fallbacks recorded · read 6 · write 6.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
       expect(restoredHistory).toHaveTextContent("Latest write fallback")

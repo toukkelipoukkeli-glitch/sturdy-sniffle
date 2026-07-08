@@ -45,6 +45,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   latestFallbackRecency: OfferFollowUpActivityReadinessSyncHealthRecency
   latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
+  operatorSummary: string
   recoveryActionLabels: string[]
   readFallbackCount: number
   status: OfferFollowUpActivityReadinessSyncHealthStatus
@@ -81,19 +82,41 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   const readFallbacks = normalizedEvents.filter((event) => event.operation === "read")
   const writeFallbacks = normalizedEvents.filter((event) => event.operation === "write")
   const status = determineSummaryStatus(readFallbacks.length, writeFallbacks.length)
+  const latestFallbackRecency = determineLatestFallbackRecency(latestFallback, options)
 
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
     latestFallback,
-    latestFallbackRecency: determineLatestFallbackRecency(latestFallback, options),
+    latestFallbackRecency,
     latestReadFallback: newestEvent(readFallbacks),
     latestWriteFallback: newestEvent(writeFallbacks),
+    operatorSummary: buildOperatorSummary({
+      latestFallbackRecency,
+      readFallbackCount: readFallbacks.length,
+      totalFallbackCount: normalizedEvents.length,
+      writeFallbackCount: writeFallbacks.length,
+    }),
     recoveryActionLabels: recoveryActionsForStatus(status),
     readFallbackCount: readFallbacks.length,
     status,
     totalFallbackCount: normalizedEvents.length,
     writeFallbackCount: writeFallbacks.length,
   }
+}
+
+function buildOperatorSummary(input: {
+  latestFallbackRecency: OfferFollowUpActivityReadinessSyncHealthRecency
+  readFallbackCount: number
+  totalFallbackCount: number
+  writeFallbackCount: number
+}): string {
+  if (input.totalFallbackCount === 0) {
+    return "Follow-up readiness persistence is healthy with no local fallback operations recorded."
+  }
+  const fallbackText = `${input.totalFallbackCount} fallback${input.totalFallbackCount === 1 ? "" : "s"}`
+  const operationText = `read ${input.readFallbackCount}, write ${input.writeFallbackCount}`
+  const recencyText = input.latestFallbackRecency === "stale" ? "latest fallback is stale" : "latest fallback is current"
+  return `Follow-up readiness persistence used ${fallbackText} (${operationText}); ${recencyText}.`
 }
 
 function determineLatestFallbackRecency(
