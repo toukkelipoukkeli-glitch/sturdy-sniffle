@@ -107,6 +107,7 @@ import {
   summarizeOfferFollowUpActivityReadinessSyncHealth,
   type OfferFollowUpActivityReadinessSyncHealthEvent,
   type OfferFollowUpActivityReadinessSyncHealthSummary,
+  type OfferFollowUpActivityReadinessSyncHealthStatus,
   type OfferFollowUpActivityReadinessSyncOperation,
 } from "./domain/offers/offerFollowUpActivityReadinessSyncHealth"
 import {
@@ -9330,7 +9331,7 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
   const totalFallbackCount = syncHealth.totalFallbackCount
-  const syncHealthLabel = totalFallbackCount > 0 ? "Fallback active" : "Healthy"
+  const syncHealthLabel = followUpActivityReadinessSyncHealthStatusLabel(syncHealth.status)
   const latestFallbacks = [syncHealth.latestReadFallback, syncHealth.latestWriteFallback].filter(
     (fallback): fallback is OfferFollowUpActivityReadinessSyncHealthEvent => Boolean(fallback),
   )
@@ -9367,7 +9368,7 @@ function OfferFollowUpActivityReadinessHistoryPanel({
       <div
         aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
         className="offer-follow-up-readiness-sync-health"
-        data-status={totalFallbackCount > 0 ? "fallback" : "healthy"}
+        data-status={syncHealth.status}
       >
         <div>
           <strong>Sync health {syncHealthLabel}</strong>
@@ -9411,6 +9412,21 @@ function followUpActivityReadinessSyncOperationLabel(operation: OfferFollowUpAct
       return "Read"
     case "write":
       return "Write"
+  }
+}
+
+function followUpActivityReadinessSyncHealthStatusLabel(
+  status: OfferFollowUpActivityReadinessSyncHealthStatus,
+): string {
+  switch (status) {
+    case "healthy":
+      return "Healthy"
+    case "read_fallback":
+      return "Read fallback"
+    case "read_write_fallback":
+      return "Read/write fallback"
+    case "write_fallback":
+      return "Write fallback"
   }
 }
 

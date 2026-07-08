@@ -24,7 +24,36 @@ describe("offer follow-up activity readiness sync health", () => {
       latestReadFallback: readFallback,
       latestWriteFallback: writeFallback,
       readFallbackCount: 1,
+      status: "read_write_fallback",
       totalFallbackCount: 2,
+      writeFallbackCount: 1,
+    })
+  })
+
+  it("classifies read-only and write-only fallback states", () => {
+    expect(
+      summarizeOfferFollowUpActivityReadinessSyncHealth([
+        syncHealthEvent({
+          operation: "read",
+        }),
+      ]),
+    ).toMatchObject({
+      readFallbackCount: 1,
+      status: "read_fallback",
+      totalFallbackCount: 1,
+      writeFallbackCount: 0,
+    })
+
+    expect(
+      summarizeOfferFollowUpActivityReadinessSyncHealth([
+        syncHealthEvent({
+          operation: "write",
+        }),
+      ]),
+    ).toMatchObject({
+      readFallbackCount: 0,
+      status: "write_fallback",
+      totalFallbackCount: 1,
       writeFallbackCount: 1,
     })
   })
@@ -42,6 +71,7 @@ describe("offer follow-up activity readiness sync health", () => {
     expect(summarizeOfferFollowUpActivityReadinessSyncHealth([first, duplicate])).toMatchObject({
       latestFallback: duplicate,
       readFallbackCount: 1,
+      status: "read_fallback",
       totalFallbackCount: 1,
       writeFallbackCount: 0,
     })
@@ -71,6 +101,7 @@ describe("offer follow-up activity readiness sync health", () => {
       latestReadFallback: undefined,
       latestWriteFallback: undefined,
       readFallbackCount: 0,
+      status: "healthy",
       totalFallbackCount: 0,
       writeFallbackCount: 0,
     })

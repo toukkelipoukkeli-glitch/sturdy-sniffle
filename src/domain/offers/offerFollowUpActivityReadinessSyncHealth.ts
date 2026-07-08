@@ -4,6 +4,11 @@ import { nonBlank } from "../shared/stringValidation"
 export const OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION = "offer-follow-up-activity-readiness-sync-health.v1"
 
 export type OfferFollowUpActivityReadinessSyncOperation = "read" | "write"
+export type OfferFollowUpActivityReadinessSyncHealthStatus =
+  | "healthy"
+  | "read_fallback"
+  | "read_write_fallback"
+  | "write_fallback"
 
 export interface OfferFollowUpActivityReadinessSyncHealthEventInput {
   nonce?: string
@@ -29,6 +34,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   readFallbackCount: number
+  status: OfferFollowUpActivityReadinessSyncHealthStatus
   totalFallbackCount: number
   writeFallbackCount: number
 }
@@ -58,16 +64,35 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
 ): OfferFollowUpActivityReadinessSyncHealthSummary {
   const normalizedEvents = normalizeEvents(events ?? [])
   const latestFallback = newestEvent(normalizedEvents)
+  const readFallbacks = normalizedEvents.filter((event) => event.operation === "read")
+  const writeFallbacks = normalizedEvents.filter((event) => event.operation === "write")
 
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
     latestFallback,
-    latestReadFallback: newestEvent(normalizedEvents.filter((event) => event.operation === "read")),
-    latestWriteFallback: newestEvent(normalizedEvents.filter((event) => event.operation === "write")),
-    readFallbackCount: normalizedEvents.filter((event) => event.operation === "read").length,
+    latestReadFallback: newestEvent(readFallbacks),
+    latestWriteFallback: newestEvent(writeFallbacks),
+    readFallbackCount: readFallbacks.length,
+    status: determineSummaryStatus(readFallbacks.length, writeFallbacks.length),
     totalFallbackCount: normalizedEvents.length,
-    writeFallbackCount: normalizedEvents.filter((event) => event.operation === "write").length,
+    writeFallbackCount: writeFallbacks.length,
   }
+}
+
+function determineSummaryStatus(
+  readFallbackCount: number,
+  writeFallbackCount: number,
+): OfferFollowUpActivityReadinessSyncHealthStatus {
+  if (readFallbackCount > 0 && writeFallbackCount > 0) {
+    return "read_write_fallback"
+  }
+  if (readFallbackCount > 0) {
+    return "read_fallback"
+  }
+  if (writeFallbackCount > 0) {
+    return "write_fallback"
+  }
+  return "healthy"
 }
 
 function normalizeEvents(
