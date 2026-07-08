@@ -5922,6 +5922,64 @@
   overflow-wrap: anywhere;
 }
 
+.offer-follow-up-readiness-sync-fallback-events {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.offer-follow-up-readiness-sync-fallback-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.offer-follow-up-readiness-sync-fallback-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.offer-follow-up-readiness-sync-fallback-filters button {
+  background: oklch(1 0 0 / 74%);
+  border: 1px solid oklch(0.82 0.035 235);
+  border-radius: 999px;
+  color: oklch(0.34 0.035 250);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+  min-height: 24px;
+  padding: 3px 8px;
+}
+
+.offer-follow-up-readiness-sync-fallback-filters button[aria-pressed="true"] {
+  background: oklch(0.24 0.055 205);
+  border-color: oklch(0.24 0.055 205);
+  color: white;
+}
+
+.offer-follow-up-readiness-sync-fallback-list {
+  display: grid;
+  gap: 4px;
+}
+
+.offer-follow-up-readiness-sync-fallback-row {
+  align-items: center;
+  background: oklch(1 0 0 / 62%);
+  border: 1px solid oklch(0.88 0.018 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px 8px;
+  grid-template-columns: auto 1fr;
+  padding: 7px 8px;
+}
+
+.offer-follow-up-readiness-sync-fallback-row small {
+  grid-column: 1 / -1;
+}
+
 .offer-follow-up-activity-actions {
   grid-template-columns: minmax(0, 1fr);
 }
