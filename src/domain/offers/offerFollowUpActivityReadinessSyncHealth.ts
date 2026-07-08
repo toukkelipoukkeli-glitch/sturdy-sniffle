@@ -2,6 +2,10 @@ import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank } from "../shared/stringValidation"
 
 export const OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION = "offer-follow-up-activity-readiness-sync-health.v1"
+export const offerFollowUpActivityReadinessSyncHealthReadRecoveryAction =
+  "Check Convex readiness reads before trusting remote follow-up history."
+export const offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction =
+  "Retry readiness writes after Convex persistence recovers."
 
 export type OfferFollowUpActivityReadinessSyncOperation = "read" | "write"
 export type OfferFollowUpActivityReadinessSyncHealthStatus =
@@ -33,6 +37,7 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   latestFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestReadFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
   latestWriteFallback?: OfferFollowUpActivityReadinessSyncHealthEvent
+  recoveryActionLabels: string[]
   readFallbackCount: number
   status: OfferFollowUpActivityReadinessSyncHealthStatus
   totalFallbackCount: number
@@ -66,16 +71,34 @@ export function summarizeOfferFollowUpActivityReadinessSyncHealth(
   const latestFallback = newestEvent(normalizedEvents)
   const readFallbacks = normalizedEvents.filter((event) => event.operation === "read")
   const writeFallbacks = normalizedEvents.filter((event) => event.operation === "write")
+  const status = determineSummaryStatus(readFallbacks.length, writeFallbacks.length)
 
   return {
     healthVersion: OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
     latestFallback,
     latestReadFallback: newestEvent(readFallbacks),
     latestWriteFallback: newestEvent(writeFallbacks),
+    recoveryActionLabels: recoveryActionsForStatus(status),
     readFallbackCount: readFallbacks.length,
-    status: determineSummaryStatus(readFallbacks.length, writeFallbacks.length),
+    status,
     totalFallbackCount: normalizedEvents.length,
     writeFallbackCount: writeFallbacks.length,
+  }
+}
+
+function recoveryActionsForStatus(status: OfferFollowUpActivityReadinessSyncHealthStatus): string[] {
+  switch (status) {
+    case "healthy":
+      return []
+    case "read_fallback":
+      return [offerFollowUpActivityReadinessSyncHealthReadRecoveryAction]
+    case "read_write_fallback":
+      return [
+        offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
+        offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
+      ]
+    case "write_fallback":
+      return [offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction]
   }
 }
 

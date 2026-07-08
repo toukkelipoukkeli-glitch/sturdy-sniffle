@@ -9383,6 +9383,16 @@ function OfferFollowUpActivityReadinessHistoryPanel({
               {formatShortDateTime(fallback.recordedAt)}
             </small>
           ))}
+          {syncHealth.recoveryActionLabels.length > 0 ? (
+            <ul
+              aria-label="Follow-up readiness sync recovery actions"
+              className="offer-follow-up-readiness-sync-recovery-actions"
+            >
+              {syncHealth.recoveryActionLabels.map((action) => (
+                <li key={action}>{action}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </div>
       {current ? (

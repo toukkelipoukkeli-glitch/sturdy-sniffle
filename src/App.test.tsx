@@ -63,7 +63,11 @@ import {
 import { OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION } from "./domain/offers/offerFollowUpActivityReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION } from "./domain/offers/offerFollowUpActivityReadinessHistory"
-import { buildOfferFollowUpActivityReadinessSyncHealthEvent } from "./domain/offers/offerFollowUpActivityReadinessSyncHealth"
+import {
+  buildOfferFollowUpActivityReadinessSyncHealthEvent,
+  offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
+  offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
+} from "./domain/offers/offerFollowUpActivityReadinessSyncHealth"
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
@@ -899,6 +903,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Sync health Read fallback")
       expect(readinessHistory).toHaveTextContent("1 follow-up readiness persistence fallback recorded · read 1 · write 0.")
       expect(readinessHistory).toHaveTextContent("Latest read fallback")
+      expect(readinessHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
       expect(screen.getByLabelText("Follow-up readiness sync health: Read fallback, 1 fallback")).toBeInTheDocument()
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
     })
@@ -1248,6 +1253,8 @@ describe("FactoryBid workspace (component)", () => {
       expect(restoredHistory).toHaveTextContent("12 follow-up readiness persistence fallbacks recorded · read 6 · write 6.")
       expect(restoredHistory).toHaveTextContent("Latest read fallback")
       expect(restoredHistory).toHaveTextContent("Latest write fallback")
+      expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
+      expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction)
     })
     expect(screen.getByLabelText("Persistence status")).toHaveTextContent("12 sync fallback")
     const integrationHealth = screen.getByLabelText("Integration health")

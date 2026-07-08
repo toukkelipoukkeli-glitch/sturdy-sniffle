@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
+  offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
+  offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
   type OfferFollowUpActivityReadinessSyncHealthEvent,
 } from "./offerFollowUpActivityReadinessSyncHealth"
@@ -23,6 +25,10 @@ describe("offer follow-up activity readiness sync health", () => {
       latestFallback: writeFallback,
       latestReadFallback: readFallback,
       latestWriteFallback: writeFallback,
+      recoveryActionLabels: [
+        offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
+        offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction,
+      ],
       readFallbackCount: 1,
       status: "read_write_fallback",
       totalFallbackCount: 2,
@@ -38,6 +44,7 @@ describe("offer follow-up activity readiness sync health", () => {
         }),
       ]),
     ).toMatchObject({
+      recoveryActionLabels: [offerFollowUpActivityReadinessSyncHealthReadRecoveryAction],
       readFallbackCount: 1,
       status: "read_fallback",
       totalFallbackCount: 1,
@@ -51,6 +58,7 @@ describe("offer follow-up activity readiness sync health", () => {
         }),
       ]),
     ).toMatchObject({
+      recoveryActionLabels: [offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction],
       readFallbackCount: 0,
       status: "write_fallback",
       totalFallbackCount: 1,
@@ -100,6 +108,7 @@ describe("offer follow-up activity readiness sync health", () => {
       latestFallback: undefined,
       latestReadFallback: undefined,
       latestWriteFallback: undefined,
+      recoveryActionLabels: [],
       readFallbackCount: 0,
       status: "healthy",
       totalFallbackCount: 0,
