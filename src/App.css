@@ -5980,6 +5980,16 @@
   grid-column: 1 / -1;
 }
 
+.offer-follow-up-readiness-sync-fallback-empty {
+  background: oklch(1 0 0 / 58%);
+  border: 1px dashed oklch(0.82 0.035 235);
+  border-radius: 8px;
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 8px;
+}
+
 .offer-follow-up-activity-actions {
   grid-template-columns: minmax(0, 1fr);
 }

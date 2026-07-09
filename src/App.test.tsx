@@ -922,6 +922,15 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(screen.getByLabelText("Persistence status")).toHaveTextContent("1 sync fallback")
     expect(screen.getByLabelText("Persistence status")).toHaveAttribute("data-severity", "warning")
+    const fallbackFilters = within(readinessHistory).getByLabelText("Follow-up readiness sync fallback filters")
+    const fallbackEvents = within(readinessHistory).getByLabelText("Follow-up readiness sync fallback events")
+    expect(within(fallbackFilters).getByRole("button", { name: "All 1" })).toHaveAttribute("aria-pressed", "true")
+
+    await user.click(within(fallbackFilters).getByRole("button", { name: "Write 0" }))
+
+    expect(within(fallbackFilters).getByRole("button", { name: "Write 0" })).toHaveAttribute("aria-pressed", "true")
+    expect(fallbackEvents).toHaveTextContent("No write fallbacks recorded.")
+    expect(within(fallbackEvents).queryByText("Read fallback")).not.toBeInTheDocument()
   })
 
   it("drills down from the persistence chip to follow-up readiness sync details", async () => {

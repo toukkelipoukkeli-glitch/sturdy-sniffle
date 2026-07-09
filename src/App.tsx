@@ -9455,13 +9455,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
                 </div>
               </div>
               <div aria-label="Follow-up readiness sync fallback events" className="offer-follow-up-readiness-sync-fallback-list">
-                {filteredFallbacks.map((fallback) => (
-                  <div className="offer-follow-up-readiness-sync-fallback-row" key={fallback.eventId}>
-                    <strong>{followUpActivityReadinessSyncOperationLabel(fallback.operation)} fallback</strong>
-                    <span>{formatShortDateTime(fallback.recordedAt)}</span>
-                    <small>{shortFollowUpActivityReadinessKey(fallback.eventId)}</small>
+                {filteredFallbacks.length > 0 ? (
+                  filteredFallbacks.map((fallback) => (
+                    <div className="offer-follow-up-readiness-sync-fallback-row" key={fallback.eventId}>
+                      <strong>{followUpActivityReadinessSyncOperationLabel(fallback.operation)} fallback</strong>
+                      <span>{formatShortDateTime(fallback.recordedAt)}</span>
+                      <small>{shortFollowUpActivityReadinessKey(fallback.eventId)}</small>
+                    </div>
+                  ))
+                ) : (
+                  <div className="offer-follow-up-readiness-sync-fallback-empty" role="status">
+                    No {followUpReadinessSyncFallbackFilterEmptyLabel(fallbackFilter)} fallbacks recorded.
                   </div>
-                ))}
+                )}
               </div>
             </div>
           ) : null}
@@ -9512,6 +9518,17 @@ function followUpReadinessSyncFallbackFilterLabel(
       return `Read ${syncHealth.readFallbackCount}`
     case "write":
       return `Write ${syncHealth.writeFallbackCount}`
+  }
+}
+
+function followUpReadinessSyncFallbackFilterEmptyLabel(filter: OfferFollowUpReadinessSyncFallbackFilter): string {
+  switch (filter) {
+    case "all":
+      return "sync"
+    case "read":
+      return "read"
+    case "write":
+      return "write"
   }
 }
 
