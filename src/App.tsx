@@ -9368,7 +9368,8 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   const [fallbackFilter, setFallbackFilter] = useState<OfferFollowUpReadinessSyncFallbackFilter>("all")
   const filteredFallbacks = syncHealth.recentFallbacks
     .filter((fallback) => fallbackFilter === "all" || fallback.operation === fallbackFilter)
-    .slice(0, 6)
+  const visibleFallbacks = filteredFallbacks.slice(0, 6)
+  const hiddenFallbackCount = Math.max(0, filteredFallbacks.length - visibleFallbacks.length)
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9455,8 +9456,8 @@ function OfferFollowUpActivityReadinessHistoryPanel({
                 </div>
               </div>
               <div aria-label="Follow-up readiness sync fallback events" className="offer-follow-up-readiness-sync-fallback-list">
-                {filteredFallbacks.length > 0 ? (
-                  filteredFallbacks.map((fallback) => (
+                {visibleFallbacks.length > 0 ? (
+                  visibleFallbacks.map((fallback) => (
                     <div className="offer-follow-up-readiness-sync-fallback-row" key={fallback.eventId}>
                       <strong>{followUpActivityReadinessSyncOperationLabel(fallback.operation)} fallback</strong>
                       <span>{formatShortDateTime(fallback.recordedAt)}</span>
@@ -9468,6 +9469,12 @@ function OfferFollowUpActivityReadinessHistoryPanel({
                     No {followUpReadinessSyncFallbackFilterEmptyLabel(fallbackFilter)} fallbacks recorded.
                   </div>
                 )}
+                {hiddenFallbackCount > 0 ? (
+                  <div className="offer-follow-up-readiness-sync-fallback-overflow" role="status">
+                    {hiddenFallbackCount} older {followUpReadinessSyncFallbackFilterEmptyLabel(fallbackFilter)} fallback
+                    {hiddenFallbackCount === 1 ? "" : "s"} hidden.
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
