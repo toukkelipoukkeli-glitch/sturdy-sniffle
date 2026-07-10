@@ -185,9 +185,8 @@ import {
   summarizeProviderRunReadHistoryDiagnostics,
 } from "./domain/providers/providerRunReadHistoryDiagnostics"
 import {
+  buildProviderRunReadHistoryPersistenceSnapshot,
   buildProviderRunReadHistoryPersistenceRecord,
-  PROVIDER_RUN_READ_HISTORY_PERSISTENCE_VERSION,
-  type ProviderRunReadHistoryPersistenceSnapshot,
 } from "./domain/providers/providerRunReadHistoryPersistence"
 import { buildProviderRunReadHistoryRecord } from "./domain/providers/providerRunReadHistory"
 import {
@@ -4729,20 +4728,7 @@ function buildProviderRunReadDiagnostics({
     persistedBy: "FactoryBid Workspace",
     readHistory,
   })
-  const snapshot: ProviderRunReadHistoryPersistenceSnapshot = {
-    convexRecordKeys: readSync.status === "convex" ? [persistenceRecord.recordKey] : [],
-    errorCount: persistenceRecord.errorCount,
-    fallbackRecordKeys: readSync.status === "fallback" ? [persistenceRecord.recordKey] : [],
-    latestRecord: persistenceRecord,
-    localRecordKeys: readSync.status === "local" ? [persistenceRecord.recordKey] : [],
-    localRunCount: persistenceRecord.localRunCount,
-    pendingRecordKeys: readSync.status === "pending" ? [persistenceRecord.recordKey] : [],
-    persistedRunCount: persistenceRecord.persistedRunCount,
-    persistenceVersion: PROVIDER_RUN_READ_HISTORY_PERSISTENCE_VERSION,
-    recordCount: 1,
-    records: [persistenceRecord],
-    statusCounts: { [readSync.status]: 1 },
-  }
+  const snapshot = buildProviderRunReadHistoryPersistenceSnapshot([persistenceRecord])
   return {
     snapshot,
     summary: summarizeProviderRunReadHistoryDiagnostics(snapshot),
