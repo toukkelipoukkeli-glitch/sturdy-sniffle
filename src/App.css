@@ -6876,6 +6876,30 @@
   padding: 10px;
 }
 
+.provider-read-diagnostics {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.provider-read-diagnostics[data-severity="healthy"] {
+  background: oklch(0.97 0.025 155);
+  border-color: oklch(0.84 0.055 155);
+}
+
+.provider-read-diagnostics[data-severity="info"] {
+  background: oklch(0.97 0.025 245);
+  border-color: oklch(0.84 0.05 245);
+}
+
+.provider-read-diagnostics[data-severity="warning"] {
+  background: oklch(0.97 0.038 55);
+  border-color: oklch(0.84 0.075 55);
+}
+
 .provider-read-sync[data-status="convex"] {
   background: oklch(0.96 0.03 155);
   border-color: oklch(0.82 0.06 155);
@@ -6897,13 +6921,21 @@
   min-width: 0;
 }
 
-.provider-read-sync strong {
+.provider-read-diagnostics > div {
+  display: grid;
+  gap: 3px;
+}
+
+.provider-read-sync strong,
+.provider-read-diagnostics strong {
   color: oklch(0.25 0.04 250);
   font-size: 0.82rem;
 }
 
 .provider-read-sync span,
-.provider-read-sync small {
+.provider-read-sync small,
+.provider-read-diagnostics span,
+.provider-read-diagnostics small {
   color: oklch(0.39 0.035 250);
   font-size: 0.74rem;
   line-height: 1.35;
@@ -6914,6 +6946,36 @@
   flex: 0 0 auto;
   font-weight: 800;
   text-align: right;
+}
+
+.provider-read-diagnostics small {
+  font-weight: 800;
+}
+
+.provider-read-diagnostics details {
+  display: grid;
+  gap: 6px;
+}
+
+.provider-read-diagnostics summary {
+  color: oklch(0.34 0.045 250);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.provider-read-diagnostics pre {
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  color: oklch(0.32 0.035 250);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
 }
 
 .provider-history-summary .metric {

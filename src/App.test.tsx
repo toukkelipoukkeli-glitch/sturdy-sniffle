@@ -734,6 +734,13 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Provider read Convex")
       expect(providerReview).toHaveTextContent("1 persisted provider audit merged with 2 local fallback audits.")
       expect(providerReview).toHaveTextContent("Convex 1 · Local 2 · Fallback 0")
+      expect(providerReview).toHaveTextContent("Read diagnostics healthy")
+      expect(providerReview).toHaveTextContent(
+        "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",
+      )
+      expect(providerReview).toHaveTextContent("Diagnostic export")
+      expect(providerReview).toHaveTextContent("Provider run read history: healthy")
+      expect(providerReview).toHaveTextContent("Records: total 1, convex 1, fallback 0, local 0, pending 0")
       expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
       expect(providerReview).toHaveTextContent("Persisted Gemini draft ready.")
       expect(providerReview).toHaveTextContent("Gemini")
@@ -836,6 +843,12 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Provider read Local fallback")
       expect(providerReview).toHaveTextContent("Convex provider-run read failed; showing 2 local provider audits.")
       expect(providerReview).toHaveTextContent("Convex 0 · Local 2 · Fallback 1")
+      expect(providerReview).toHaveTextContent("Read diagnostics fallback")
+      expect(providerReview).toHaveTextContent(
+        "Provider-run read history has 1 read record (0 Convex, 1 fallback, 0 local, 0 pending); latest read used local fallback.",
+      )
+      expect(providerReview).toHaveTextContent("Check Convex provider-run reads before trusting local provider audit history.")
+      expect(providerReview).toHaveTextContent("Provider run read history: fallback")
       expect(providerReview).toHaveTextContent("Detected CNC milling RFQ")
     })
     expect(screen.getByLabelText("Integration health")).toHaveTextContent(
