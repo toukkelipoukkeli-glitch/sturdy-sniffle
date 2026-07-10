@@ -4355,20 +4355,28 @@ function IntegrationStatusPanel({
   status: WorkspaceIntegrationStatus
 }) {
   const [connectorFilter, setConnectorFilter] = useState<ConnectorLinkDrilldownFilter>("all")
-  const [providerDiagnosticCopyFeedback, setProviderDiagnosticCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const [providerDiagnosticCopyFeedback, setProviderDiagnosticCopyFeedback] = useState<{
+    exportSummary: string
+    kind: "copied" | "error" | "idle"
+    rfqId: string
+  }>({ exportSummary: "", kind: "idle", rfqId: "" })
   const connectorDrilldown = useMemo(
     () => buildConnectorLinkDrilldown(connectorSnapshot, { filter: connectorFilter, limit: 6, rfqId }),
     [connectorFilter, connectorSnapshot, rfqId],
   )
-
-  useEffect(() => {
-    setProviderDiagnosticCopyFeedback("idle")
-  }, [providerReadDiagnostics.exportSummary, rfqId])
-
   const handleCopyProviderDiagnostics = async () => {
     const copied = await copyTextToClipboard(providerReadDiagnostics.exportSummary)
-    setProviderDiagnosticCopyFeedback(copied ? "copied" : "error")
+    setProviderDiagnosticCopyFeedback({
+      exportSummary: providerReadDiagnostics.exportSummary,
+      kind: copied ? "copied" : "error",
+      rfqId,
+    })
   }
+  const activeProviderDiagnosticCopyFeedback =
+    providerDiagnosticCopyFeedback.exportSummary === providerReadDiagnostics.exportSummary &&
+    providerDiagnosticCopyFeedback.rfqId === rfqId
+      ? providerDiagnosticCopyFeedback.kind
+      : "idle"
   const providerDiagnosticSummary = providerReadDiagnostics.summary
 
   return (
@@ -4417,12 +4425,12 @@ function IntegrationStatusPanel({
         <div className="integration-provider-read-diagnostics-actions">
           <Button onClick={() => void handleCopyProviderDiagnostics()} size="sm" type="button" variant="outline">
             <Copy aria-hidden="true" />
-            {providerDiagnosticCopyFeedback === "copied" ? "Copied" : "Copy provider diagnostics"}
+            {activeProviderDiagnosticCopyFeedback === "copied" ? "Copied" : "Copy provider diagnostics"}
           </Button>
           <small role="status">
-            {providerDiagnosticCopyFeedback === "copied"
+            {activeProviderDiagnosticCopyFeedback === "copied"
               ? "Provider diagnostics copied from Integration health."
-              : providerDiagnosticCopyFeedback === "error"
+              : activeProviderDiagnosticCopyFeedback === "error"
                 ? "Copy unavailable; open Provider review for the diagnostic export."
                 : "Copy the selected RFQ provider-read diagnostic export."}
           </small>
