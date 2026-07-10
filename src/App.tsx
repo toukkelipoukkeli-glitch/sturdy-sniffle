@@ -2317,15 +2317,17 @@ function App() {
       workspacePersistenceRuntime.mode,
     ],
   )
-  const selectedProviderReadDiagnostics = useMemo(
-    () =>
-      buildProviderRunReadDiagnostics({
-        audits: selectedProviderRuns,
-        readSync: selectedProviderRunReadSync,
-        rfqId: selectedItem.id,
-      }).summary,
-    [selectedItem.id, selectedProviderRunReadSync, selectedProviderRuns],
-  )
+  const selectedProviderReadDiagnostics = useMemo(() => {
+    const diagnostics = buildProviderRunReadDiagnostics({
+      audits: selectedProviderRuns,
+      readSync: selectedProviderRunReadSync,
+      rfqId: selectedItem.id,
+    })
+    return {
+      exportSummary: buildProviderRunReadHistoryDiagnosticExportSummary(diagnostics.snapshot),
+      summary: diagnostics.summary,
+    }
+  }, [selectedItem.id, selectedProviderRunReadSync, selectedProviderRuns])
   const syncConnectorInbox = async () => {
     const item = selectedItem
     const rfqId = item.id
@@ -4345,15 +4347,37 @@ function IntegrationStatusPanel({
   isConnectorSyncing: boolean
   onSyncConnector: () => void
   onSyncReplies: () => void
-  providerReadDiagnostics: ProviderRunReadHistoryDiagnosticSummary
+  providerReadDiagnostics: {
+    exportSummary: string
+    summary: ProviderRunReadHistoryDiagnosticSummary
+  }
   rfqId: string
   status: WorkspaceIntegrationStatus
 }) {
   const [connectorFilter, setConnectorFilter] = useState<ConnectorLinkDrilldownFilter>("all")
+  const [providerDiagnosticCopyFeedback, setProviderDiagnosticCopyFeedback] = useState<{
+    exportSummary: string
+    kind: "copied" | "error" | "idle"
+    rfqId: string
+  }>({ exportSummary: "", kind: "idle", rfqId: "" })
   const connectorDrilldown = useMemo(
     () => buildConnectorLinkDrilldown(connectorSnapshot, { filter: connectorFilter, limit: 6, rfqId }),
     [connectorFilter, connectorSnapshot, rfqId],
   )
+  const handleCopyProviderDiagnostics = async () => {
+    const copied = await copyTextToClipboard(providerReadDiagnostics.exportSummary)
+    setProviderDiagnosticCopyFeedback({
+      exportSummary: providerReadDiagnostics.exportSummary,
+      kind: copied ? "copied" : "error",
+      rfqId,
+    })
+  }
+  const activeProviderDiagnosticCopyFeedback =
+    providerDiagnosticCopyFeedback.exportSummary === providerReadDiagnostics.exportSummary &&
+    providerDiagnosticCopyFeedback.rfqId === rfqId
+      ? providerDiagnosticCopyFeedback.kind
+      : "idle"
+  const providerDiagnosticSummary = providerReadDiagnostics.summary
 
   return (
     <section className="integration-status-panel" aria-label="Integration health">
@@ -4385,19 +4409,32 @@ function IntegrationStatusPanel({
         ))}
       </div>
       <div
-        aria-label={`Provider read diagnostics: ${humanizeKey(providerReadDiagnostics.status)}, ${providerReadDiagnostics.severity}`}
+        aria-label={`Provider read diagnostics: ${humanizeKey(providerDiagnosticSummary.status)}, ${providerDiagnosticSummary.severity}`}
         className="integration-provider-read-diagnostics"
-        data-severity={providerReadDiagnostics.severity}
+        data-severity={providerDiagnosticSummary.severity}
       >
         <div>
-          <strong>Provider diagnostics {humanizeKey(providerReadDiagnostics.status)}</strong>
-          <span>{providerReadDiagnostics.operatorSummary}</span>
+          <strong>Provider diagnostics {humanizeKey(providerDiagnosticSummary.status)}</strong>
+          <span>{providerDiagnosticSummary.operatorSummary}</span>
         </div>
         <small>
-          {providerReadDiagnostics.recoveryActionLabels.length > 0
-            ? providerReadDiagnostics.recoveryActionLabels[0]
+          {providerDiagnosticSummary.recoveryActionLabels.length > 0
+            ? providerDiagnosticSummary.recoveryActionLabels[0]
             : "No provider read recovery action needed."}
         </small>
+        <div className="integration-provider-read-diagnostics-actions">
+          <Button onClick={() => void handleCopyProviderDiagnostics()} size="sm" type="button" variant="outline">
+            <Copy aria-hidden="true" />
+            {activeProviderDiagnosticCopyFeedback === "copied" ? "Copied" : "Copy provider diagnostics"}
+          </Button>
+          <small role="status">
+            {activeProviderDiagnosticCopyFeedback === "copied"
+              ? "Provider diagnostics copied from Integration health."
+              : activeProviderDiagnosticCopyFeedback === "error"
+                ? "Copy unavailable; open Provider review for the diagnostic export."
+                : "Copy the selected RFQ provider-read diagnostic export."}
+          </small>
+        </div>
       </div>
       <RfqCalendarPlanPreview plan={calendarPlan} />
       <ConnectorLinkDrilldownPanel
