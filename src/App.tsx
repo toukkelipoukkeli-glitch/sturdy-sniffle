@@ -324,6 +324,8 @@ import {
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
+  type ProviderRunReadSyncState,
+  type ProviderRunReadSyncStatus,
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import {
@@ -356,15 +358,6 @@ import {
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
-
-type ProviderRunReadSyncStatus = "convex" | "fallback" | "local" | "pending"
-
-interface ProviderRunReadSyncState {
-  fallbackCount: number
-  localRunCount: number
-  persistedRunCount: number
-  status: ProviderRunReadSyncStatus
-}
 
 interface RfqFieldPatch {
   commit?: boolean
@@ -2290,6 +2283,7 @@ function App() {
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
+        providerRunReadSync: selectedProviderRunReadSync,
         providerRuns: selectedProviderRuns,
         replySync: offerReplySync,
         rfqId: selectedItem.id,
@@ -2303,6 +2297,7 @@ function App() {
       selectedConnectorSyncErrorCount,
       selectedConnectorSnapshot,
       selectedItem.id,
+      selectedProviderRunReadSync,
       selectedProviderRuns,
       workspacePersistenceRuntime.mode,
     ],

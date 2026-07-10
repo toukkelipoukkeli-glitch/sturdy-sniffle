@@ -81,7 +81,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ Mock/local/provider adapters explicit; outputs audited with prompt/output/review/failure metadata; AI never required for core calc (`providers/*`).
 - ✅ **Provider run history filterable in UI** — `ProviderRunReviewPanel` exposes provider run summary metrics plus all, failed, fallbacks, skipped, succeeded, and warnings filters backed by `providerRunHistory.ts`.
-- 🟡 **Provider runs read from Convex** — query APIs, a terminal-run read adapter with local fallback, and selected-RFQ optional browser Convex hydration exist; this branch surfaces the read source/fallback state to operators while preserving fixture fallback. → **Slice H (optional)**
+- 🟡 **Provider runs read from Convex** — query APIs, a terminal-run read adapter with local fallback, selected-RFQ optional browser Convex hydration, and operator-visible Provider review read-source/fallback health exist; this branch feeds that state into Integration health. → **Slice H (optional)**
 
 ## §8 Convex / data production readiness
 

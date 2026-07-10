@@ -739,6 +739,9 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Gemini")
       expect(providerReview).toHaveTextContent("convex-input-hash")
     })
+    expect(screen.getByLabelText("Integration health")).toHaveTextContent(
+      "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
+    )
   })
 
   it("prefers persisted provider run audits over local audits with the same run key", async () => {
@@ -835,6 +838,9 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Convex 0 · Local 2 · Fallback 1")
       expect(providerReview).toHaveTextContent("Detected CNC milling RFQ")
     })
+    expect(screen.getByLabelText("Integration health")).toHaveTextContent(
+      "Provider run history fell back to 2 local audits after a Convex read failure.",
+    )
   })
 
   it("hydrates provider outcome readiness snapshots through the Convex browser bridge", async () => {
