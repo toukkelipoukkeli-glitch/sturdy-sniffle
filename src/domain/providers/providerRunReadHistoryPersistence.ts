@@ -107,6 +107,12 @@ export function buildProviderRunReadHistoryPersistenceRecord({
   }
 }
 
+export function buildProviderRunReadHistoryPersistenceSnapshot(
+  records: ProviderRunReadHistoryPersistenceRecord[],
+): ProviderRunReadHistoryPersistenceSnapshot {
+  return normalizeSnapshot({ records })
+}
+
 function normalizeSnapshot(
   snapshot: Partial<ProviderRunReadHistoryPersistenceSnapshot> | undefined,
 ): ProviderRunReadHistoryPersistenceSnapshot {

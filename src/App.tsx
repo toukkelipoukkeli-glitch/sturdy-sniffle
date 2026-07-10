@@ -181,6 +181,15 @@ import {
   createLocalProviderRunReader,
 } from "./domain/providers/convexProviderRun"
 import {
+  buildProviderRunReadHistoryDiagnosticExportSummary,
+  summarizeProviderRunReadHistoryDiagnostics,
+} from "./domain/providers/providerRunReadHistoryDiagnostics"
+import {
+  buildProviderRunReadHistoryPersistenceSnapshot,
+  buildProviderRunReadHistoryPersistenceRecord,
+} from "./domain/providers/providerRunReadHistoryPersistence"
+import { buildProviderRunReadHistoryRecord } from "./domain/providers/providerRunReadHistory"
+import {
   buildProviderRunHistorySummary,
   type ProviderRunHistoryFilter,
 } from "./domain/providers/providerRunHistory"
@@ -2988,7 +2997,7 @@ function App() {
             rfqId={selectedItem.id}
             status={integrationStatus}
           />
-          <ProviderRunReviewPanel audits={selectedProviderRuns} readSync={selectedProviderRunReadSync} />
+          <ProviderRunReviewPanel audits={selectedProviderRuns} readSync={selectedProviderRunReadSync} rfqId={selectedItem.id} />
         </aside>
       </section>
       {isCreatingRfq ? <RfqCreateDialog onCancel={() => setIsCreatingRfq(false)} onCreate={createRfq} /> : null}
@@ -4559,7 +4568,15 @@ function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) 
   return <Database aria-hidden="true" />
 }
 
-function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit[]; readSync: ProviderRunReadSyncState }) {
+function ProviderRunReviewPanel({
+  audits,
+  readSync,
+  rfqId,
+}: {
+  audits: ProviderRunAudit[]
+  readSync: ProviderRunReadSyncState
+  rfqId: string
+}) {
   const [filter, setFilter] = useState<ProviderRunHistoryFilter>("all")
   const latestAudit = audits[0]
   if (!latestAudit) {
@@ -4568,6 +4585,8 @@ function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit
   const history = buildProviderRunHistorySummary(audits, { filter })
   const readSyncLabel = providerRunReadSyncLabel(readSync.status)
   const readSyncSummary = providerRunReadSyncPanelSummary(readSync)
+  const readDiagnostics = buildProviderRunReadDiagnostics({ audits, readSync, rfqId })
+  const readDiagnosticExportSummary = buildProviderRunReadHistoryDiagnosticExportSummary(readDiagnostics.snapshot)
   const auditByRunKey = new Map(audits.map((audit) => [audit.runKey, audit]))
   const visibleAudits = history.events
     .map((event) => auditByRunKey.get(event.runKey))
@@ -4590,6 +4609,26 @@ function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit
         <small>
           Convex {readSync.persistedRunCount} · Local {readSync.localRunCount} · Fallback {readSync.fallbackCount}
         </small>
+      </div>
+      <div
+        className="provider-read-diagnostics"
+        data-severity={readDiagnostics.summary.severity}
+        aria-label="Provider run read diagnostics"
+      >
+        <div>
+          <strong>Read diagnostics {humanizeKey(readDiagnostics.summary.status)}</strong>
+          <span>{readDiagnostics.summary.operatorSummary}</span>
+        </div>
+        <small>
+          {readDiagnostics.summary.severity}
+          {readDiagnostics.summary.recoveryActionLabels.length > 0
+            ? ` · ${readDiagnostics.summary.recoveryActionLabels[0]}`
+            : " · No recovery action needed"}
+        </small>
+        <details>
+          <summary>Diagnostic export</summary>
+          <pre>{readDiagnosticExportSummary}</pre>
+        </details>
       </div>
       <div className="provider-history-summary" aria-label="Provider run history summary">
         <Metric label="Runs" value={String(history.totalRuns)} />
@@ -4657,6 +4696,51 @@ function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit
       </div>
     </section>
   )
+}
+
+function buildProviderRunReadDiagnostics({
+  audits,
+  readSync,
+  rfqId,
+}: {
+  audits: ProviderRunAudit[]
+  readSync: ProviderRunReadSyncState
+  rfqId: string
+}) {
+  const persistedAuditKeys = audits
+    .filter((audit) => audit.promptExcerpt === "Persisted provider run read from Convex.")
+    .map((audit) => audit.runKey)
+  const localAuditKeys = audits
+    .filter((audit) => audit.promptExcerpt !== "Persisted provider run read from Convex.")
+    .map((audit) => audit.runKey)
+  const readHistory = buildProviderRunReadHistoryRecord({
+    errorMessages:
+      readSync.status === "fallback"
+        ? ["Convex provider-run read failed; local provider audit history is displayed."]
+        : [],
+    localRunKeys: fillProviderRunKeys(localAuditKeys, readSync.localRunCount, `${rfqId}:local-provider-run`),
+    persistedRunKeys: fillProviderRunKeys(persistedAuditKeys, readSync.persistedRunCount, `${rfqId}:persisted-provider-run`),
+    recordedAt: audits[0]?.completedAt ?? audits[0]?.startedAt ?? "1970-01-01T00:00:00.000Z",
+    rfqId,
+    sync: readSync,
+  })
+  const persistenceRecord = buildProviderRunReadHistoryPersistenceRecord({
+    persistedBy: "FactoryBid Workspace",
+    readHistory,
+  })
+  const snapshot = buildProviderRunReadHistoryPersistenceSnapshot([persistenceRecord])
+  return {
+    snapshot,
+    summary: summarizeProviderRunReadHistoryDiagnostics(snapshot),
+  }
+}
+
+function fillProviderRunKeys(keys: string[], expectedCount: number, fallbackPrefix: string): string[] {
+  const filled = keys.slice(0, expectedCount)
+  for (let index = filled.length; index < expectedCount; index += 1) {
+    filled.push(`${fallbackPrefix}-${index + 1}`)
+  }
+  return filled
 }
 
 function providerHistoryFilterLabel(

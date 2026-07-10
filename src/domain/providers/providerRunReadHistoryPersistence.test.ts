@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildProviderRunReadHistoryPersistenceSnapshot,
   createLocalProviderRunReadHistoryPersistence,
   PROVIDER_RUN_READ_HISTORY_PERSISTENCE_VERSION,
   type ProviderRunReadHistoryPersistenceRecord,
@@ -144,6 +145,49 @@ describe("provider run read history persistence", () => {
         recordKey: "same-read",
       },
       recordCount: 1,
+    })
+  })
+
+  it("normalizes direct persistence snapshots with the same bucket rules as adapters", () => {
+    const localRecord = persistenceRecord({
+      persistedAt: "2026-07-10T09:00:00.000Z",
+      readHistory: readHistory({
+        localRunKeys: ["local-1"],
+        recordKey: "local-read",
+        sync: buildProviderRunReadSyncState("local", 1, 0),
+      }),
+    })
+    const fallbackRecord = persistenceRecord({
+      persistedAt: "2026-07-10T10:00:00.000Z",
+      readHistory: readHistory({
+        errorMessages: ["Convex read failed."],
+        localRunKeys: ["local-1", "local-2"],
+        recordKey: "fallback-read",
+        sync: buildProviderRunReadSyncState("fallback", 2, 0),
+      }),
+    })
+
+    const snapshot = buildProviderRunReadHistoryPersistenceSnapshot([localRecord, fallbackRecord])
+
+    expect(snapshot).toMatchObject({
+      errorCount: 1,
+      fallbackRecordKeys: ["fallback-read"],
+      latestRecord: {
+        recordKey: "fallback-read",
+        status: "fallback",
+      },
+      localRecordKeys: ["local-read"],
+      localRunCount: 3,
+      persistedRunCount: 0,
+      recordCount: 2,
+      records: [
+        { recordKey: "fallback-read" },
+        { recordKey: "local-read" },
+      ],
+      statusCounts: {
+        fallback: 1,
+        local: 1,
+      },
     })
   })
 
