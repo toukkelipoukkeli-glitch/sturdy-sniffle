@@ -43,6 +43,7 @@ export interface ConvexProviderRunReadRecord {
 
 export interface ProviderRunReadOptions {
   limit?: number
+  rfqId?: unknown
   status?: ProviderRunStatus
 }
 
@@ -210,6 +211,7 @@ function normalizeTerminalStatus(status: string): ProviderRunStatus {
 function compactListArgs(options: ProviderRunReadOptions): Record<string, unknown> {
   return {
     ...(options.limit === undefined ? {} : { limit: nonNegativeInteger(options.limit, "limit") }),
+    ...(options.rfqId === undefined ? {} : { rfqId: nonBlankUnknown(options.rfqId, "rfqId") }),
     ...(options.status === undefined ? {} : { status: normalizeStatus(options.status) }),
   }
 }
