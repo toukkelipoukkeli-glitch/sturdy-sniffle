@@ -4624,10 +4624,10 @@ function providerHistoryFilterLabel(
 
 function mergeProviderRunAudits(localAudits: ProviderRunAudit[], persistedAudits: ProviderRunAudit[]): ProviderRunAudit[] {
   const auditsByRunKey = new Map<string, ProviderRunAudit>()
-  for (const audit of persistedAudits) {
+  for (const audit of localAudits) {
     auditsByRunKey.set(audit.runKey, audit)
   }
-  for (const audit of localAudits) {
+  for (const audit of persistedAudits) {
     auditsByRunKey.set(audit.runKey, audit)
   }
   return [...auditsByRunKey.values()].sort(
