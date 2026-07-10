@@ -6801,6 +6801,48 @@
   flex: 1 1 180px;
 }
 
+.provider-read-diagnostic-actions-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.provider-read-diagnostic-actions-list li {
+  background: rgb(255 255 255 / 70%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+}
+
+.provider-read-diagnostic-actions-list li[data-severity="healthy"] {
+  border-color: oklch(0.82 0.055 155);
+}
+
+.provider-read-diagnostic-actions-list li[data-severity="info"] {
+  border-color: oklch(0.82 0.05 245);
+}
+
+.provider-read-diagnostic-actions-list li[data-severity="warning"] {
+  border-color: oklch(0.82 0.08 55);
+}
+
+.provider-read-diagnostic-actions-list strong {
+  color: oklch(0.27 0.04 250);
+  font-size: 0.74rem;
+}
+
+.provider-read-diagnostic-actions-list span {
+  color: oklch(0.4 0.035 250);
+  font-size: 0.72rem;
+  font-weight: 720;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .connector-drilldown {
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;

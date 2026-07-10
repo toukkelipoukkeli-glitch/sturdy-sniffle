@@ -20,6 +20,14 @@ describe("provider run read history diagnostics", () => {
     expect(summarizeProviderRunReadHistoryDiagnostics(emptySnapshot())).toEqual({
       diagnosticVersion: PROVIDER_RUN_READ_HISTORY_DIAGNOSTICS_VERSION,
       latestRecord: undefined,
+      nextActionItems: [
+        {
+          detail: "No provider-read fallback is recorded for this RFQ; continue monitoring persisted read history.",
+          key: "monitor-provider-read-history",
+          label: "Monitor provider reads",
+          severity: "healthy",
+        },
+      ],
       operatorSummary: "Provider-run read history has no persisted read records yet.",
       recentRecords: [],
       recoveryActionLabels: [],
@@ -46,6 +54,20 @@ describe("provider run read history diagnostics", () => {
         status: "fallback",
       },
       operatorSummary: "Provider-run read history has 1 read record (0 Convex, 1 fallback, 0 local, 0 pending); latest read used local fallback.",
+      nextActionItems: [
+        {
+          detail: "Convex provider-run reads failed; compare local audits before using release decisions.",
+          key: "verify-convex-provider-reads",
+          label: "Verify Convex provider reads",
+          severity: "warning",
+        },
+        {
+          detail: "Keep local provider audit history visible until the persisted read path recovers.",
+          key: "keep-local-provider-audits",
+          label: "Keep local audits visible",
+          severity: "info",
+        },
+      ],
       recoveryActionLabels: [providerRunReadHistoryFallbackRecoveryAction],
       severity: "warning",
       status: "fallback",
@@ -87,6 +109,20 @@ describe("provider run read history diagnostics", () => {
     ])
 
     expect(summarizeProviderRunReadHistoryDiagnostics(mixedSnapshot)).toMatchObject({
+      nextActionItems: [
+        {
+          detail: "Fallback and persisted reads are both present; reconcile the newest fallback before trusting merged audits.",
+          key: "reconcile-provider-read-sources",
+          label: "Reconcile read sources",
+          severity: "warning",
+        },
+        {
+          detail: "Copy the diagnostic export into the provider incident or handoff before clearing fallback history.",
+          key: "attach-provider-diagnostic-export",
+          label: "Attach diagnostic export",
+          severity: "info",
+        },
+      ],
       operatorSummary:
         "Provider-run read history has 2 read records (1 Convex, 1 fallback, 0 local, 0 pending); review fallback records before trusting merged provider audits.",
       recoveryActionLabels: [providerRunReadHistoryFallbackRecoveryAction],
@@ -94,6 +130,14 @@ describe("provider run read history diagnostics", () => {
       status: "mixed",
     })
     expect(summarizeProviderRunReadHistoryDiagnostics(healthySnapshot)).toMatchObject({
+      nextActionItems: [
+        {
+          detail: "No provider-read fallback is recorded for this RFQ; continue monitoring persisted read history.",
+          key: "monitor-provider-read-history",
+          label: "Monitor provider reads",
+          severity: "healthy",
+        },
+      ],
       operatorSummary: "Provider-run read history has 2 read records (1 Convex, 0 fallback, 1 local, 0 pending); no fallback reads recorded.",
       recoveryActionLabels: [],
       severity: "healthy",
@@ -112,6 +156,14 @@ describe("provider run read history diagnostics", () => {
     ])
 
     expect(summarizeProviderRunReadHistoryDiagnostics(snapshot)).toMatchObject({
+      nextActionItems: [
+        {
+          detail: "Convex provider-run reads are still pending; keep local provider audits visible while the read settles.",
+          key: "wait-for-convex-provider-read",
+          label: "Wait for Convex read",
+          severity: "info",
+        },
+      ],
       operatorSummary: "Provider-run read history has 1 read record (0 Convex, 0 fallback, 0 local, 1 pending); Convex reads are still pending.",
       recoveryActionLabels: [providerRunReadHistoryPendingRecoveryAction],
       severity: "info",
@@ -146,6 +198,9 @@ describe("provider run read history diagnostics", () => {
         "Summary: Provider-run read history has 2 read records (1 Convex, 1 fallback, 0 local, 0 pending); review fallback records before trusting merged provider audits.",
         "Latest read: fallback 2026-07-10T10:00:00.000Z fallback-read",
         `Recovery actions: ${providerRunReadHistoryFallbackRecoveryAction}`,
+        "Next actions:",
+        "- warning Reconcile read sources: Fallback and persisted reads are both present; reconcile the newest fallback before trusting merged audits.",
+        "- info Attach diagnostic export: Copy the diagnostic export into the provider incident or handoff before clearing fallback history.",
         "Recent provider reads:",
         "- fallback 2026-07-10T10:00:00.000Z fallback-read rfq-204",
         "- convex 2026-07-10T09:00:00.000Z convex-read rfq-204",
