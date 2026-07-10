@@ -5922,6 +5922,18 @@
   overflow-wrap: anywhere;
 }
 
+.offer-follow-up-readiness-sync-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.offer-follow-up-readiness-sync-actions small {
+  min-width: min(100%, 220px);
+}
+
 .offer-follow-up-readiness-sync-fallback-events {
   display: grid;
   gap: 6px;

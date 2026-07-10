@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-08 Europe/Helsinki.
+Last refreshed: 2026-07-10 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `dea7ece` (`Show empty sync fallback filter states (#298)`).
-- Open PRs at this checkpoint: none on `main`; this branch is adding overflow copy for retained sync fallback events hidden by the six-row panel cap.
-- In-flight PR at this checkpoint: `codex/followup-sync-health-overflow` shows how many older fallback events are hidden when the filtered list is capped.
+- Main branch checkpoint: `119a8bc` (`Show hidden sync fallback overflow (#299)`).
+- Open PRs at this checkpoint: none on `main`; this branch is adding a copyable follow-up readiness sync-health diagnostic summary for operator handoff/debugging.
+- In-flight PR at this checkpoint: `codex/followup-sync-health-export-summary` copies a deterministic sync-health summary with fallback counts, recency, recovery actions, and retained event IDs.
 - Latest merged sequence:
+  - `#299` shows how many older fallback events are hidden when the filtered sync fallback list is capped at six rows.
   - `#298` shows an explicit empty state when a selected read/write fallback filter has no events.
   - `#297` surfaces deterministic newest-first recent fallback events in the Offer sync-health drill-down with All/Read/Write filters.
   - `#296` adds a guarded Review action to the topbar persistence chip so warning/critical fallback health routes operators to the detailed Offer sync panels.

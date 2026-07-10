@@ -1288,6 +1288,11 @@ describe("FactoryBid workspace (component)", () => {
 
   it("restores follow-up readiness sync fallback health from local storage", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     window.__FACTORYBID_WORKSPACE_CONVEX__ = {
       mutationRefs: {
         recordWorkspaceActivity: "recordWorkspaceActivity",
@@ -1352,6 +1357,14 @@ describe("FactoryBid workspace (component)", () => {
     const fallbackEvents = within(restoredHistory).getByLabelText("Follow-up readiness sync fallback events")
     expect(within(fallbackEvents).getAllByText(/fallback$/)).toHaveLength(6)
     expect(fallbackEvents).toHaveTextContent("6 older sync fallbacks hidden.")
+    await user.click(within(restoredHistory).getByRole("button", { name: "Copy sync summary" }))
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain("Follow-up readiness sync health: read_write_fallback")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Fallbacks: total 12, read 6, write 6")
+    expect(writeText.mock.calls[0]?.[0]).toContain(
+      "offer-follow-up-activity-readiness-sync:read:offer-204:rfq-204:2026-06-18T05:00:00.000Z:seed-0",
+    )
+    expect(restoredHistory).toHaveTextContent("Sync-health summary copied for diagnostics.")
 
     await user.click(within(fallbackFilters).getByRole("button", { name: "Write 6" }))
 

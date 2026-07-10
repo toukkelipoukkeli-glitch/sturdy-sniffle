@@ -103,6 +103,7 @@ import {
   type OfferFollowUpActivityReadinessSyncSummary,
 } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import {
+  buildOfferFollowUpActivityReadinessSyncHealthExportSummary,
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
   type OfferFollowUpActivityReadinessSyncHealthEvent,
@@ -9370,6 +9371,12 @@ function OfferFollowUpActivityReadinessHistoryPanel({
     .filter((fallback) => fallbackFilter === "all" || fallback.operation === fallbackFilter)
   const visibleFallbacks = filteredFallbacks.slice(0, 6)
   const hiddenFallbackCount = Math.max(0, filteredFallbacks.length - visibleFallbacks.length)
+  const syncHealthExportSummary = buildOfferFollowUpActivityReadinessSyncHealthExportSummary(syncHealth)
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopySyncHealthSummary = async () => {
+    const copied = await copyTextToClipboard(syncHealthExportSummary)
+    setCopyFeedback(copied ? "copied" : "error")
+  }
 
   return (
     <section className="offer-follow-up-readiness-history-panel" aria-label="Follow-up activity readiness history">
@@ -9434,6 +9441,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
               ))}
             </ul>
           ) : null}
+          <div className="offer-follow-up-readiness-sync-actions">
+            <Button onClick={() => void handleCopySyncHealthSummary()} size="sm" type="button" variant="outline">
+              <Copy aria-hidden="true" />
+              {copyFeedback === "copied" ? "Copied" : "Copy sync summary"}
+            </Button>
+            <small role="status">
+              {copyFeedback === "copied"
+                ? "Sync-health summary copied for diagnostics."
+                : copyFeedback === "error"
+                  ? "Copy unavailable; select the sync-health details manually."
+                  : "Copy a deterministic sync-health summary for diagnostics."}
+            </small>
+          </div>
           {syncHealth.recentFallbacks.length > 0 ? (
             <div className="offer-follow-up-readiness-sync-fallback-events">
               <div className="offer-follow-up-readiness-sync-fallback-heading">
