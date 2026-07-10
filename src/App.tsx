@@ -183,6 +183,7 @@ import {
 import {
   buildProviderRunReadHistoryDiagnosticExportSummary,
   summarizeProviderRunReadHistoryDiagnostics,
+  type ProviderRunReadHistoryDiagnosticActionItem,
   type ProviderRunReadHistoryDiagnosticSummary,
 } from "./domain/providers/providerRunReadHistoryDiagnostics"
 import {
@@ -4422,6 +4423,7 @@ function IntegrationStatusPanel({
             ? providerDiagnosticSummary.recoveryActionLabels[0]
             : "No provider read recovery action needed."}
         </small>
+        <ProviderReadDiagnosticActionList actions={providerDiagnosticSummary.nextActionItems} />
         <div className="integration-provider-read-diagnostics-actions">
           <Button onClick={() => void handleCopyProviderDiagnostics()} size="sm" type="button" variant="outline">
             <Copy aria-hidden="true" />
@@ -4695,6 +4697,7 @@ function ProviderRunReviewPanel({
             ? ` · ${readDiagnostics.summary.recoveryActionLabels[0]}`
             : " · No recovery action needed"}
         </small>
+        <ProviderReadDiagnosticActionList actions={readDiagnostics.summary.nextActionItems} />
         <details>
           <summary>Diagnostic export</summary>
           <div className="provider-read-diagnostics-actions">
@@ -4778,6 +4781,23 @@ function ProviderRunReviewPanel({
         )}
       </div>
     </section>
+  )
+}
+
+function ProviderReadDiagnosticActionList({
+  actions,
+}: {
+  actions: ProviderRunReadHistoryDiagnosticActionItem[]
+}) {
+  return (
+    <ul className="provider-read-diagnostic-actions-list" aria-label="Provider read diagnostic next actions">
+      {actions.map((action) => (
+        <li data-severity={action.severity} key={action.key}>
+          <strong>{action.label}</strong>
+          <span>{action.detail}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
 

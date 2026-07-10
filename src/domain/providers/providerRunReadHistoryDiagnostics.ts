@@ -14,9 +14,17 @@ export const providerRunReadHistoryPendingRecoveryAction =
 export type ProviderRunReadHistoryDiagnosticStatus = "fallback" | "healthy" | "mixed" | "pending"
 export type ProviderRunReadHistoryDiagnosticSeverity = "healthy" | "info" | "warning"
 
+export interface ProviderRunReadHistoryDiagnosticActionItem {
+  detail: string
+  key: string
+  label: string
+  severity: ProviderRunReadHistoryDiagnosticSeverity
+}
+
 export interface ProviderRunReadHistoryDiagnosticSummary {
   diagnosticVersion: typeof PROVIDER_RUN_READ_HISTORY_DIAGNOSTICS_VERSION
   latestRecord?: ProviderRunReadHistoryPersistenceRecord
+  nextActionItems: ProviderRunReadHistoryDiagnosticActionItem[]
   operatorSummary: string
   recentRecords: ProviderRunReadHistoryPersistenceRecord[]
   recoveryActionLabels: string[]
@@ -34,6 +42,7 @@ export function summarizeProviderRunReadHistoryDiagnostics(
   return {
     diagnosticVersion: PROVIDER_RUN_READ_HISTORY_DIAGNOSTICS_VERSION,
     latestRecord: recentRecords[0],
+    nextActionItems: nextActionsForStatus(status),
     operatorSummary: buildOperatorSummary(snapshot, status),
     recentRecords,
     recoveryActionLabels: recoveryActionsForStatus(status),
@@ -62,6 +71,12 @@ export function buildProviderRunReadHistoryDiagnosticExportSummary(
   }
   if (diagnostic.recoveryActionLabels.length > 0) {
     lines.push(`Recovery actions: ${diagnostic.recoveryActionLabels.join(" | ")}`)
+  }
+  if (diagnostic.nextActionItems.length > 0) {
+    lines.push("Next actions:")
+    for (const action of diagnostic.nextActionItems) {
+      lines.push(`- ${action.severity} ${action.label}: ${action.detail}`)
+    }
   }
   if (diagnostic.recentRecords.length > 0) {
     lines.push("Recent provider reads:")
@@ -127,6 +142,59 @@ function recoveryActionsForStatus(status: ProviderRunReadHistoryDiagnosticStatus
       return [providerRunReadHistoryPendingRecoveryAction]
     case "healthy":
       return []
+  }
+}
+
+function nextActionsForStatus(status: ProviderRunReadHistoryDiagnosticStatus): ProviderRunReadHistoryDiagnosticActionItem[] {
+  switch (status) {
+    case "fallback":
+      return [
+        {
+          detail: "Convex provider-run reads failed; compare local audits before using release decisions.",
+          key: "verify-convex-provider-reads",
+          label: "Verify Convex provider reads",
+          severity: "warning",
+        },
+        {
+          detail: "Keep local provider audit history visible until the persisted read path recovers.",
+          key: "keep-local-provider-audits",
+          label: "Keep local audits visible",
+          severity: "info",
+        },
+      ]
+    case "mixed":
+      return [
+        {
+          detail: "Fallback and persisted reads are both present; reconcile the newest fallback before trusting merged audits.",
+          key: "reconcile-provider-read-sources",
+          label: "Reconcile read sources",
+          severity: "warning",
+        },
+        {
+          detail: "Copy the diagnostic export into the provider incident or handoff before clearing fallback history.",
+          key: "attach-provider-diagnostic-export",
+          label: "Attach diagnostic export",
+          severity: "info",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Convex provider-run reads are still pending; keep local provider audits visible while the read settles.",
+          key: "wait-for-convex-provider-read",
+          label: "Wait for Convex read",
+          severity: "info",
+        },
+      ]
+    case "healthy":
+      return [
+        {
+          detail: "No provider-read fallback is recorded for this RFQ; continue monitoring persisted read history.",
+          key: "monitor-provider-read-history",
+          label: "Monitor provider reads",
+          severity: "healthy",
+        },
+      ]
   }
 }
 

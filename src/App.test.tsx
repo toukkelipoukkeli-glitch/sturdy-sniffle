@@ -747,6 +747,10 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Diagnostic export")
       expect(providerReview).toHaveTextContent("Provider run read history: healthy")
       expect(providerReview).toHaveTextContent("Records: total 1, convex 1, fallback 0, local 0, pending 0")
+      expect(providerReview).toHaveTextContent("Monitor provider reads")
+      expect(providerReview).toHaveTextContent(
+        "No provider-read fallback is recorded for this RFQ; continue monitoring persisted read history.",
+      )
       expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
       expect(providerReview).toHaveTextContent("Persisted Gemini draft ready.")
       expect(providerReview).toHaveTextContent("Gemini")
@@ -764,6 +768,7 @@ describe("FactoryBid workspace (component)", () => {
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",
     )
     expect(integrationHealth).toHaveTextContent("No provider read recovery action needed.")
+    expect(integrationHealth).toHaveTextContent("Monitor provider reads")
     expect(screen.getByLabelText("Provider read diagnostics: healthy, healthy")).toHaveAttribute("data-severity", "healthy")
     expect(integrationHealth).toHaveTextContent("Copy the selected RFQ provider-read diagnostic export.")
     await user.click(within(integrationHealth).getByRole("button", { name: "Copy provider diagnostics" }))
@@ -879,6 +884,8 @@ describe("FactoryBid workspace (component)", () => {
         "Provider-run read history has 1 read record (0 Convex, 1 fallback, 0 local, 0 pending); latest read used local fallback.",
       )
       expect(providerReview).toHaveTextContent("Check Convex provider-run reads before trusting local provider audit history.")
+      expect(providerReview).toHaveTextContent("Verify Convex provider reads")
+      expect(providerReview).toHaveTextContent("Keep local audits visible")
       expect(providerReview).toHaveTextContent("Provider run read history: fallback")
       expect(providerReview).toHaveTextContent("Detected CNC milling RFQ")
     })
@@ -888,6 +895,8 @@ describe("FactoryBid workspace (component)", () => {
       "Provider-run read history has 1 read record (0 Convex, 1 fallback, 0 local, 0 pending); latest read used local fallback.",
     )
     expect(integrationHealth).toHaveTextContent("Check Convex provider-run reads before trusting local provider audit history.")
+    expect(integrationHealth).toHaveTextContent("Verify Convex provider reads")
+    expect(integrationHealth).toHaveTextContent("Keep local provider audit history visible until the persisted read path recovers.")
     expect(within(integrationHealth).getByRole("button", { name: "Copy provider diagnostics" })).toBeInTheDocument()
     expect(integrationHealth).toHaveTextContent("Copy the selected RFQ provider-read diagnostic export.")
     await user.click(within(integrationHealth).getByRole("button", { name: "Copy provider diagnostics" }))
