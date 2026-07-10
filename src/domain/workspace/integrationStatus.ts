@@ -2,6 +2,11 @@ import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
+import {
+  providerRunReadSyncIntegrationDetail,
+  providerRunReadSyncIntegrationReviewSuffix,
+  type ProviderRunReadSyncState,
+} from "../providers/providerRunReadSync"
 import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
 export type IntegrationHealthStatus = "live" | "fallback" | "attention" | "blocked"
@@ -36,15 +41,6 @@ export interface IntegrationStatusSource {
   status: IntegrationStatusSourceStatus
   detail: string
   count?: number
-}
-
-export type ProviderRunReadSyncStatus = "convex" | "fallback" | "local" | "pending"
-
-export interface ProviderRunReadSyncState {
-  fallbackCount: number
-  localRunCount: number
-  persistedRunCount: number
-  status: ProviderRunReadSyncStatus
 }
 
 export interface WorkspaceIntegrationStatusInput {
@@ -246,7 +242,7 @@ function providerRunSource(
   if (readSync?.status === "fallback") {
     return {
       count: providerRuns.length,
-      detail: `Provider run history fell back to ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"} after a Convex read failure.`,
+      detail: providerRunReadSyncIntegrationDetail(readSync),
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
@@ -257,7 +253,7 @@ function providerRunSource(
   if (readSync?.status === "pending") {
     return {
       count: providerRuns.length,
-      detail: `Checking Convex provider-run history; ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"} remain visible.`,
+      detail: providerRunReadSyncIntegrationDetail(readSync),
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
@@ -266,13 +262,9 @@ function providerRunSource(
   }
 
   if (reviewCount > 0) {
-    const persistedText =
-      readSync?.status === "convex" && readSync.persistedRunCount > 0
-        ? ` ${readSync.persistedRunCount} persisted provider audit${readSync.persistedRunCount === 1 ? "" : "s"} read from Convex.`
-        : ""
     return {
       count: providerRuns.length,
-      detail: `${reviewCount} provider run${reviewCount === 1 ? "" : "s"} used fallback or warning paths.${persistedText}`,
+      detail: `${reviewCount} provider run${reviewCount === 1 ? "" : "s"} used fallback or warning paths.${readSync ? providerRunReadSyncIntegrationReviewSuffix(readSync) : ""}`,
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
@@ -283,10 +275,7 @@ function providerRunSource(
   if (readSync?.status === "convex") {
     return {
       count: providerRuns.length,
-      detail:
-        readSync.persistedRunCount > 0
-          ? `${readSync.persistedRunCount} persisted provider audit${readSync.persistedRunCount === 1 ? "" : "s"} read from Convex and merged with ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"}.`
-          : `Convex returned no persisted provider runs; ${readSync.localRunCount} local provider audit${readSync.localRunCount === 1 ? "" : "s"} remain visible.`,
+      detail: providerRunReadSyncIntegrationDetail(readSync),
       key: "provider_runs",
       label: "Provider runs",
       severity: "healthy",
@@ -297,7 +286,7 @@ function providerRunSource(
   if (readSync?.status === "local") {
     return {
       count: providerRuns.length,
-      detail: `${readSync.localRunCount} local provider audit${readSync.localRunCount === 1 ? "" : "s"} available; Convex provider-run reads are not configured.`,
+      detail: providerRunReadSyncIntegrationDetail(readSync),
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
