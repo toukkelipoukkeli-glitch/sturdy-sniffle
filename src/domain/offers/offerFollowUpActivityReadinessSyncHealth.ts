@@ -56,6 +56,35 @@ export interface OfferFollowUpActivityReadinessSyncHealthSummary {
   writeFallbackCount: number
 }
 
+export function buildOfferFollowUpActivityReadinessSyncHealthExportSummary(
+  summary: OfferFollowUpActivityReadinessSyncHealthSummary,
+): string {
+  const lines = [
+    `Follow-up readiness sync health: ${summary.status}`,
+    `Severity: ${summary.severity}`,
+    `Fallbacks: total ${summary.totalFallbackCount}, read ${summary.readFallbackCount}, write ${summary.writeFallbackCount}`,
+    `Recency: ${summary.latestFallbackRecency}`,
+    `Summary: ${summary.operatorSummary}`,
+  ]
+
+  if (summary.latestFallback) {
+    lines.push(
+      `Latest fallback: ${summary.latestFallback.operation} ${summary.latestFallback.recordedAt} ${summary.latestFallback.eventId}`,
+    )
+  }
+  if (summary.recoveryActionLabels.length > 0) {
+    lines.push(`Recovery actions: ${summary.recoveryActionLabels.join(" | ")}`)
+  }
+  if (summary.recentFallbacks.length > 0) {
+    lines.push("Recent fallbacks:")
+    for (const fallback of summary.recentFallbacks) {
+      lines.push(`- ${fallback.operation} ${fallback.recordedAt} ${fallback.eventId}`)
+    }
+  }
+
+  return lines.join("\n")
+}
+
 export function buildOfferFollowUpActivityReadinessSyncHealthEvent(
   input: OfferFollowUpActivityReadinessSyncHealthEventInput,
 ): OfferFollowUpActivityReadinessSyncHealthEvent {

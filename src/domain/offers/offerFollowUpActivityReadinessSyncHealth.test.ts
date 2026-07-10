@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  buildOfferFollowUpActivityReadinessSyncHealthExportSummary,
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   OFFER_FOLLOW_UP_ACTIVITY_READINESS_SYNC_HEALTH_VERSION,
   offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
@@ -171,6 +172,38 @@ describe("offer follow-up activity readiness sync health", () => {
       totalFallbackCount: 0,
       writeFallbackCount: 0,
     })
+  })
+
+  it("builds a deterministic operator export summary", () => {
+    const readFallback = syncHealthEvent({
+      operation: "read",
+      recordedAt: "2026-07-03T07:00:00.000Z",
+    })
+    const writeFallback = syncHealthEvent({
+      operation: "write",
+      recordedAt: "2026-07-03T07:05:00.000Z",
+    })
+
+    expect(
+      buildOfferFollowUpActivityReadinessSyncHealthExportSummary(
+        summarizeOfferFollowUpActivityReadinessSyncHealth([readFallback, writeFallback], {
+          now: "2026-07-04T08:05:01.000Z",
+        }),
+      ),
+    ).toBe(
+      [
+        "Follow-up readiness sync health: read_write_fallback",
+        "Severity: critical",
+        "Fallbacks: total 2, read 1, write 1",
+        "Recency: stale",
+        "Summary: Follow-up readiness persistence used 2 fallbacks (read 1, write 1); latest fallback is stale.",
+        `Latest fallback: write 2026-07-03T07:05:00.000Z ${writeFallback.eventId}`,
+        `Recovery actions: ${offerFollowUpActivityReadinessSyncHealthReadRecoveryAction} | ${offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction}`,
+        "Recent fallbacks:",
+        `- write 2026-07-03T07:05:00.000Z ${writeFallback.eventId}`,
+        `- read 2026-07-03T07:00:00.000Z ${readFallback.eventId}`,
+      ].join("\n"),
+    )
   })
 
   it("rejects malformed fallback events", () => {
