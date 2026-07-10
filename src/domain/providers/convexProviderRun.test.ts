@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import { createMockProviderAdapter, hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./ai"
-import { buildConvexProviderRunPayload, type ConvexProviderRunPayload } from "./convexProviderRun"
-import { buildProviderRunAudit } from "./providerRunAudit"
+import {
+  buildConvexProviderRunPayload,
+  buildProviderRunAuditFromConvex,
+  createConvexProviderRunReader,
+  createLocalProviderRunReader,
+  type ConvexProviderRunPayload,
+} from "./convexProviderRun"
+import { buildProviderRunAudit, type ProviderRunAudit } from "./providerRunAudit"
 
 const request: ProviderRunRequest = {
   input: {
@@ -130,4 +136,180 @@ describe("Convex provider run persistence payload", () => {
       }),
     ).toThrow("audit.completedAt must be on or after audit.startedAt")
   })
+
+  it("hydrates terminal provider run audits from Convex read records", () => {
+    expect(
+      buildProviderRunAuditFromConvex({
+        _id: "provider-run-1",
+        adapterVersion: "provider-adapter.v1.gemini",
+        completedAt: 1_781_938_802_000,
+        createdAt: 1_781_938_803_000,
+        errorMessage: "Gemini quota exhausted.",
+        inputHash: "input-hash-1",
+        offerId: "convex-offer-204",
+        provider: "gemini",
+        purpose: "draft",
+        rfqId: "convex-rfq-204",
+        startedAt: 1_781_938_800_000,
+        status: "failed",
+      }),
+    ).toEqual<ProviderRunAudit>({
+      adapterVersion: "provider-adapter.v1.gemini",
+      auditVersion: "provider-run-audit.v1",
+      completedAt: "2026-06-20T07:00:02.000Z",
+      durationMs: 2000,
+      errorMessage: "Gemini quota exhausted.",
+      inputHash: "input-hash-1",
+      metadata: {},
+      promptExcerpt: "Persisted provider run read from Convex.",
+      provider: "gemini",
+      purpose: "draft",
+      runKey: "draft:gemini:input-hash-1:2026-06-20T07:00:00.000Z",
+      startedAt: "2026-06-20T07:00:00.000Z",
+      status: "failed",
+      trace: {
+        offerId: "convex-offer-204",
+        rfqId: "convex-rfq-204",
+      },
+      warnings: [],
+    })
+  })
+
+  it("lists terminal provider run audits through the configured Convex query", async () => {
+    const calls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    const reader = createConvexProviderRunReader({
+      queryRef: "listProviderRuns",
+      runQuery: async (queryRef, args) => {
+        calls.push({ args, queryRef })
+        return [
+          providerRunRecord({
+            completedAt: 1_781_938_805_000,
+            inputHash: "input-hash-new",
+            startedAt: 1_781_938_804_000,
+          }),
+          providerRunRecord({
+            completedAt: 1_781_938_802_000,
+            inputHash: "input-hash-old",
+            startedAt: 1_781_938_800_000,
+          }),
+        ]
+      },
+    })
+
+    const audits = await reader.listRuns({ limit: 1, status: "succeeded" })
+
+    expect(calls).toEqual([
+      {
+        args: {
+          limit: 1,
+          status: "succeeded",
+        },
+        queryRef: "listProviderRuns",
+      },
+    ])
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      completedAt: "2026-06-20T07:00:05.000Z",
+      inputHash: "input-hash-new",
+      outputSummary: "Provider run completed.",
+      provider: "mock",
+      runKey: "summarize:mock:input-hash-new:2026-06-20T07:00:04.000Z",
+      status: "succeeded",
+    })
+  })
+
+  it("falls back to local provider run audits when Convex reads fail or return malformed rows", async () => {
+    const errors: string[] = []
+    const fallback = createLocalProviderRunReader({
+      audits: [
+        providerAudit({
+          inputHash: "local-hash",
+          startedAt: "2026-06-20T07:30:00.000Z",
+        }),
+      ],
+    })
+    const reader = createConvexProviderRunReader({
+      fallback,
+      onQueryError: (error, args) => {
+        errors.push(`${error instanceof Error ? error.message : String(error)}:${args.status ?? "all"}`)
+      },
+      queryRef: "listProviderRuns",
+      runQuery: async () => [
+        providerRunRecord({
+          status: "running",
+        }),
+      ],
+    })
+
+    const audits = await reader.listRuns()
+
+    expect(errors).toEqual(["record.status is not a completed provider run status:all"])
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      inputHash: "local-hash",
+      runKey: "summarize:mock:local-hash:2026-06-20T07:30:00.000Z",
+    })
+    audits[0]?.warnings.push("mutated by caller")
+    expect((await fallback.listRuns())[0]?.warnings).toEqual([])
+  })
 })
+
+function providerRunRecord(
+  overrides: Partial<{
+    adapterVersion: string
+    completedAt: number
+    createdAt: number
+    errorMessage: string
+    inputHash: string
+    offerId: string
+    outputSummary: string
+    provider: "elevenlabs" | "gemini" | "local_codex" | "mock" | "tavily"
+    purpose: "draft" | "extract" | "scout" | "summarize" | "voice"
+    quoteId: string
+    rfqId: string
+    startedAt: number
+    status: "failed" | "queued" | "running" | "skipped" | "succeeded"
+  }> = {},
+) {
+  return {
+    _id: "provider-run-1",
+    adapterVersion: overrides.adapterVersion ?? "provider-adapter.v1.mock",
+    completedAt: overrides.completedAt ?? 1_781_938_802_000,
+    createdAt: overrides.createdAt ?? 1_781_938_803_000,
+    inputHash: overrides.inputHash ?? "input-hash-1",
+    offerId: overrides.offerId,
+    outputSummary: overrides.outputSummary ?? "Provider run completed.",
+    provider: overrides.provider ?? "mock",
+    purpose: overrides.purpose ?? "summarize",
+    quoteId: overrides.quoteId,
+    rfqId: overrides.rfqId,
+    startedAt: overrides.startedAt ?? 1_781_938_800_000,
+    status: overrides.status ?? "succeeded",
+    ...(overrides.errorMessage ? { errorMessage: overrides.errorMessage } : {}),
+  }
+}
+
+function providerAudit(overrides: Partial<ProviderRunAudit> = {}): ProviderRunAudit {
+  const provider = overrides.provider ?? "mock"
+  const purpose = overrides.purpose ?? "summarize"
+  const inputHash = overrides.inputHash ?? "input-hash-local"
+  const startedAt = overrides.startedAt ?? "2026-06-20T07:00:00.000Z"
+  const completedAt = overrides.completedAt ?? startedAt
+  return {
+    adapterVersion: `provider-adapter.v1.${provider}`,
+    auditVersion: "provider-run-audit.v1",
+    completedAt,
+    durationMs: Date.parse(completedAt) - Date.parse(startedAt),
+    inputHash,
+    metadata: {},
+    promptExcerpt: "Local provider audit.",
+    provider,
+    purpose,
+    runKey: `${purpose}:${provider}:${inputHash}:${startedAt}`,
+    startedAt,
+    status: overrides.status ?? "succeeded",
+    trace: overrides.trace,
+    warnings: overrides.warnings ?? [],
+    ...overrides,
+  }
+}
