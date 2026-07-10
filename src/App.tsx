@@ -185,6 +185,13 @@ import {
   type ProviderRunHistoryFilter,
 } from "./domain/providers/providerRunHistory"
 import { buildProviderRunAudit, type ProviderRunAudit } from "./domain/providers/providerRunAudit"
+import {
+  buildProviderRunReadSyncState,
+  providerRunReadSyncLabel,
+  providerRunReadSyncPanelSummary,
+  type ProviderRunReadSyncState,
+  type ProviderRunReadSyncStatus,
+} from "./domain/providers/providerRunReadSync"
 import type { CncQuoteInput, CncQuoteResult } from "./domain/quoting/cnc"
 import type { FabricationInputEditPatch, FabricationInputEditState } from "./domain/quoting/fabricationInputEdits"
 import {
@@ -324,8 +331,6 @@ import {
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
-  type ProviderRunReadSyncState,
-  type ProviderRunReadSyncStatus,
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import {
@@ -4562,7 +4567,7 @@ function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit
   }
   const history = buildProviderRunHistorySummary(audits, { filter })
   const readSyncLabel = providerRunReadSyncLabel(readSync.status)
-  const readSyncSummary = providerRunReadSyncSummary(readSync)
+  const readSyncSummary = providerRunReadSyncPanelSummary(readSync)
   const auditByRunKey = new Map(audits.map((audit) => [audit.runKey, audit]))
   const visibleAudits = history.events
     .map((event) => auditByRunKey.get(event.runKey))
@@ -4674,19 +4679,6 @@ function providerHistoryFilterLabel(
   }
 }
 
-function buildProviderRunReadSyncState(
-  status: ProviderRunReadSyncStatus,
-  localRunCount: number,
-  persistedRunCount: number,
-): ProviderRunReadSyncState {
-  return {
-    fallbackCount: status === "fallback" ? 1 : 0,
-    localRunCount,
-    persistedRunCount: status === "convex" ? persistedRunCount : 0,
-    status,
-  }
-}
-
 function upsertProviderRunReadSyncState(
   current: Record<string, ProviderRunReadSyncState>,
   rfqId: string,
@@ -4703,34 +4695,6 @@ function upsertProviderRunReadSyncState(
     return current
   }
   return { ...current, [rfqId]: next }
-}
-
-function providerRunReadSyncLabel(status: ProviderRunReadSyncStatus): string {
-  switch (status) {
-    case "convex":
-      return "Convex"
-    case "fallback":
-      return "Local fallback"
-    case "pending":
-      return "Checking Convex"
-    case "local":
-      return "Local"
-  }
-}
-
-function providerRunReadSyncSummary(sync: ProviderRunReadSyncState): string {
-  switch (sync.status) {
-    case "convex":
-      return sync.persistedRunCount > 0
-        ? `${sync.persistedRunCount} persisted provider audit${sync.persistedRunCount === 1 ? "" : "s"} merged with ${sync.localRunCount} local fallback audit${sync.localRunCount === 1 ? "" : "s"}.`
-        : `Convex returned no persisted provider runs; ${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"} remain visible.`
-    case "fallback":
-      return `Convex provider-run read failed; showing ${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"}.`
-    case "pending":
-      return `Checking Convex for provider-run audits; ${sync.localRunCount} local audit${sync.localRunCount === 1 ? "" : "s"} remain visible.`
-    case "local":
-      return `${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"} available; Convex provider-run read is not configured.`
-  }
 }
 
 function mergeProviderRunAudits(localAudits: ProviderRunAudit[], persistedAudits: ProviderRunAudit[]): ProviderRunAudit[] {
