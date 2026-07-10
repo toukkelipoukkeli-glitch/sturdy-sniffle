@@ -684,7 +684,13 @@ describe("FactoryBid workspace (component)", () => {
   })
 
   it("hydrates provider run audits through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     window.__FACTORYBID_WORKSPACE_CONVEX__ = {
       mutationRefs: {
         recordWorkspaceActivity: "recordWorkspaceActivity",
@@ -746,6 +752,12 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Gemini")
       expect(providerReview).toHaveTextContent("convex-input-hash")
     })
+    await user.click(within(providerReview).getByText("Diagnostic export"))
+    await user.click(within(providerReview).getByRole("button", { name: "Copy diagnostics" }))
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain("Provider run read history: healthy")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
+    expect(providerReview).toHaveTextContent("Provider read diagnostics copied.")
     expect(screen.getByLabelText("Integration health")).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
     )

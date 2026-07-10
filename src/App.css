@@ -6964,6 +6964,17 @@
   font-weight: 800;
 }
 
+.provider-read-diagnostics-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.provider-read-diagnostics-actions [data-slot="button"] {
+  flex: 0 0 auto;
+}
+
 .provider-read-diagnostics pre {
   background: rgb(255 255 255 / 72%);
   border: 1px solid rgb(15 23 42 / 8%);
