@@ -1351,12 +1351,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(fallbackFilters).getByRole("button", { name: "All 12" })).toHaveAttribute("aria-pressed", "true")
     const fallbackEvents = within(restoredHistory).getByLabelText("Follow-up readiness sync fallback events")
     expect(within(fallbackEvents).getAllByText(/fallback$/)).toHaveLength(6)
+    expect(fallbackEvents).toHaveTextContent("6 older sync fallbacks hidden.")
 
     await user.click(within(fallbackFilters).getByRole("button", { name: "Write 6" }))
 
     expect(within(fallbackFilters).getByRole("button", { name: "Write 6" })).toHaveAttribute("aria-pressed", "true")
     expect(within(fallbackEvents).getAllByText("Write fallback")).toHaveLength(6)
     expect(within(fallbackEvents).queryByText("Read fallback")).not.toBeInTheDocument()
+    expect(fallbackEvents).not.toHaveTextContent("hidden")
     expect(screen.getByLabelText("Follow-up readiness sync health: Read/write fallback, 12 fallbacks")).toHaveAttribute(
       "data-severity",
       "critical",

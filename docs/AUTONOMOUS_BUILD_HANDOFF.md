@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0eafe10` (`Add follow-up sync health fallback filters (#297)`).
-- Open PRs at this checkpoint: none on `main`; this branch is hardening zero-count fallback filter states.
-- In-flight PR at this checkpoint: `codex/followup-sync-health-empty-filter` shows an explicit empty state when a selected read/write fallback filter has no events.
+- Main branch checkpoint: `dea7ece` (`Show empty sync fallback filter states (#298)`).
+- Open PRs at this checkpoint: none on `main`; this branch is adding overflow copy for retained sync fallback events hidden by the six-row panel cap.
+- In-flight PR at this checkpoint: `codex/followup-sync-health-overflow` shows how many older fallback events are hidden when the filtered list is capped.
 - Latest merged sequence:
+  - `#298` shows an explicit empty state when a selected read/write fallback filter has no events.
   - `#297` surfaces deterministic newest-first recent fallback events in the Offer sync-health drill-down with All/Read/Write filters.
   - `#296` adds a guarded Review action to the topbar persistence chip so warning/critical fallback health routes operators to the detailed Offer sync panels.
   - `#295` surfaces warning/critical follow-up readiness persistence health in the always-visible topbar persistence chip and keeps generic sync fallback severity aligned with the displayed fallback count.

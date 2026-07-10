@@ -5990,6 +5990,13 @@
   padding: 8px;
 }
 
+.offer-follow-up-readiness-sync-fallback-overflow {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 4px;
+}
+
 .offer-follow-up-activity-actions {
   grid-template-columns: minmax(0, 1fr);
 }
