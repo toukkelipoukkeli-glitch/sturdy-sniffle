@@ -6772,6 +6772,13 @@
   min-width: 0;
 }
 
+.integration-provider-read-diagnostics-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .integration-provider-read-diagnostics strong {
   color: oklch(0.25 0.04 250);
   font-size: 0.82rem;
@@ -6784,6 +6791,14 @@
   font-weight: 750;
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.integration-provider-read-diagnostics-actions [data-slot="button"] {
+  flex: 0 0 auto;
+}
+
+.integration-provider-read-diagnostics-actions small {
+  flex: 1 1 180px;
 }
 
 .connector-drilldown {
