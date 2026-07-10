@@ -183,6 +183,7 @@ import {
 import {
   buildProviderRunReadHistoryDiagnosticExportSummary,
   summarizeProviderRunReadHistoryDiagnostics,
+  type ProviderRunReadHistoryDiagnosticSummary,
 } from "./domain/providers/providerRunReadHistoryDiagnostics"
 import {
   buildProviderRunReadHistoryPersistenceSnapshot,
@@ -2316,6 +2317,15 @@ function App() {
       workspacePersistenceRuntime.mode,
     ],
   )
+  const selectedProviderReadDiagnostics = useMemo(
+    () =>
+      buildProviderRunReadDiagnostics({
+        audits: selectedProviderRuns,
+        readSync: selectedProviderRunReadSync,
+        rfqId: selectedItem.id,
+      }).summary,
+    [selectedItem.id, selectedProviderRunReadSync, selectedProviderRuns],
+  )
   const syncConnectorInbox = async () => {
     const item = selectedItem
     const rfqId = item.id
@@ -2994,6 +3004,7 @@ function App() {
             isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
             onSyncReplies={syncOfferReplies}
+            providerReadDiagnostics={selectedProviderReadDiagnostics}
             rfqId={selectedItem.id}
             status={integrationStatus}
           />
@@ -4325,6 +4336,7 @@ function IntegrationStatusPanel({
   isConnectorSyncing,
   onSyncConnector,
   onSyncReplies,
+  providerReadDiagnostics,
   rfqId,
   status,
 }: {
@@ -4333,6 +4345,7 @@ function IntegrationStatusPanel({
   isConnectorSyncing: boolean
   onSyncConnector: () => void
   onSyncReplies: () => void
+  providerReadDiagnostics: ProviderRunReadHistoryDiagnosticSummary
   rfqId: string
   status: WorkspaceIntegrationStatus
 }) {
@@ -4370,6 +4383,21 @@ function IntegrationStatusPanel({
         {status.sources.map((source) => (
           <IntegrationSourceRow key={source.key} source={source} />
         ))}
+      </div>
+      <div
+        aria-label={`Provider read diagnostics: ${humanizeKey(providerReadDiagnostics.status)}, ${providerReadDiagnostics.severity}`}
+        className="integration-provider-read-diagnostics"
+        data-severity={providerReadDiagnostics.severity}
+      >
+        <div>
+          <strong>Provider diagnostics {humanizeKey(providerReadDiagnostics.status)}</strong>
+          <span>{providerReadDiagnostics.operatorSummary}</span>
+        </div>
+        <small>
+          {providerReadDiagnostics.recoveryActionLabels.length > 0
+            ? providerReadDiagnostics.recoveryActionLabels[0]
+            : "No provider read recovery action needed."}
+        </small>
       </div>
       <RfqCalendarPlanPreview plan={calendarPlan} />
       <ConnectorLinkDrilldownPanel
