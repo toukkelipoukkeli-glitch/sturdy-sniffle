@@ -140,6 +140,61 @@ describe("workspace integration status", () => {
       "Persistence: 2 follow-up readiness persistence fallbacks recorded (read 1, write 1); latest fallback is stale.",
     )
   })
+
+  it("surfaces Convex provider-run read health on the provider source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRunReadSync: {
+        fallbackCount: 0,
+        localRunCount: 1,
+        persistedRunCount: 1,
+        status: "convex",
+      },
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "provider_runs")).toMatchObject({
+      count: 1,
+      detail: "1 persisted provider audit read from Convex and merged with 1 local audit.",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("surfaces provider-run read fallback health on the provider source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRunReadSync: {
+        fallbackCount: 1,
+        localRunCount: 1,
+        persistedRunCount: 0,
+        status: "fallback",
+      },
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "provider_runs")).toMatchObject({
+      count: 1,
+      detail: "Provider run history fell back to 1 local audit after a Convex read failure.",
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Provider runs: Provider run history fell back to 1 local audit after a Convex read failure.",
+    )
+  })
 })
 
 function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): ConnectorSyncPersistenceSnapshot {

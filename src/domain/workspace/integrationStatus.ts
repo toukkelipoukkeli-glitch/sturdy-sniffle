@@ -38,12 +38,22 @@ export interface IntegrationStatusSource {
   count?: number
 }
 
+export type ProviderRunReadSyncStatus = "convex" | "fallback" | "local" | "pending"
+
+export interface ProviderRunReadSyncState {
+  fallbackCount: number
+  localRunCount: number
+  persistedRunCount: number
+  status: ProviderRunReadSyncStatus
+}
+
 export interface WorkspaceIntegrationStatusInput {
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
+  providerRunReadSync?: ProviderRunReadSyncState
   providerRuns: ProviderRunAudit[]
   replySync?: GmailOfferReplySyncResult
   rfqId: string
@@ -63,6 +73,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpReadinessSyncHealth,
   followUpScheduledAt,
   persistenceMode,
+  providerRunReadSync,
   providerRuns,
   replySync,
   rfqId,
@@ -71,7 +82,7 @@ export function summarizeWorkspaceIntegrationStatus({
   const sources = [
     persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
-    providerRunSource(providerRuns),
+    providerRunSource(providerRuns, providerRunReadSync),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
   ]
@@ -214,7 +225,10 @@ function connectorSource(
   }
 }
 
-function providerRunSource(providerRuns: ProviderRunAudit[]): IntegrationStatusSource {
+function providerRunSource(
+  providerRuns: ProviderRunAudit[],
+  readSync: ProviderRunReadSyncState | undefined,
+): IntegrationStatusSource {
   const failedCount = providerRuns.filter((run) => run.status === "failed").length
   const reviewCount = providerRuns.filter((run) => run.status === "skipped" || run.warnings.length > 0).length
 
@@ -229,14 +243,65 @@ function providerRunSource(providerRuns: ProviderRunAudit[]): IntegrationStatusS
     }
   }
 
-  if (reviewCount > 0) {
+  if (readSync?.status === "fallback") {
     return {
       count: providerRuns.length,
-      detail: `${reviewCount} provider run${reviewCount === 1 ? "" : "s"} used fallback or warning paths.`,
+      detail: `Provider run history fell back to ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"} after a Convex read failure.`,
+      key: "provider_runs",
+      label: "Provider runs",
+      severity: "attention",
+      status: "fallback",
+    }
+  }
+
+  if (readSync?.status === "pending") {
+    return {
+      count: providerRuns.length,
+      detail: `Checking Convex provider-run history; ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"} remain visible.`,
+      key: "provider_runs",
+      label: "Provider runs",
+      severity: "attention",
+      status: "pending",
+    }
+  }
+
+  if (reviewCount > 0) {
+    const persistedText =
+      readSync?.status === "convex" && readSync.persistedRunCount > 0
+        ? ` ${readSync.persistedRunCount} persisted provider audit${readSync.persistedRunCount === 1 ? "" : "s"} read from Convex.`
+        : ""
+    return {
+      count: providerRuns.length,
+      detail: `${reviewCount} provider run${reviewCount === 1 ? "" : "s"} used fallback or warning paths.${persistedText}`,
       key: "provider_runs",
       label: "Provider runs",
       severity: "attention",
       status: "review",
+    }
+  }
+
+  if (readSync?.status === "convex") {
+    return {
+      count: providerRuns.length,
+      detail:
+        readSync.persistedRunCount > 0
+          ? `${readSync.persistedRunCount} persisted provider audit${readSync.persistedRunCount === 1 ? "" : "s"} read from Convex and merged with ${readSync.localRunCount} local audit${readSync.localRunCount === 1 ? "" : "s"}.`
+          : `Convex returned no persisted provider runs; ${readSync.localRunCount} local provider audit${readSync.localRunCount === 1 ? "" : "s"} remain visible.`,
+      key: "provider_runs",
+      label: "Provider runs",
+      severity: "healthy",
+      status: "convex",
+    }
+  }
+
+  if (readSync?.status === "local") {
+    return {
+      count: providerRuns.length,
+      detail: `${readSync.localRunCount} local provider audit${readSync.localRunCount === 1 ? "" : "s"} available; Convex provider-run reads are not configured.`,
+      key: "provider_runs",
+      label: "Provider runs",
+      severity: "attention",
+      status: "local",
     }
   }
 

@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5861620` (`Hydrate provider runs from Convex bridge (#302)`).
-- Open PRs at this checkpoint: none on `main`; this branch is surfacing provider-run read sync health in the operator workspace.
-- In-flight PR at this checkpoint: `codex/provider-run-read-sync-health` makes selected-RFQ provider-run read source/fallback state visible while preserving local fixture fallback.
+- Main branch checkpoint: `741b8e1` (`Surface provider run read sync health (#303)`).
+- Open PRs at this checkpoint: none on `main`; this branch is surfacing provider-run read sync health in the Integration health panel.
+- In-flight PR at this checkpoint: `codex/provider-read-integration-health` feeds selected-RFQ provider-run read source/fallback state into the broader integration health summary.
 - Latest merged sequence:
+  - `#303` surfaces selected-RFQ provider-run read source/fallback health in the Provider review panel with Convex/local/fallback copy.
   - `#302` hydrates selected-RFQ terminal provider runs through the optional browser Convex bridge and keeps persisted records authoritative over local fallback collisions.
   - `#301` hydrates completed Convex provider-run records into deterministic local audit history with query fallback behavior.
   - `#300` adds a copyable follow-up readiness sync-health diagnostic summary with fallback counts, recency, recovery actions, and retained event IDs.
@@ -206,7 +207,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel/history summaries/local persistence/readiness-history UI/local-state persistence/unique manual follow-up audit keys/restored-action readiness replay/Convex readiness payload contracts/workflow persistence/client adapter/runtime bridge, operator-visible sync-source summaries, scoped sync-health fallback visibility, read/write fallback history details, reload-safe sync-health replay, global fallback indicator alignment, restored sync-health retention capping, per-operation latest fallback visibility, per-operation sync-health status labels, sync-health recovery actions, fallback recency state, sync-health operator summaries, sync-health severity labels, and Integration health surfacing for warning/critical sync-health fallback state.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
-- Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, and optional browser runtime read hydration for selected-RFQ terminal provider runs.
+- Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, optional browser runtime read hydration for selected-RFQ terminal provider runs, and operator-visible provider-run read sync health.
 - CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
