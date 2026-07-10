@@ -6742,6 +6742,50 @@
   width: 13px;
 }
 
+.integration-provider-read-diagnostics {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.integration-provider-read-diagnostics[data-severity="healthy"] {
+  background: oklch(0.97 0.025 155);
+  border-color: oklch(0.84 0.055 155);
+}
+
+.integration-provider-read-diagnostics[data-severity="info"] {
+  background: oklch(0.97 0.025 245);
+  border-color: oklch(0.84 0.05 245);
+}
+
+.integration-provider-read-diagnostics[data-severity="warning"] {
+  background: oklch(0.97 0.038 55);
+  border-color: oklch(0.84 0.075 55);
+}
+
+.integration-provider-read-diagnostics div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.integration-provider-read-diagnostics strong {
+  color: oklch(0.25 0.04 250);
+  font-size: 0.82rem;
+}
+
+.integration-provider-read-diagnostics span,
+.integration-provider-read-diagnostics small {
+  color: oklch(0.39 0.035 250);
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .connector-drilldown {
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;

@@ -758,7 +758,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Provider run read history: healthy")
     expect(writeText.mock.calls[0]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
     expect(providerReview).toHaveTextContent("Provider read diagnostics copied.")
-    expect(screen.getByLabelText("Integration health")).toHaveTextContent(
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
+    expect(integrationHealth).toHaveTextContent(
+      "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",
+    )
+    expect(integrationHealth).toHaveTextContent("No provider read recovery action needed.")
+    expect(screen.getByLabelText("Provider read diagnostics: healthy, healthy")).toHaveAttribute("data-severity", "healthy")
+    expect(integrationHealth).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
     )
   })
@@ -863,7 +870,14 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerReview).toHaveTextContent("Provider run read history: fallback")
       expect(providerReview).toHaveTextContent("Detected CNC milling RFQ")
     })
-    expect(screen.getByLabelText("Integration health")).toHaveTextContent(
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider diagnostics fallback")
+    expect(integrationHealth).toHaveTextContent(
+      "Provider-run read history has 1 read record (0 Convex, 1 fallback, 0 local, 0 pending); latest read used local fallback.",
+    )
+    expect(integrationHealth).toHaveTextContent("Check Convex provider-run reads before trusting local provider audit history.")
+    expect(screen.getByLabelText("Provider read diagnostics: fallback, warning")).toHaveAttribute("data-severity", "warning")
+    expect(integrationHealth).toHaveTextContent(
       "Provider run history fell back to 2 local audits after a Convex read failure.",
     )
   })
