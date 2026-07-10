@@ -4578,6 +4578,7 @@ function ProviderRunReviewPanel({
   rfqId: string
 }) {
   const [filter, setFilter] = useState<ProviderRunHistoryFilter>("all")
+  const [diagnosticCopyFeedback, setDiagnosticCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
   const latestAudit = audits[0]
   if (!latestAudit) {
     return null
@@ -4587,6 +4588,10 @@ function ProviderRunReviewPanel({
   const readSyncSummary = providerRunReadSyncPanelSummary(readSync)
   const readDiagnostics = buildProviderRunReadDiagnostics({ audits, readSync, rfqId })
   const readDiagnosticExportSummary = buildProviderRunReadHistoryDiagnosticExportSummary(readDiagnostics.snapshot)
+  const handleCopyDiagnosticExport = async () => {
+    const copied = await copyTextToClipboard(readDiagnosticExportSummary)
+    setDiagnosticCopyFeedback(copied ? "copied" : "error")
+  }
   const auditByRunKey = new Map(audits.map((audit) => [audit.runKey, audit]))
   const visibleAudits = history.events
     .map((event) => auditByRunKey.get(event.runKey))
@@ -4627,6 +4632,19 @@ function ProviderRunReviewPanel({
         </small>
         <details>
           <summary>Diagnostic export</summary>
+          <div className="provider-read-diagnostics-actions">
+            <Button onClick={() => void handleCopyDiagnosticExport()} size="sm" type="button" variant="outline">
+              <Copy aria-hidden="true" />
+              {diagnosticCopyFeedback === "copied" ? "Copied" : "Copy diagnostics"}
+            </Button>
+            <small role="status">
+              {diagnosticCopyFeedback === "copied"
+                ? "Provider read diagnostics copied."
+                : diagnosticCopyFeedback === "error"
+                  ? "Copy unavailable; select the diagnostic export manually."
+                  : "Copy a deterministic provider read diagnostic export."}
+            </small>
+          </div>
           <pre>{readDiagnosticExportSummary}</pre>
         </details>
       </div>
