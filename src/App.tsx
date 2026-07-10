@@ -177,6 +177,10 @@ import {
 } from "./domain/offers/offerReplyState"
 import { hashProviderInput, type ProviderRunRequest, type ProviderRunResult } from "./domain/providers/ai"
 import {
+  createConvexProviderRunReader,
+  createLocalProviderRunReader,
+} from "./domain/providers/convexProviderRun"
+import {
   buildProviderRunHistorySummary,
   type ProviderRunHistoryFilter,
 } from "./domain/providers/providerRunHistory"
@@ -1047,6 +1051,8 @@ function App() {
   )
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
+  const [providerRunAuditsById, setProviderRunAuditsById] = useState<Record<string, ProviderRunAudit[]>>({})
+  const providerRunAuditsRef = useRef<Record<string, ProviderRunAudit[]>>({})
   const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
     Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
   >({})
@@ -1085,6 +1091,7 @@ function App() {
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessSyncEventCounterRef = useRef(0)
+  const providerRunQueryKeysRef = useRef(new Map<string, Promise<ProviderRunAudit[]>>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1106,6 +1113,9 @@ function App() {
     [actionsById, followUpActivitySummaryById, statusById, workspaceConvexBridge],
   )
   const workspacePersistence = workspacePersistenceRuntime.adapter
+  useEffect(() => {
+    providerRunAuditsRef.current = providerRunAuditsById
+  }, [providerRunAuditsById])
   useEffect(() => {
     offerProviderReadinessSnapshotsRef.current = offerProviderReadinessSnapshotsById
   }, [offerProviderReadinessSnapshotsById])
@@ -1153,6 +1163,10 @@ function App() {
   ])
   const queueNow = workspaceNow
   const selectedItem = workItems.find((item) => item.id === selectedId) ?? workItems[0]
+  const selectedProviderRuns = useMemo(
+    () => mergeProviderRunAudits(selectedItem.providerRuns, providerRunAuditsById[selectedId] ?? []),
+    [providerRunAuditsById, selectedId, selectedItem.providerRuns],
+  )
   const selectedActions = useMemo(() => actionsById[selectedId] ?? [], [actionsById, selectedId])
   const selectedCadReviewOverrideEvents = useMemo(
     () => cadReviewOverrideEventsById[selectedId] ?? [],
@@ -1690,6 +1704,59 @@ function App() {
     releaseExecutionHistoryById[selectedId],
     localOfferReleaseHistory,
   )
+  const providerRunBridge = useMemo(() => createBrowserConvexProviderRunBridge(), [])
+  const convexProviderRunRfqId = providerRunBridge?.resolveRfqId(selectedItem.id)
+  useEffect(() => {
+    let cancelled = false
+    const providerRunQueries = providerRunQueryKeysRef.current
+    const queryKey =
+      providerRunBridge?.queryRef && convexProviderRunRfqId
+        ? `${selectedId}::${convexProviderRunRfqId}`
+        : undefined
+    if (!queryKey || !providerRunBridge) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    let providerRunPromise = providerRunQueries.get(queryKey)
+    if (!providerRunPromise) {
+      const fallback = createLocalProviderRunReader({
+        audits: providerRunAuditsRef.current[selectedId] ?? selectedItem.providerRuns,
+      })
+      const reader = createConvexProviderRunReader({
+        fallback,
+        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        queryRef: providerRunBridge.queryRef,
+        runQuery: providerRunBridge.runQuery,
+      })
+      providerRunPromise = reader.listRuns({
+        limit: 20,
+        rfqId: convexProviderRunRfqId,
+      })
+      providerRunQueries.set(queryKey, providerRunPromise)
+    }
+
+    void providerRunPromise
+      .then((audits) => {
+        if (!cancelled && audits.length > 0) {
+          setProviderRunAuditsById((current) => ({
+            ...current,
+            [selectedId]: mergeProviderRunAudits(current[selectedId] ?? [], audits),
+          }))
+        }
+      })
+      .catch(() => {
+        providerRunQueries.delete(queryKey)
+        if (!cancelled) {
+          setPersistenceSyncErrorCount((count) => count + 1)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [convexProviderRunRfqId, providerRunBridge, selectedId, selectedItem.providerRuns])
   const localFollowUpActivitySummary = useMemo(
     () => summarizeOfferFollowUpActivities([], { offerId: offer.offerNumber.toLowerCase() }),
     [offer.offerNumber],
@@ -2177,7 +2244,7 @@ function App() {
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
-        providerRuns: selectedItem.providerRuns,
+        providerRuns: selectedProviderRuns,
         replySync: offerReplySync,
         rfqId: selectedItem.id,
         syncErrorCount: persistenceSyncErrorCount,
@@ -2190,7 +2257,7 @@ function App() {
       selectedConnectorSyncErrorCount,
       selectedConnectorSnapshot,
       selectedItem.id,
-      selectedItem.providerRuns,
+      selectedProviderRuns,
       workspacePersistenceRuntime.mode,
     ],
   )
@@ -2875,7 +2942,7 @@ function App() {
             rfqId={selectedItem.id}
             status={integrationStatus}
           />
-          <ProviderRunReviewPanel audits={selectedItem.providerRuns} />
+          <ProviderRunReviewPanel audits={selectedProviderRuns} />
         </aside>
       </section>
       {isCreatingRfq ? <RfqCreateDialog onCancel={() => setIsCreatingRfq(false)} onCreate={createRfq} /> : null}
@@ -4553,6 +4620,19 @@ function providerHistoryFilterLabel(
     case "warnings":
       return `Warnings ${history.warningCount}`
   }
+}
+
+function mergeProviderRunAudits(localAudits: ProviderRunAudit[], persistedAudits: ProviderRunAudit[]): ProviderRunAudit[] {
+  const auditsByRunKey = new Map<string, ProviderRunAudit>()
+  for (const audit of localAudits) {
+    auditsByRunKey.set(audit.runKey, audit)
+  }
+  for (const audit of persistedAudits) {
+    auditsByRunKey.set(audit.runKey, audit)
+  }
+  return [...auditsByRunKey.values()].sort(
+    (left, right) => right.startedAt.localeCompare(left.startedAt) || left.runKey.localeCompare(right.runKey),
+  )
 }
 
 function TriageView({
@@ -11442,6 +11522,7 @@ interface BrowserConvexWorkspaceBridge {
   offerFollowUpActivityReadinessQueryRef?: unknown
   offerReleaseExecutionsQueryRef?: unknown
   offerReplyMutationRef?: unknown
+  providerRunsByRfqQueryRef?: unknown
   offerProviderOutcomeReadinessMutationRef?: unknown
   offerProviderOutcomeReadinessQueryRef?: unknown
   offerIdsByLocalId?: Record<string, string>
@@ -11457,6 +11538,12 @@ interface BrowserConvexOfferReplyBridge {
   resolveQuoteId: (quoteId: string) => string | undefined
   resolveRfqId: (rfqId: string) => string | undefined
   runMutation: WorkspacePersistenceBridge["runMutation"]
+}
+
+interface BrowserConvexProviderRunBridge {
+  queryRef: unknown
+  resolveRfqId: (rfqId: string) => string | undefined
+  runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
 }
 
 interface BrowserConvexOfferProviderOutcomeReadinessBridge {
@@ -11522,6 +11609,19 @@ function createBrowserConvexOfferReplyBridge(): BrowserConvexOfferReplyBridge | 
     resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
     resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
     runMutation: bridge.runMutation,
+  }
+}
+
+function createBrowserConvexProviderRunBridge(): BrowserConvexProviderRunBridge | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.providerRunsByRfqQueryRef || !bridge.runQuery) {
+    return undefined
+  }
+
+  return {
+    queryRef: bridge.providerRunsByRfqQueryRef,
+    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    runQuery: bridge.runQuery,
   }
 }
 

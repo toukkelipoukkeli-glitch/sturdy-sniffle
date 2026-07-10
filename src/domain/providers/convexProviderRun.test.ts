@@ -196,12 +196,13 @@ describe("Convex provider run persistence payload", () => {
       },
     })
 
-    const audits = await reader.listRuns({ limit: 1, status: "succeeded" })
+    const audits = await reader.listRuns({ limit: 1, rfqId: "convex-rfq-204", status: "succeeded" })
 
     expect(calls).toEqual([
       {
         args: {
           limit: 1,
+          rfqId: "convex-rfq-204",
           status: "succeeded",
         },
         queryRef: "listProviderRuns",

@@ -683,6 +683,115 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessCall?.args).not.toHaveProperty("rfqId")
   })
 
+  it("hydrates provider run audits through the Convex browser bridge", async () => {
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      providerRunsByRfqQueryRef: "listProviderRunsByRfq",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            _id: "provider-run-convex-draft",
+            adapterVersion: "provider-adapter.v1.gemini",
+            completedAt: Date.parse("2026-06-20T09:00:02.000Z"),
+            createdAt: Date.parse("2026-06-20T09:00:03.000Z"),
+            inputHash: "convex-input-hash",
+            outputSummary: "Persisted Gemini draft ready.",
+            provider: "gemini",
+            purpose: "draft",
+            rfqId: "convex-rfq-204",
+            startedAt: Date.parse("2026-06-20T09:00:00.000Z"),
+            status: "succeeded",
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            rfqId: "convex-rfq-204",
+          },
+          queryRef: "listProviderRunsByRfq",
+        },
+      ])
+    })
+    const providerReview = screen.getByLabelText("Provider review")
+    await waitFor(() => {
+      expect(providerReview).toHaveTextContent("Runs 3")
+      expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
+      expect(providerReview).toHaveTextContent("Persisted Gemini draft ready.")
+      expect(providerReview).toHaveTextContent("Gemini")
+      expect(providerReview).toHaveTextContent("convex-input-hash")
+    })
+  })
+
+  it("prefers persisted provider run audits over local audits with the same run key", async () => {
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      providerRunsByRfqQueryRef: "listProviderRunsByRfq",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [
+          {
+            _id: "provider-run-convex-extract-collision",
+            adapterVersion: "provider-adapter.v1.mock",
+            completedAt: Date.parse("2026-06-20T05:30:04.000Z"),
+            createdAt: Date.parse("2026-06-20T05:30:05.000Z"),
+            inputHash: "2f2dad12",
+            outputSummary: "Persisted extraction override from Convex.",
+            provider: "mock",
+            purpose: "extract",
+            rfqId: "convex-rfq-204",
+            startedAt: Date.parse("2026-06-20T05:30:01.000Z"),
+            status: "succeeded",
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            rfqId: "convex-rfq-204",
+          },
+          queryRef: "listProviderRunsByRfq",
+        },
+      ])
+    })
+    const providerReview = screen.getByLabelText("Provider review")
+    await waitFor(() => {
+      expect(providerReview).toHaveTextContent("Runs 2")
+      expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
+      expect(providerReview).toHaveTextContent("Persisted extraction override from Convex.")
+      expect(providerReview).not.toHaveTextContent("Detected CNC milling RFQ")
+    })
+  })
+
   it("hydrates provider outcome readiness snapshots through the Convex browser bridge", async () => {
     const user = userEvent.setup()
     const mutationCalls: Array<{ args: Record<string, unknown>; mutationRef: unknown }> = []
