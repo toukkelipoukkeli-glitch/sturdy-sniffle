@@ -731,6 +731,9 @@ describe("FactoryBid workspace (component)", () => {
     const providerReview = screen.getByLabelText("Provider review")
     await waitFor(() => {
       expect(providerReview).toHaveTextContent("Runs 3")
+      expect(providerReview).toHaveTextContent("Provider read Convex")
+      expect(providerReview).toHaveTextContent("1 persisted provider audit merged with 2 local fallback audits.")
+      expect(providerReview).toHaveTextContent("Convex 1 · Local 2 · Fallback 0")
       expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
       expect(providerReview).toHaveTextContent("Persisted Gemini draft ready.")
       expect(providerReview).toHaveTextContent("Gemini")
@@ -786,9 +789,51 @@ describe("FactoryBid workspace (component)", () => {
     const providerReview = screen.getByLabelText("Provider review")
     await waitFor(() => {
       expect(providerReview).toHaveTextContent("Runs 2")
+      expect(providerReview).toHaveTextContent("Provider read Convex")
       expect(providerReview).toHaveTextContent("Persisted provider run read from Convex.")
       expect(providerReview).toHaveTextContent("Persisted extraction override from Convex.")
       expect(providerReview).not.toHaveTextContent("Detected CNC milling RFQ")
+    })
+  })
+
+  it("surfaces provider run read fallback health when Convex reads fail", async () => {
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      providerRunsByRfqQueryRef: "listProviderRunsByRfq",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            rfqId: "convex-rfq-204",
+          },
+          queryRef: "listProviderRunsByRfq",
+        },
+      ])
+    })
+    const providerReview = screen.getByLabelText("Provider review")
+    await waitFor(() => {
+      expect(providerReview).toHaveTextContent("Runs 2")
+      expect(providerReview).toHaveTextContent("Provider read Local fallback")
+      expect(providerReview).toHaveTextContent("Convex provider-run read failed; showing 2 local provider audits.")
+      expect(providerReview).toHaveTextContent("Convex 0 · Local 2 · Fallback 1")
+      expect(providerReview).toHaveTextContent("Detected CNC milling RFQ")
     })
   })
 

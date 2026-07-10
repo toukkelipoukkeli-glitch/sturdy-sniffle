@@ -357,6 +357,15 @@ import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
 
+type ProviderRunReadSyncStatus = "convex" | "fallback" | "local" | "pending"
+
+interface ProviderRunReadSyncState {
+  fallbackCount: number
+  localRunCount: number
+  persistedRunCount: number
+  status: ProviderRunReadSyncStatus
+}
+
 interface RfqFieldPatch {
   commit?: boolean
   customer?: string
@@ -1052,6 +1061,7 @@ function App() {
   const [offerRepliesById, setOfferRepliesById] = useState<Record<string, GmailOfferReplySyncResult>>({})
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
   const [providerRunAuditsById, setProviderRunAuditsById] = useState<Record<string, ProviderRunAudit[]>>({})
+  const [providerRunReadSyncById, setProviderRunReadSyncById] = useState<Record<string, ProviderRunReadSyncState>>({})
   const providerRunAuditsRef = useRef<Record<string, ProviderRunAudit[]>>({})
   const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
     Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
@@ -1092,6 +1102,7 @@ function App() {
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessSyncEventCounterRef = useRef(0)
   const providerRunQueryKeysRef = useRef(new Map<string, Promise<ProviderRunAudit[]>>())
+  const providerRunQueryModeRef = useRef(new Map<string, Exclude<ProviderRunReadSyncStatus, "local" | "pending">>())
   const providerReadinessPersistenceKeysRef = useRef(new Set<string>())
   const providerReadinessQueryKeysRef = useRef(new Set<string>())
   const workspaceConvexBridge = useMemo(() => createBrowserConvexWorkspaceBridge(), [])
@@ -1706,9 +1717,18 @@ function App() {
   )
   const providerRunBridge = useMemo(() => createBrowserConvexProviderRunBridge(), [])
   const convexProviderRunRfqId = providerRunBridge?.resolveRfqId(selectedItem.id)
+  const selectedProviderRunReadSync =
+    providerRunReadSyncById[selectedId] ??
+    buildProviderRunReadSyncState(
+      providerRunBridge && convexProviderRunRfqId ? "pending" : "local",
+      selectedItem.providerRuns.length,
+      0,
+    )
   useEffect(() => {
     let cancelled = false
     const providerRunQueries = providerRunQueryKeysRef.current
+    const providerRunQueryModes = providerRunQueryModeRef.current
+    const localRunCount = selectedItem.providerRuns.length
     const queryKey =
       providerRunBridge?.queryRef && convexProviderRunRfqId
         ? `${selectedId}::${convexProviderRunRfqId}`
@@ -1721,34 +1741,60 @@ function App() {
 
     let providerRunPromise = providerRunQueries.get(queryKey)
     if (!providerRunPromise) {
+      let usedFallback = false
       const fallback = createLocalProviderRunReader({
         audits: providerRunAuditsRef.current[selectedId] ?? selectedItem.providerRuns,
       })
       const reader = createConvexProviderRunReader({
         fallback,
-        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        onQueryError: () => {
+          usedFallback = true
+          setPersistenceSyncErrorCount((count) => count + 1)
+        },
         queryRef: providerRunBridge.queryRef,
         runQuery: providerRunBridge.runQuery,
       })
-      providerRunPromise = reader.listRuns({
-        limit: 20,
-        rfqId: convexProviderRunRfqId,
-      })
+      providerRunPromise = reader
+        .listRuns({
+          limit: 20,
+          rfqId: convexProviderRunRfqId,
+        })
+        .then((audits) => {
+          providerRunQueryModes.set(queryKey, usedFallback ? "fallback" : "convex")
+          return audits
+        })
       providerRunQueries.set(queryKey, providerRunPromise)
     }
 
     void providerRunPromise
       .then((audits) => {
-        if (!cancelled && audits.length > 0) {
-          setProviderRunAuditsById((current) => ({
-            ...current,
-            [selectedId]: mergeProviderRunAudits(current[selectedId] ?? [], audits),
-          }))
+        if (!cancelled) {
+          const syncStatus = providerRunQueryModes.get(queryKey) ?? "convex"
+          setProviderRunReadSyncById((current) =>
+            upsertProviderRunReadSyncState(
+              current,
+              selectedId,
+              buildProviderRunReadSyncState(syncStatus, localRunCount, audits.length),
+            ),
+          )
+          if (audits.length > 0) {
+            setProviderRunAuditsById((current) => ({
+              ...current,
+              [selectedId]: mergeProviderRunAudits(current[selectedId] ?? [], audits),
+            }))
+          }
         }
       })
       .catch(() => {
         providerRunQueries.delete(queryKey)
         if (!cancelled) {
+          setProviderRunReadSyncById((current) =>
+            upsertProviderRunReadSyncState(
+              current,
+              selectedId,
+              buildProviderRunReadSyncState("fallback", localRunCount, 0),
+            ),
+          )
           setPersistenceSyncErrorCount((count) => count + 1)
         }
       })
@@ -2942,7 +2988,7 @@ function App() {
             rfqId={selectedItem.id}
             status={integrationStatus}
           />
-          <ProviderRunReviewPanel audits={selectedProviderRuns} />
+          <ProviderRunReviewPanel audits={selectedProviderRuns} readSync={selectedProviderRunReadSync} />
         </aside>
       </section>
       {isCreatingRfq ? <RfqCreateDialog onCancel={() => setIsCreatingRfq(false)} onCreate={createRfq} /> : null}
@@ -4513,13 +4559,15 @@ function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) 
   return <Database aria-hidden="true" />
 }
 
-function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
+function ProviderRunReviewPanel({ audits, readSync }: { audits: ProviderRunAudit[]; readSync: ProviderRunReadSyncState }) {
   const [filter, setFilter] = useState<ProviderRunHistoryFilter>("all")
   const latestAudit = audits[0]
   if (!latestAudit) {
     return null
   }
   const history = buildProviderRunHistorySummary(audits, { filter })
+  const readSyncLabel = providerRunReadSyncLabel(readSync.status)
+  const readSyncSummary = providerRunReadSyncSummary(readSync)
   const auditByRunKey = new Map(audits.map((audit) => [audit.runKey, audit]))
   const visibleAudits = history.events
     .map((event) => auditByRunKey.get(event.runKey))
@@ -4533,6 +4581,15 @@ function ProviderRunReviewPanel({ audits }: { audits: ProviderRunAudit[] }) {
           Provider review
         </span>
         <span className={`provider-status provider-status-${latestAudit.status}`}>{latestAudit.status}</span>
+      </div>
+      <div className="provider-read-sync" data-status={readSync.status} aria-label="Provider run read sync health">
+        <div>
+          <strong>Provider read {readSyncLabel}</strong>
+          <span>{readSyncSummary}</span>
+        </div>
+        <small>
+          Convex {readSync.persistedRunCount} · Local {readSync.localRunCount} · Fallback {readSync.fallbackCount}
+        </small>
       </div>
       <div className="provider-history-summary" aria-label="Provider run history summary">
         <Metric label="Runs" value={String(history.totalRuns)} />
@@ -4619,6 +4676,65 @@ function providerHistoryFilterLabel(
       return `Succeeded ${history.succeededCount}`
     case "warnings":
       return `Warnings ${history.warningCount}`
+  }
+}
+
+function buildProviderRunReadSyncState(
+  status: ProviderRunReadSyncStatus,
+  localRunCount: number,
+  persistedRunCount: number,
+): ProviderRunReadSyncState {
+  return {
+    fallbackCount: status === "fallback" ? 1 : 0,
+    localRunCount,
+    persistedRunCount: status === "convex" ? persistedRunCount : 0,
+    status,
+  }
+}
+
+function upsertProviderRunReadSyncState(
+  current: Record<string, ProviderRunReadSyncState>,
+  rfqId: string,
+  next: ProviderRunReadSyncState,
+): Record<string, ProviderRunReadSyncState> {
+  const previous = current[rfqId]
+  if (
+    previous &&
+    previous.status === next.status &&
+    previous.localRunCount === next.localRunCount &&
+    previous.persistedRunCount === next.persistedRunCount &&
+    previous.fallbackCount === next.fallbackCount
+  ) {
+    return current
+  }
+  return { ...current, [rfqId]: next }
+}
+
+function providerRunReadSyncLabel(status: ProviderRunReadSyncStatus): string {
+  switch (status) {
+    case "convex":
+      return "Convex"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local"
+  }
+}
+
+function providerRunReadSyncSummary(sync: ProviderRunReadSyncState): string {
+  switch (sync.status) {
+    case "convex":
+      return sync.persistedRunCount > 0
+        ? `${sync.persistedRunCount} persisted provider audit${sync.persistedRunCount === 1 ? "" : "s"} merged with ${sync.localRunCount} local fallback audit${sync.localRunCount === 1 ? "" : "s"}.`
+        : `Convex returned no persisted provider runs; ${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"} remain visible.`
+    case "fallback":
+      return `Convex provider-run read failed; showing ${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"}.`
+    case "pending":
+      return `Checking Convex for provider-run audits; ${sync.localRunCount} local audit${sync.localRunCount === 1 ? "" : "s"} remain visible.`
+    case "local":
+      return `${sync.localRunCount} local provider audit${sync.localRunCount === 1 ? "" : "s"} available; Convex provider-run read is not configured.`
   }
 }
 
