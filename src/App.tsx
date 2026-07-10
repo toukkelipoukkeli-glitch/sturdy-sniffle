@@ -4360,6 +4360,11 @@ function IntegrationStatusPanel({
     () => buildConnectorLinkDrilldown(connectorSnapshot, { filter: connectorFilter, limit: 6, rfqId }),
     [connectorFilter, connectorSnapshot, rfqId],
   )
+
+  useEffect(() => {
+    setProviderDiagnosticCopyFeedback("idle")
+  }, [providerReadDiagnostics.exportSummary, rfqId])
+
   const handleCopyProviderDiagnostics = async () => {
     const copied = await copyTextToClipboard(providerReadDiagnostics.exportSummary)
     setProviderDiagnosticCopyFeedback(copied ? "copied" : "error")
