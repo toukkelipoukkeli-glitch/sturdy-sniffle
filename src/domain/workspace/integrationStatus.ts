@@ -14,6 +14,7 @@ export type IntegrationSourceSeverity = "healthy" | "attention" | "blocked"
 export type IntegrationStatusSourceKey =
   | "calendar_follow_up"
   | "connector"
+  | "convex_bridge"
   | "offer_replies"
   | "persistence"
   | "provider_runs"
@@ -43,7 +44,17 @@ export interface IntegrationStatusSource {
   count?: number
 }
 
+export type WorkspaceConvexBridgeHealthStatus = "configured" | "missing" | "partial"
+
+export interface WorkspaceConvexBridgeHealth {
+  availableCapabilityCount: number
+  missingCapabilityLabels: string[]
+  status: WorkspaceConvexBridgeHealthStatus
+  totalCapabilityCount: number
+}
+
 export interface WorkspaceIntegrationStatusInput {
+  convexBridgeHealth?: WorkspaceConvexBridgeHealth
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
@@ -64,6 +75,7 @@ export interface WorkspaceIntegrationStatus {
 }
 
 export function summarizeWorkspaceIntegrationStatus({
+  convexBridgeHealth,
   connectorErrorCount = 0,
   connectorSnapshot,
   followUpReadinessSyncHealth,
@@ -76,6 +88,7 @@ export function summarizeWorkspaceIntegrationStatus({
   syncErrorCount,
 }: WorkspaceIntegrationStatusInput): WorkspaceIntegrationStatus {
   const sources = [
+    ...(convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
     persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
@@ -91,6 +104,42 @@ export function summarizeWorkspaceIntegrationStatus({
     status: overallStatus(sources),
     warningCount: warnings.length,
     warnings,
+  }
+}
+
+function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationStatusSource {
+  if (health.status === "configured") {
+    return {
+      count: health.availableCapabilityCount,
+      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`,
+      key: "convex_bridge",
+      label: "Convex bridge",
+      severity: "healthy",
+      status: "convex",
+    }
+  }
+
+  if (health.status === "partial") {
+    const missingText = health.missingCapabilityLabels.slice(0, 3).join(", ")
+    const hiddenCount = Math.max(0, health.missingCapabilityLabels.length - 3)
+    const suffix = hiddenCount > 0 ? `, and ${hiddenCount} more` : ""
+    return {
+      count: health.availableCapabilityCount,
+      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}${suffix}.`,
+      key: "convex_bridge",
+      label: "Convex bridge",
+      severity: "attention",
+      status: "review",
+    }
+  }
+
+  return {
+    count: 0,
+    detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+    key: "convex_bridge",
+    label: "Convex bridge",
+    severity: "attention",
+    status: "local",
   }
 }
 

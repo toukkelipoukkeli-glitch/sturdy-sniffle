@@ -766,6 +766,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
     expect(providerReview).toHaveTextContent("Provider read diagnostics copied.")
     const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Convex bridge")
+    expect(integrationHealth).toHaveTextContent(
+      "2/7 optional Convex bridge capabilities are configured; missing offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more.",
+    )
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",

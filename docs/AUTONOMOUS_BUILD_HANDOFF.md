@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8896ad2` (`[codex] Add provider read diagnostic actions (#313)`).
+- Main branch checkpoint: `b9f87ad` (`Surface provider read diagnostic records (#314)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/provider-diagnostic-records` adds compact recent provider-read diagnostic records to Provider review and Integration health.
+- In-flight branch at this checkpoint: `codex/convex-bridge-health-source` surfaces optional browser Convex bridge capability health in Integration health.
 - Latest merged sequence:
+  - `#314` adds compact recent provider-read diagnostic records to Provider review and Integration health.
   - `#313` adds deterministic provider-read diagnostic next-action items in Provider review and Integration health.
   - `#312` makes the Integration health provider-run diagnostics export copyable and adds deterministic selected-RFQ copy/status feedback.
   - `#311` surfaces selected-RFQ provider-read diagnostic status, summary, severity, and recovery copy in Integration health.
