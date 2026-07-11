@@ -25,6 +25,18 @@ export interface WorkspaceConvexBridgeHealth {
 
 export type WorkspaceConvexBridgeCapabilityAvailability = Record<WorkspaceConvexBridgeCapabilityKey, boolean>
 
+export interface WorkspaceConvexBridgeProbe {
+  hasFollowUpActivityReadQueryRef?: boolean
+  hasFollowUpReadinessMutationRef?: boolean
+  hasOfferProviderOutcomeReadinessMutationRef?: boolean
+  hasOfferReleaseExecutionsQueryRef?: boolean
+  hasOfferReplyMutationRef?: boolean
+  hasProviderRunsByRfqQueryRef?: boolean
+  hasRunMutation?: boolean
+  hasRunQuery?: boolean
+  hasWorkspaceMutationRefs?: boolean
+}
+
 const convexBridgeCapabilityDefinitions: Array<{
   key: WorkspaceConvexBridgeCapabilityKey
   label: string
@@ -63,4 +75,20 @@ export function summarizeWorkspaceConvexBridgeHealth(
           : "partial",
     totalCapabilityCount: capabilities.length,
   }
+}
+
+export function summarizeWorkspaceConvexBridgeProbe(
+  probe: WorkspaceConvexBridgeProbe | undefined,
+): WorkspaceConvexBridgeHealth {
+  return summarizeWorkspaceConvexBridgeHealth({
+    follow_up_activity_reads: Boolean(probe?.hasFollowUpActivityReadQueryRef && probe.hasRunQuery),
+    follow_up_readiness_writes: Boolean(probe?.hasFollowUpReadinessMutationRef && probe.hasRunMutation),
+    offer_release_reads: Boolean(probe?.hasOfferReleaseExecutionsQueryRef && probe.hasRunQuery),
+    offer_reply_writes: Boolean(probe?.hasOfferReplyMutationRef && probe.hasRunMutation),
+    provider_outcome_readiness_writes: Boolean(
+      probe?.hasOfferProviderOutcomeReadinessMutationRef && probe.hasRunMutation,
+    ),
+    provider_run_reads: Boolean(probe?.hasProviderRunsByRfqQueryRef && probe.hasRunQuery),
+    workspace_writes: Boolean(probe?.hasWorkspaceMutationRefs && probe.hasRunMutation),
+  })
 }

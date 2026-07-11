@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { summarizeWorkspaceConvexBridgeHealth } from "./convexBridgeHealth"
+import { summarizeWorkspaceConvexBridgeHealth, summarizeWorkspaceConvexBridgeProbe } from "./convexBridgeHealth"
 
 describe("workspace Convex bridge health", () => {
   it("classifies a fully configured bridge and preserves capability order", () => {
@@ -61,5 +61,34 @@ describe("workspace Convex bridge health", () => {
       "provider outcome readiness writes",
       "offer reply writes",
     ])
+  })
+
+  it("derives capability health from browser bridge probe facts", () => {
+    const missing = summarizeWorkspaceConvexBridgeProbe(undefined)
+    const partial = summarizeWorkspaceConvexBridgeProbe({
+      hasFollowUpActivityReadQueryRef: true,
+      hasFollowUpReadinessMutationRef: true,
+      hasOfferReleaseExecutionsQueryRef: true,
+      hasProviderRunsByRfqQueryRef: true,
+      hasRunMutation: true,
+      hasRunQuery: true,
+      hasWorkspaceMutationRefs: true,
+    })
+    const missingRunner = summarizeWorkspaceConvexBridgeProbe({
+      hasOfferReplyMutationRef: true,
+      hasProviderRunsByRfqQueryRef: true,
+      hasRunMutation: false,
+      hasRunQuery: false,
+    })
+
+    expect(missing.status).toBe("missing")
+    expect(partial.status).toBe("partial")
+    expect(partial.availableCapabilityCount).toBe(5)
+    expect(partial.missingCapabilityLabels).toEqual([
+      "provider outcome readiness writes",
+      "offer reply writes",
+    ])
+    expect(missingRunner.status).toBe("missing")
+    expect(missingRunner.availableCapabilityCount).toBe(0)
   })
 })

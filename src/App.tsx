@@ -345,7 +345,7 @@ import {
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import {
-  summarizeWorkspaceConvexBridgeHealth,
+  summarizeWorkspaceConvexBridgeProbe,
   type WorkspaceConvexBridgeHealth,
 } from "./domain/workspace/convexBridgeHealth"
 import {
@@ -11942,14 +11942,16 @@ declare global {
 
 function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
   const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
-  return summarizeWorkspaceConvexBridgeHealth({
-    follow_up_activity_reads: Boolean(bridge?.offerFollowUpActivitiesQueryRef && bridge.runQuery),
-    follow_up_readiness_writes: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef && bridge.runMutation),
-    offer_release_reads: Boolean(bridge?.offerReleaseExecutionsQueryRef && bridge.runQuery),
-    offer_reply_writes: Boolean(bridge?.offerReplyMutationRef && bridge.runMutation),
-    provider_outcome_readiness_writes: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef && bridge.runMutation),
-    provider_run_reads: Boolean(bridge?.providerRunsByRfqQueryRef && bridge.runQuery),
-    workspace_writes: Boolean(bridge?.mutationRefs && bridge.runMutation),
+  return summarizeWorkspaceConvexBridgeProbe({
+    hasFollowUpActivityReadQueryRef: Boolean(bridge?.offerFollowUpActivitiesQueryRef),
+    hasFollowUpReadinessMutationRef: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef),
+    hasOfferProviderOutcomeReadinessMutationRef: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef),
+    hasOfferReleaseExecutionsQueryRef: Boolean(bridge?.offerReleaseExecutionsQueryRef),
+    hasOfferReplyMutationRef: Boolean(bridge?.offerReplyMutationRef),
+    hasProviderRunsByRfqQueryRef: Boolean(bridge?.providerRunsByRfqQueryRef),
+    hasRunMutation: Boolean(bridge?.runMutation),
+    hasRunQuery: Boolean(bridge?.runQuery),
+    hasWorkspaceMutationRefs: Boolean(bridge?.mutationRefs),
   })
 }
 
