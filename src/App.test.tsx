@@ -768,7 +768,7 @@ describe("FactoryBid workspace (component)", () => {
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Convex bridge")
     expect(integrationHealth).toHaveTextContent(
-      "2/7 optional Convex bridge capabilities are configured; missing offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more.",
+      "2/7 optional Convex bridge capabilities are configured; missing offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more.",
     )
     const bridgeCapabilities = within(integrationHealth).getByLabelText("Convex bridge capabilities")
     expect(bridgeCapabilities).toHaveTextContent("workspace writes")
@@ -776,11 +776,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(bridgeCapabilities).toHaveTextContent("provider run reads")
     expect(bridgeCapabilities).toHaveTextContent("offer release reads")
     expect(bridgeCapabilities).toHaveTextContent("follow-up readiness writes")
-    expect(within(bridgeCapabilities).getAllByText("missing")).toHaveLength(5)
+    expect(bridgeCapabilities).toHaveTextContent("RFQ ID map (1 local ID)")
+    expect(bridgeCapabilities).toHaveTextContent("offer ID map (0 local IDs)")
+    expect(bridgeCapabilities).toHaveTextContent("quote ID map (0 local IDs)")
+    expect(within(bridgeCapabilities).getAllByText("missing")).toHaveLength(7)
     const bridgeRecovery = within(integrationHealth).getByLabelText("Convex bridge recovery actions")
     expect(bridgeRecovery).toHaveTextContent("Add missing bridge refs")
     expect(bridgeRecovery).toHaveTextContent(
-      "Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more in the optional browser bridge.",
+      "Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more in the optional browser bridge.",
     )
     expect(bridgeRecovery).toHaveTextContent("Keep local fallback")
     expect(integrationHealth).toHaveTextContent("Copy the Convex bridge capability diagnostic export.")
@@ -789,9 +792,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[1]?.[0]).toContain("Convex bridge health")
     expect(writeText.mock.calls[1]?.[0]).toContain("Status: partial")
     expect(writeText.mock.calls[1]?.[0]).toContain("- offer release reads: missing")
+    expect(writeText.mock.calls[1]?.[0]).toContain("- RFQ ID map: configured (1 local ID)")
+    expect(writeText.mock.calls[1]?.[0]).toContain("- offer ID map")
     expect(writeText.mock.calls[1]?.[0]).toContain("Recovery actions:")
     expect(writeText.mock.calls[1]?.[0]).toContain(
-      "- Add missing bridge refs: Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more in the optional browser bridge.",
+      "- Add missing bridge refs: Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more in the optional browser bridge.",
     )
     expect(integrationHealth).toHaveTextContent("Convex bridge diagnostics copied.")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")

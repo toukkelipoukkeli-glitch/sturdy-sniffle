@@ -11943,6 +11943,7 @@ declare global {
 function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
   const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
   return summarizeWorkspaceConvexBridgeProbe({
+    offerIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.offerIdsByLocalId),
     hasFollowUpActivityReadQueryRef: Boolean(bridge?.offerFollowUpActivitiesQueryRef),
     hasFollowUpReadinessMutationRef: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef),
     hasOfferProviderOutcomeReadinessMutationRef: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef),
@@ -11952,7 +11953,17 @@ function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
     hasRunMutation: Boolean(bridge?.runMutation),
     hasRunQuery: Boolean(bridge?.runQuery),
     hasWorkspaceMutationRefs: Boolean(bridge?.mutationRefs),
+    quoteIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.quoteIdsByLocalId),
+    rfqIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.rfqIdsByLocalId),
   })
+}
+
+function countBridgeIdMapEntries(map: Record<string, string> | undefined): number {
+  if (!map) {
+    return 0
+  }
+
+  return Object.values(map).filter((value) => typeof value === "string" && value.trim().length > 0).length
 }
 
 function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | undefined {
