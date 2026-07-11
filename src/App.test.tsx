@@ -777,6 +777,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(bridgeCapabilities).toHaveTextContent("offer release reads")
     expect(bridgeCapabilities).toHaveTextContent("follow-up readiness writes")
     expect(within(bridgeCapabilities).getAllByText("missing")).toHaveLength(5)
+    const bridgeRecovery = within(integrationHealth).getByLabelText("Convex bridge recovery actions")
+    expect(bridgeRecovery).toHaveTextContent("Add missing bridge refs")
+    expect(bridgeRecovery).toHaveTextContent(
+      "Wire offer release reads, follow-up activity reads and follow-up readiness writes, plus 2 more in the optional browser bridge.",
+    )
+    expect(bridgeRecovery).toHaveTextContent("Keep local fallback")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",

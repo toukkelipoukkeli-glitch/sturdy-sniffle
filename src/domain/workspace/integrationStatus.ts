@@ -41,8 +41,15 @@ export interface IntegrationStatusSource {
   severity: IntegrationSourceSeverity
   status: IntegrationStatusSourceStatus
   detail: string
+  actions?: IntegrationStatusSourceAction[]
   details?: IntegrationStatusSourceDetail[]
   count?: number
+}
+
+export interface IntegrationStatusSourceAction {
+  detail: string
+  key: string
+  label: string
 }
 
 export interface IntegrationStatusSourceDetail {
@@ -141,6 +148,18 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
     return {
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}${suffix}.`,
+      actions: [
+        {
+          detail: `Wire ${convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)} in the optional browser bridge.`,
+          key: "wire_missing_capabilities",
+          label: "Add missing bridge refs",
+        },
+        {
+          detail: "Keep local fallback paths visible until bridge health reports configured.",
+          key: "keep_local_fallback",
+          label: "Keep local fallback",
+        },
+      ],
       details: convexBridgeCapabilityDetails(health),
       key: "convex_bridge",
       label: "Convex bridge",
@@ -152,6 +171,18 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   return {
     count: 0,
     detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+    actions: [
+      {
+        detail: "Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
+        key: "configure_bridge",
+        label: "Configure Convex bridge",
+      },
+      {
+        detail: "Keep local fallback paths visible until bridge health reports configured.",
+        key: "keep_local_fallback",
+        label: "Keep local fallback",
+      },
+    ],
     details: convexBridgeCapabilityDetails(health),
     key: "convex_bridge",
     label: "Convex bridge",
@@ -170,6 +201,21 @@ function convexBridgeCapabilityDetails(health: WorkspaceConvexBridgeHealth): Int
     label: capability.label,
     status: capability.configured ? "configured" : "missing",
   }))
+}
+
+function convexBridgeMissingCapabilitySummary(labels: string[]): string {
+  if (labels.length === 0) {
+    return "the missing bridge refs"
+  }
+
+  const visibleLabels = labels.slice(0, 3)
+  const hiddenCount = Math.max(0, labels.length - visibleLabels.length)
+  const visibleText =
+    visibleLabels.length === 1
+      ? visibleLabels[0]
+      : `${visibleLabels.slice(0, -1).join(", ")} and ${visibleLabels[visibleLabels.length - 1]}`
+
+  return hiddenCount > 0 ? `${visibleText}, plus ${hiddenCount} more` : visibleText
 }
 
 function persistenceSource(

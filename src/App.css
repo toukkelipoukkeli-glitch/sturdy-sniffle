@@ -6771,6 +6771,40 @@
   color: oklch(0.3 0.08 155);
 }
 
+.integration-source-action-list {
+  display: grid;
+  gap: 5px;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.integration-source-action-list li {
+  background: rgb(255 255 255 / 68%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+}
+
+.integration-source-action-list li strong,
+.integration-source-action-list li span {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.integration-source-action-list li strong {
+  color: oklch(0.28 0.045 250);
+  font-weight: 850;
+}
+
+.integration-source-action-list li span {
+  color: oklch(0.4 0.035 250);
+  font-weight: 700;
+}
+
 .integration-source-status {
   align-self: start;
   background: white;

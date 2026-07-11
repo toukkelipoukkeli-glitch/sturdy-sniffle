@@ -4628,6 +4628,16 @@ function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
             ))}
           </ul>
         ) : null}
+        {source.actions && source.actions.length > 0 ? (
+          <ul className="integration-source-action-list" aria-label={`${source.label} recovery actions`}>
+            {source.actions.map((action) => (
+              <li key={action.key}>
+                <strong>{action.label}</strong>
+                <span>{action.detail}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       <span className="integration-source-status">
         {source.count !== undefined ? `${source.count} ` : ""}
