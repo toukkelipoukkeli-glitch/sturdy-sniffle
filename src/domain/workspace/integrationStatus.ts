@@ -41,13 +41,27 @@ export interface IntegrationStatusSource {
   severity: IntegrationSourceSeverity
   status: IntegrationStatusSourceStatus
   detail: string
+  details?: IntegrationStatusSourceDetail[]
   count?: number
+}
+
+export interface IntegrationStatusSourceDetail {
+  key: string
+  label: string
+  status: "configured" | "missing"
 }
 
 export type WorkspaceConvexBridgeHealthStatus = "configured" | "missing" | "partial"
 
+export interface WorkspaceConvexBridgeCapability {
+  configured: boolean
+  key: string
+  label: string
+}
+
 export interface WorkspaceConvexBridgeHealth {
   availableCapabilityCount: number
+  capabilities?: WorkspaceConvexBridgeCapability[]
   missingCapabilityLabels: string[]
   status: WorkspaceConvexBridgeHealthStatus
   totalCapabilityCount: number
@@ -112,6 +126,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
     return {
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`,
+      details: convexBridgeCapabilityDetails(health),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "healthy",
@@ -126,6 +141,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
     return {
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}${suffix}.`,
+      details: convexBridgeCapabilityDetails(health),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "attention",
@@ -136,11 +152,24 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   return {
     count: 0,
     detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+    details: convexBridgeCapabilityDetails(health),
     key: "convex_bridge",
     label: "Convex bridge",
     severity: "attention",
     status: "local",
   }
+}
+
+function convexBridgeCapabilityDetails(health: WorkspaceConvexBridgeHealth): IntegrationStatusSourceDetail[] | undefined {
+  if (!health.capabilities || health.capabilities.length === 0) {
+    return undefined
+  }
+
+  return health.capabilities.map((capability) => ({
+    key: capability.key,
+    label: capability.label,
+    status: capability.configured ? "configured" : "missing",
+  }))
 }
 
 function persistenceSource(
