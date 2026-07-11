@@ -4610,6 +4610,16 @@ function connectorLinkDrilldownFilterLabel(
 }
 
 function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
+  const [diagnosticCopyFeedback, setDiagnosticCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopyDiagnosticExport = async () => {
+    if (!source.diagnosticExport) {
+      return
+    }
+
+    const copied = await copyTextToClipboard(source.diagnosticExport)
+    setDiagnosticCopyFeedback(copied ? "copied" : "error")
+  }
+
   return (
     <article className="integration-source-row" data-severity={source.severity}>
       <span className="integration-source-icon" aria-hidden="true">
@@ -4637,6 +4647,21 @@ function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
               </li>
             ))}
           </ul>
+        ) : null}
+        {source.diagnosticExport ? (
+          <div className="integration-source-copy-actions">
+            <Button onClick={() => void handleCopyDiagnosticExport()} size="sm" type="button" variant="outline">
+              <Copy aria-hidden="true" />
+              {diagnosticCopyFeedback === "copied" ? "Copied" : "Copy bridge diagnostics"}
+            </Button>
+            <small role="status">
+              {diagnosticCopyFeedback === "copied"
+                ? "Convex bridge diagnostics copied."
+                : diagnosticCopyFeedback === "error"
+                  ? "Copy unavailable; inspect the bridge status details manually."
+                  : "Copy the Convex bridge capability diagnostic export."}
+            </small>
+          </div>
         ) : null}
       </div>
       <span className="integration-source-status">

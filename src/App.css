@@ -6805,6 +6805,27 @@
   font-weight: 700;
 }
 
+.integration-source-copy-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.integration-source-copy-actions [data-slot="button"] {
+  flex: 0 0 auto;
+}
+
+.integration-source-copy-actions small {
+  color: oklch(0.4 0.035 250);
+  flex: 1 1 160px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
 .integration-source-status {
   align-self: start;
   background: white;
