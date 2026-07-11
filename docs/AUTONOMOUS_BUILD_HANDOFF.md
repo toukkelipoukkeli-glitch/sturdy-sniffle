@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `bfd31bc` (`Add Convex bridge identity map health (#322)`).
+- Main branch checkpoint: `fa0dfe3` (`Normalize Convex bridge ID map lookups (#323)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-bridge-id-map-normalization` normalizes optional browser bridge local-to-Convex ID map reads before any query or mutation adapter consumes them.
+- In-flight branch at this checkpoint: `codex/convex-bridge-id-map-domain-helper` extracts optional browser bridge ID-map normalization into focused workspace domain helpers.
 - Latest merged sequence:
+  - `#323` normalizes optional browser bridge local-to-Convex ID map reads before any query or mutation adapter consumes them.
   - `#322` adds deterministic browser bridge identity-map readiness to the optional Convex bridge health surface.
   - `#321` adds a deterministic browser bridge probe adapter on top of the new Convex bridge health domain helper.
   - `#320` extracts deterministic Convex bridge capability health summarization into a focused domain helper.
