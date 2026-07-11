@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `dd2a691` (`Surface Convex bridge capability details (#316)`).
+- Main branch checkpoint: `ad1b28e` (`Add Convex bridge recovery actions (#317)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-bridge-recovery-actions` adds deterministic recovery actions for partial or missing Convex bridge capabilities.
+- In-flight branch at this checkpoint: `codex/convex-bridge-diagnostic-export` adds a copyable Convex bridge capability diagnostic export.
 - Latest merged sequence:
+  - `#317` adds deterministic recovery actions for partial or missing Convex bridge capabilities.
   - `#316` surfaces configured/missing Convex bridge capabilities inside Integration health.
   - `#315` surfaces optional browser Convex bridge capability health in Integration health so local fallback remains explicit when no browser bridge is configured.
   - `#314` adds compact recent provider-read diagnostic records to Provider review and Integration health.

@@ -43,6 +43,7 @@ export interface IntegrationStatusSource {
   detail: string
   actions?: IntegrationStatusSourceAction[]
   details?: IntegrationStatusSourceDetail[]
+  diagnosticExport?: string
   count?: number
 }
 
@@ -134,6 +135,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`,
       details: convexBridgeCapabilityDetails(health),
+      diagnosticExport: convexBridgeDiagnosticExport(health),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "healthy",
@@ -159,6 +161,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
         },
       ],
       details: convexBridgeCapabilityDetails(health),
+      diagnosticExport: convexBridgeDiagnosticExport(health),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "attention",
@@ -182,6 +185,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
       },
     ],
     details: convexBridgeCapabilityDetails(health),
+    diagnosticExport: convexBridgeDiagnosticExport(health),
     key: "convex_bridge",
     label: "Convex bridge",
     severity: "attention",
@@ -211,6 +215,23 @@ function convexBridgeMissingCapabilitySummary(labels: string[]): string {
   const visibleText = visibleLabels.join(", ")
 
   return hiddenCount > 0 ? `${visibleText}, and ${hiddenCount} more` : visibleText
+}
+
+function convexBridgeDiagnosticExport(health: WorkspaceConvexBridgeHealth): string {
+  const capabilityLines = (health.capabilities ?? []).map(
+    (capability) => `- ${capability.label}: ${capability.configured ? "configured" : "missing"}`,
+  )
+  const missingLines = health.missingCapabilityLabels.map((label) => `- ${label}`)
+
+  return [
+    "Convex bridge health",
+    `Status: ${health.status}`,
+    `Capabilities configured: ${health.availableCapabilityCount}/${health.totalCapabilityCount}`,
+    "Capability details:",
+    ...(capabilityLines.length > 0 ? capabilityLines : ["- no capability details available"]),
+    "Missing capabilities:",
+    ...(missingLines.length > 0 ? missingLines : ["- none"]),
+  ].join("\n")
 }
 
 function persistenceSource(

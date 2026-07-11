@@ -783,6 +783,13 @@ describe("FactoryBid workspace (component)", () => {
       "Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more in the optional browser bridge.",
     )
     expect(bridgeRecovery).toHaveTextContent("Keep local fallback")
+    expect(integrationHealth).toHaveTextContent("Copy the Convex bridge capability diagnostic export.")
+    await user.click(within(integrationHealth).getByRole("button", { name: "Copy bridge diagnostics" }))
+    expect(writeText).toHaveBeenCalledTimes(2)
+    expect(writeText.mock.calls[1]?.[0]).toContain("Convex bridge health")
+    expect(writeText.mock.calls[1]?.[0]).toContain("Status: partial")
+    expect(writeText.mock.calls[1]?.[0]).toContain("- offer release reads: missing")
+    expect(integrationHealth).toHaveTextContent("Convex bridge diagnostics copied.")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",
@@ -794,9 +801,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Provider read diagnostics: healthy, healthy")).toHaveAttribute("data-severity", "healthy")
     expect(integrationHealth).toHaveTextContent("Copy the selected RFQ provider-read diagnostic export.")
     await user.click(within(integrationHealth).getByRole("button", { name: "Copy provider diagnostics" }))
-    expect(writeText).toHaveBeenCalledTimes(2)
-    expect(writeText.mock.calls[1]?.[0]).toContain("Provider run read history: healthy")
-    expect(writeText.mock.calls[1]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
+    expect(writeText).toHaveBeenCalledTimes(3)
+    expect(writeText.mock.calls[2]?.[0]).toContain("Provider run read history: healthy")
+    expect(writeText.mock.calls[2]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics copied from Integration health.")
     expect(integrationHealth).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
