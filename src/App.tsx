@@ -4424,6 +4424,10 @@ function IntegrationStatusPanel({
             : "No provider read recovery action needed."}
         </small>
         <ProviderReadDiagnosticActionList actions={providerDiagnosticSummary.nextActionItems} />
+        <ProviderReadDiagnosticRecordList
+          records={providerDiagnosticSummary.recentRecords}
+          totalRecordCount={providerDiagnosticSummary.totalRecordCount}
+        />
         <div className="integration-provider-read-diagnostics-actions">
           <Button onClick={() => void handleCopyProviderDiagnostics()} size="sm" type="button" variant="outline">
             <Copy aria-hidden="true" />
@@ -4698,6 +4702,10 @@ function ProviderRunReviewPanel({
             : " · No recovery action needed"}
         </small>
         <ProviderReadDiagnosticActionList actions={readDiagnostics.summary.nextActionItems} />
+        <ProviderReadDiagnosticRecordList
+          records={readDiagnostics.summary.recentRecords}
+          totalRecordCount={readDiagnostics.summary.totalRecordCount}
+        />
         <details>
           <summary>Diagnostic export</summary>
           <div className="provider-read-diagnostics-actions">
@@ -4798,6 +4806,42 @@ function ProviderReadDiagnosticActionList({
         </li>
       ))}
     </ul>
+  )
+}
+
+function ProviderReadDiagnosticRecordList({
+  records,
+  totalRecordCount,
+}: {
+  records: ProviderRunReadHistoryDiagnosticSummary["recentRecords"]
+  totalRecordCount: number
+}) {
+  const visibleRecords = records.slice(0, 3)
+
+  return (
+    <div className="provider-read-diagnostic-records" aria-label="Provider read diagnostic records">
+      <strong>Recent provider reads</strong>
+      {visibleRecords.length > 0 ? (
+        <div className="provider-read-diagnostic-record-list">
+          {visibleRecords.map((record) => (
+            <article data-status={record.status} key={record.recordKey}>
+              <span>{humanizeKey(record.status)} read</span>
+              <small>
+                {record.persistedAt} · {record.recordKey}
+              </small>
+              <small>
+                Convex {record.persistedRunCount} · Local {record.localRunCount} · Errors {record.errorCount}
+              </small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <small>No provider read records yet.</small>
+      )}
+      {totalRecordCount > visibleRecords.length ? (
+        <small>{totalRecordCount - visibleRecords.length} older provider read record(s) hidden.</small>
+      ) : null}
+    </div>
   )
 }
 
