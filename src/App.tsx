@@ -348,6 +348,7 @@ import {
   countWorkspaceConvexBridgeIdMapEntries,
   resolveWorkspaceConvexBridgeMappedId,
   summarizeWorkspaceConvexBridgeProbe,
+  summarizeWorkspaceConvexRuntimeConfig,
   type WorkspaceConvexBridgeHealth,
 } from "./domain/workspace/convexBridgeHealth"
 import {
@@ -2298,10 +2299,19 @@ function App() {
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const convexBridgeHealth = useMemo(() => summarizeBrowserConvexBridgeHealth(), [])
+  const convexRuntimeConfigHealth = useMemo(
+    () =>
+      summarizeWorkspaceConvexRuntimeConfig({
+        convexSiteUrl: import.meta.env.VITE_CONVEX_SITE_URL,
+        convexUrl: import.meta.env.VITE_CONVEX_URL,
+      }),
+    [],
+  )
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
         convexBridgeHealth,
+        convexRuntimeConfigHealth,
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
@@ -2315,6 +2325,7 @@ function App() {
       }),
     [
       convexBridgeHealth,
+      convexRuntimeConfigHealth,
       followUpActivityReadinessSyncHealth,
       offerFollowUpScheduledAt,
       offerReplySync,
