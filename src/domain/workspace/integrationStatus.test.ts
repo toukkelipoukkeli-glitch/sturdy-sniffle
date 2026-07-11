@@ -56,7 +56,9 @@ describe("workspace integration status", () => {
     })
 
     expect(status.status).toBe("live")
-    expect(status.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+    const convexBridgeSource = status.sources.find((source) => source.key === "convex_bridge")
+    expect(convexBridgeSource?.actions).toBeUndefined()
+    expect(convexBridgeSource).toMatchObject({
       count: 4,
       detail: "4/4 optional Convex bridge capabilities are configured.",
       details: [
@@ -115,6 +117,19 @@ describe("workspace integration status", () => {
 
     expect(missing.status).toBe("fallback")
     expect(missing.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
+          key: "configure_bridge",
+          label: "Configure Convex bridge",
+        },
+        {
+          detail: "Keep local fallback paths visible until bridge health reports configured.",
+          key: "keep_local_fallback",
+          label: "Keep local fallback",
+        },
+      ],
       count: 0,
       detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
       details: [
@@ -126,6 +141,18 @@ describe("workspace integration status", () => {
     })
     expect(partial.status).toBe("attention")
     expect(partial.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+      actions: [
+        {
+          detail: "Wire provider run reads, offer release reads, follow-up activity reads, and 1 more in the optional browser bridge.",
+          key: "wire_missing_capabilities",
+          label: "Add missing bridge refs",
+        },
+        {
+          detail: "Keep local fallback paths visible until bridge health reports configured.",
+          key: "keep_local_fallback",
+          label: "Keep local fallback",
+        },
+      ],
       count: 1,
       detail:
         "1/5 optional Convex bridge capabilities are configured; missing provider run reads, offer release reads, follow-up activity reads, and 1 more.",

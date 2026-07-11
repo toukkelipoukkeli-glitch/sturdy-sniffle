@@ -41,8 +41,15 @@ export interface IntegrationStatusSource {
   severity: IntegrationSourceSeverity
   status: IntegrationStatusSourceStatus
   detail: string
+  actions?: IntegrationStatusSourceAction[]
   details?: IntegrationStatusSourceDetail[]
   count?: number
+}
+
+export interface IntegrationStatusSourceAction {
+  detail: string
+  key: string
+  label: string
 }
 
 export interface IntegrationStatusSourceDetail {
@@ -135,12 +142,22 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   }
 
   if (health.status === "partial") {
-    const missingText = health.missingCapabilityLabels.slice(0, 3).join(", ")
-    const hiddenCount = Math.max(0, health.missingCapabilityLabels.length - 3)
-    const suffix = hiddenCount > 0 ? `, and ${hiddenCount} more` : ""
+    const missingText = convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)
     return {
       count: health.availableCapabilityCount,
-      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}${suffix}.`,
+      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}.`,
+      actions: [
+        {
+          detail: `Wire ${missingText} in the optional browser bridge.`,
+          key: "wire_missing_capabilities",
+          label: "Add missing bridge refs",
+        },
+        {
+          detail: "Keep local fallback paths visible until bridge health reports configured.",
+          key: "keep_local_fallback",
+          label: "Keep local fallback",
+        },
+      ],
       details: convexBridgeCapabilityDetails(health),
       key: "convex_bridge",
       label: "Convex bridge",
@@ -152,6 +169,18 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   return {
     count: 0,
     detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+    actions: [
+      {
+        detail: "Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
+        key: "configure_bridge",
+        label: "Configure Convex bridge",
+      },
+      {
+        detail: "Keep local fallback paths visible until bridge health reports configured.",
+        key: "keep_local_fallback",
+        label: "Keep local fallback",
+      },
+    ],
     details: convexBridgeCapabilityDetails(health),
     key: "convex_bridge",
     label: "Convex bridge",
@@ -170,6 +199,18 @@ function convexBridgeCapabilityDetails(health: WorkspaceConvexBridgeHealth): Int
     label: capability.label,
     status: capability.configured ? "configured" : "missing",
   }))
+}
+
+function convexBridgeMissingCapabilitySummary(labels: string[]): string {
+  if (labels.length === 0) {
+    return "the missing bridge refs"
+  }
+
+  const visibleLabels = labels.slice(0, 3)
+  const hiddenCount = Math.max(0, labels.length - visibleLabels.length)
+  const visibleText = visibleLabels.join(", ")
+
+  return hiddenCount > 0 ? `${visibleText}, and ${hiddenCount} more` : visibleText
 }
 
 function persistenceSource(
