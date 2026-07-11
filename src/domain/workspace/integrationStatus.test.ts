@@ -220,6 +220,72 @@ describe("workspace integration status", () => {
     })
   })
 
+  it("surfaces Convex bridge identity-map readiness in details and diagnostics", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: {
+        availableCapabilityCount: 7,
+        availableIdentityMapCount: 1,
+        capabilities: [
+          { configured: true, key: "workspace_writes", label: "workspace writes" },
+          { configured: true, key: "provider_run_reads", label: "provider run reads" },
+          { configured: true, key: "offer_release_reads", label: "offer release reads" },
+          { configured: true, key: "follow_up_activity_reads", label: "follow-up activity reads" },
+          { configured: true, key: "follow_up_readiness_writes", label: "follow-up readiness writes" },
+          {
+            configured: true,
+            key: "provider_outcome_readiness_writes",
+            label: "provider outcome readiness writes",
+          },
+          { configured: true, key: "offer_reply_writes", label: "offer reply writes" },
+        ],
+        identityMaps: [
+          { configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 2 },
+          { configured: false, key: "offer_id_map", label: "offer ID map", localIdCount: 0 },
+          { configured: false, key: "quote_id_map", label: "quote ID map", localIdCount: 0 },
+        ],
+        missingCapabilityLabels: [],
+        missingIdentityMapLabels: ["offer ID map", "quote ID map"],
+        status: "partial",
+        totalCapabilityCount: 7,
+        totalIdentityMapCount: 3,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    const convexBridgeSource = status.sources.find((source) => source.key === "convex_bridge")
+    expect(convexBridgeSource).toMatchObject({
+      actions: [
+        {
+          detail: "Wire offer ID map, quote ID map in the optional browser bridge.",
+          key: "wire_missing_capabilities",
+          label: "Add missing bridge refs",
+        },
+        {
+          detail: "Keep local fallback paths visible until bridge health reports configured.",
+          key: "keep_local_fallback",
+          label: "Keep local fallback",
+        },
+      ],
+      detail: "7/7 optional Convex bridge capabilities are configured; missing offer ID map, quote ID map.",
+      severity: "attention",
+      status: "review",
+    })
+    expect(convexBridgeSource?.details?.slice(-3)).toEqual([
+      { key: "rfq_id_map", label: "RFQ ID map (2 local IDs)", status: "configured" },
+      { key: "offer_id_map", label: "offer ID map (0 local IDs)", status: "missing" },
+      { key: "quote_id_map", label: "quote ID map (0 local IDs)", status: "missing" },
+    ])
+    expect(convexBridgeSource?.diagnosticExport).toContain("Identity maps:")
+    expect(convexBridgeSource?.diagnosticExport).toContain("- RFQ ID map: configured (2 local IDs)")
+    expect(convexBridgeSource?.diagnosticExport).toContain("Missing identity maps:\n- offer ID map\n- quote ID map")
+  })
+
   it("marks local and stale integration paths as fallback while preserving counts", () => {
     const status = summarizeWorkspaceIntegrationStatus({
       connectorSnapshot: connectorSnapshot("stale"),

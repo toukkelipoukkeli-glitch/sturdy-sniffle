@@ -16,8 +16,12 @@ describe("workspace Convex bridge health", () => {
 
     expect(health.status).toBe("configured")
     expect(health.availableCapabilityCount).toBe(7)
+    expect(health.availableIdentityMapCount).toBe(0)
     expect(health.totalCapabilityCount).toBe(7)
+    expect(health.totalIdentityMapCount).toBe(0)
     expect(health.missingCapabilityLabels).toEqual([])
+    expect(health.missingIdentityMapLabels).toEqual([])
+    expect(health.identityMaps).toEqual([])
     expect(health.capabilities.map((capability) => [capability.key, capability.label, capability.configured])).toEqual([
       ["workspace_writes", "workspace writes", true],
       ["provider_run_reads", "provider run reads", true],
@@ -73,6 +77,7 @@ describe("workspace Convex bridge health", () => {
       hasRunMutation: true,
       hasRunQuery: true,
       hasWorkspaceMutationRefs: true,
+      rfqIdMapLocalIdCount: 2,
     })
     const missingRunner = summarizeWorkspaceConvexBridgeProbe({
       hasOfferReplyMutationRef: true,
@@ -84,11 +89,53 @@ describe("workspace Convex bridge health", () => {
     expect(missing.status).toBe("missing")
     expect(partial.status).toBe("partial")
     expect(partial.availableCapabilityCount).toBe(5)
+    expect(partial.availableIdentityMapCount).toBe(1)
+    expect(partial.missingIdentityMapLabels).toEqual(["offer ID map", "quote ID map"])
+    expect(partial.identityMaps).toEqual([
+      { configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 2 },
+      { configured: false, key: "offer_id_map", label: "offer ID map", localIdCount: 0 },
+      { configured: false, key: "quote_id_map", label: "quote ID map", localIdCount: 0 },
+    ])
     expect(partial.missingCapabilityLabels).toEqual([
       "provider outcome readiness writes",
       "offer reply writes",
     ])
     expect(missingRunner.status).toBe("missing")
     expect(missingRunner.availableCapabilityCount).toBe(0)
+  })
+
+  it("requires identity maps before a probed bridge is fully configured", () => {
+    const missingMaps = summarizeWorkspaceConvexBridgeProbe({
+      hasFollowUpActivityReadQueryRef: true,
+      hasFollowUpReadinessMutationRef: true,
+      hasOfferProviderOutcomeReadinessMutationRef: true,
+      hasOfferReleaseExecutionsQueryRef: true,
+      hasOfferReplyMutationRef: true,
+      hasProviderRunsByRfqQueryRef: true,
+      hasRunMutation: true,
+      hasRunQuery: true,
+      hasWorkspaceMutationRefs: true,
+    })
+    const configured = summarizeWorkspaceConvexBridgeProbe({
+      hasFollowUpActivityReadQueryRef: true,
+      hasFollowUpReadinessMutationRef: true,
+      hasOfferProviderOutcomeReadinessMutationRef: true,
+      hasOfferReleaseExecutionsQueryRef: true,
+      hasOfferReplyMutationRef: true,
+      hasProviderRunsByRfqQueryRef: true,
+      hasRunMutation: true,
+      hasRunQuery: true,
+      hasWorkspaceMutationRefs: true,
+      offerIdMapLocalIdCount: 1,
+      quoteIdMapLocalIdCount: 1,
+      rfqIdMapLocalIdCount: 1,
+    })
+
+    expect(missingMaps.status).toBe("partial")
+    expect(missingMaps.availableCapabilityCount).toBe(7)
+    expect(missingMaps.availableIdentityMapCount).toBe(0)
+    expect(missingMaps.missingIdentityMapLabels).toEqual(["RFQ ID map", "offer ID map", "quote ID map"])
+    expect(configured.status).toBe("configured")
+    expect(configured.availableIdentityMapCount).toBe(3)
   })
 })

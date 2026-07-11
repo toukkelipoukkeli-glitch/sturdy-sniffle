@@ -118,7 +118,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   if (health.status === "configured") {
     return {
       count: health.availableCapabilityCount,
-      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`,
+      detail: convexBridgeConfiguredDetail(health),
       details: convexBridgeCapabilityDetails(health),
       diagnosticExport: convexBridgeDiagnosticExport(health, []),
       key: "convex_bridge",
@@ -129,7 +129,10 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   }
 
   if (health.status === "partial") {
-    const missingText = convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)
+    const missingText = convexBridgeMissingCapabilitySummary([
+      ...health.missingCapabilityLabels,
+      ...(health.missingIdentityMapLabels ?? []),
+    ])
     const actions = [
       {
         detail: `Wire ${missingText} in the optional browser bridge.`,
@@ -183,15 +186,33 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
 }
 
 function convexBridgeCapabilityDetails(health: WorkspaceConvexBridgeHealth): IntegrationStatusSourceDetail[] | undefined {
-  if (!health.capabilities || health.capabilities.length === 0) {
+  const identityMapDetails = (health.identityMaps ?? []).map((identityMap) => ({
+    key: identityMap.key,
+    label: `${identityMap.label} (${identityMap.localIdCount} local ${identityMap.localIdCount === 1 ? "ID" : "IDs"})`,
+    status: identityMap.configured ? ("configured" as const) : ("missing" as const),
+  }))
+
+  if ((!health.capabilities || health.capabilities.length === 0) && identityMapDetails.length === 0) {
     return undefined
   }
 
-  return health.capabilities.map((capability) => ({
-    key: capability.key,
-    label: capability.label,
-    status: capability.configured ? "configured" : "missing",
-  }))
+  return [
+    ...health.capabilities.map((capability) => ({
+      key: capability.key,
+      label: capability.label,
+      status: capability.configured ? ("configured" as const) : ("missing" as const),
+    })),
+    ...identityMapDetails,
+  ]
+}
+
+function convexBridgeConfiguredDetail(health: WorkspaceConvexBridgeHealth): string {
+  const capabilityText = `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`
+  if (!health.totalIdentityMapCount) {
+    return capabilityText
+  }
+
+  return `${capabilityText} ${health.availableIdentityMapCount ?? 0}/${health.totalIdentityMapCount} identity maps are ready.`
 }
 
 function convexBridgeMissingCapabilitySummary(labels: string[]): string {
@@ -214,6 +235,14 @@ function convexBridgeDiagnosticExport(
     (capability) => `- ${capability.label}: ${capability.configured ? "configured" : "missing"}`,
   )
   const missingLines = health.missingCapabilityLabels.map((label) => `- ${label}`)
+  const hasIdentityMapDetails = Boolean(health.totalIdentityMapCount)
+  const identityMapLines = (health.identityMaps ?? []).map(
+    (identityMap) =>
+      `- ${identityMap.label}: ${identityMap.configured ? "configured" : "missing"} (${identityMap.localIdCount} local ${
+        identityMap.localIdCount === 1 ? "ID" : "IDs"
+      })`,
+  )
+  const missingIdentityMapLines = (health.missingIdentityMapLabels ?? []).map((label) => `- ${label}`)
   const actionLines = actions.map((action) => `- ${action.label}: ${action.detail}`)
 
   return [
@@ -224,6 +253,14 @@ function convexBridgeDiagnosticExport(
     ...(capabilityLines.length > 0 ? capabilityLines : ["- no capability details available"]),
     "Missing capabilities:",
     ...(missingLines.length > 0 ? missingLines : ["- none"]),
+    ...(hasIdentityMapDetails
+      ? [
+          "Identity maps:",
+          ...(identityMapLines.length > 0 ? identityMapLines : ["- no identity map details available"]),
+          "Missing identity maps:",
+          ...(missingIdentityMapLines.length > 0 ? missingIdentityMapLines : ["- none"]),
+        ]
+      : []),
     "Recovery actions:",
     ...(actionLines.length > 0 ? actionLines : ["- none"]),
   ].join("\n")
