@@ -11974,9 +11974,9 @@ function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | unde
 
   return {
     mutationRefs: bridge.mutationRefs,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
-    resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveQuoteId: (quoteId) => resolveBridgeIdMapValue(bridge.quoteIdsByLocalId, quoteId),
+    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
   }
 }
@@ -11989,9 +11989,9 @@ function createBrowserConvexOfferReplyBridge(): BrowserConvexOfferReplyBridge | 
 
   return {
     mutationRef: bridge.offerReplyMutationRef,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
-    resolveQuoteId: (quoteId) => bridge.quoteIdsByLocalId?.[quoteId],
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveQuoteId: (quoteId) => resolveBridgeIdMapValue(bridge.quoteIdsByLocalId, quoteId),
+    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
   }
 }
@@ -12004,7 +12004,7 @@ function createBrowserConvexProviderRunBridge(): BrowserConvexProviderRunBridge 
 
   return {
     queryRef: bridge.providerRunsByRfqQueryRef,
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12018,8 +12018,8 @@ function createBrowserConvexOfferProviderOutcomeReadinessBridge(): BrowserConvex
   return {
     mutationRef: bridge.offerProviderOutcomeReadinessMutationRef,
     queryRef: bridge.offerProviderOutcomeReadinessQueryRef,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
@@ -12033,7 +12033,7 @@ function createBrowserConvexOfferReleaseExecutionBridge(): BrowserConvexOfferRel
 
   return {
     queryRef: bridge.offerReleaseExecutionsQueryRef,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12046,7 +12046,7 @@ function createBrowserConvexOfferFollowUpActivityBridge(): BrowserConvexOfferFol
 
   return {
     queryRef: bridge.offerFollowUpActivitiesQueryRef,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12060,11 +12060,21 @@ function createBrowserConvexOfferFollowUpActivityReadinessBridge(): BrowserConve
   return {
     mutationRef: bridge.offerFollowUpActivityReadinessMutationRef,
     queryRef: bridge.offerFollowUpActivityReadinessQueryRef,
-    resolveOfferId: (offerId) => bridge.offerIdsByLocalId?.[offerId],
-    resolveRfqId: (rfqId) => bridge.rfqIdsByLocalId?.[rfqId],
+    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
+}
+
+function resolveBridgeIdMapValue(map: Record<string, string> | undefined, localId: string): string | undefined {
+  const mappedId = map?.[localId]
+  if (typeof mappedId !== "string") {
+    return undefined
+  }
+
+  const normalizedId = mappedId.trim()
+  return normalizedId.length > 0 ? normalizedId : undefined
 }
 
 const OFFER_RELEASE_EXECUTION_STATUSES = [

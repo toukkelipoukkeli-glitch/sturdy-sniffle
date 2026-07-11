@@ -88,7 +88,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ Tenant-safe queries/mutations for main flows (`convex/workflow.ts`); authz/tenant guards tested (`convex/authz.test.ts`, `workflowRules.test.ts`).
 - ✅ Indexes for RFQ queue, customer history, quote status, offer state, provider runs, connector links, workload.
 - ✅ Local dev works with `convex:codegen` / `convex:once`; no secrets committed.
-- 🟡 **Convex actually called by the app** — optional browser bridge capability health, configured/missing capability details, bridge recovery actions, copyable bridge diagnostics with recovery actions, a tested deterministic bridge-health helper, a tested browser bridge probe adapter, and RFQ/offer/quote identity-map readiness are now visible in Integration health, and local fallback remains the default when the bridge is missing or partial. A first-class `ConvexReactClient`/`ConvexProvider` wiring is still future work. → **Slice H (optional, guarded so local-first e2e stays green)**
+- 🟡 **Convex actually called by the app** — optional browser bridge capability health, configured/missing capability details, bridge recovery actions, copyable bridge diagnostics with recovery actions, a tested deterministic bridge-health helper, a tested browser bridge probe adapter, RFQ/offer/quote identity-map readiness, and guarded ID-map normalization before browser bridge reads/writes are now visible in Integration health, and local fallback remains the default when the bridge is missing or partial. A first-class `ConvexReactClient`/`ConvexProvider` wiring is still future work. → **Slice H (optional, guarded so local-first e2e stays green)**
 
 ## §9 UI production hardening
 
