@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { summarizeWorkspaceConvexBridgeHealth, summarizeWorkspaceConvexBridgeProbe } from "./convexBridgeHealth"
+import {
+  countWorkspaceConvexBridgeIdMapEntries,
+  resolveWorkspaceConvexBridgeMappedId,
+  summarizeWorkspaceConvexBridgeHealth,
+  summarizeWorkspaceConvexBridgeProbe,
+} from "./convexBridgeHealth"
 
 describe("workspace Convex bridge health", () => {
   it("classifies a fully configured bridge and preserves capability order", () => {
@@ -137,5 +142,22 @@ describe("workspace Convex bridge health", () => {
     expect(missingMaps.missingIdentityMapLabels).toEqual(["RFQ ID map", "offer ID map", "quote ID map"])
     expect(configured.status).toBe("configured")
     expect(configured.availableIdentityMapCount).toBe(3)
+  })
+
+  it("normalizes browser bridge ID map values for counts and lookups", () => {
+    const idMap = {
+      blank: "   ",
+      nonString: 42,
+      offer: " convex-offer-204 ",
+      rfq: "convex-rfq-204",
+    }
+
+    expect(countWorkspaceConvexBridgeIdMapEntries(undefined)).toBe(0)
+    expect(countWorkspaceConvexBridgeIdMapEntries(idMap)).toBe(2)
+    expect(resolveWorkspaceConvexBridgeMappedId(idMap, "offer")).toBe("convex-offer-204")
+    expect(resolveWorkspaceConvexBridgeMappedId(idMap, "rfq")).toBe("convex-rfq-204")
+    expect(resolveWorkspaceConvexBridgeMappedId(idMap, "blank")).toBeUndefined()
+    expect(resolveWorkspaceConvexBridgeMappedId(idMap, "missing")).toBeUndefined()
+    expect(resolveWorkspaceConvexBridgeMappedId(idMap, "nonString")).toBeUndefined()
   })
 })

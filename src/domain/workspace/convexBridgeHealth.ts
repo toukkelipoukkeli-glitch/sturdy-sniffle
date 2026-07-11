@@ -154,6 +154,30 @@ export function summarizeWorkspaceConvexBridgeProbe(
   }
 }
 
+export function countWorkspaceConvexBridgeIdMapEntries(map: Record<string, unknown> | undefined): number {
+  if (!map) {
+    return 0
+  }
+
+  return Object.values(map).filter((value) => normalizeWorkspaceConvexBridgeMappedId(value) !== undefined).length
+}
+
+export function resolveWorkspaceConvexBridgeMappedId(
+  map: Record<string, unknown> | undefined,
+  localId: string,
+): string | undefined {
+  return normalizeWorkspaceConvexBridgeMappedId(map?.[localId])
+}
+
 function positiveCount(value: number | undefined): number {
   return Number.isFinite(value) && value !== undefined && value > 0 ? Math.floor(value) : 0
+}
+
+function normalizeWorkspaceConvexBridgeMappedId(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const normalizedId = value.trim()
+  return normalizedId.length > 0 ? normalizedId : undefined
 }

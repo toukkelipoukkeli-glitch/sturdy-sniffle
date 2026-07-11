@@ -345,6 +345,8 @@ import {
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import {
+  countWorkspaceConvexBridgeIdMapEntries,
+  resolveWorkspaceConvexBridgeMappedId,
   summarizeWorkspaceConvexBridgeProbe,
   type WorkspaceConvexBridgeHealth,
 } from "./domain/workspace/convexBridgeHealth"
@@ -11943,7 +11945,7 @@ declare global {
 function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
   const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
   return summarizeWorkspaceConvexBridgeProbe({
-    offerIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.offerIdsByLocalId),
+    offerIdMapLocalIdCount: countWorkspaceConvexBridgeIdMapEntries(bridge?.offerIdsByLocalId),
     hasFollowUpActivityReadQueryRef: Boolean(bridge?.offerFollowUpActivitiesQueryRef),
     hasFollowUpReadinessMutationRef: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef),
     hasOfferProviderOutcomeReadinessMutationRef: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef),
@@ -11953,17 +11955,9 @@ function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
     hasRunMutation: Boolean(bridge?.runMutation),
     hasRunQuery: Boolean(bridge?.runQuery),
     hasWorkspaceMutationRefs: Boolean(bridge?.mutationRefs),
-    quoteIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.quoteIdsByLocalId),
-    rfqIdMapLocalIdCount: countBridgeIdMapEntries(bridge?.rfqIdsByLocalId),
+    quoteIdMapLocalIdCount: countWorkspaceConvexBridgeIdMapEntries(bridge?.quoteIdsByLocalId),
+    rfqIdMapLocalIdCount: countWorkspaceConvexBridgeIdMapEntries(bridge?.rfqIdsByLocalId),
   })
-}
-
-function countBridgeIdMapEntries(map: Record<string, string> | undefined): number {
-  if (!map) {
-    return 0
-  }
-
-  return Object.values(map).filter((value) => typeof value === "string" && value.trim().length > 0).length
 }
 
 function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | undefined {
@@ -11974,9 +11968,9 @@ function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | unde
 
   return {
     mutationRefs: bridge.mutationRefs,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
-    resolveQuoteId: (quoteId) => resolveBridgeIdMapValue(bridge.quoteIdsByLocalId, quoteId),
-    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
+    resolveQuoteId: (quoteId) => resolveWorkspaceConvexBridgeMappedId(bridge.quoteIdsByLocalId, quoteId),
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
   }
 }
@@ -11989,9 +11983,9 @@ function createBrowserConvexOfferReplyBridge(): BrowserConvexOfferReplyBridge | 
 
   return {
     mutationRef: bridge.offerReplyMutationRef,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
-    resolveQuoteId: (quoteId) => resolveBridgeIdMapValue(bridge.quoteIdsByLocalId, quoteId),
-    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
+    resolveQuoteId: (quoteId) => resolveWorkspaceConvexBridgeMappedId(bridge.quoteIdsByLocalId, quoteId),
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
   }
 }
@@ -12004,7 +11998,7 @@ function createBrowserConvexProviderRunBridge(): BrowserConvexProviderRunBridge 
 
   return {
     queryRef: bridge.providerRunsByRfqQueryRef,
-    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12018,8 +12012,8 @@ function createBrowserConvexOfferProviderOutcomeReadinessBridge(): BrowserConvex
   return {
     mutationRef: bridge.offerProviderOutcomeReadinessMutationRef,
     queryRef: bridge.offerProviderOutcomeReadinessQueryRef,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
-    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
@@ -12033,7 +12027,7 @@ function createBrowserConvexOfferReleaseExecutionBridge(): BrowserConvexOfferRel
 
   return {
     queryRef: bridge.offerReleaseExecutionsQueryRef,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12046,7 +12040,7 @@ function createBrowserConvexOfferFollowUpActivityBridge(): BrowserConvexOfferFol
 
   return {
     queryRef: bridge.offerFollowUpActivitiesQueryRef,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
     runQuery: bridge.runQuery,
   }
 }
@@ -12060,21 +12054,11 @@ function createBrowserConvexOfferFollowUpActivityReadinessBridge(): BrowserConve
   return {
     mutationRef: bridge.offerFollowUpActivityReadinessMutationRef,
     queryRef: bridge.offerFollowUpActivityReadinessQueryRef,
-    resolveOfferId: (offerId) => resolveBridgeIdMapValue(bridge.offerIdsByLocalId, offerId),
-    resolveRfqId: (rfqId) => resolveBridgeIdMapValue(bridge.rfqIdsByLocalId, rfqId),
+    resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
     runQuery: bridge.runQuery,
   }
-}
-
-function resolveBridgeIdMapValue(map: Record<string, string> | undefined, localId: string): string | undefined {
-  const mappedId = map?.[localId]
-  if (typeof mappedId !== "string") {
-    return undefined
-  }
-
-  const normalizedId = mappedId.trim()
-  return normalizedId.length > 0 ? normalizedId : undefined
 }
 
 const OFFER_RELEASE_EXECUTION_STATUSES = [
