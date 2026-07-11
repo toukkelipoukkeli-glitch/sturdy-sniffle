@@ -1,6 +1,6 @@
 # FactoryBid OS — Production Readiness Checklist
 
-Last updated: 2026-07-06 (Europe/Helsinki). Owner: autonomous build loop.
+Last updated: 2026-07-11 (Europe/Helsinki). Owner: autonomous build loop.
 
 This checklist tracks the gap between the current `main` and a production-grade local-first
 factory tarjouslaskenta system, as defined by the mission Definition of Done (DoD §1–§10).
@@ -81,14 +81,14 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 - ✅ Mock/local/provider adapters explicit; outputs audited with prompt/output/review/failure metadata; AI never required for core calc (`providers/*`).
 - ✅ **Provider run history filterable in UI** — `ProviderRunReviewPanel` exposes provider run summary metrics plus all, failed, fallbacks, skipped, succeeded, and warnings filters backed by `providerRunHistory.ts`.
-- 🟡 **Provider runs read from Convex** — query APIs, a terminal-run read adapter with local fallback, selected-RFQ optional browser Convex hydration, operator-visible Provider review plus Integration health read-source/fallback health, shared provider-domain copy/state, deterministic read-history summaries, local persistence snapshots, operator diagnostics/export copy, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, deterministic next-action items, compact recent-read record drill-downs, and optional bridge capability health exist. → **Slice H (optional)**
+- 🟡 **Provider runs read from Convex** — query APIs, a terminal-run read adapter with local fallback, selected-RFQ optional browser Convex hydration, operator-visible Provider review plus Integration health read-source/fallback health, shared provider-domain copy/state, deterministic read-history summaries, local persistence snapshots, operator diagnostics/export copy, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, deterministic next-action items, compact recent-read record drill-downs, optional bridge capability health, and configured/missing capability details exist. → **Slice H (optional)**
 
 ## §8 Convex / data production readiness
 
 - ✅ Tenant-safe queries/mutations for main flows (`convex/workflow.ts`); authz/tenant guards tested (`convex/authz.test.ts`, `workflowRules.test.ts`).
 - ✅ Indexes for RFQ queue, customer history, quote status, offer state, provider runs, connector links, workload.
 - ✅ Local dev works with `convex:codegen` / `convex:once`; no secrets committed.
-- 🟡 **Convex actually called by the app** — optional browser bridge capability health is now visible in Integration health, and local fallback remains the default when the bridge is missing or partial. A first-class `ConvexReactClient`/`ConvexProvider` wiring is still future work. → **Slice H (optional, guarded so local-first e2e stays green)**
+- 🟡 **Convex actually called by the app** — optional browser bridge capability health and configured/missing capability details are now visible in Integration health, and local fallback remains the default when the bridge is missing or partial. A first-class `ConvexReactClient`/`ConvexProvider` wiring is still future work. → **Slice H (optional, guarded so local-first e2e stays green)**
 
 ## §9 UI production hardening
 

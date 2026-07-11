@@ -770,6 +770,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "2/7 optional Convex bridge capabilities are configured; missing offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more.",
     )
+    const bridgeCapabilities = within(integrationHealth).getByLabelText("Convex bridge capabilities")
+    expect(bridgeCapabilities).toHaveTextContent("workspace writes")
+    expect(bridgeCapabilities).toHaveTextContent("configured")
+    expect(bridgeCapabilities).toHaveTextContent("provider run reads")
+    expect(bridgeCapabilities).toHaveTextContent("offer release reads")
+    expect(bridgeCapabilities).toHaveTextContent("follow-up readiness writes")
+    expect(within(bridgeCapabilities).getAllByText("missing")).toHaveLength(5)
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",

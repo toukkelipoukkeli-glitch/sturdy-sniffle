@@ -36,6 +36,12 @@ describe("workspace integration status", () => {
     const status = summarizeWorkspaceIntegrationStatus({
       convexBridgeHealth: {
         availableCapabilityCount: 4,
+        capabilities: [
+          { configured: true, key: "workspace_writes", label: "workspace writes" },
+          { configured: true, key: "provider_run_reads", label: "provider run reads" },
+          { configured: true, key: "offer_release_reads", label: "offer release reads" },
+          { configured: true, key: "follow_up_activity_reads", label: "follow-up activity reads" },
+        ],
         missingCapabilityLabels: [],
         status: "configured",
         totalCapabilityCount: 4,
@@ -53,6 +59,12 @@ describe("workspace integration status", () => {
     expect(status.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
       count: 4,
       detail: "4/4 optional Convex bridge capabilities are configured.",
+      details: [
+        { key: "workspace_writes", label: "workspace writes", status: "configured" },
+        { key: "provider_run_reads", label: "provider run reads", status: "configured" },
+        { key: "offer_release_reads", label: "offer release reads", status: "configured" },
+        { key: "follow_up_activity_reads", label: "follow-up activity reads", status: "configured" },
+      ],
       severity: "healthy",
       status: "convex",
     })
@@ -62,6 +74,10 @@ describe("workspace integration status", () => {
     const missing = summarizeWorkspaceIntegrationStatus({
       convexBridgeHealth: {
         availableCapabilityCount: 0,
+        capabilities: [
+          { configured: false, key: "workspace_writes", label: "workspace writes" },
+          { configured: false, key: "provider_run_reads", label: "provider run reads" },
+        ],
         missingCapabilityLabels: ["workspace writes", "provider run reads"],
         status: "missing",
         totalCapabilityCount: 2,
@@ -77,6 +93,13 @@ describe("workspace integration status", () => {
     const partial = summarizeWorkspaceIntegrationStatus({
       convexBridgeHealth: {
         availableCapabilityCount: 1,
+        capabilities: [
+          { configured: true, key: "workspace_writes", label: "workspace writes" },
+          { configured: false, key: "provider_run_reads", label: "provider run reads" },
+          { configured: false, key: "offer_release_reads", label: "offer release reads" },
+          { configured: false, key: "follow_up_activity_reads", label: "follow-up activity reads" },
+          { configured: false, key: "readiness_writes", label: "readiness writes" },
+        ],
         missingCapabilityLabels: ["provider run reads", "offer release reads", "follow-up activity reads", "readiness writes"],
         status: "partial",
         totalCapabilityCount: 5,
@@ -94,6 +117,10 @@ describe("workspace integration status", () => {
     expect(missing.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
       count: 0,
       detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+      details: [
+        { key: "workspace_writes", label: "workspace writes", status: "missing" },
+        { key: "provider_run_reads", label: "provider run reads", status: "missing" },
+      ],
       severity: "attention",
       status: "local",
     })
@@ -102,6 +129,13 @@ describe("workspace integration status", () => {
       count: 1,
       detail:
         "1/5 optional Convex bridge capabilities are configured; missing provider run reads, offer release reads, follow-up activity reads, and 1 more.",
+      details: [
+        { key: "workspace_writes", label: "workspace writes", status: "configured" },
+        { key: "provider_run_reads", label: "provider run reads", status: "missing" },
+        { key: "offer_release_reads", label: "offer release reads", status: "missing" },
+        { key: "follow_up_activity_reads", label: "follow-up activity reads", status: "missing" },
+        { key: "readiness_writes", label: "readiness writes", status: "missing" },
+      ],
       severity: "attention",
       status: "review",
     })

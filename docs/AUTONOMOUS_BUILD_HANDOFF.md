@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-10 Europe/Helsinki.
+Last refreshed: 2026-07-11 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b9f87ad` (`Surface provider read diagnostic records (#314)`).
+- Main branch checkpoint: `0dbb915` (`Surface Convex bridge health (#315)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-bridge-health-source` surfaces optional browser Convex bridge capability health in Integration health.
+- In-flight branch at this checkpoint: `codex/convex-bridge-capability-details` surfaces configured/missing Convex bridge capabilities inside Integration health.
 - Latest merged sequence:
+  - `#315` surfaces optional browser Convex bridge capability health in Integration health so local fallback remains explicit when no browser bridge is configured.
   - `#314` adds compact recent provider-read diagnostic records to Provider review and Integration health.
   - `#313` adds deterministic provider-read diagnostic next-action items in Provider review and Integration health.
   - `#312` makes the Integration health provider-run diagnostics export copyable and adds deterministic selected-RFQ copy/status feedback.
