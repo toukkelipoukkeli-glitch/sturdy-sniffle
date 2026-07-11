@@ -655,11 +655,11 @@ describe("FactoryBid workspace (component)", () => {
         transitionRfqStatus: "transitionRfqStatus",
       },
       offerIdsByLocalId: {
-        "offer-204": "convex-offer-204",
+        "offer-204": " convex-offer-204 ",
       },
       offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
       rfqIdsByLocalId: {
-        "rfq-204": "convex-rfq-204",
+        "rfq-204": " convex-rfq-204 ",
       },
       runMutation: async (mutationRef, args) => {
         calls.push({ args, mutationRef })
@@ -698,7 +698,7 @@ describe("FactoryBid workspace (component)", () => {
       },
       providerRunsByRfqQueryRef: "listProviderRunsByRfq",
       rfqIdsByLocalId: {
-        "rfq-204": "convex-rfq-204",
+        "rfq-204": " convex-rfq-204 ",
       },
       runMutation: async () => {},
       runQuery: async (queryRef, args) => {
@@ -817,6 +817,34 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
     )
+  })
+
+  it("keeps provider reads on local fallback when Convex bridge ID maps resolve blank", async () => {
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      providerRunsByRfqQueryRef: "listProviderRunsByRfq",
+      rfqIdsByLocalId: {
+        "rfq-204": "   ",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return []
+      },
+    }
+
+    render(<App />)
+
+    const providerReview = screen.getByLabelText("Provider review")
+    await waitFor(() => {
+      expect(providerReview).toHaveTextContent("Provider read Local")
+      expect(providerReview).toHaveTextContent("Convex provider-run read is not configured.")
+    })
+    expect(queryCalls).toEqual([])
   })
 
   it("prefers persisted provider run audits over local audits with the same run key", async () => {
