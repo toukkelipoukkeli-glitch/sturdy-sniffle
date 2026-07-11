@@ -342,6 +342,7 @@ import {
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
+  type WorkspaceConvexBridgeHealth,
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import {
@@ -2291,9 +2292,11 @@ function App() {
   ])
   const offerReplySync = offerRepliesById[selectedId]
   const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
+  const convexBridgeHealth = useMemo(() => summarizeBrowserConvexBridgeHealth(), [])
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
+        convexBridgeHealth,
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
@@ -2306,6 +2309,7 @@ function App() {
         syncErrorCount: persistenceSyncErrorCount,
       }),
     [
+      convexBridgeHealth,
       followUpActivityReadinessSyncHealth,
       offerFollowUpScheduledAt,
       offerReplySync,
@@ -11885,6 +11889,56 @@ interface BrowserConvexOfferFollowUpActivityReadinessBridge {
 declare global {
   interface Window {
     __FACTORYBID_WORKSPACE_CONVEX__?: BrowserConvexWorkspaceBridge
+  }
+}
+
+function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  const capabilities = [
+    {
+      available: Boolean(bridge?.mutationRefs && bridge.runMutation),
+      label: "workspace writes",
+    },
+    {
+      available: Boolean(bridge?.providerRunsByRfqQueryRef && bridge.runQuery),
+      label: "provider run reads",
+    },
+    {
+      available: Boolean(bridge?.offerReleaseExecutionsQueryRef && bridge.runQuery),
+      label: "offer release reads",
+    },
+    {
+      available: Boolean(bridge?.offerFollowUpActivitiesQueryRef && bridge.runQuery),
+      label: "follow-up activity reads",
+    },
+    {
+      available: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef && bridge.runMutation),
+      label: "follow-up readiness writes",
+    },
+    {
+      available: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef && bridge.runMutation),
+      label: "provider outcome readiness writes",
+    },
+    {
+      available: Boolean(bridge?.offerReplyMutationRef && bridge.runMutation),
+      label: "offer reply writes",
+    },
+  ]
+  const missingCapabilityLabels = capabilities
+    .filter((capability) => !capability.available)
+    .map((capability) => capability.label)
+  const availableCapabilityCount = capabilities.length - missingCapabilityLabels.length
+
+  return {
+    availableCapabilityCount,
+    missingCapabilityLabels,
+    status:
+      availableCapabilityCount === 0
+        ? "missing"
+        : availableCapabilityCount === capabilities.length
+          ? "configured"
+          : "partial",
+    totalCapabilityCount: capabilities.length,
   }
 }
 

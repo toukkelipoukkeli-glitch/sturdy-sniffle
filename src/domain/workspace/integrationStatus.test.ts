@@ -32,6 +32,81 @@ describe("workspace integration status", () => {
     ])
   })
 
+  it("surfaces configured optional Convex bridge capability health", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: {
+        availableCapabilityCount: 4,
+        missingCapabilityLabels: [],
+        status: "configured",
+        totalCapabilityCount: 4,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+      count: 4,
+      detail: "4/4 optional Convex bridge capabilities are configured.",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("surfaces missing and partial optional Convex bridge capability health", () => {
+    const missing = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: {
+        availableCapabilityCount: 0,
+        missingCapabilityLabels: ["workspace writes", "provider run reads"],
+        status: "missing",
+        totalCapabilityCount: 2,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+    const partial = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: {
+        availableCapabilityCount: 1,
+        missingCapabilityLabels: ["provider run reads", "offer release reads", "follow-up activity reads", "readiness writes"],
+        status: "partial",
+        totalCapabilityCount: 5,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(missing.status).toBe("fallback")
+    expect(missing.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+      count: 0,
+      detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
+      severity: "attention",
+      status: "local",
+    })
+    expect(partial.status).toBe("attention")
+    expect(partial.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
+      count: 1,
+      detail:
+        "1/5 optional Convex bridge capabilities are configured; missing provider run reads, offer release reads, follow-up activity reads, and 1 more.",
+      severity: "attention",
+      status: "review",
+    })
+  })
+
   it("marks local and stale integration paths as fallback while preserving counts", () => {
     const status = summarizeWorkspaceIntegrationStatus({
       connectorSnapshot: connectorSnapshot("stale"),
