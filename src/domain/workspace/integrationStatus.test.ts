@@ -72,6 +72,8 @@ describe("workspace integration status", () => {
         "- follow-up activity reads: configured",
         "Missing capabilities:",
         "- none",
+        "Recovery actions:",
+        "- none",
       ].join("\n"),
       details: [
         { key: "workspace_writes", label: "workspace writes", status: "configured" },
@@ -154,6 +156,9 @@ describe("workspace integration status", () => {
         "Missing capabilities:",
         "- workspace writes",
         "- provider run reads",
+        "Recovery actions:",
+        "- Configure Convex bridge: Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
+        "- Keep local fallback: Keep local fallback paths visible until bridge health reports configured.",
       ].join("\n"),
       details: [
         { key: "workspace_writes", label: "workspace writes", status: "missing" },
@@ -194,6 +199,9 @@ describe("workspace integration status", () => {
         "- offer release reads",
         "- follow-up activity reads",
         "- readiness writes",
+        "Recovery actions:",
+        "- Add missing bridge refs: Wire provider run reads, offer release reads, follow-up activity reads, and 1 more in the optional browser bridge.",
+        "- Keep local fallback: Keep local fallback paths visible until bridge health reports configured.",
       ].join("\n"),
       details: [
         { key: "workspace_writes", label: "workspace writes", status: "configured" },

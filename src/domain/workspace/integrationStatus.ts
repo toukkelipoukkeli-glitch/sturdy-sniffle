@@ -135,7 +135,7 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured.`,
       details: convexBridgeCapabilityDetails(health),
-      diagnosticExport: convexBridgeDiagnosticExport(health),
+      diagnosticExport: convexBridgeDiagnosticExport(health, []),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "healthy",
@@ -145,23 +145,25 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
 
   if (health.status === "partial") {
     const missingText = convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)
+    const actions = [
+      {
+        detail: `Wire ${missingText} in the optional browser bridge.`,
+        key: "wire_missing_capabilities",
+        label: "Add missing bridge refs",
+      },
+      {
+        detail: "Keep local fallback paths visible until bridge health reports configured.",
+        key: "keep_local_fallback",
+        label: "Keep local fallback",
+      },
+    ] satisfies IntegrationStatusSourceAction[]
+
     return {
       count: health.availableCapabilityCount,
       detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}.`,
-      actions: [
-        {
-          detail: `Wire ${missingText} in the optional browser bridge.`,
-          key: "wire_missing_capabilities",
-          label: "Add missing bridge refs",
-        },
-        {
-          detail: "Keep local fallback paths visible until bridge health reports configured.",
-          key: "keep_local_fallback",
-          label: "Keep local fallback",
-        },
-      ],
+      actions,
       details: convexBridgeCapabilityDetails(health),
-      diagnosticExport: convexBridgeDiagnosticExport(health),
+      diagnosticExport: convexBridgeDiagnosticExport(health, actions),
       key: "convex_bridge",
       label: "Convex bridge",
       severity: "attention",
@@ -169,23 +171,25 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
     }
   }
 
+  const actions = [
+    {
+      detail: "Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
+      key: "configure_bridge",
+      label: "Configure Convex bridge",
+    },
+    {
+      detail: "Keep local fallback paths visible until bridge health reports configured.",
+      key: "keep_local_fallback",
+      label: "Keep local fallback",
+    },
+  ] satisfies IntegrationStatusSourceAction[]
+
   return {
     count: 0,
     detail: "No optional browser Convex bridge is configured; workspace uses local fallback paths.",
-    actions: [
-      {
-        detail: "Expose browser bridge refs plus runQuery/runMutation before expecting persisted workspace reads or writes.",
-        key: "configure_bridge",
-        label: "Configure Convex bridge",
-      },
-      {
-        detail: "Keep local fallback paths visible until bridge health reports configured.",
-        key: "keep_local_fallback",
-        label: "Keep local fallback",
-      },
-    ],
+    actions,
     details: convexBridgeCapabilityDetails(health),
-    diagnosticExport: convexBridgeDiagnosticExport(health),
+    diagnosticExport: convexBridgeDiagnosticExport(health, actions),
     key: "convex_bridge",
     label: "Convex bridge",
     severity: "attention",
@@ -217,11 +221,15 @@ function convexBridgeMissingCapabilitySummary(labels: string[]): string {
   return hiddenCount > 0 ? `${visibleText}, and ${hiddenCount} more` : visibleText
 }
 
-function convexBridgeDiagnosticExport(health: WorkspaceConvexBridgeHealth): string {
+function convexBridgeDiagnosticExport(
+  health: WorkspaceConvexBridgeHealth,
+  actions: IntegrationStatusSourceAction[],
+): string {
   const capabilityLines = (health.capabilities ?? []).map(
     (capability) => `- ${capability.label}: ${capability.configured ? "configured" : "missing"}`,
   )
   const missingLines = health.missingCapabilityLabels.map((label) => `- ${label}`)
+  const actionLines = actions.map((action) => `- ${action.label}: ${action.detail}`)
 
   return [
     "Convex bridge health",
@@ -231,6 +239,8 @@ function convexBridgeDiagnosticExport(health: WorkspaceConvexBridgeHealth): stri
     ...(capabilityLines.length > 0 ? capabilityLines : ["- no capability details available"]),
     "Missing capabilities:",
     ...(missingLines.length > 0 ? missingLines : ["- none"]),
+    "Recovery actions:",
+    ...(actionLines.length > 0 ? actionLines : ["- none"]),
   ].join("\n")
 }
 

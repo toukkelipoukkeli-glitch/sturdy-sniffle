@@ -789,6 +789,10 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[1]?.[0]).toContain("Convex bridge health")
     expect(writeText.mock.calls[1]?.[0]).toContain("Status: partial")
     expect(writeText.mock.calls[1]?.[0]).toContain("- offer release reads: missing")
+    expect(writeText.mock.calls[1]?.[0]).toContain("Recovery actions:")
+    expect(writeText.mock.calls[1]?.[0]).toContain(
+      "- Add missing bridge refs: Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more in the optional browser bridge.",
+    )
     expect(integrationHealth).toHaveTextContent("Convex bridge diagnostics copied.")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
