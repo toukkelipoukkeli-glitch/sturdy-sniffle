@@ -6843,6 +6843,56 @@
   overflow-wrap: anywhere;
 }
 
+.provider-read-diagnostic-records {
+  background: rgb(255 255 255 / 58%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+}
+
+.provider-read-diagnostic-records > strong {
+  color: oklch(0.27 0.04 250);
+  font-size: 0.74rem;
+}
+
+.provider-read-diagnostic-record-list {
+  display: grid;
+  gap: 6px;
+}
+
+.provider-read-diagnostic-record-list article {
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+}
+
+.provider-read-diagnostic-record-list article[data-status="convex"] {
+  border-color: oklch(0.82 0.055 155);
+}
+
+.provider-read-diagnostic-record-list article[data-status="fallback"] {
+  border-color: oklch(0.82 0.08 55);
+}
+
+.provider-read-diagnostic-record-list article[data-status="local"] {
+  border-color: oklch(0.82 0.045 230);
+}
+
+.provider-read-diagnostic-record-list article[data-status="pending"] {
+  border-color: oklch(0.82 0.055 85);
+}
+
+.provider-read-diagnostic-record-list span {
+  color: oklch(0.28 0.04 250);
+  font-size: 0.73rem;
+  font-weight: 820;
+}
+
 .connector-drilldown {
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
