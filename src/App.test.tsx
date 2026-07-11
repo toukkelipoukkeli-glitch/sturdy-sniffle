@@ -244,6 +244,7 @@ describe("FactoryBid workspace (component)", () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllEnvs()
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: originalClipboard,
@@ -816,6 +817,28 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent("Provider diagnostics copied from Integration health.")
     expect(integrationHealth).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
+    )
+  })
+
+  it("surfaces public Convex runtime readiness in Integration health", () => {
+    vi.stubEnv("VITE_CONVEX_URL", " https://necessary-fly-178.convex.cloud ")
+    vi.stubEnv("VITE_CONVEX_SITE_URL", "https://factorybid-os.convex.site")
+
+    render(<App />)
+
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Convex runtime")
+    expect(integrationHealth).toHaveTextContent(
+      "2/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+    )
+    const runtimeDetails = within(integrationHealth).getByLabelText("Convex runtime capabilities")
+    expect(runtimeDetails).toHaveTextContent("VITE_CONVEX_URL")
+    expect(runtimeDetails).toHaveTextContent("VITE_CONVEX_SITE_URL")
+    expect(within(runtimeDetails).getAllByText("configured")).toHaveLength(2)
+    const runtimeActions = within(integrationHealth).getByLabelText("Convex runtime recovery actions")
+    expect(runtimeActions).toHaveTextContent("Install browser bridge")
+    expect(runtimeActions).toHaveTextContent(
+      "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
     )
   })
 

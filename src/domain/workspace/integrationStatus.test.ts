@@ -86,6 +86,108 @@ describe("workspace integration status", () => {
     })
   })
 
+  it("surfaces public Convex runtime config health separately from bridge capabilities", () => {
+    const configured = summarizeWorkspaceIntegrationStatus({
+      convexRuntimeConfigHealth: {
+        configuredCount: 1,
+        entries: [
+          {
+            configured: true,
+            key: "convex_url",
+            label: "VITE_CONVEX_URL",
+            value: "https://necessary-fly-178.convex.cloud/",
+          },
+          {
+            configured: false,
+            key: "convex_site_url",
+            label: "VITE_CONVEX_SITE_URL",
+          },
+        ],
+        invalidLabels: [],
+        missingLabels: [],
+        nextActionLabels: [
+          "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+        ],
+        operatorSummary:
+          "1/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+        status: "configured",
+        totalCount: 2,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+    const invalid = summarizeWorkspaceIntegrationStatus({
+      convexRuntimeConfigHealth: {
+        configuredCount: 0,
+        entries: [
+          {
+            configured: false,
+            issue: "invalid URL",
+            key: "convex_url",
+            label: "VITE_CONVEX_URL",
+          },
+          {
+            configured: false,
+            key: "convex_site_url",
+            label: "VITE_CONVEX_SITE_URL",
+          },
+        ],
+        invalidLabels: ["VITE_CONVEX_URL"],
+        missingLabels: [],
+        nextActionLabels: ["Fix malformed public Convex runtime setting: VITE_CONVEX_URL."],
+        operatorSummary: "Public Convex runtime config is invalid: VITE_CONVEX_URL.",
+        status: "invalid",
+        totalCount: 2,
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(configured.sources.find((source) => source.key === "convex_runtime")).toMatchObject({
+      actions: [
+        {
+          detail: "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+          key: "convex_runtime_next_1",
+          label: "Install browser bridge",
+        },
+      ],
+      detail:
+        "1/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+      details: [
+        { key: "convex_url", label: "VITE_CONVEX_URL", status: "configured" },
+        { key: "convex_site_url", label: "VITE_CONVEX_SITE_URL", status: "missing" },
+      ],
+      severity: "healthy",
+      status: "convex",
+    })
+    expect(invalid.sources.find((source) => source.key === "convex_runtime")).toMatchObject({
+      actions: [
+        {
+          detail: "Fix malformed public Convex runtime setting: VITE_CONVEX_URL.",
+          key: "convex_runtime_fix_1",
+          label: "Fix runtime config",
+        },
+      ],
+      detail: "Public Convex runtime config is invalid: VITE_CONVEX_URL.",
+      details: [
+        { key: "convex_url", label: "VITE_CONVEX_URL (invalid URL)", status: "missing" },
+        { key: "convex_site_url", label: "VITE_CONVEX_SITE_URL", status: "missing" },
+      ],
+      severity: "attention",
+      status: "review",
+    })
+  })
+
   it("surfaces missing and partial optional Convex bridge capability health", () => {
     const missing = summarizeWorkspaceIntegrationStatus({
       convexBridgeHealth: {

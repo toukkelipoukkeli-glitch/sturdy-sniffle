@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `2617a41` (`Extract Convex bridge ID map helpers (#324)`).
+- Main branch checkpoint: `5e168df` (`Add Convex browser runtime config probe (#325)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-browser-bridge-runtime-probe` adds deterministic public Convex browser runtime URL probing before any first-class client wiring.
+- In-flight branch at this checkpoint: `codex/convex-runtime-integration-health` surfaces deterministic public Convex browser runtime URL readiness in Integration health without changing fallback behavior.
 - Latest merged sequence:
+  - `#325` adds deterministic public Convex browser runtime URL probing before any first-class client wiring.
   - `#324` extracts optional browser bridge ID-map counting and lookup normalization into focused workspace domain helpers.
   - `#323` normalizes optional browser bridge local-to-Convex ID map reads before any query or mutation adapter consumes them.
   - `#322` adds deterministic browser bridge identity-map readiness to the optional Convex bridge health surface.
