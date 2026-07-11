@@ -7,6 +7,7 @@ import {
   providerRunReadSyncIntegrationReviewSuffix,
   type ProviderRunReadSyncState,
 } from "../providers/providerRunReadSync"
+import type { WorkspaceConvexBridgeHealth } from "./convexBridgeHealth"
 import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
 export type IntegrationHealthStatus = "live" | "fallback" | "attention" | "blocked"
@@ -57,22 +58,6 @@ export interface IntegrationStatusSourceDetail {
   key: string
   label: string
   status: "configured" | "missing"
-}
-
-export type WorkspaceConvexBridgeHealthStatus = "configured" | "missing" | "partial"
-
-export interface WorkspaceConvexBridgeCapability {
-  configured: boolean
-  key: string
-  label: string
-}
-
-export interface WorkspaceConvexBridgeHealth {
-  availableCapabilityCount: number
-  capabilities?: WorkspaceConvexBridgeCapability[]
-  missingCapabilityLabels: string[]
-  status: WorkspaceConvexBridgeHealthStatus
-  totalCapabilityCount: number
 }
 
 export interface WorkspaceIntegrationStatusInput {

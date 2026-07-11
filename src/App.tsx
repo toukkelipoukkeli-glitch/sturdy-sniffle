@@ -342,9 +342,12 @@ import {
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
-  type WorkspaceConvexBridgeHealth,
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
+import {
+  summarizeWorkspaceConvexBridgeHealth,
+  type WorkspaceConvexBridgeHealth,
+} from "./domain/workspace/convexBridgeHealth"
 import {
   evaluateQuoteApproval,
   type QuoteApprovalCheckStatus,
@@ -11939,64 +11942,15 @@ declare global {
 
 function summarizeBrowserConvexBridgeHealth(): WorkspaceConvexBridgeHealth {
   const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
-  const capabilities = [
-    {
-      available: Boolean(bridge?.mutationRefs && bridge.runMutation),
-      key: "workspace_writes",
-      label: "workspace writes",
-    },
-    {
-      available: Boolean(bridge?.providerRunsByRfqQueryRef && bridge.runQuery),
-      key: "provider_run_reads",
-      label: "provider run reads",
-    },
-    {
-      available: Boolean(bridge?.offerReleaseExecutionsQueryRef && bridge.runQuery),
-      key: "offer_release_reads",
-      label: "offer release reads",
-    },
-    {
-      available: Boolean(bridge?.offerFollowUpActivitiesQueryRef && bridge.runQuery),
-      key: "follow_up_activity_reads",
-      label: "follow-up activity reads",
-    },
-    {
-      available: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef && bridge.runMutation),
-      key: "follow_up_readiness_writes",
-      label: "follow-up readiness writes",
-    },
-    {
-      available: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef && bridge.runMutation),
-      key: "provider_outcome_readiness_writes",
-      label: "provider outcome readiness writes",
-    },
-    {
-      available: Boolean(bridge?.offerReplyMutationRef && bridge.runMutation),
-      key: "offer_reply_writes",
-      label: "offer reply writes",
-    },
-  ]
-  const missingCapabilityLabels = capabilities
-    .filter((capability) => !capability.available)
-    .map((capability) => capability.label)
-  const availableCapabilityCount = capabilities.length - missingCapabilityLabels.length
-
-  return {
-    availableCapabilityCount,
-    capabilities: capabilities.map((capability) => ({
-      configured: capability.available,
-      key: capability.key,
-      label: capability.label,
-    })),
-    missingCapabilityLabels,
-    status:
-      availableCapabilityCount === 0
-        ? "missing"
-        : availableCapabilityCount === capabilities.length
-          ? "configured"
-          : "partial",
-    totalCapabilityCount: capabilities.length,
-  }
+  return summarizeWorkspaceConvexBridgeHealth({
+    follow_up_activity_reads: Boolean(bridge?.offerFollowUpActivitiesQueryRef && bridge.runQuery),
+    follow_up_readiness_writes: Boolean(bridge?.offerFollowUpActivityReadinessMutationRef && bridge.runMutation),
+    offer_release_reads: Boolean(bridge?.offerReleaseExecutionsQueryRef && bridge.runQuery),
+    offer_reply_writes: Boolean(bridge?.offerReplyMutationRef && bridge.runMutation),
+    provider_outcome_readiness_writes: Boolean(bridge?.offerProviderOutcomeReadinessMutationRef && bridge.runMutation),
+    provider_run_reads: Boolean(bridge?.providerRunsByRfqQueryRef && bridge.runQuery),
+    workspace_writes: Boolean(bridge?.mutationRefs && bridge.runMutation),
+  })
 }
 
 function createBrowserConvexWorkspaceBridge(): WorkspacePersistenceBridge | undefined {
