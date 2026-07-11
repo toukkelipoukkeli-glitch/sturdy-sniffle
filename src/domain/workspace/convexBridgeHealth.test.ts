@@ -5,6 +5,7 @@ import {
   resolveWorkspaceConvexBridgeMappedId,
   summarizeWorkspaceConvexBridgeHealth,
   summarizeWorkspaceConvexBridgeProbe,
+  summarizeWorkspaceConvexRuntimeConfig,
 } from "./convexBridgeHealth"
 
 describe("workspace Convex bridge health", () => {
@@ -159,5 +160,84 @@ describe("workspace Convex bridge health", () => {
     expect(resolveWorkspaceConvexBridgeMappedId(idMap, "blank")).toBeUndefined()
     expect(resolveWorkspaceConvexBridgeMappedId(idMap, "missing")).toBeUndefined()
     expect(resolveWorkspaceConvexBridgeMappedId(idMap, "nonString")).toBeUndefined()
+  })
+
+  it("classifies configured public Convex runtime URLs without requiring the optional site URL", () => {
+    const health = summarizeWorkspaceConvexRuntimeConfig({
+      convexSiteUrl: " https://factorybid-os.convex.site ",
+      convexUrl: " https://necessary-fly-178.convex.cloud ",
+    })
+    const clientOnly = summarizeWorkspaceConvexRuntimeConfig({
+      convexUrl: "http://127.0.0.1:3210",
+    })
+
+    expect(health).toMatchObject({
+      configuredCount: 2,
+      invalidLabels: [],
+      missingLabels: [],
+      status: "configured",
+      totalCount: 2,
+    })
+    expect(health.entries).toEqual([
+      {
+        configured: true,
+        key: "convex_url",
+        label: "VITE_CONVEX_URL",
+        value: "https://necessary-fly-178.convex.cloud/",
+      },
+      {
+        configured: true,
+        key: "convex_site_url",
+        label: "VITE_CONVEX_SITE_URL",
+        value: "https://factorybid-os.convex.site/",
+      },
+    ])
+    expect(health.operatorSummary).toBe(
+      "2/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+    )
+    expect(health.nextActionLabels).toEqual([
+      "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+    ])
+    expect(clientOnly.status).toBe("configured")
+    expect(clientOnly.configuredCount).toBe(1)
+    expect(clientOnly.missingLabels).toEqual([])
+  })
+
+  it("keeps the runtime probe missing when the required public Convex client URL is absent", () => {
+    const health = summarizeWorkspaceConvexRuntimeConfig({
+      convexSiteUrl: "https://factorybid-os.convex.site",
+      convexUrl: "   ",
+    })
+
+    expect(health.status).toBe("missing")
+    expect(health.configuredCount).toBe(1)
+    expect(health.missingLabels).toEqual(["VITE_CONVEX_URL"])
+    expect(health.operatorSummary).toBe(
+      "Public Convex runtime config is missing: VITE_CONVEX_URL. Local fallback remains active.",
+    )
+    expect(health.nextActionLabels).toEqual([
+      "Set VITE_CONVEX_URL in ignored local env before creating a Convex browser client.",
+    ])
+  })
+
+  it("rejects malformed public Convex runtime URL values before browser client wiring", () => {
+    const health = summarizeWorkspaceConvexRuntimeConfig({
+      convexSiteUrl: "convex.site/path",
+      convexUrl: "javascript:alert(1)",
+    })
+
+    expect(health.status).toBe("invalid")
+    expect(health.configuredCount).toBe(0)
+    expect(health.invalidLabels).toEqual(["VITE_CONVEX_URL", "VITE_CONVEX_SITE_URL"])
+    expect(health.entries.map((entry) => [entry.key, entry.configured, entry.issue])).toEqual([
+      ["convex_url", false, "invalid URL"],
+      ["convex_site_url", false, "invalid URL"],
+    ])
+    expect(health.operatorSummary).toBe(
+      "Public Convex runtime config is invalid: VITE_CONVEX_URL, VITE_CONVEX_SITE_URL.",
+    )
+    expect(health.nextActionLabels).toEqual([
+      "Fix malformed public Convex runtime settings: VITE_CONVEX_URL, VITE_CONVEX_SITE_URL.",
+    ])
   })
 })
