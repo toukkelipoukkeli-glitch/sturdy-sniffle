@@ -143,7 +143,7 @@ describe("workspace integration status", () => {
     expect(partial.sources.find((source) => source.key === "convex_bridge")).toMatchObject({
       actions: [
         {
-          detail: "Wire provider run reads, offer release reads and follow-up activity reads, plus 1 more in the optional browser bridge.",
+          detail: "Wire provider run reads, offer release reads, follow-up activity reads, and 1 more in the optional browser bridge.",
           key: "wire_missing_capabilities",
           label: "Add missing bridge refs",
         },

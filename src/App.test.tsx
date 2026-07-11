@@ -780,7 +780,7 @@ describe("FactoryBid workspace (component)", () => {
     const bridgeRecovery = within(integrationHealth).getByLabelText("Convex bridge recovery actions")
     expect(bridgeRecovery).toHaveTextContent("Add missing bridge refs")
     expect(bridgeRecovery).toHaveTextContent(
-      "Wire offer release reads, follow-up activity reads and follow-up readiness writes, plus 2 more in the optional browser bridge.",
+      "Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 2 more in the optional browser bridge.",
     )
     expect(bridgeRecovery).toHaveTextContent("Keep local fallback")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")

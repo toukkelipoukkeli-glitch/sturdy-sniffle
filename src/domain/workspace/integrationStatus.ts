@@ -142,15 +142,13 @@ function convexBridgeSource(health: WorkspaceConvexBridgeHealth): IntegrationSta
   }
 
   if (health.status === "partial") {
-    const missingText = health.missingCapabilityLabels.slice(0, 3).join(", ")
-    const hiddenCount = Math.max(0, health.missingCapabilityLabels.length - 3)
-    const suffix = hiddenCount > 0 ? `, and ${hiddenCount} more` : ""
+    const missingText = convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)
     return {
       count: health.availableCapabilityCount,
-      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}${suffix}.`,
+      detail: `${health.availableCapabilityCount}/${health.totalCapabilityCount} optional Convex bridge capabilities are configured; missing ${missingText}.`,
       actions: [
         {
-          detail: `Wire ${convexBridgeMissingCapabilitySummary(health.missingCapabilityLabels)} in the optional browser bridge.`,
+          detail: `Wire ${missingText} in the optional browser bridge.`,
           key: "wire_missing_capabilities",
           label: "Add missing bridge refs",
         },
@@ -210,12 +208,9 @@ function convexBridgeMissingCapabilitySummary(labels: string[]): string {
 
   const visibleLabels = labels.slice(0, 3)
   const hiddenCount = Math.max(0, labels.length - visibleLabels.length)
-  const visibleText =
-    visibleLabels.length === 1
-      ? visibleLabels[0]
-      : `${visibleLabels.slice(0, -1).join(", ")} and ${visibleLabels[visibleLabels.length - 1]}`
+  const visibleText = visibleLabels.join(", ")
 
-  return hiddenCount > 0 ? `${visibleText}, plus ${hiddenCount} more` : visibleText
+  return hiddenCount > 0 ? `${visibleText}, and ${hiddenCount} more` : visibleText
 }
 
 function persistenceSource(
