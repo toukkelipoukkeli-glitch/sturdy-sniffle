@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-11 Europe/Helsinki.
+Last refreshed: 2026-07-12 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `80eeb4c` (`Surface Convex runtime health in integrations (#326)`).
+- Main branch checkpoint: `ecf8e41` (`[codex] Add Convex browser bridge install plan (#327)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-browser-bridge-install-plan` adds a deterministic guarded browser bridge install plan before any first-class Convex client wiring.
+- In-flight branch at this checkpoint: `codex/convex-install-plan-integration-health` surfaces the deterministic guarded browser bridge install plan in Integration health without installing a live Convex client.
 - Latest merged sequence:
+  - `#327` adds a deterministic guarded browser bridge install plan before any first-class Convex client wiring.
   - `#326` surfaces deterministic public Convex browser runtime URL readiness in Integration health without changing fallback behavior.
   - `#325` adds deterministic public Convex browser runtime URL probing before any first-class client wiring.
   - `#324` extracts optional browser bridge ID-map counting and lookup normalization into focused workspace domain helpers.

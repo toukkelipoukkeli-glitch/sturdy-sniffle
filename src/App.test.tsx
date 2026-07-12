@@ -688,6 +688,8 @@ describe("FactoryBid workspace (component)", () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    vi.stubEnv("VITE_CONVEX_SITE_URL", "")
+    vi.stubEnv("VITE_CONVEX_URL", "")
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText },
@@ -767,39 +769,18 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
     expect(providerReview).toHaveTextContent("Provider read diagnostics copied.")
     const integrationHealth = screen.getByLabelText("Integration health")
-    expect(integrationHealth).toHaveTextContent("Convex bridge")
+    expect(integrationHealth).toHaveTextContent("Convex bridge install")
     expect(integrationHealth).toHaveTextContent(
-      "2/7 optional Convex bridge capabilities are configured; missing offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more.",
+      "3/12 Convex browser bridge install facts are ready; blocked by VITE_CONVEX_URL missing, offer release reads, follow-up activity reads, and 5 more.",
     )
-    const bridgeCapabilities = within(integrationHealth).getByLabelText("Convex bridge capabilities")
-    expect(bridgeCapabilities).toHaveTextContent("workspace writes")
-    expect(bridgeCapabilities).toHaveTextContent("configured")
-    expect(bridgeCapabilities).toHaveTextContent("provider run reads")
-    expect(bridgeCapabilities).toHaveTextContent("offer release reads")
-    expect(bridgeCapabilities).toHaveTextContent("follow-up readiness writes")
-    expect(bridgeCapabilities).toHaveTextContent("RFQ ID map (1 local ID)")
-    expect(bridgeCapabilities).toHaveTextContent("offer ID map (0 local IDs)")
-    expect(bridgeCapabilities).toHaveTextContent("quote ID map (0 local IDs)")
-    expect(within(bridgeCapabilities).getAllByText("missing")).toHaveLength(7)
-    const bridgeRecovery = within(integrationHealth).getByLabelText("Convex bridge recovery actions")
-    expect(bridgeRecovery).toHaveTextContent("Add missing bridge refs")
-    expect(bridgeRecovery).toHaveTextContent(
-      "Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more in the optional browser bridge.",
-    )
-    expect(bridgeRecovery).toHaveTextContent("Keep local fallback")
-    expect(integrationHealth).toHaveTextContent("Copy the Convex bridge capability diagnostic export.")
-    await user.click(within(integrationHealth).getByRole("button", { name: "Copy bridge diagnostics" }))
-    expect(writeText).toHaveBeenCalledTimes(2)
-    expect(writeText.mock.calls[1]?.[0]).toContain("Convex bridge health")
-    expect(writeText.mock.calls[1]?.[0]).toContain("Status: partial")
-    expect(writeText.mock.calls[1]?.[0]).toContain("- offer release reads: missing")
-    expect(writeText.mock.calls[1]?.[0]).toContain("- RFQ ID map: configured (1 local ID)")
-    expect(writeText.mock.calls[1]?.[0]).toContain("- offer ID map")
-    expect(writeText.mock.calls[1]?.[0]).toContain("Recovery actions:")
-    expect(writeText.mock.calls[1]?.[0]).toContain(
-      "- Add missing bridge refs: Wire offer release reads, follow-up activity reads, follow-up readiness writes, and 4 more in the optional browser bridge.",
-    )
-    expect(integrationHealth).toHaveTextContent("Convex bridge diagnostics copied.")
+    const installDetails = within(integrationHealth).getByLabelText("Convex bridge install capabilities")
+    expect(installDetails).toHaveTextContent("Runtime config (0/2)")
+    expect(installDetails).toHaveTextContent("Bridge refs and identity maps (3/10)")
+    const installRecovery = within(integrationHealth).getByLabelText("Convex bridge install recovery actions")
+    expect(installRecovery).toHaveTextContent("Set VITE_CONVEX_URL")
+    expect(installRecovery).toHaveTextContent("Wire missing browser bridge refs")
+    expect(installRecovery).toHaveTextContent("Keep fallback active")
+    expect(integrationHealth).not.toHaveTextContent("Convex bridge diagnostics copied.")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics healthy")
     expect(integrationHealth).toHaveTextContent(
       "Provider-run read history has 1 read record (1 Convex, 0 fallback, 0 local, 0 pending); no fallback reads recorded.",
@@ -811,34 +792,36 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Provider read diagnostics: healthy, healthy")).toHaveAttribute("data-severity", "healthy")
     expect(integrationHealth).toHaveTextContent("Copy the selected RFQ provider-read diagnostic export.")
     await user.click(within(integrationHealth).getByRole("button", { name: "Copy provider diagnostics" }))
-    expect(writeText).toHaveBeenCalledTimes(3)
-    expect(writeText.mock.calls[2]?.[0]).toContain("Provider run read history: healthy")
-    expect(writeText.mock.calls[2]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
+    expect(writeText).toHaveBeenCalledTimes(2)
+    expect(writeText.mock.calls[1]?.[0]).toContain("Provider run read history: healthy")
+    expect(writeText.mock.calls[1]?.[0]).toContain("Records: total 1, convex 1, fallback 0, local 0, pending 0")
     expect(integrationHealth).toHaveTextContent("Provider diagnostics copied from Integration health.")
     expect(integrationHealth).toHaveTextContent(
       "2 provider runs used fallback or warning paths. 1 persisted provider audit read from Convex.",
     )
   })
 
-  it("surfaces public Convex runtime readiness in Integration health", () => {
+  it("surfaces public Convex install readiness in Integration health", () => {
     vi.stubEnv("VITE_CONVEX_URL", " https://necessary-fly-178.convex.cloud ")
     vi.stubEnv("VITE_CONVEX_SITE_URL", "https://factorybid-os.convex.site")
 
     render(<App />)
 
     const integrationHealth = screen.getByLabelText("Integration health")
-    expect(integrationHealth).toHaveTextContent("Convex runtime")
+    expect(integrationHealth).not.toHaveTextContent("Convex runtime")
+    expect(integrationHealth).toHaveTextContent("Convex bridge install")
     expect(integrationHealth).toHaveTextContent(
-      "2/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+      "2/12 Convex browser bridge install facts are ready; blocked by workspace writes, provider run reads, offer release reads, and 7 more.",
     )
-    const runtimeDetails = within(integrationHealth).getByLabelText("Convex runtime capabilities")
-    expect(runtimeDetails).toHaveTextContent("VITE_CONVEX_URL")
-    expect(runtimeDetails).toHaveTextContent("VITE_CONVEX_SITE_URL")
-    expect(within(runtimeDetails).getAllByText("configured")).toHaveLength(2)
-    const runtimeActions = within(integrationHealth).getByLabelText("Convex runtime recovery actions")
-    expect(runtimeActions).toHaveTextContent("Install browser bridge")
-    expect(runtimeActions).toHaveTextContent(
-      "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+    const installDetails = within(integrationHealth).getByLabelText("Convex bridge install capabilities")
+    expect(installDetails).toHaveTextContent("Runtime config (2/2)")
+    expect(installDetails).toHaveTextContent("Bridge refs and identity maps (0/10)")
+    const installActions = within(integrationHealth).getByLabelText("Convex bridge install recovery actions")
+    expect(installActions).toHaveTextContent(
+      "Wire missing browser bridge refs: workspace writes, provider run reads, offer release reads, and 4 more.",
+    )
+    expect(installActions).toHaveTextContent(
+      "Keep local fallback active until runtime config, generated refs, runners, and identity maps are ready together.",
     )
   })
 
