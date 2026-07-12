@@ -110,10 +110,6 @@ function bridgeInstallOperatorSummary(
 }
 
 function summarizeLabels(labels: string[]): string {
-  if (labels.length === 0) {
-    return "no blockers"
-  }
-
   const visibleLabels = labels.slice(0, 3)
   const hiddenCount = Math.max(0, labels.length - visibleLabels.length)
   const visibleText = visibleLabels.join(", ")
