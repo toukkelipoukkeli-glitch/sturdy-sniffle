@@ -344,6 +344,7 @@ import {
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
+import { buildWorkspaceConvexBrowserBridgeInstallPlan } from "./domain/workspace/convexBrowserBridgeInstallPlan"
 import {
   countWorkspaceConvexBridgeIdMapEntries,
   resolveWorkspaceConvexBridgeMappedId,
@@ -2307,10 +2308,19 @@ function App() {
       }),
     [],
   )
+  const convexBridgeInstallPlan = useMemo(
+    () =>
+      buildWorkspaceConvexBrowserBridgeInstallPlan({
+        bridgeHealth: convexBridgeHealth,
+        runtimeConfigHealth: convexRuntimeConfigHealth,
+      }),
+    [convexBridgeHealth, convexRuntimeConfigHealth],
+  )
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
         convexBridgeHealth,
+        convexBridgeInstallPlan,
         convexRuntimeConfigHealth,
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
@@ -2325,6 +2335,7 @@ function App() {
       }),
     [
       convexBridgeHealth,
+      convexBridgeInstallPlan,
       convexRuntimeConfigHealth,
       followUpActivityReadinessSyncHealth,
       offerFollowUpScheduledAt,

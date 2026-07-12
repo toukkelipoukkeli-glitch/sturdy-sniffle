@@ -8,6 +8,7 @@ import {
 export type WorkspaceConvexBrowserBridgeInstallPlanStatus = "blocked" | "ready"
 
 export interface WorkspaceConvexBrowserBridgeInstallPlanInput {
+  bridgeHealth?: WorkspaceConvexBridgeHealth
   bridgeProbe?: WorkspaceConvexBridgeProbe
   runtimeConfigHealth: WorkspaceConvexRuntimeConfigHealth
 }
@@ -24,10 +25,11 @@ export interface WorkspaceConvexBrowserBridgeInstallPlan {
 }
 
 export function buildWorkspaceConvexBrowserBridgeInstallPlan({
+  bridgeHealth: providedBridgeHealth,
   bridgeProbe,
   runtimeConfigHealth,
 }: WorkspaceConvexBrowserBridgeInstallPlanInput): WorkspaceConvexBrowserBridgeInstallPlan {
-  const bridgeHealth = summarizeWorkspaceConvexBridgeProbe(bridgeProbe)
+  const bridgeHealth = providedBridgeHealth ?? summarizeWorkspaceConvexBridgeProbe(bridgeProbe)
   const runtimeReady = runtimeConfigHealth.status === "configured"
   const bridgeReady = bridgeHealth.status === "configured"
   const blockedReasonLabels = [

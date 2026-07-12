@@ -840,6 +840,20 @@ describe("FactoryBid workspace (component)", () => {
     expect(runtimeActions).toHaveTextContent(
       "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
     )
+    expect(integrationHealth).toHaveTextContent("Convex bridge install")
+    expect(integrationHealth).toHaveTextContent(
+      "2/12 Convex browser bridge install facts are ready; blocked by workspace writes, provider run reads, offer release reads, and 7 more.",
+    )
+    const installDetails = within(integrationHealth).getByLabelText("Convex bridge install capabilities")
+    expect(installDetails).toHaveTextContent("Runtime config (2/2)")
+    expect(installDetails).toHaveTextContent("Bridge refs and identity maps (0/10)")
+    const installActions = within(integrationHealth).getByLabelText("Convex bridge install recovery actions")
+    expect(installActions).toHaveTextContent(
+      "Wire missing browser bridge refs: workspace writes, provider run reads, offer release reads, and 4 more.",
+    )
+    expect(installActions).toHaveTextContent(
+      "Keep local fallback active until runtime config, generated refs, runners, and identity maps are ready together.",
+    )
   })
 
   it("keeps provider reads on local fallback when Convex bridge ID maps resolve blank", async () => {

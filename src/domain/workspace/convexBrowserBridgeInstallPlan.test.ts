@@ -104,6 +104,42 @@ describe("workspace Convex browser bridge install plan", () => {
     ])
   })
 
+  it("uses precomputed bridge health when the browser adapter already summarized the probe", () => {
+    const plan = buildWorkspaceConvexBrowserBridgeInstallPlan({
+      bridgeHealth: {
+        availableCapabilityCount: 1,
+        availableIdentityMapCount: 1,
+        capabilities: [
+          { configured: true, key: "workspace_writes", label: "workspace writes" },
+          { configured: false, key: "provider_run_reads", label: "provider run reads" },
+        ],
+        identityMaps: [
+          { configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 1 },
+          { configured: false, key: "offer_id_map", label: "offer ID map", localIdCount: 0 },
+        ],
+        missingCapabilityLabels: ["provider run reads"],
+        missingIdentityMapLabels: ["offer ID map"],
+        status: "partial",
+        totalCapabilityCount: 2,
+        totalIdentityMapCount: 2,
+      },
+      runtimeConfigHealth: summarizeWorkspaceConvexRuntimeConfig({
+        convexUrl: "https://necessary-fly-178.convex.cloud",
+      }),
+    })
+
+    expect(plan.status).toBe("blocked")
+    expect(plan.readyFactCount).toBe(3)
+    expect(plan.totalFactCount).toBe(6)
+    expect(plan.blockedReasonLabels).toEqual(["provider run reads", "offer ID map"])
+    expect(plan.nextActionLabels).toEqual([
+      "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+      "Wire missing browser bridge refs: provider run reads.",
+      "Seed browser bridge identity maps: offer ID map.",
+      "Keep local fallback active until runtime config, generated refs, runners, and identity maps are ready together.",
+    ])
+  })
+
   it("blocks installation on malformed runtime URLs and missing identity maps", () => {
     const plan = buildWorkspaceConvexBrowserBridgeInstallPlan({
       bridgeProbe: {

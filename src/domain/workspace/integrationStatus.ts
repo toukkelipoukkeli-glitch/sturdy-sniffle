@@ -7,6 +7,7 @@ import {
   providerRunReadSyncIntegrationReviewSuffix,
   type ProviderRunReadSyncState,
 } from "../providers/providerRunReadSync"
+import type { WorkspaceConvexBrowserBridgeInstallPlan } from "./convexBrowserBridgeInstallPlan"
 import type { WorkspaceConvexBridgeHealth, WorkspaceConvexRuntimeConfigHealth } from "./convexBridgeHealth"
 import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
@@ -16,6 +17,7 @@ export type IntegrationStatusSourceKey =
   | "calendar_follow_up"
   | "connector"
   | "convex_bridge"
+  | "convex_install_plan"
   | "convex_runtime"
   | "offer_replies"
   | "persistence"
@@ -32,6 +34,7 @@ export type IntegrationStatusSourceStatus =
   | "no_match"
   | "none"
   | "pending"
+  | "ready"
   | "review"
   | "scheduled"
   | "stale"
@@ -62,6 +65,7 @@ export interface IntegrationStatusSourceDetail {
 }
 
 export interface WorkspaceIntegrationStatusInput {
+  convexBridgeInstallPlan?: WorkspaceConvexBrowserBridgeInstallPlan
   convexBridgeHealth?: WorkspaceConvexBridgeHealth
   convexRuntimeConfigHealth?: WorkspaceConvexRuntimeConfigHealth
   connectorErrorCount?: number
@@ -84,6 +88,7 @@ export interface WorkspaceIntegrationStatus {
 }
 
 export function summarizeWorkspaceIntegrationStatus({
+  convexBridgeInstallPlan,
   convexBridgeHealth,
   convexRuntimeConfigHealth,
   connectorErrorCount = 0,
@@ -100,6 +105,7 @@ export function summarizeWorkspaceIntegrationStatus({
   const sources = [
     ...(convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
     ...(convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
+    ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan)] : []),
     persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
@@ -116,6 +122,49 @@ export function summarizeWorkspaceIntegrationStatus({
     warningCount: warnings.length,
     warnings,
   }
+}
+
+function convexBridgeInstallPlanSource(plan: WorkspaceConvexBrowserBridgeInstallPlan): IntegrationStatusSource {
+  const runtimeReady = plan.runtimeConfigHealth.status === "configured"
+  const bridgeReady = plan.bridgeHealth.status === "configured"
+  const details = [
+    {
+      key: "runtime_config",
+      label: `Runtime config (${plan.runtimeConfigHealth.configuredCount}/${plan.runtimeConfigHealth.totalCount})`,
+      status: runtimeReady ? ("configured" as const) : ("missing" as const),
+    },
+    {
+      key: "bridge_runtime",
+      label: `Bridge refs and identity maps (${plan.readyFactCount - plan.runtimeConfigHealth.configuredCount}/${
+        plan.totalFactCount - plan.runtimeConfigHealth.totalCount
+      })`,
+      status: bridgeReady ? ("configured" as const) : ("missing" as const),
+    },
+  ]
+  const actions = plan.nextActionLabels.map((detail, index) => ({
+    detail,
+    key: `convex_install_plan_${index + 1}`,
+    label: installPlanActionLabel(plan.status, detail),
+  }))
+
+  return {
+    actions,
+    count: plan.readyFactCount,
+    detail: plan.operatorSummary,
+    details,
+    key: "convex_install_plan",
+    label: "Convex bridge install",
+    severity: plan.status === "ready" ? "healthy" : "attention",
+    status: plan.status === "ready" ? "ready" : "blocked",
+  }
+}
+
+function installPlanActionLabel(status: WorkspaceConvexBrowserBridgeInstallPlan["status"], detail: string): string {
+  if (status === "ready") {
+    return "Install guarded bridge"
+  }
+
+  return detail.startsWith("Keep local fallback") ? "Keep fallback active" : "Resolve install blocker"
 }
 
 function convexRuntimeSource(health: WorkspaceConvexRuntimeConfigHealth): IntegrationStatusSource {
