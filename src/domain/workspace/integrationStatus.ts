@@ -103,9 +103,9 @@ export function summarizeWorkspaceIntegrationStatus({
   syncErrorCount,
 }: WorkspaceIntegrationStatusInput): WorkspaceIntegrationStatus {
   const sources = [
-    ...(convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
-    ...(convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
     ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan)] : []),
+    ...(!convexBridgeInstallPlan && convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
+    ...(!convexBridgeInstallPlan && convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
     persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),

@@ -7,6 +7,7 @@ import {
   summarizeOfferFollowUpActivityReadinessSyncHealth,
 } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
+import type { WorkspaceConvexBridgeHealth, WorkspaceConvexRuntimeConfigHealth } from "./convexBridgeHealth"
 import { summarizeWorkspaceIntegrationStatus } from "./integrationStatus"
 
 describe("workspace integration status", () => {
@@ -189,26 +190,53 @@ describe("workspace integration status", () => {
   })
 
   it("surfaces guarded Convex browser bridge install plan readiness", () => {
+    const bridgeHealth = {
+      availableCapabilityCount: 1,
+      availableIdentityMapCount: 1,
+      capabilities: [
+        { configured: true, key: "workspace_writes", label: "workspace writes" },
+        { configured: false, key: "provider_run_reads", label: "provider run reads" },
+      ],
+      identityMaps: [
+        { configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 1 },
+        { configured: false, key: "offer_id_map", label: "offer ID map", localIdCount: 0 },
+      ],
+      missingCapabilityLabels: ["provider run reads"],
+      missingIdentityMapLabels: ["offer ID map"],
+      status: "partial" as const,
+      totalCapabilityCount: 2,
+      totalIdentityMapCount: 2,
+    } satisfies WorkspaceConvexBridgeHealth
+    const runtimeConfigHealth = {
+      configuredCount: 1,
+      entries: [
+        {
+          configured: true,
+          key: "convex_url",
+          label: "VITE_CONVEX_URL",
+          value: "https://necessary-fly-178.convex.cloud/",
+        },
+        {
+          configured: false,
+          key: "convex_site_url",
+          label: "VITE_CONVEX_SITE_URL",
+        },
+      ],
+      invalidLabels: [],
+      missingLabels: [],
+      nextActionLabels: [
+        "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
+      ],
+      operatorSummary:
+        "1/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+      status: "configured" as const,
+      totalCount: 2,
+    } satisfies WorkspaceConvexRuntimeConfigHealth
     const status = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: bridgeHealth,
       convexBridgeInstallPlan: {
         blockedReasonLabels: ["provider run reads", "offer ID map"],
-        bridgeHealth: {
-          availableCapabilityCount: 1,
-          availableIdentityMapCount: 1,
-          capabilities: [
-            { configured: true, key: "workspace_writes", label: "workspace writes" },
-            { configured: false, key: "provider_run_reads", label: "provider run reads" },
-          ],
-          identityMaps: [
-            { configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 1 },
-            { configured: false, key: "offer_id_map", label: "offer ID map", localIdCount: 0 },
-          ],
-          missingCapabilityLabels: ["provider run reads"],
-          missingIdentityMapLabels: ["offer ID map"],
-          status: "partial",
-          totalCapabilityCount: 2,
-          totalIdentityMapCount: 2,
-        },
+        bridgeHealth,
         nextActionLabels: [
           "Wire missing browser bridge refs: provider run reads.",
           "Seed browser bridge identity maps: offer ID map.",
@@ -217,34 +245,11 @@ describe("workspace integration status", () => {
         operatorSummary:
           "3/6 Convex browser bridge install facts are ready; blocked by provider run reads, offer ID map.",
         readyFactCount: 3,
-        runtimeConfigHealth: {
-          configuredCount: 1,
-          entries: [
-            {
-              configured: true,
-              key: "convex_url",
-              label: "VITE_CONVEX_URL",
-              value: "https://necessary-fly-178.convex.cloud/",
-            },
-            {
-              configured: false,
-              key: "convex_site_url",
-              label: "VITE_CONVEX_SITE_URL",
-            },
-          ],
-          invalidLabels: [],
-          missingLabels: [],
-          nextActionLabels: [
-            "Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes.",
-          ],
-          operatorSummary:
-            "1/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
-          status: "configured",
-          totalCount: 2,
-        },
+        runtimeConfigHealth,
         status: "blocked",
         totalFactCount: 6,
       },
+      convexRuntimeConfigHealth: runtimeConfigHealth,
       connectorSnapshot: connectorSnapshot("linked"),
       followUpScheduledAt: "2026-06-27T06:00:00.000Z",
       persistenceMode: "local",
@@ -255,6 +260,14 @@ describe("workspace integration status", () => {
     })
 
     expect(status.status).toBe("fallback")
+    expect(status.sources.map((source) => source.key)).toEqual([
+      "convex_install_plan",
+      "persistence",
+      "connector",
+      "provider_runs",
+      "offer_replies",
+      "calendar_follow_up",
+    ])
     expect(status.sources.find((source) => source.key === "convex_install_plan")).toMatchObject({
       actions: [
         {
