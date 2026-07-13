@@ -300,6 +300,206 @@ describe("workspace integration status", () => {
     )
   })
 
+  it("surfaces guarded installer fallback when install facts are ready but opt-in is disabled", () => {
+    const bridgeHealth = {
+      availableCapabilityCount: 2,
+      availableIdentityMapCount: 1,
+      capabilities: [
+        { configured: true, key: "workspace_writes", label: "workspace writes" },
+        { configured: true, key: "provider_run_reads", label: "provider run reads" },
+      ],
+      identityMaps: [{ configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 1 }],
+      missingCapabilityLabels: [],
+      missingIdentityMapLabels: [],
+      status: "configured" as const,
+      totalCapabilityCount: 2,
+      totalIdentityMapCount: 1,
+    } satisfies WorkspaceConvexBridgeHealth
+    const runtimeConfigHealth = {
+      configuredCount: 2,
+      entries: [
+        {
+          configured: true,
+          key: "convex_url",
+          label: "VITE_CONVEX_URL",
+          value: "https://necessary-fly-178.convex.cloud/",
+        },
+        {
+          configured: true,
+          key: "convex_site_url",
+          label: "VITE_CONVEX_SITE_URL",
+          value: "https://factorybid-os.convex.site/",
+        },
+      ],
+      invalidLabels: [],
+      missingLabels: [],
+      nextActionLabels: ["Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes."],
+      operatorSummary:
+        "2/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+      status: "configured" as const,
+      totalCount: 2,
+    } satisfies WorkspaceConvexRuntimeConfigHealth
+    const convexBridgeInstallPlan = {
+      blockedReasonLabels: [],
+      bridgeHealth,
+      nextActionLabels: ["Install the optional browser bridge with guarded Convex query and mutation runners."],
+      operatorSummary: "5/5 Convex browser bridge install facts are ready; guarded runtime installation can proceed.",
+      readyFactCount: 5,
+      runtimeConfigHealth,
+      status: "ready" as const,
+      totalFactCount: 5,
+    }
+    const status = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: bridgeHealth,
+      convexBridgeInstallPlan,
+      convexBridgeInstallerDecision: {
+        blockedReasonLabels: ["VITE_FACTORYBID_ENABLE_CONVEX_BROWSER_BRIDGE disabled"],
+        canInstall: true,
+        enabled: false,
+        installAction: "keep_local_fallback",
+        mode: "local",
+        nextActionLabels: [
+          "Set VITE_FACTORYBID_ENABLE_CONVEX_BROWSER_BRIDGE=true only after generated Convex refs, runners, and identity maps are deployed together.",
+          "Keep local fallback active while the optional browser bridge is disabled.",
+        ],
+        operatorSummary:
+          "Convex browser bridge install facts are ready, but the guarded opt-in is disabled; local fallback remains active.",
+        status: "fallback",
+      },
+      convexRuntimeConfigHealth: runtimeConfigHealth,
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.sources.find((source) => source.key === "convex_install_plan")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Set VITE_FACTORYBID_ENABLE_CONVEX_BROWSER_BRIDGE=true only after generated Convex refs, runners, and identity maps are deployed together.",
+          key: "convex_install_plan_1",
+          label: "Enable guarded bridge",
+        },
+        {
+          detail: "Keep local fallback active while the optional browser bridge is disabled.",
+          key: "convex_install_plan_2",
+          label: "Keep fallback active",
+        },
+      ],
+      detail: "Convex browser bridge install facts are ready, but the guarded opt-in is disabled; local fallback remains active.",
+      details: [
+        { key: "runtime_config", label: "Runtime config (2/2)", status: "configured" },
+        { key: "bridge_runtime", label: "Bridge refs and identity maps (3/3)", status: "configured" },
+        { key: "installer_opt_in", label: "Installer opt-in (disabled)", status: "missing" },
+      ],
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Convex bridge install: Convex browser bridge install facts are ready, but the guarded opt-in is disabled; local fallback remains active.",
+    )
+  })
+
+  it("surfaces guarded installer ready state when install facts and opt-in are both ready", () => {
+    const bridgeHealth = {
+      availableCapabilityCount: 1,
+      availableIdentityMapCount: 1,
+      capabilities: [{ configured: true, key: "workspace_writes", label: "workspace writes" }],
+      identityMaps: [{ configured: true, key: "rfq_id_map", label: "RFQ ID map", localIdCount: 1 }],
+      missingCapabilityLabels: [],
+      missingIdentityMapLabels: [],
+      status: "configured" as const,
+      totalCapabilityCount: 1,
+      totalIdentityMapCount: 1,
+    } satisfies WorkspaceConvexBridgeHealth
+    const runtimeConfigHealth = {
+      configuredCount: 1,
+      entries: [
+        {
+          configured: true,
+          key: "convex_url",
+          label: "VITE_CONVEX_URL",
+          value: "https://necessary-fly-178.convex.cloud/",
+        },
+        {
+          configured: false,
+          key: "convex_site_url",
+          label: "VITE_CONVEX_SITE_URL",
+        },
+      ],
+      invalidLabels: [],
+      missingLabels: [],
+      nextActionLabels: ["Install the optional browser bridge with generated Convex refs before enabling persisted reads or writes."],
+      operatorSummary:
+        "1/2 public Convex runtime URLs configured; browser bridge can be installed behind the existing fallback boundary.",
+      status: "configured" as const,
+      totalCount: 2,
+    } satisfies WorkspaceConvexRuntimeConfigHealth
+    const status = summarizeWorkspaceIntegrationStatus({
+      convexBridgeHealth: bridgeHealth,
+      convexBridgeInstallPlan: {
+        blockedReasonLabels: [],
+        bridgeHealth,
+        nextActionLabels: ["Install the optional browser bridge with guarded Convex query and mutation runners."],
+        operatorSummary: "3/4 Convex browser bridge install facts are ready; guarded runtime installation can proceed.",
+        readyFactCount: 3,
+        runtimeConfigHealth,
+        status: "ready",
+        totalFactCount: 4,
+      },
+      convexBridgeInstallerDecision: {
+        blockedReasonLabels: [],
+        canInstall: true,
+        enabled: true,
+        installAction: "install_guarded_bridge",
+        mode: "convex",
+        nextActionLabels: [
+          "Install the optional browser bridge with guarded Convex query and mutation runners.",
+          "Keep local fallback and sync-error telemetry attached after installation.",
+        ],
+        operatorSummary:
+          "Convex browser bridge install facts are ready and explicitly enabled; guarded runtime installation can proceed.",
+        status: "ready",
+      },
+      convexRuntimeConfigHealth: runtimeConfigHealth,
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.warningCount).toBe(0)
+    expect(status.sources.find((source) => source.key === "convex_install_plan")).toMatchObject({
+      actions: [
+        {
+          detail: "Install the optional browser bridge with guarded Convex query and mutation runners.",
+          key: "convex_install_plan_1",
+          label: "Install guarded bridge",
+        },
+        {
+          detail: "Keep local fallback and sync-error telemetry attached after installation.",
+          key: "convex_install_plan_2",
+          label: "Keep fallback active",
+        },
+      ],
+      detail: "Convex browser bridge install facts are ready and explicitly enabled; guarded runtime installation can proceed.",
+      details: [
+        { key: "runtime_config", label: "Runtime config (1/2)", status: "configured" },
+        { key: "bridge_runtime", label: "Bridge refs and identity maps (2/2)", status: "configured" },
+        { key: "installer_opt_in", label: "Installer opt-in (enabled)", status: "configured" },
+      ],
+      severity: "healthy",
+      status: "ready",
+    })
+  })
+
   it("surfaces missing and partial optional Convex bridge capability health", () => {
     const missing = summarizeWorkspaceIntegrationStatus({
       convexBridgeHealth: {

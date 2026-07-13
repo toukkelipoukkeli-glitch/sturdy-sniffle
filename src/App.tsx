@@ -345,6 +345,7 @@ import {
   type WorkspaceIntegrationStatus,
 } from "./domain/workspace/integrationStatus"
 import { buildWorkspaceConvexBrowserBridgeInstallPlan } from "./domain/workspace/convexBrowserBridgeInstallPlan"
+import { decideWorkspaceConvexBrowserBridgeInstaller } from "./domain/workspace/convexBrowserBridgeInstaller"
 import {
   countWorkspaceConvexBridgeIdMapEntries,
   resolveWorkspaceConvexBridgeMappedId,
@@ -2316,11 +2317,20 @@ function App() {
       }),
     [convexBridgeHealth, convexRuntimeConfigHealth],
   )
+  const convexBridgeInstallerDecision = useMemo(
+    () =>
+      decideWorkspaceConvexBrowserBridgeInstaller({
+        enabled: isEnabledEnvFlag(import.meta.env.VITE_FACTORYBID_ENABLE_CONVEX_BROWSER_BRIDGE),
+        installPlan: convexBridgeInstallPlan,
+      }),
+    [convexBridgeInstallPlan],
+  )
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
         convexBridgeHealth,
         convexBridgeInstallPlan,
+        convexBridgeInstallerDecision,
         convexRuntimeConfigHealth,
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
@@ -2336,6 +2346,7 @@ function App() {
     [
       convexBridgeHealth,
       convexBridgeInstallPlan,
+      convexBridgeInstallerDecision,
       convexRuntimeConfigHealth,
       followUpActivityReadinessSyncHealth,
       offerFollowUpScheduledAt,
@@ -12466,6 +12477,14 @@ function formatProvider(provider: ProviderRunAudit["provider"]): string {
 
 function humanizeKey(key: string) {
   return key.replaceAll("_", " ")
+}
+
+function isEnabledEnvFlag(value: unknown): boolean {
+  if (typeof value !== "string") {
+    return false
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase())
 }
 
 export default App
