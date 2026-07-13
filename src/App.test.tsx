@@ -771,11 +771,12 @@ describe("FactoryBid workspace (component)", () => {
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Convex bridge install")
     expect(integrationHealth).toHaveTextContent(
-      "3/12 Convex browser bridge install facts are ready; blocked by VITE_CONVEX_URL missing, offer release reads, follow-up activity reads, and 5 more.",
+      "Convex browser bridge installation is blocked by VITE_CONVEX_URL missing, offer release reads, follow-up activity reads, and 5 more; local fallback remains active.",
     )
     const installDetails = within(integrationHealth).getByLabelText("Convex bridge install capabilities")
     expect(installDetails).toHaveTextContent("Runtime config (0/2)")
     expect(installDetails).toHaveTextContent("Bridge refs and identity maps (3/10)")
+    expect(installDetails).toHaveTextContent("Installer opt-in (disabled)")
     const installRecovery = within(integrationHealth).getByLabelText("Convex bridge install recovery actions")
     expect(installRecovery).toHaveTextContent("Set VITE_CONVEX_URL")
     expect(installRecovery).toHaveTextContent("Wire missing browser bridge refs")
@@ -811,11 +812,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).not.toHaveTextContent("Convex runtime")
     expect(integrationHealth).toHaveTextContent("Convex bridge install")
     expect(integrationHealth).toHaveTextContent(
-      "2/12 Convex browser bridge install facts are ready; blocked by workspace writes, provider run reads, offer release reads, and 7 more.",
+      "Convex browser bridge installation is blocked by workspace writes, provider run reads, offer release reads, and 7 more; local fallback remains active.",
     )
     const installDetails = within(integrationHealth).getByLabelText("Convex bridge install capabilities")
     expect(installDetails).toHaveTextContent("Runtime config (2/2)")
     expect(installDetails).toHaveTextContent("Bridge refs and identity maps (0/10)")
+    expect(installDetails).toHaveTextContent("Installer opt-in (disabled)")
     const installActions = within(integrationHealth).getByLabelText("Convex bridge install recovery actions")
     expect(installActions).toHaveTextContent(
       "Wire missing browser bridge refs: workspace writes, provider run reads, offer release reads, and 4 more.",

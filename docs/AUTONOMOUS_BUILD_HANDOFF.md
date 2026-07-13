@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `dc41f91` (`[codex] Surface Convex install plan health (#328)`).
+- Main branch checkpoint: `a2bda68` (`Add guarded Convex bridge installer decision (#329)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/convex-browser-bridge-installer-boundary` adds a deterministic opt-in installer decision boundary before any live Convex client or `ConvexProvider` wiring.
+- In-flight branch at this checkpoint: `codex/convex-installer-integration-status` wires the guarded installer decision into the existing read-only Integration health Convex install row while local fallback remains the default.
 - Latest merged sequence:
+  - `#329` adds the deterministic guarded browser bridge installer decision boundary before any live Convex client or `ConvexProvider` wiring.
   - `#328` surfaces the deterministic guarded browser bridge install plan in Integration health and suppresses overlapping raw runtime/bridge rows when the aggregate plan is present.
   - `#327` adds a deterministic guarded browser bridge install plan before any first-class Convex client wiring.
   - `#326` surfaces deterministic public Convex browser runtime URL readiness in Integration health without changing fallback behavior.

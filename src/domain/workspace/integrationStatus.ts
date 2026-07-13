@@ -8,6 +8,7 @@ import {
   type ProviderRunReadSyncState,
 } from "../providers/providerRunReadSync"
 import type { WorkspaceConvexBrowserBridgeInstallPlan } from "./convexBrowserBridgeInstallPlan"
+import type { WorkspaceConvexBrowserBridgeInstallerDecision } from "./convexBrowserBridgeInstaller"
 import type { WorkspaceConvexBridgeHealth, WorkspaceConvexRuntimeConfigHealth } from "./convexBridgeHealth"
 import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 
@@ -66,6 +67,7 @@ export interface IntegrationStatusSourceDetail {
 
 export interface WorkspaceIntegrationStatusInput {
   convexBridgeInstallPlan?: WorkspaceConvexBrowserBridgeInstallPlan
+  convexBridgeInstallerDecision?: WorkspaceConvexBrowserBridgeInstallerDecision
   convexBridgeHealth?: WorkspaceConvexBridgeHealth
   convexRuntimeConfigHealth?: WorkspaceConvexRuntimeConfigHealth
   connectorErrorCount?: number
@@ -89,6 +91,7 @@ export interface WorkspaceIntegrationStatus {
 
 export function summarizeWorkspaceIntegrationStatus({
   convexBridgeInstallPlan,
+  convexBridgeInstallerDecision,
   convexBridgeHealth,
   convexRuntimeConfigHealth,
   connectorErrorCount = 0,
@@ -103,7 +106,7 @@ export function summarizeWorkspaceIntegrationStatus({
   syncErrorCount,
 }: WorkspaceIntegrationStatusInput): WorkspaceIntegrationStatus {
   const sources = [
-    ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan)] : []),
+    ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan, convexBridgeInstallerDecision)] : []),
     ...(!convexBridgeInstallPlan && convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
     ...(!convexBridgeInstallPlan && convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
     persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
@@ -124,9 +127,13 @@ export function summarizeWorkspaceIntegrationStatus({
   }
 }
 
-function convexBridgeInstallPlanSource(plan: WorkspaceConvexBrowserBridgeInstallPlan): IntegrationStatusSource {
+function convexBridgeInstallPlanSource(
+  plan: WorkspaceConvexBrowserBridgeInstallPlan,
+  installerDecision?: WorkspaceConvexBrowserBridgeInstallerDecision,
+): IntegrationStatusSource {
   const runtimeReady = plan.runtimeConfigHealth.status === "configured"
   const bridgeReady = plan.bridgeHealth.status === "configured"
+  const optInReady = installerDecision?.status === "ready"
   const details = [
     {
       key: "runtime_config",
@@ -140,31 +147,54 @@ function convexBridgeInstallPlanSource(plan: WorkspaceConvexBrowserBridgeInstall
       })`,
       status: bridgeReady ? ("configured" as const) : ("missing" as const),
     },
+    ...(installerDecision
+      ? [
+          {
+            key: "installer_opt_in",
+            label: `Installer opt-in (${installerDecision.enabled ? "enabled" : "disabled"})`,
+            status: optInReady ? ("configured" as const) : ("missing" as const),
+          },
+        ]
+      : []),
   ]
-  const actions = plan.nextActionLabels.map((detail, index) => ({
+  const sourceActionLabels = installerDecision?.nextActionLabels ?? plan.nextActionLabels
+  const actions = sourceActionLabels.map((detail, index) => ({
     detail,
     key: `convex_install_plan_${index + 1}`,
-    label: installPlanActionLabel(plan.status, detail),
+    label: installPlanActionLabel(plan.status, installerDecision?.status, detail),
   }))
+  const sourceStatus = installerDecision?.status ?? plan.status
 
   return {
     actions,
     count: plan.readyFactCount,
-    detail: plan.operatorSummary,
+    detail: installerDecision?.operatorSummary ?? plan.operatorSummary,
     details,
     key: "convex_install_plan",
     label: "Convex bridge install",
-    severity: plan.status === "ready" ? "healthy" : "attention",
-    status: plan.status === "ready" ? "ready" : "blocked",
+    severity: sourceStatus === "ready" ? "healthy" : "attention",
+    status: sourceStatus === "ready" ? "ready" : sourceStatus === "fallback" ? "fallback" : "blocked",
   }
 }
 
-function installPlanActionLabel(status: WorkspaceConvexBrowserBridgeInstallPlan["status"], detail: string): string {
-  if (status === "ready") {
+function installPlanActionLabel(
+  planStatus: WorkspaceConvexBrowserBridgeInstallPlan["status"],
+  installerStatus: WorkspaceConvexBrowserBridgeInstallerDecision["status"] | undefined,
+  detail: string,
+): string {
+  if (detail.startsWith("Keep local fallback")) {
+    return "Keep fallback active"
+  }
+
+  if (installerStatus === "ready" || (installerStatus === undefined && planStatus === "ready")) {
     return "Install guarded bridge"
   }
 
-  return detail.startsWith("Keep local fallback") ? "Keep fallback active" : "Resolve install blocker"
+  if (installerStatus === "fallback") {
+    return "Enable guarded bridge"
+  }
+
+  return "Resolve install blocker"
 }
 
 function convexRuntimeSource(health: WorkspaceConvexRuntimeConfigHealth): IntegrationStatusSource {
