@@ -103,6 +103,10 @@ import {
   type OfferFollowUpActivityReadinessSyncSummary,
 } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import {
+  buildOfferFollowUpActivityReadinessReadModel,
+  type OfferFollowUpActivityReadinessReadModelStatus,
+} from "./domain/offers/offerFollowUpActivityReadinessReadModel"
+import {
   buildOfferFollowUpActivityReadinessSyncHealthExportSummary,
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
@@ -9828,9 +9832,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   sync: OfferFollowUpActivityReadinessSyncSummary
   syncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
 }) {
+  const readModel = useMemo(
+    () =>
+      buildOfferFollowUpActivityReadinessReadModel({
+        history,
+        sync,
+        syncHealth,
+      }),
+    [history, sync, syncHealth],
+  )
   const current = history.currentReadiness
   const status = current?.status ?? "pending"
   const statusLabel = current ? followUpActivityReadinessLabel(current.status) : "Pending"
+  const readModelStatusLabel = offerFollowUpActivityReadinessReadModelStatusLabel(readModel.status)
   const syncLabel = followUpActivityReadinessSyncLabel(sync.mode)
   const currentSourceLabel = followUpActivityReadinessSyncLabel(sync.currentSource)
   const totalFallbackCount = syncHealth.totalFallbackCount
@@ -9879,6 +9893,36 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Convex" value={String(sync.convexRecordCount)} />
         <Metric label="Local" value={String(sync.localRecordCount)} />
         <Metric label="Other" value={String(sync.otherRecordCount)} />
+      </div>
+      <div
+        aria-label={`Follow-up readiness read model: ${readModelStatusLabel}`}
+        className="offer-follow-up-readiness-read-model"
+        data-status={readModel.status}
+      >
+        <div>
+          <strong>Persisted read {readModelStatusLabel}</strong>
+          <span>{readModel.operatorSummary}</span>
+          <small>
+            Source {followUpActivityReadinessSyncLabel(readModel.source)} · {readModel.totalReadinessRecords} record
+            {readModel.totalReadinessRecords === 1 ? "" : "s"} ·{" "}
+            {readModel.canUsePersistedRead ? "Persisted read enabled" : "Local fallback guarded"}
+          </small>
+        </div>
+        <OfferFollowUpActivityReadinessReadModelList
+          items={readModel.blockerLabels}
+          kind="blocker"
+          label="Follow-up readiness read blockers"
+        />
+        <OfferFollowUpActivityReadinessReadModelList
+          items={readModel.warningLabels}
+          kind="warning"
+          label="Follow-up readiness read warnings"
+        />
+        <OfferFollowUpActivityReadinessReadModelList
+          items={readModel.nextActionLabels}
+          kind="action"
+          label="Follow-up readiness read next actions"
+        />
       </div>
       <div
         aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
@@ -9994,6 +10038,27 @@ function OfferFollowUpActivityReadinessHistoryPanel({
   )
 }
 
+function OfferFollowUpActivityReadinessReadModelList({
+  items,
+  kind,
+  label,
+}: {
+  items: string[]
+  kind: "action" | "blocker" | "warning"
+  label: string
+}) {
+  if (items.length === 0) {
+    return null
+  }
+  return (
+    <ul aria-label={label} className="offer-follow-up-readiness-read-model-list" data-kind={kind}>
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  )
+}
+
 function followUpActivityReadinessSyncOperationLabel(operation: OfferFollowUpActivityReadinessSyncOperation): string {
   switch (operation) {
     case "read":
@@ -10081,6 +10146,23 @@ function followUpActivityReadinessSyncLabel(syncMode: OfferFollowUpActivityReadi
       return "Pending"
     case "other":
       return "Unmatched"
+  }
+}
+
+function offerFollowUpActivityReadinessReadModelStatusLabel(
+  status: OfferFollowUpActivityReadinessReadModelStatus,
+): string {
+  switch (status) {
+    case "fallback":
+      return "Fallback"
+    case "partial":
+      return "Partial"
+    case "pending":
+      return "Pending"
+    case "ready":
+      return "Ready"
+    case "review":
+      return "Review"
   }
 }
 

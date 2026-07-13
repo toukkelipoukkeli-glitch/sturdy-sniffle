@@ -1178,6 +1178,11 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Local 0")
       expect(readinessHistory).toHaveTextContent("Sync health Healthy")
       expect(readinessHistory).toHaveTextContent("Persistence severity · Healthy")
+      expect(readinessHistory).toHaveTextContent("Persisted read Pending")
+      expect(readinessHistory).toHaveTextContent("Local fallback guarded")
+      expect(readinessHistory).toHaveTextContent(
+        "Read or record follow-up readiness before relying on persisted follow-up coverage.",
+      )
       expect(readinessHistory).toHaveTextContent("Current pending readiness")
       expect(readinessHistory).toHaveTextContent("Convex snapshot")
     })
@@ -1656,6 +1661,9 @@ describe("FactoryBid workspace (component)", () => {
       expect(restoredHistory).toHaveTextContent("Latest write fallback")
       expect(restoredHistory).toHaveTextContent("Fallback recency · Stale")
       expect(restoredHistory).toHaveTextContent("Persistence severity · Critical")
+      expect(restoredHistory).toHaveTextContent("Persisted read Fallback")
+      expect(restoredHistory).toHaveTextContent("Local fallback guarded")
+      expect(restoredHistory).toHaveTextContent("Follow-up readiness persisted reads are stale or unavailable.")
       expect(restoredHistory).toHaveTextContent("Recent fallbacks 12")
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthReadRecoveryAction)
       expect(restoredHistory).toHaveTextContent(offerFollowUpActivityReadinessSyncHealthWriteRecoveryAction)
@@ -1723,7 +1731,11 @@ describe("FactoryBid workspace (component)", () => {
       expect(followUpActivity).toHaveTextContent("Missing 0")
       expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
     })
-    expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("Current recorded readiness")
+    const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
+    expect(readinessHistory).toHaveTextContent("Current recorded readiness")
+    expect(readinessHistory).toHaveTextContent("Persisted read Ready")
+    expect(readinessHistory).toHaveTextContent("Persisted read enabled")
+    expect(readinessHistory).toHaveTextContent("Use persisted follow-up readiness to avoid duplicate follow-up activity writes.")
   })
 
   it("rejects malformed restored follow-up activity readiness history snapshots", async () => {
