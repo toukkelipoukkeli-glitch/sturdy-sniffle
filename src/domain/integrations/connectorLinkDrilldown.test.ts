@@ -29,6 +29,10 @@ describe("connector link drill-down", () => {
       detail: "rfq-204-thread:rfq-204-gmail-message - 2 syncs",
       key: "link:gmail:rfq-204-thread:rfq-204-gmail-message",
     })
+    expect(drilldown.recoveryActionLabels).toEqual([
+      "Refresh Gmail sync for rfq-204-thread:rfq-204-gmail-message.",
+      "Refresh Calendar sync for mock-calendar-002.",
+    ])
   })
 
   it("filters provider links and attention links without leaking other RFQs", () => {
@@ -51,6 +55,40 @@ describe("connector link drill-down", () => {
       "limit must be a positive integer",
     )
     expect(() => buildConnectorLinkDrilldown(snapshot(), { rfqId: " " })).toThrow("rfqId is required")
+  })
+
+  it("builds deterministic recovery actions for blocked links", () => {
+    const drilldown = buildConnectorLinkDrilldown(
+      {
+        payloads: [
+          {
+            activities: [],
+            links: [
+              {
+                externalId: "blocked-thread",
+                provider: "gmail",
+                rfqId: "rfq-204",
+                syncStatus: "blocked",
+              },
+              {
+                externalId: "blocked-calendar",
+                provider: "calendar",
+                rfqId: "rfq-204",
+                syncStatus: "blocked",
+              },
+            ],
+          },
+        ],
+        syncCount: 1,
+      },
+      { filter: "attention", rfqId: "rfq-204" },
+    )
+
+    expect(drilldown.recoveryActionLabels).toEqual([
+      "Reconnect Gmail before resyncing blocked-thread.",
+      "Reconnect Calendar before resyncing blocked-calendar.",
+    ])
+    expect(drilldown.items.map((item) => item.status)).toEqual(["blocked", "blocked"])
   })
 })
 
