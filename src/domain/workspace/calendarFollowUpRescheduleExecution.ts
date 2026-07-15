@@ -155,7 +155,7 @@ function executionStatus(
   commands: CalendarFollowUpRescheduleCommandExecution[],
 ): CalendarFollowUpRescheduleExecutionStatus {
   if (plan.status === "empty" || plan.status === "blocked" || commands.some((command) => command.status === "blocked")) {
-    return "blocked"
+    return commands.some((command) => command.status !== "blocked") ? "partial" : "blocked"
   }
   if (mode === "dry_run") {
     return "prepared"
@@ -198,6 +198,9 @@ function executionNextActions(
     return [`Record provider outcomes for ${commands.length} calendar reschedule command(s).`]
   }
   return [
+    ...commands
+      .filter((command) => command.status === "blocked")
+      .flatMap((command) => command.blockerLabels),
     ...commands
       .filter((command) => command.status === "failed")
       .map((command) => `Resolve failed calendar reschedule command: ${command.title}.`),

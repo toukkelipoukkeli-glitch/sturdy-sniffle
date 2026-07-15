@@ -83,6 +83,44 @@ describe("calendar follow-up reschedule execution", () => {
     expect(secondRun.executionFingerprint).toBe(firstRun.executionFingerprint)
   })
 
+  it("records mixed blocked and completed provider work as a partial audit", () => {
+    const ready = readyPlan()
+    const blocked = blockedPlan()
+    const plan: CalendarFollowUpReschedulePlan = {
+      commands: [blocked.commands[0], ready.commands[0]].filter((command) => Boolean(command)),
+      status: "mixed",
+      summary: {
+        blockedCount: 1,
+        commandCount: 2,
+        readyCount: 1,
+      },
+    }
+
+    const run = buildCalendarFollowUpRescheduleExecutionRun({
+      actor: "Sari",
+      commandOutcomes: [
+        {
+          commandId: ready.commands[0]?.commandId ?? "",
+          externalId: "calendar-event-019",
+          message: "Replacement hold created.",
+          status: "created",
+        },
+      ],
+      executedAt: "2026-06-24T09:30:00+03:00",
+      mode: "commit",
+      plan,
+    })
+
+    expect(run.status).toBe("partial")
+    expect(run.commands.map((command) => command.status)).toEqual(["blocked", "created"])
+    expect(run.nextActions).toContain("Terminal customer reply")
+    expect(run.commands.find((command) => command.status === "created")).toMatchObject({
+      externalId: "calendar-event-019",
+      message: "Replacement hold created.",
+      title: "Reschedule ready",
+    })
+  })
+
   it("keeps blocked reschedule commands non-executable without leaking provider outcomes", () => {
     const plan = blockedPlan()
     const run = buildCalendarFollowUpRescheduleExecutionRun({
