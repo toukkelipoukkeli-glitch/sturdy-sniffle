@@ -344,6 +344,15 @@ import {
   type CalendarFollowUpStatusTask,
 } from "./domain/workspace/calendarFollowUpStatus"
 import {
+  buildCalendarFollowUpReschedulePlan,
+  type CalendarFollowUpReschedulePlanSummary,
+} from "./domain/workspace/calendarFollowUpReschedulePlan"
+import { createLocalCalendarFollowUpReschedulePlanPersistence } from "./domain/workspace/calendarFollowUpReschedulePlanPersistence"
+import {
+  buildCalendarFollowUpReschedulePlanReadModel,
+  type CalendarFollowUpReschedulePlanReadModel,
+} from "./domain/workspace/calendarFollowUpReschedulePlanReadModel"
+import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
@@ -5349,6 +5358,25 @@ function CalendarFollowUpStatusPanel({
     () => buildCalendarFollowUpStatus({ actions, filter, now, offerId, replySync, rfqId }),
     [actions, filter, now, offerId, replySync, rfqId],
   )
+  const rescheduleReadModel = useMemo(() => {
+    const plan = buildCalendarFollowUpReschedulePlan({ rfqId, tasks: status.tasks })
+    const recordKey = calendarFollowUpReschedulePlanRecordKey(rfqId, plan.summary)
+    const snapshot = createLocalCalendarFollowUpReschedulePlanPersistence({
+      initialSnapshot: {
+        currentRecordKey: recordKey,
+        records: [
+          {
+            plan,
+            recordedAt: now,
+            recordKey,
+            rfqId,
+          },
+        ],
+      },
+    }).snapshot()
+
+    return buildCalendarFollowUpReschedulePlanReadModel({ summary: snapshot.summary })
+  }, [now, rfqId, status.tasks])
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
@@ -5373,6 +5401,7 @@ function CalendarFollowUpStatusPanel({
           value={String(status.summary.rescheduleReadyCount + status.summary.rescheduleBlockedCount)}
         />
       </div>
+      <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
           <Button
@@ -5411,6 +5440,37 @@ function CalendarFollowUpStatusPanel({
   )
 }
 
+function CalendarFollowUpRescheduleReadModelPanel({
+  readModel,
+}: {
+  readModel: CalendarFollowUpReschedulePlanReadModel
+}) {
+  return (
+    <div
+      className="calendar-follow-up-reschedule-read-model"
+      data-status={readModel.status}
+      aria-label="Calendar follow-up reschedule read model"
+    >
+      <div className="calendar-follow-up-reschedule-read-model-copy">
+        <strong>{readModel.title}</strong>
+        <span>{readModel.detail}</span>
+      </div>
+      <div className="calendar-follow-up-reschedule-read-model-metrics">
+        <Metric label="Ready" value={String(readModel.readyCommandCount)} />
+        <Metric label="Blocked" value={String(readModel.blockedCommandCount)} />
+        <Metric label="Records" value={String(readModel.recordCount)} />
+      </div>
+      {readModel.nextActions.length > 0 ? (
+        <ul className="calendar-follow-up-reschedule-read-model-actions">
+          {readModel.nextActions.slice(0, 2).map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function CalendarFollowUpStatusRow({ task }: { task: CalendarFollowUpStatusTask }) {
   return (
     <article className="calendar-follow-up-row" data-status={task.status}>
@@ -5437,6 +5497,19 @@ function CalendarFollowUpStatusRow({ task }: { task: CalendarFollowUpStatusTask 
       <span className="integration-source-status">{humanizeKey(task.status)}</span>
     </article>
   )
+}
+
+function calendarFollowUpReschedulePlanRecordKey(
+  rfqId: string,
+  summary: CalendarFollowUpReschedulePlanSummary,
+) {
+  return [
+    "calendar-reschedule-plan",
+    rfqId,
+    summary.commandCount,
+    summary.readyCount,
+    summary.blockedCount,
+  ].join(":")
 }
 
 function CalendarFollowUpStatusIcon({ status }: { status: CalendarFollowUpStatusTask["status"] }) {

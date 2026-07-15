@@ -2592,6 +2592,14 @@ describe("FactoryBid workspace (component)", () => {
       "Previous follow-up hold is overdue; create a reviewed replacement hold before contacting the customer.",
     )
     expect(preview).toHaveTextContent("Suggested due 22 Jun")
+
+    const readModel = within(followUpStatus).getByLabelText("Calendar follow-up reschedule read model")
+    expect(readModel).toHaveTextContent("Reschedule ready")
+    expect(readModel).toHaveTextContent("1 reviewed reschedule command(s) are ready for operator approval before provider execution.")
+    expect(readModel).toHaveTextContent("Ready 1")
+    expect(readModel).toHaveTextContent("Blocked 0")
+    expect(readModel).toHaveTextContent("Records 1")
+    expect(readModel).toHaveTextContent("Review the replacement due dates with the operator.")
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {
