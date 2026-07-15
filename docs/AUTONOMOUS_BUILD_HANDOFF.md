@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e15c39f` (`Surface follow-up readiness read model (#333)`).
+- Main branch checkpoint: `da51c07` (`Add connector stale link recovery actions (#335)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none. Start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#335` adds deterministic stale/blocked connector link recovery actions in the Integration health connector drill-down while keeping healthy RFQ sync unchanged.
+  - `#334` refreshes the autonomous handoff after the follow-up readiness read-model UI slice.
   - `#333` surfaces the deterministic follow-up readiness read model in the Offer activity readiness history panel with Browser/Playwright QA fallback evidence.
   - `#332` adds the deterministic follow-up readiness read-model boundary that decides persisted-read ready/pending/partial/review/fallback state from history, sync source, and sync-health summaries.
   - `#331` refreshes the autonomous handoff after the Convex installer opt-in Integration health slice.
@@ -239,7 +241,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, optional browser runtime read hydration for selected-RFQ terminal provider runs, operator-visible provider-run read sync health in Provider review and Integration health, deterministic provider-run read history summaries, local persistence snapshots for those read-history records, operator diagnostics/export copy for that persisted read-health trail, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, provider-read diagnostic next-action items, optional browser Convex bridge probe health for configured refs and local identity maps, and guarded browser bridge install-plan visibility.
 - CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
-- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
+- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs and stale-link recovery actions, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
 
