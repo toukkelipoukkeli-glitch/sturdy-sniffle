@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `7430ec4` (`Add calendar reschedule read model (#344)`).
+- Main branch checkpoint: `5f7b6ab` (`Surface calendar reschedule read model (#345)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/calendar-reschedule-read-model-ui` (surface the read model in the calendar follow-up panel).
+- In-flight branch at this checkpoint: none. Start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#345` surfaces deterministic calendar follow-up reschedule read-model status, metrics, and next actions in the existing calendar follow-up panel with Browser/Playwright QA fallback evidence.
   - `#344` adds deterministic operator read-model copy/status/actions for persisted calendar follow-up reschedule plan histories.
   - `#343` refreshes the autonomous handoff after the calendar follow-up reschedule persistence slice.
   - `#342` adds deterministic local persistence snapshots for calendar follow-up reschedule plans, including seeded-record validation, dedupe, cloning, and history summaries.
