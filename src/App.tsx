@@ -5368,6 +5368,10 @@ function CalendarFollowUpStatusPanel({
         <Metric label="Open" value={String(status.summary.openCount)} />
         <Metric label="Completed" value={String(status.summary.completedCount)} />
         <Metric label="Review" value={String(status.summary.reviewCount + status.summary.cancelledCount)} />
+        <Metric
+          label="Reschedule"
+          value={String(status.summary.rescheduleReadyCount + status.summary.rescheduleBlockedCount)}
+        />
       </div>
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
@@ -5416,6 +5420,19 @@ function CalendarFollowUpStatusRow({ task }: { task: CalendarFollowUpStatusTask 
       <div>
         <strong>{calendarFollowUpTaskLabel(task)}</strong>
         <span>{task.detail}</span>
+        {task.reschedulePreview ? (
+          <div
+            className="calendar-follow-up-reschedule-preview"
+            data-tone={task.reschedulePreview.tone}
+            aria-label={`Calendar follow-up reschedule preview for ${task.id}`}
+          >
+            <strong>{task.reschedulePreview.label}</strong>
+            <span>{task.reschedulePreview.detail}</span>
+            {task.reschedulePreview.suggestedDueAt ? (
+              <small>Suggested due {formatShortDateTime(task.reschedulePreview.suggestedDueAt)}</small>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <span className="integration-source-status">{humanizeKey(task.status)}</span>
     </article>

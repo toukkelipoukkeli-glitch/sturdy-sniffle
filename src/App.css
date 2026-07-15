@@ -3724,7 +3724,7 @@
 .calendar-follow-up-summary {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .calendar-follow-up-filters {
@@ -3788,6 +3788,38 @@
 .calendar-follow-up-row div span {
   color: oklch(0.43 0.025 250);
   font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-reschedule-preview {
+  border: 1px solid oklch(0.84 0.07 82);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 7px 8px;
+}
+
+.calendar-follow-up-reschedule-preview[data-tone="ready"] {
+  background: oklch(0.985 0.018 88);
+  color: oklch(0.34 0.08 75);
+}
+
+.calendar-follow-up-reschedule-preview[data-tone="blocked"] {
+  background: oklch(0.985 0.02 35);
+  border-color: oklch(0.8 0.09 35);
+  color: oklch(0.36 0.08 35);
+}
+
+.calendar-follow-up-reschedule-preview strong {
+  font-size: 0.74rem;
+}
+
+.calendar-follow-up-reschedule-preview span,
+.calendar-follow-up-reschedule-preview small {
+  color: inherit;
+  font-size: 0.72rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
