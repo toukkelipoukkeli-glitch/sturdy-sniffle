@@ -7,10 +7,13 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `703d2f7` (`Add calendar follow-up reschedule previews (#339)`).
+- Main branch checkpoint: `0337310` (`Add calendar reschedule plan persistence (#342)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none. Start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#342` adds deterministic local persistence snapshots for calendar follow-up reschedule plans, including seeded-record validation, dedupe, cloning, and history summaries.
+  - `#341` adds a deterministic provider-safe calendar follow-up reschedule command planning boundary while keeping live calendar execution deferred.
+  - `#340` refreshes the autonomous handoff after the calendar follow-up reschedule preview slice.
   - `#339` adds deterministic calendar follow-up reschedule-ready/blocked previews for overdue review holds and terminal cancelled holds with desktop/mobile Playwright QA fallback evidence.
   - `#338` refreshes the autonomous handoff after the cross-RFQ connector history slice.
   - `#337` adds deterministic cross-RFQ connector history in the Integration health connector drill-down with desktop/mobile Playwright QA fallback evidence.
