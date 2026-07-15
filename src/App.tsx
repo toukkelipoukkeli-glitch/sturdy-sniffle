@@ -4586,6 +4586,13 @@ function ConnectorLinkDrilldownPanel({
           </Button>
         ))}
       </div>
+      {drilldown.recoveryActionLabels.length > 0 ? (
+        <ul className="connector-drilldown-recovery-actions" aria-label="Connector stale-link recovery actions">
+          {drilldown.recoveryActionLabels.slice(0, 4).map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
       <div className="connector-drilldown-list">
         {drilldown.items.length > 0 ? (
           drilldown.items.map((item) => <ConnectorLinkDrilldownRow item={item} key={item.key} />)

@@ -39,6 +39,7 @@ export interface ConnectorLinkDrilldownItem {
 export interface ConnectorLinkDrilldown {
   filter: ConnectorLinkDrilldownFilter
   items: ConnectorLinkDrilldownItem[]
+  recoveryActionLabels: string[]
   summary: ConnectorLinkDrilldownSummary
 }
 
@@ -102,13 +103,15 @@ export function buildConnectorLinkDrilldown(
     }
   }
 
-  const links = [...linkMap.values()].sort(compareLinks).map(linkItem)
+  const linkAccumulators = [...linkMap.values()].sort(compareLinks)
+  const links = linkAccumulators.map(linkItem)
   const summary = summarize(links, activities, snapshot.syncCount)
   const items = [...filterLinks(links, filter), ...filterActivities(activities, filter)].slice(0, limit)
 
   return {
     filter,
     items,
+    recoveryActionLabels: recoveryActionsForLinks(linkAccumulators),
     summary,
   }
 }
@@ -141,6 +144,19 @@ function linkItem(link: LinkAccumulator): ConnectorLinkDrilldownItem {
     provider: link.provider,
     status: link.status,
   }
+}
+
+function recoveryActionsForLinks(links: LinkAccumulator[]): string[] {
+  return links.flatMap((link) => {
+    if (link.status === "linked") {
+      return []
+    }
+    const providerLabel = link.provider === "gmail" ? "Gmail" : "Calendar"
+    if (link.status === "blocked") {
+      return [`Reconnect ${providerLabel} before resyncing ${link.externalId}.`]
+    }
+    return [`Refresh ${providerLabel} sync for ${link.externalId}.`]
+  })
 }
 
 function filterLinks(
