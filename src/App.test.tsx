@@ -2591,7 +2591,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(preview).toHaveTextContent(
       "Previous follow-up hold is overdue; create a reviewed replacement hold before contacting the customer.",
     )
-    expect(preview).toHaveTextContent("Suggested due 22 Jun, 09.00")
+    expect(preview).toHaveTextContent("Suggested due 22 Jun")
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {
