@@ -19,6 +19,7 @@ export interface ConnectorLinkDrilldownSummary {
   activityCount: number
   blockedCount: number
   calendarLinkCount: number
+  crossRfqLinkCount: number
   gmailLinkCount: number
   linkedCount: number
   linkCount: number
@@ -37,16 +38,27 @@ export interface ConnectorLinkDrilldownItem {
 }
 
 export interface ConnectorLinkDrilldown {
+  crossRfqHistoryItems: ConnectorCrossRfqHistoryItem[]
   filter: ConnectorLinkDrilldownFilter
   items: ConnectorLinkDrilldownItem[]
   recoveryActionLabels: string[]
   summary: ConnectorLinkDrilldownSummary
 }
 
+export interface ConnectorCrossRfqHistoryItem {
+  detail: string
+  key: string
+  label: string
+  provider: ConvexConnectorProvider
+  rfqIds: string[]
+  status: ConvexConnectorSyncStatus
+}
+
 interface LinkAccumulator {
   externalId: string
   externalUrl?: string
   provider: ConvexConnectorProvider
+  rfqIds: Set<string>
   status: ConvexConnectorSyncStatus
   syncOccurrences: number
 }
@@ -59,33 +71,18 @@ export function buildConnectorLinkDrilldown(
   const limit = normalizeLimit(options.limit)
   const filter = options.filter ?? "all"
   const linkMap = new Map<string, LinkAccumulator>()
+  const allLinkMap = new Map<string, LinkAccumulator>()
   const activities: ConnectorLinkDrilldownItem[] = []
 
   for (const [payloadIndex, payload] of snapshot.payloads.entries()) {
     for (const link of payload.links) {
+      mergeLink(allLinkMap, link)
+
       if (link.rfqId !== rfqId) {
         continue
       }
 
-      const key = `${link.provider}:${link.externalId}`
-      const existing = linkMap.get(key)
-      if (!existing) {
-        linkMap.set(key, {
-          externalId: link.externalId,
-          externalUrl: link.externalUrl,
-          provider: link.provider,
-          status: link.syncStatus,
-          syncOccurrences: 1,
-        })
-        continue
-      }
-
-      linkMap.set(key, {
-        ...existing,
-        externalUrl: existing.externalUrl ?? link.externalUrl,
-        status: worstSyncStatus(existing.status, link.syncStatus),
-        syncOccurrences: existing.syncOccurrences + 1,
-      })
+      mergeLink(linkMap, link)
     }
 
     for (const [activityIndex, activity] of payload.activities.entries()) {
@@ -105,10 +102,12 @@ export function buildConnectorLinkDrilldown(
 
   const linkAccumulators = [...linkMap.values()].sort(compareLinks)
   const links = linkAccumulators.map(linkItem)
-  const summary = summarize(links, activities, snapshot.syncCount)
+  const crossRfqHistoryItems = crossRfqHistoryForLinks(linkAccumulators, allLinkMap, rfqId)
+  const summary = summarize(links, activities, snapshot.syncCount, crossRfqHistoryItems.length)
   const items = [...filterLinks(links, filter), ...filterActivities(activities, filter)].slice(0, limit)
 
   return {
+    crossRfqHistoryItems,
     filter,
     items,
     recoveryActionLabels: recoveryActionsForLinks(linkAccumulators),
@@ -116,21 +115,83 @@ export function buildConnectorLinkDrilldown(
   }
 }
 
+function mergeLink(
+  linkMap: Map<string, LinkAccumulator>,
+  link: {
+    externalId: string
+    externalUrl?: string
+    provider: ConvexConnectorProvider
+    rfqId?: string
+    syncStatus: ConvexConnectorSyncStatus
+  },
+): void {
+  const key = `${link.provider}:${link.externalId}`
+  const existing = linkMap.get(key)
+  if (!existing) {
+    linkMap.set(key, {
+      externalId: link.externalId,
+      externalUrl: link.externalUrl,
+      provider: link.provider,
+      rfqIds: new Set(link.rfqId ? [link.rfqId] : []),
+      status: link.syncStatus,
+      syncOccurrences: 1,
+    })
+    return
+  }
+
+  linkMap.set(key, {
+    ...existing,
+    externalUrl: existing.externalUrl ?? link.externalUrl,
+    rfqIds: new Set([...existing.rfqIds, ...(link.rfqId ? [link.rfqId] : [])]),
+    status: worstSyncStatus(existing.status, link.syncStatus),
+    syncOccurrences: existing.syncOccurrences + 1,
+  })
+}
+
 function summarize(
   links: ConnectorLinkDrilldownItem[],
   activities: ConnectorLinkDrilldownItem[],
   syncCount: number,
+  crossRfqLinkCount: number,
 ): ConnectorLinkDrilldownSummary {
   return {
     activityCount: activities.length,
     blockedCount: links.filter((link) => link.status === "blocked").length,
     calendarLinkCount: links.filter((link) => link.provider === "calendar").length,
+    crossRfqLinkCount,
     gmailLinkCount: links.filter((link) => link.provider === "gmail").length,
     linkedCount: links.filter((link) => link.status === "linked").length,
     linkCount: links.length,
     staleCount: links.filter((link) => link.status === "stale").length,
     syncCount,
   }
+}
+
+function crossRfqHistoryForLinks(
+  selectedLinks: LinkAccumulator[],
+  allLinkMap: Map<string, LinkAccumulator>,
+  selectedRfqId: string,
+): ConnectorCrossRfqHistoryItem[] {
+  return selectedLinks.flatMap((link) => {
+    const sharedLink = allLinkMap.get(`${link.provider}:${link.externalId}`)
+    const otherRfqIds = [...(sharedLink?.rfqIds ?? [])].filter((rfqId) => rfqId !== selectedRfqId).sort()
+    if (otherRfqIds.length === 0) {
+      return []
+    }
+
+    const providerLabel = link.provider === "gmail" ? "Gmail message thread" : "Calendar event"
+    const rfqLabel = `${otherRfqIds.length} other ${otherRfqIds.length === 1 ? "RFQ" : "RFQs"}`
+    return [
+      {
+        detail: `${link.externalId} also appears on ${rfqLabel}: ${otherRfqIds.join(", ")}.`,
+        key: `cross-rfq:${link.provider}:${link.externalId}`,
+        label: `${providerLabel} shared with ${otherRfqIds.length} ${otherRfqIds.length === 1 ? "RFQ" : "RFQs"}`,
+        provider: link.provider,
+        rfqIds: otherRfqIds,
+        status: sharedLink?.status ?? link.status,
+      },
+    ]
+  })
 }
 
 function linkItem(link: LinkAccumulator): ConnectorLinkDrilldownItem {

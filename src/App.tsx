@@ -4593,6 +4593,31 @@ function ConnectorLinkDrilldownPanel({
           ))}
         </ul>
       ) : null}
+      <div className="connector-drilldown-cross-rfq" aria-label="Cross-RFQ connector history">
+        <div className="connector-drilldown-cross-rfq-heading">
+          <span>Cross-RFQ history</span>
+          <strong>{drilldown.summary.crossRfqLinkCount} shared</strong>
+        </div>
+        {drilldown.crossRfqHistoryItems.length > 0 ? (
+          <div className="connector-drilldown-cross-rfq-list">
+            {drilldown.crossRfqHistoryItems.slice(0, 4).map((item) => (
+              <article className="connector-drilldown-cross-rfq-row" data-status={item.status} key={item.key}>
+                <span className="integration-source-icon" aria-hidden="true">
+                  {item.provider === "gmail" ? <Mail /> : <CalendarDays />}
+                </span>
+                <div>
+                  <strong>{item.label}</strong>
+                  <span>{item.detail}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="provider-history-empty" role="status">
+            No shared connector links found for this RFQ.
+          </div>
+        )}
+      </div>
       <div className="connector-drilldown-list">
         {drilldown.items.length > 0 ? (
           drilldown.items.map((item) => <ConnectorLinkDrilldownRow item={item} key={item.key} />)

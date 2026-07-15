@@ -11,6 +11,7 @@ describe("connector link drill-down", () => {
       activityCount: 3,
       blockedCount: 0,
       calendarLinkCount: 2,
+      crossRfqLinkCount: 0,
       gmailLinkCount: 1,
       linkedCount: 1,
       linkCount: 3,
@@ -33,6 +34,7 @@ describe("connector link drill-down", () => {
       "Refresh Gmail sync for rfq-204-thread:rfq-204-gmail-message.",
       "Refresh Calendar sync for mock-calendar-002.",
     ])
+    expect(drilldown.crossRfqHistoryItems).toEqual([])
   })
 
   it("filters provider links and attention links without leaking other RFQs", () => {
@@ -89,6 +91,83 @@ describe("connector link drill-down", () => {
       "Reconnect Calendar before resyncing blocked-calendar.",
     ])
     expect(drilldown.items.map((item) => item.status)).toEqual(["blocked", "blocked"])
+  })
+
+  it("surfaces deterministic cross-RFQ history for shared connector links", () => {
+    const drilldown = buildConnectorLinkDrilldown(
+      {
+        payloads: [
+          {
+            activities: [],
+            links: [
+              {
+                externalId: "shared-thread",
+                provider: "gmail",
+                rfqId: "rfq-204",
+                syncStatus: "linked",
+              },
+              {
+                externalId: "shared-thread",
+                provider: "gmail",
+                rfqId: "rfq-999",
+                syncStatus: "stale",
+              },
+              {
+                externalId: "shared-calendar",
+                provider: "calendar",
+                rfqId: "rfq-204",
+                syncStatus: "blocked",
+              },
+            ],
+          },
+          {
+            activities: [],
+            links: [
+              {
+                externalId: "shared-thread",
+                provider: "gmail",
+                rfqId: "rfq-301",
+                syncStatus: "linked",
+              },
+              {
+                externalId: "shared-calendar",
+                provider: "calendar",
+                rfqId: "rfq-301",
+                syncStatus: "linked",
+              },
+              {
+                externalId: "unrelated-calendar",
+                provider: "calendar",
+                rfqId: "rfq-777",
+                syncStatus: "stale",
+              },
+            ],
+          },
+        ],
+        syncCount: 2,
+      },
+      { rfqId: "rfq-204" },
+    )
+
+    expect(drilldown.summary.crossRfqLinkCount).toBe(2)
+    expect(drilldown.crossRfqHistoryItems).toEqual([
+      {
+        detail: "shared-thread also appears on 2 other RFQs: rfq-301, rfq-999.",
+        key: "cross-rfq:gmail:shared-thread",
+        label: "Gmail message thread shared with 2 RFQs",
+        provider: "gmail",
+        rfqIds: ["rfq-301", "rfq-999"],
+        status: "stale",
+      },
+      {
+        detail: "shared-calendar also appears on 1 other RFQ: rfq-301.",
+        key: "cross-rfq:calendar:shared-calendar",
+        label: "Calendar event shared with 1 RFQ",
+        provider: "calendar",
+        rfqIds: ["rfq-301"],
+        status: "blocked",
+      },
+    ])
   })
 })
 

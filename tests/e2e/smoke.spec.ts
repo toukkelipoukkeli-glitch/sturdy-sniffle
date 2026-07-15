@@ -129,6 +129,10 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(connectorDrilldown.locator(".metric", { hasText: "Gmail" })).toContainText("1")
   await expect(connectorDrilldown.locator(".metric", { hasText: "Calendar" })).toContainText("2")
   await expect(connectorDrilldown.locator(".metric", { hasText: "Activity" })).toContainText("3")
+  await expect(connectorDrilldown.getByLabel("Cross-RFQ connector history")).toContainText("0 shared")
+  await expect(connectorDrilldown.getByLabel("Cross-RFQ connector history")).toContainText(
+    "No shared connector links found for this RFQ.",
+  )
   await expect(connectorDrilldown.getByRole("button", { name: "All 6" })).toBeVisible()
   await connectorDrilldown.getByRole("button", { name: "Gmail 1" }).click()
   await expect(connectorDrilldown).toContainText("Gmail message thread")
