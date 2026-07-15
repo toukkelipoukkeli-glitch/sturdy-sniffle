@@ -2556,6 +2556,44 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByRole("heading", { name: "RFQ intake" })).toBeInTheDocument()
   })
 
+  it("surfaces overdue calendar follow-up reschedule previews", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+      expect(stored.actionsById?.["rfq-204"]?.some((action: { kind: string }) => action.kind === "follow_up_created")).toBe(true)
+    })
+
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    unmount()
+    const followUpActions = stored.actionsById?.["rfq-204"] ?? []
+    stored.actionsById = {
+      ...stored.actionsById,
+      "rfq-204": followUpActions.map((action: { kind: string }) =>
+        action.kind === "follow_up_created" ? { ...action, followUpDueAt: "2026-06-19T06:00:00.000Z" } : action,
+      ),
+    }
+    stored.activeView = "triage"
+    stored.selectedId = "rfq-204"
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+
+    render(<App />)
+
+    const followUpStatus = screen.getByLabelText("Calendar follow-up status")
+    expect(followUpStatus).toHaveTextContent("Review follow-up")
+    expect(followUpStatus).toHaveTextContent("Reschedule 1")
+    const preview = within(followUpStatus).getByLabelText("Calendar follow-up reschedule preview for follow-up-rfq-204")
+    expect(preview).toHaveTextContent("Reschedule ready")
+    expect(preview).toHaveTextContent(
+      "Previous follow-up hold is overdue; create a reviewed replacement hold before contacting the customer.",
+    )
+    expect(preview).toHaveTextContent("Suggested due 22 Jun, 09.00")
+  })
+
   it("records workspace actions with the deterministic local operator context", async () => {
     const user = userEvent.setup()
     render(<App />)

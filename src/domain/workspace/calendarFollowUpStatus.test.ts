@@ -17,6 +17,8 @@ describe("calendar follow-up status", () => {
       cancelledCount: 0,
       completedCount: 0,
       openCount: 1,
+      rescheduleBlockedCount: 0,
+      rescheduleReadyCount: 0,
       reviewCount: 0,
       taskCount: 1,
       warningCount: 0,
@@ -63,8 +65,21 @@ describe("calendar follow-up status", () => {
     })
 
     expect(overdue.tasks.map((task) => task.status)).toEqual(["review"])
+    expect(overdue.summary.rescheduleReadyCount).toBe(1)
+    expect(overdue.tasks[0]?.reschedulePreview).toEqual({
+      detail: "Previous follow-up hold is overdue; create a reviewed replacement hold before contacting the customer.",
+      label: "Reschedule ready",
+      suggestedDueAt: "2026-06-26T06:00:00.000Z",
+      tone: "ready",
+    })
     expect(cancelled.tasks.map((task) => task.status)).toEqual(["cancelled"])
     expect(cancelled.summary.cancelledCount).toBe(1)
+    expect(cancelled.summary.rescheduleBlockedCount).toBe(1)
+    expect(cancelled.tasks[0]?.reschedulePreview).toEqual({
+      detail: "Terminal customer reply recorded; do not reschedule this calendar hold.",
+      label: "Reschedule blocked",
+      tone: "blocked",
+    })
   })
 
   it("filters by RFQ and validates required inputs", () => {
@@ -117,6 +132,8 @@ describe("calendar follow-up status", () => {
     expect(status.summary).toMatchObject({
       completedCount: 1,
       openCount: 1,
+      rescheduleBlockedCount: 0,
+      rescheduleReadyCount: 0,
       taskCount: 2,
     })
     expect(status.tasks.map((task) => [task.id, task.status])).toEqual([

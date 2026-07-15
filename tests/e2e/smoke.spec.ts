@@ -303,6 +303,7 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(followUpStatus).toContainText("Follow-up scheduled")
   await expect(followUpStatus.locator(".metric", { hasText: "Open" })).toContainText("1")
   await expect(followUpStatus.locator(".metric", { hasText: "Completed" })).toContainText("0")
+  await expect(followUpStatus.locator(".metric", { hasText: "Reschedule" })).toContainText("0")
   await expect(followUpStatus.getByRole("button", { name: "Open 1" })).toBeVisible()
   await followUpStatus.getByRole("button", { name: "Open 1" }).click()
   await expect(followUpStatus).toContainText("Calendar hold due")
@@ -427,6 +428,9 @@ test("runs the quote workspace costing workflow", async ({ page }) => {
   await expect(page.getByLabel("Calendar follow-up status")).toContainText("Follow-up completed")
   await expect(page.getByLabel("Calendar follow-up status").locator(".metric", { hasText: "Completed" })).toContainText(
     "1",
+  )
+  await expect(page.getByLabel("Calendar follow-up status").locator(".metric", { hasText: "Reschedule" })).toContainText(
+    "0",
   )
   await page.getByLabel("Calendar follow-up status").getByRole("button", { name: "Completed 1" }).click()
   await expect(page.getByLabel("Calendar follow-up status")).toContainText("Completed")

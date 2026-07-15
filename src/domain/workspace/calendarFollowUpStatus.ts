@@ -21,14 +21,24 @@ export interface CalendarFollowUpStatusTask {
   id: string
   key: string
   offerId: string
+  reschedulePreview?: CalendarFollowUpReschedulePreview
   scheduledAt: string
   status: CalendarFollowUpTaskStatus
+}
+
+export interface CalendarFollowUpReschedulePreview {
+  detail: string
+  label: string
+  suggestedDueAt?: string
+  tone: "blocked" | "ready"
 }
 
 export interface CalendarFollowUpStatusSummary {
   cancelledCount: number
   completedCount: number
   openCount: number
+  rescheduleBlockedCount: number
+  rescheduleReadyCount: number
   reviewCount: number
   taskCount: number
   warningCount: number
@@ -79,6 +89,7 @@ function taskFromAction(input: {
       : dueAt < input.now
         ? "review"
         : "open"
+  const reschedulePreview = reschedulePreviewForStatus(status, input.now)
 
   return {
     ...(completedAt ? { completedAt } : {}),
@@ -87,6 +98,7 @@ function taskFromAction(input: {
     id: taskId,
     key: input.action.key,
     offerId: input.action.offerId ?? "",
+    ...(reschedulePreview ? { reschedulePreview } : {}),
     scheduledAt: input.action.occurredAt,
     status,
   }
@@ -122,6 +134,8 @@ function summarize(
     cancelledCount: tasks.filter((task) => task.status === "cancelled").length,
     completedCount: tasks.filter((task) => task.status === "completed").length,
     openCount: tasks.filter((task) => task.status === "open").length,
+    rescheduleBlockedCount: tasks.filter((task) => task.reschedulePreview?.tone === "blocked").length,
+    rescheduleReadyCount: tasks.filter((task) => task.reschedulePreview?.tone === "ready").length,
     reviewCount: tasks.filter((task) => task.status === "review").length,
     taskCount: tasks.length,
     warningCount: warnings.length,
@@ -156,6 +170,35 @@ function followUpDetail(status: CalendarFollowUpTaskStatus, dueAt: string, compl
     case "review":
       return `Due ${dueAt}; needs operator review.`
   }
+}
+
+function reschedulePreviewForStatus(
+  status: CalendarFollowUpTaskStatus,
+  now: string,
+): CalendarFollowUpReschedulePreview | undefined {
+  if (status === "cancelled") {
+    return {
+      detail: "Terminal customer reply recorded; do not reschedule this calendar hold.",
+      label: "Reschedule blocked",
+      tone: "blocked",
+    }
+  }
+  if (status !== "review") {
+    return undefined
+  }
+
+  return {
+    detail: "Previous follow-up hold is overdue; create a reviewed replacement hold before contacting the customer.",
+    label: "Reschedule ready",
+    suggestedDueAt: addUtcDays(now, 2),
+    tone: "ready",
+  }
+}
+
+function addUtcDays(isoTimestamp: string, days: number): string {
+  const date = new Date(isoTimestamp)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString()
 }
 
 function nonBlank(value: string, key: string): string {
