@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-15 Europe/Helsinki.
+Last refreshed: 2026-07-16 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `55aa270` (`Add calendar reschedule execution audit (#347)`).
+- Main branch checkpoint: `f1c4789` (`Refresh calendar execution handoff (#348)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none. Start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#348` refreshes the autonomous handoff after the calendar reschedule execution audit slice.
   - `#347` adds deterministic dry-run/commit execution audit rows for calendar follow-up reschedule plans, including mixed blocked/created handling before live provider execution.
   - `#346` refreshes the autonomous handoff after the calendar reschedule read-model UI slice.
   - `#345` surfaces deterministic calendar follow-up reschedule read-model status, metrics, and next actions in the existing calendar follow-up panel with Browser/Playwright QA fallback evidence.
