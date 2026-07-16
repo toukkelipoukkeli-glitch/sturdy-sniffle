@@ -6,6 +6,7 @@ import { buildCalendarFollowUpRescheduleExecutionRun } from "./calendarFollowUpR
 import {
   createLocalCalendarFollowUpRescheduleExecutionPersistence,
   CALENDAR_FOLLOW_UP_RESCHEDULE_EXECUTION_PERSISTENCE_VERSION,
+  type CalendarFollowUpRescheduleExecutionRecord,
 } from "./calendarFollowUpRescheduleExecutionPersistence"
 import { buildCalendarFollowUpReschedulePlan, type CalendarFollowUpReschedulePlan } from "./calendarFollowUpReschedulePlan"
 import type { CalendarFollowUpRescheduleCommand } from "./calendarFollowUpReschedulePlan"
@@ -203,12 +204,68 @@ describe("calendar follow-up reschedule execution persistence", () => {
     expect(() =>
       createLocalCalendarFollowUpRescheduleExecutionPersistence({
         initialSnapshot: {
+          records: [{ ...seededRecord, rfqIds: [] }],
+        },
+      }),
+    ).toThrow("records with commands must include rfqIds and taskIds")
+    expect(() =>
+      createLocalCalendarFollowUpRescheduleExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, taskIds: [] }],
+        },
+      }),
+    ).toThrow("records with commands must include rfqIds and taskIds")
+    expect(() =>
+      createLocalCalendarFollowUpRescheduleExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...zeroCommandRecord(seededRecord),
+              rfqIds: ["rfq-019"],
+            },
+          ],
+        },
+      }),
+    ).toThrow("records without commands must not include rfqIds or taskIds")
+    expect(() =>
+      createLocalCalendarFollowUpRescheduleExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...zeroCommandRecord(seededRecord),
+              taskIds: ["follow-up-rfq-019"],
+            },
+          ],
+        },
+      }),
+    ).toThrow("records without commands must not include rfqIds or taskIds")
+    expect(() =>
+      createLocalCalendarFollowUpRescheduleExecutionPersistence({
+        initialSnapshot: {
           records: [{ ...seededRecord, status: "needs_review" as never }],
         },
       }),
     ).toThrow("status is not a supported calendar reschedule execution status")
   })
 })
+
+function zeroCommandRecord(
+  record: CalendarFollowUpRescheduleExecutionRecord,
+): CalendarFollowUpRescheduleExecutionRecord {
+  return {
+    ...record,
+    blockedCommandCount: 0,
+    commandCount: 0,
+    createdCommandCount: 0,
+    failedCommandCount: 0,
+    pendingCommandCount: 0,
+    planStatus: "empty",
+    preparedCommandCount: 0,
+    rfqIds: [],
+    status: "blocked",
+    taskIds: [],
+  }
+}
 
 function buildReadyDryRun() {
   return buildCalendarFollowUpRescheduleExecutionRun({

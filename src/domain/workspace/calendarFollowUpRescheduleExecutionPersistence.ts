@@ -163,6 +163,12 @@ function normalizeRecord(
   if (countedCommands !== normalized.commandCount) {
     throw new Error("commandCount must equal the sum of per-status command counts")
   }
+  if (normalized.commandCount > 0 && (normalized.rfqIds.length === 0 || normalized.taskIds.length === 0)) {
+    throw new Error("records with commands must include rfqIds and taskIds")
+  }
+  if (normalized.commandCount === 0 && (normalized.rfqIds.length > 0 || normalized.taskIds.length > 0)) {
+    throw new Error("records without commands must not include rfqIds or taskIds")
+  }
 
   return normalized
 }
