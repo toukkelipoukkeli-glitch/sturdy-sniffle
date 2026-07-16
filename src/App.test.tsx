@@ -2600,6 +2600,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(readModel).toHaveTextContent("Blocked 0")
     expect(readModel).toHaveTextContent("Records 1")
     expect(readModel).toHaveTextContent("Review the replacement due dates with the operator.")
+
+    const executionReadModel = within(followUpStatus).getByLabelText("Calendar follow-up reschedule execution read model")
+    expect(executionReadModel).toHaveTextContent("Reschedule execution prepared")
+    expect(executionReadModel).toHaveTextContent("1 calendar reschedule command(s) are prepared in dry-run mode.")
+    expect(executionReadModel).toHaveTextContent("Commands 1")
+    expect(executionReadModel).toHaveTextContent("Prepared 1")
+    expect(executionReadModel).toHaveTextContent("Records 1")
+    expect(executionReadModel).toHaveTextContent("Review the dry-run execution audit before committing provider calendar changes.")
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {

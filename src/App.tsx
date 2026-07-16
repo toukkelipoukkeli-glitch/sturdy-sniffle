@@ -352,6 +352,12 @@ import {
   buildCalendarFollowUpReschedulePlanReadModel,
   type CalendarFollowUpReschedulePlanReadModel,
 } from "./domain/workspace/calendarFollowUpReschedulePlanReadModel"
+import { buildCalendarFollowUpRescheduleExecutionRun } from "./domain/workspace/calendarFollowUpRescheduleExecution"
+import { createLocalCalendarFollowUpRescheduleExecutionPersistence } from "./domain/workspace/calendarFollowUpRescheduleExecutionPersistence"
+import {
+  buildCalendarFollowUpRescheduleExecutionReadModel,
+  type CalendarFollowUpRescheduleExecutionReadModel,
+} from "./domain/workspace/calendarFollowUpRescheduleExecutionReadModel"
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
@@ -5377,6 +5383,21 @@ function CalendarFollowUpStatusPanel({
 
     return buildCalendarFollowUpReschedulePlanReadModel({ summary: snapshot.summary })
   }, [now, rfqId, status.tasks])
+  const rescheduleExecutionReadModel = useMemo(() => {
+    const plan = buildCalendarFollowUpReschedulePlan({ rfqId, tasks: status.tasks })
+    const run = plan.summary.commandCount > 0
+      ? buildCalendarFollowUpRescheduleExecutionRun({
+        actor: "FactoryBid OS",
+        executedAt: now,
+        mode: "dry_run",
+        plan,
+      })
+      : undefined
+    const persistence = createLocalCalendarFollowUpRescheduleExecutionPersistence({
+      initialRuns: run ? [run] : [],
+    })
+    return buildCalendarFollowUpRescheduleExecutionReadModel({ snapshot: persistence.snapshot() })
+  }, [now, rfqId, status.tasks])
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
@@ -5402,6 +5423,7 @@ function CalendarFollowUpStatusPanel({
         />
       </div>
       <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
+      <CalendarFollowUpRescheduleExecutionReadModelPanel readModel={rescheduleExecutionReadModel} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
           <Button
@@ -5458,6 +5480,37 @@ function CalendarFollowUpRescheduleReadModelPanel({
       <div className="calendar-follow-up-reschedule-read-model-metrics">
         <Metric label="Ready" value={String(readModel.readyCommandCount)} />
         <Metric label="Blocked" value={String(readModel.blockedCommandCount)} />
+        <Metric label="Records" value={String(readModel.recordCount)} />
+      </div>
+      {readModel.nextActions.length > 0 ? (
+        <ul className="calendar-follow-up-reschedule-read-model-actions">
+          {readModel.nextActions.slice(0, 2).map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+function CalendarFollowUpRescheduleExecutionReadModelPanel({
+  readModel,
+}: {
+  readModel: CalendarFollowUpRescheduleExecutionReadModel
+}) {
+  return (
+    <div
+      className="calendar-follow-up-reschedule-execution-read-model"
+      data-status={readModel.status}
+      aria-label="Calendar follow-up reschedule execution read model"
+    >
+      <div className="calendar-follow-up-reschedule-read-model-copy">
+        <strong>{readModel.title}</strong>
+        <span>{readModel.detail}</span>
+      </div>
+      <div className="calendar-follow-up-reschedule-read-model-metrics">
+        <Metric label="Commands" value={String(readModel.commandCount)} />
+        <Metric label="Prepared" value={String(readModel.preparedCommandCount)} />
         <Metric label="Records" value={String(readModel.recordCount)} />
       </div>
       {readModel.nextActions.length > 0 ? (

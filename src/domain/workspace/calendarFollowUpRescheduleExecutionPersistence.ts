@@ -53,13 +53,21 @@ export interface CalendarFollowUpRescheduleExecutionPersistenceAdapter {
 }
 
 export interface LocalCalendarFollowUpRescheduleExecutionPersistenceOptions {
+  initialRuns?: CalendarFollowUpRescheduleExecutionRun[]
   initialSnapshot?: Partial<CalendarFollowUpRescheduleExecutionPersistenceSnapshot>
 }
 
 export function createLocalCalendarFollowUpRescheduleExecutionPersistence({
+  initialRuns = [],
   initialSnapshot,
 }: LocalCalendarFollowUpRescheduleExecutionPersistenceOptions = {}): CalendarFollowUpRescheduleExecutionPersistenceAdapter {
-  let snapshotState = normalizeSnapshot(initialSnapshot)
+  let snapshotState = normalizeSnapshot({
+    ...initialSnapshot,
+    records: [
+      ...(initialSnapshot?.records ?? []),
+      ...initialRuns.map(buildExecutionRecord),
+    ],
+  })
 
   return {
     async recordRun(run) {

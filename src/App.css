@@ -3824,7 +3824,8 @@
   overflow-wrap: anywhere;
 }
 
-.calendar-follow-up-reschedule-read-model {
+.calendar-follow-up-reschedule-read-model,
+.calendar-follow-up-reschedule-execution-read-model {
   border: 1px solid oklch(0.86 0.03 235);
   border-radius: 8px;
   display: grid;
@@ -3832,19 +3833,27 @@
   padding: 10px;
 }
 
-.calendar-follow-up-reschedule-read-model[data-status="ready"] {
+.calendar-follow-up-reschedule-read-model[data-status="ready"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="prepared"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="succeeded"] {
   background: oklch(0.985 0.018 88);
   border-color: oklch(0.84 0.07 82);
 }
 
 .calendar-follow-up-reschedule-read-model[data-status="blocked"],
-.calendar-follow-up-reschedule-read-model[data-status="mixed"] {
+.calendar-follow-up-reschedule-read-model[data-status="mixed"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="blocked"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="failed"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="partial"] {
   background: oklch(0.985 0.02 35);
   border-color: oklch(0.8 0.09 35);
 }
 
 .calendar-follow-up-reschedule-read-model[data-status="empty"],
-.calendar-follow-up-reschedule-read-model[data-status="stale"] {
+.calendar-follow-up-reschedule-read-model[data-status="stale"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="empty"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="pending"],
+.calendar-follow-up-reschedule-execution-read-model[data-status="stale"] {
   background: oklch(0.98 0.01 245);
 }
 
