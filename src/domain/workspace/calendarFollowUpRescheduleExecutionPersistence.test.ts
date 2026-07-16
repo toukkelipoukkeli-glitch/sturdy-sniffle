@@ -54,6 +54,27 @@ describe("calendar follow-up reschedule execution persistence", () => {
     expect(snapshot.records[0]).not.toHaveProperty("commands")
   })
 
+  it("hydrates seeded execution runs into normalized snapshots", () => {
+    const run = buildReadyDryRun()
+    const adapter = createLocalCalendarFollowUpRescheduleExecutionPersistence({
+      initialRuns: [run],
+    })
+
+    const snapshot = adapter.snapshot()
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.latestRun).toMatchObject({
+      actor: "Sari",
+      commandCount: 1,
+      executionFingerprint: run.executionFingerprint,
+      mode: "dry_run",
+      planStatus: "ready",
+      preparedCommandCount: 1,
+      status: "prepared",
+    })
+    expect(snapshot.records[0]).not.toHaveProperty("commands")
+  })
+
   it("records committed and partial execution counts sorted newest first", async () => {
     const ready = readyPlan()
     const blocked = blockedPlan()
