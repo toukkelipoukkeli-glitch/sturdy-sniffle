@@ -5364,15 +5364,18 @@ function CalendarFollowUpStatusPanel({
     () => buildCalendarFollowUpStatus({ actions, filter, now, offerId, replySync, rfqId }),
     [actions, filter, now, offerId, replySync, rfqId],
   )
+  const reschedulePlan = useMemo(
+    () => buildCalendarFollowUpReschedulePlan({ rfqId, tasks: status.tasks }),
+    [rfqId, status.tasks],
+  )
   const rescheduleReadModel = useMemo(() => {
-    const plan = buildCalendarFollowUpReschedulePlan({ rfqId, tasks: status.tasks })
-    const recordKey = calendarFollowUpReschedulePlanRecordKey(rfqId, plan.summary)
+    const recordKey = calendarFollowUpReschedulePlanRecordKey(rfqId, reschedulePlan.summary)
     const snapshot = createLocalCalendarFollowUpReschedulePlanPersistence({
       initialSnapshot: {
         currentRecordKey: recordKey,
         records: [
           {
-            plan,
+            plan: reschedulePlan,
             recordedAt: now,
             recordKey,
             rfqId,
@@ -5382,22 +5385,21 @@ function CalendarFollowUpStatusPanel({
     }).snapshot()
 
     return buildCalendarFollowUpReschedulePlanReadModel({ summary: snapshot.summary })
-  }, [now, rfqId, status.tasks])
+  }, [now, reschedulePlan, rfqId])
   const rescheduleExecutionReadModel = useMemo(() => {
-    const plan = buildCalendarFollowUpReschedulePlan({ rfqId, tasks: status.tasks })
-    const run = plan.summary.commandCount > 0
+    const run = reschedulePlan.summary.commandCount > 0
       ? buildCalendarFollowUpRescheduleExecutionRun({
         actor: "FactoryBid OS",
         executedAt: now,
         mode: "dry_run",
-        plan,
+        plan: reschedulePlan,
       })
       : undefined
     const persistence = createLocalCalendarFollowUpRescheduleExecutionPersistence({
       initialRuns: run ? [run] : [],
     })
     return buildCalendarFollowUpRescheduleExecutionReadModel({ snapshot: persistence.snapshot() })
-  }, [now, rfqId, status.tasks])
+  }, [now, reschedulePlan])
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
