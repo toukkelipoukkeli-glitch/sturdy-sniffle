@@ -188,6 +188,12 @@ describe("calendar follow-up reschedule execution history summary", () => {
     const snapshot = adapter.snapshot()
     const summary = summarizeCalendarFollowUpRescheduleExecutionHistory(snapshot)
     summary.recentRuns[0]!.rfqIds.push("mutated-rfq")
+    const staleSnapshot = {
+      ...snapshot,
+      latestRun: snapshot.records[1],
+      records: [...snapshot.records].reverse(),
+    }
+    const staleSummary = summarizeCalendarFollowUpRescheduleExecutionHistory(staleSnapshot)
 
     expect(summary.latestRun?.executionFingerprint).toBe(newerRun.executionFingerprint)
     expect(summary.recentRuns.map((run) => run.executionFingerprint)).toEqual([
@@ -195,6 +201,9 @@ describe("calendar follow-up reschedule execution history summary", () => {
       olderRun.executionFingerprint,
     ])
     expect(summarizeCalendarFollowUpRescheduleExecutionHistory(snapshot).recentRuns[0]?.rfqIds).toEqual(["rfq-019"])
+    expect(staleSummary.latestRun?.executionFingerprint).toBe(newerRun.executionFingerprint)
+    expect(staleSummary.status).toBe("pending_provider")
+    expect(staleSummary.actionItems[0]?.detail).toBe("Record provider outcomes for 1 pending calendar command(s).")
     expect(buildCalendarFollowUpRescheduleExecutionHistoryExportSummary(snapshot)).toContain(
       "Calendar reschedule execution history: pending_provider",
     )

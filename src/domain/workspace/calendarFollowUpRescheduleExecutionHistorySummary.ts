@@ -45,13 +45,14 @@ export function summarizeCalendarFollowUpRescheduleExecutionHistory(
 ): CalendarFollowUpRescheduleExecutionHistorySummary {
   assertPersistenceVersion(snapshot)
   const recentRuns = snapshot.records.map(cloneRecord).sort(sortNewestFirst)
-  const status = determineStatus(snapshot)
+  const latestRun = recentRuns[0]
+  const status = determineStatus(latestRun)
 
   return {
-    actionItems: actionItemsForStatus(status, snapshot),
+    actionItems: actionItemsForStatus(status, latestRun),
     commandCount: recentRuns.reduce((total, record) => total + record.commandCount, 0),
-    latestRun: recentRuns[0],
-    operatorSummary: operatorSummaryForStatus(status, snapshot),
+    latestRun,
+    operatorSummary: operatorSummaryForStatus(status, snapshot.recordCount, latestRun),
     pendingActionCount: snapshot.pendingActionCount,
     recentRuns,
     rfqIds: [...snapshot.rfqIds],
@@ -99,9 +100,8 @@ export function buildCalendarFollowUpRescheduleExecutionHistoryExportSummary(
 }
 
 function determineStatus(
-  snapshot: CalendarFollowUpRescheduleExecutionPersistenceSnapshot,
+  latest: CalendarFollowUpRescheduleExecutionRecord | undefined,
 ): CalendarFollowUpRescheduleExecutionHistorySummaryStatus {
-  const latest = snapshot.latestRun
   if (!latest) {
     return "empty"
   }
@@ -136,13 +136,13 @@ function severityForStatus(
 
 function operatorSummaryForStatus(
   status: CalendarFollowUpRescheduleExecutionHistorySummaryStatus,
-  snapshot: CalendarFollowUpRescheduleExecutionPersistenceSnapshot,
+  recordCount: number,
+  latest: CalendarFollowUpRescheduleExecutionRecord | undefined,
 ): string {
-  const latest = snapshot.latestRun
   if (!latest) {
     return "No calendar reschedule execution history has been recorded yet."
   }
-  const runText = `${snapshot.recordCount} execution run${snapshot.recordCount === 1 ? "" : "s"}`
+  const runText = `${recordCount} execution run${recordCount === 1 ? "" : "s"}`
   switch (status) {
     case "completed":
       return `Calendar reschedule execution history has ${runText}; latest run completed ${latest.createdCommandCount} provider command(s).`
@@ -159,7 +159,7 @@ function operatorSummaryForStatus(
 
 function actionItemsForStatus(
   status: CalendarFollowUpRescheduleExecutionHistorySummaryStatus,
-  snapshot: CalendarFollowUpRescheduleExecutionPersistenceSnapshot,
+  latest: CalendarFollowUpRescheduleExecutionRecord | undefined,
 ): CalendarFollowUpRescheduleExecutionHistoryActionItem[] {
   switch (status) {
     case "completed":
@@ -198,7 +198,7 @@ function actionItemsForStatus(
     case "pending_provider":
       return [
         {
-          detail: `Record provider outcomes for ${snapshot.latestRun?.pendingCommandCount ?? 0} pending calendar command(s).`,
+          detail: `Record provider outcomes for ${latest?.pendingCommandCount ?? 0} pending calendar command(s).`,
           key: "record-calendar-provider-outcomes",
           label: "Record provider outcomes",
           severity: "info",
