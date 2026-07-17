@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9566c31` (`[codex] Add calendar reschedule execution history summary (#355)`).
+- Main branch checkpoint: `b77a46b` (`[codex] Surface calendar execution history summary (#356)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/calendar-reschedule-execution-history-summary-ui` surfaces the deterministic execution history summary in the existing calendar follow-up panel.
+- In-flight branch at this checkpoint: none; start the next slice from a fresh `origin/main`.
 - Latest merged sequence:
+  - `#356` surfaces deterministic calendar reschedule execution history summaries in the existing calendar follow-up status panel, with Browser/Playwright QA fallback evidence.
   - `#355` adds deterministic calendar reschedule execution history summaries/export copy, including a CodeRabbit follow-up fix to derive status/actions from the sorted latest run.
   - `#354` refreshes the autonomous handoff after the calendar reschedule execution read-model UI slice.
   - `#353` surfaces the calendar reschedule execution read model in the existing follow-up status panel as a dry-run-only operator status card, with Browser/Playwright QA fallback evidence.
@@ -261,7 +262,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, optional browser runtime read hydration for selected-RFQ terminal provider runs, operator-visible provider-run read sync health in Provider review and Integration health, deterministic provider-run read history summaries, local persistence snapshots for those read-history records, operator diagnostics/export copy for that persisted read-health trail, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, provider-read diagnostic next-action items, optional browser Convex bridge probe health for configured refs and local identity maps, and guarded browser bridge install-plan visibility.
 - CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
-- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs with cross-RFQ history and stale-link recovery actions, calendar plan previews, calendar follow-up status, offer reply state, release execution history, and audit visibility.
+- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs with cross-RFQ history and stale-link recovery actions, calendar plan previews, calendar follow-up status with execution read-model/history summaries, offer reply state, release execution history, and audit visibility.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
 
