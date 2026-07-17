@@ -2608,6 +2608,21 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionReadModel).toHaveTextContent("Prepared 1")
     expect(executionReadModel).toHaveTextContent("Records 1")
     expect(executionReadModel).toHaveTextContent("Review the dry-run execution audit before committing provider calendar changes.")
+
+    const executionHistorySummary = within(followUpStatus).getByLabelText(
+      "Calendar follow-up reschedule execution history summary",
+    )
+    expect(executionHistorySummary).toHaveTextContent("Execution history ready for review")
+    expect(executionHistorySummary).toHaveTextContent(
+      "Calendar reschedule execution history has 1 execution run; latest dry-run prepared 1 command(s) for review.",
+    )
+    expect(executionHistorySummary).toHaveTextContent("Runs 1")
+    expect(executionHistorySummary).toHaveTextContent("Commands 1")
+    expect(executionHistorySummary).toHaveTextContent("Pending 1")
+    expect(executionHistorySummary).toHaveTextContent("Review dry-run")
+    expect(executionHistorySummary).toHaveTextContent(
+      "Review the dry-run execution before enabling calendar provider side effects.",
+    )
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {

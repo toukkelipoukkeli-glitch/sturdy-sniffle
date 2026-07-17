@@ -359,6 +359,10 @@ import {
   type CalendarFollowUpRescheduleExecutionReadModel,
 } from "./domain/workspace/calendarFollowUpRescheduleExecutionReadModel"
 import {
+  summarizeCalendarFollowUpRescheduleExecutionHistory,
+  type CalendarFollowUpRescheduleExecutionHistorySummary,
+} from "./domain/workspace/calendarFollowUpRescheduleExecutionHistorySummary"
+import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
@@ -5386,7 +5390,7 @@ function CalendarFollowUpStatusPanel({
 
     return buildCalendarFollowUpReschedulePlanReadModel({ summary: snapshot.summary })
   }, [now, reschedulePlan, rfqId])
-  const rescheduleExecutionReadModel = useMemo(() => {
+  const rescheduleExecutionSnapshot = useMemo(() => {
     const run = reschedulePlan.summary.commandCount > 0
       ? buildCalendarFollowUpRescheduleExecutionRun({
         actor: "FactoryBid OS",
@@ -5398,8 +5402,16 @@ function CalendarFollowUpStatusPanel({
     const persistence = createLocalCalendarFollowUpRescheduleExecutionPersistence({
       initialRuns: run ? [run] : [],
     })
-    return buildCalendarFollowUpRescheduleExecutionReadModel({ snapshot: persistence.snapshot() })
+    return persistence.snapshot()
   }, [now, reschedulePlan])
+  const rescheduleExecutionReadModel = useMemo(
+    () => buildCalendarFollowUpRescheduleExecutionReadModel({ snapshot: rescheduleExecutionSnapshot }),
+    [rescheduleExecutionSnapshot],
+  )
+  const rescheduleExecutionHistorySummary = useMemo(
+    () => summarizeCalendarFollowUpRescheduleExecutionHistory(rescheduleExecutionSnapshot),
+    [rescheduleExecutionSnapshot],
+  )
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
@@ -5426,6 +5438,7 @@ function CalendarFollowUpStatusPanel({
       </div>
       <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
       <CalendarFollowUpRescheduleExecutionReadModelPanel readModel={rescheduleExecutionReadModel} />
+      <CalendarFollowUpRescheduleExecutionHistorySummaryPanel summary={rescheduleExecutionHistorySummary} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
           <Button
@@ -5526,6 +5539,39 @@ function CalendarFollowUpRescheduleExecutionReadModelPanel({
   )
 }
 
+function CalendarFollowUpRescheduleExecutionHistorySummaryPanel({
+  summary,
+}: {
+  summary: CalendarFollowUpRescheduleExecutionHistorySummary
+}) {
+  return (
+    <div
+      className="calendar-follow-up-reschedule-execution-history-summary"
+      data-severity={summary.severity}
+      aria-label="Calendar follow-up reschedule execution history summary"
+    >
+      <div className="calendar-follow-up-reschedule-read-model-copy">
+        <strong>{calendarFollowUpRescheduleExecutionHistoryTitle(summary.status)}</strong>
+        <span>{summary.operatorSummary}</span>
+      </div>
+      <div className="calendar-follow-up-reschedule-read-model-metrics">
+        <Metric label="Runs" value={String(summary.totalRuns)} />
+        <Metric label="Commands" value={String(summary.commandCount)} />
+        <Metric label="Pending" value={String(summary.pendingActionCount)} />
+      </div>
+      {summary.actionItems.length > 0 ? (
+        <ul className="calendar-follow-up-reschedule-read-model-actions">
+          {summary.actionItems.slice(0, 2).map((action) => (
+            <li key={action.key}>
+              <strong>{action.label}:</strong> {action.detail}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function CalendarFollowUpStatusRow({ task }: { task: CalendarFollowUpStatusTask }) {
   return (
     <article className="calendar-follow-up-row" data-status={task.status}>
@@ -5618,6 +5664,23 @@ function calendarFollowUpTaskLabel(task: CalendarFollowUpStatusTask) {
     return `Completed ${formatShortDateTime(task.completedAt ?? task.dueAt)}`
   }
   return `Due ${formatShortDateTime(task.dueAt)}`
+}
+
+function calendarFollowUpRescheduleExecutionHistoryTitle(
+  status: CalendarFollowUpRescheduleExecutionHistorySummary["status"],
+) {
+  switch (status) {
+    case "completed":
+      return "Execution history healthy"
+    case "empty":
+      return "No execution history"
+    case "needs_attention":
+      return "Execution history needs review"
+    case "pending_provider":
+      return "Execution history pending provider"
+    case "ready_for_review":
+      return "Execution history ready for review"
+  }
 }
 
 function RfqReadinessCheckIcon({ status }: { status: RfqIntakeReadinessCheckStatus }) {
