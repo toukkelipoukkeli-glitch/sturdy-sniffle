@@ -5,7 +5,9 @@ import { buildCalendarFollowUpRescheduleExecutionRun } from "./calendarFollowUpR
 import {
   buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord,
   CALENDAR_FOLLOW_UP_RESCHEDULE_PROVIDER_OUTCOME_PERSISTENCE_VERSION,
+  createConvexCalendarFollowUpRescheduleProviderOutcomeReader,
   createLocalCalendarFollowUpRescheduleProviderOutcomePersistence,
+  createLocalCalendarFollowUpRescheduleProviderOutcomeReader,
   fingerprintCalendarFollowUpRescheduleProviderOutcomes,
   type CalendarFollowUpRescheduleProviderOutcomePersistenceRecord,
 } from "./calendarFollowUpRescheduleProviderOutcomePersistence"
@@ -176,6 +178,137 @@ describe("calendar follow-up reschedule provider outcome persistence", () => {
     expect(adapter.snapshot().records[1]?.recordedBy).toBe("ops")
   })
 
+  it("lists restored local outcome records with RFQ filters, limits, and cloned snapshots", async () => {
+    const rfq019Plan = readyPlan()
+    const rfq020Plan = readyPlanFor({ offerId: "offer-020", rfqId: "rfq-020" })
+    const rfq019Record = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: readyCommandOutcomes(rfq019Plan),
+      plan: rfq019Plan,
+      recordedAt: "2026-06-24T09:35:00+03:00",
+      recordedBy: "sales",
+      rfqId: "rfq-019",
+    })
+    const rfq020Record = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: readyCommandOutcomes(rfq020Plan),
+      plan: rfq020Plan,
+      recordedAt: "2026-06-24T09:45:00+03:00",
+      recordedBy: "ops",
+      rfqId: "rfq-020",
+    })
+
+    const reader = createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
+      initialSnapshot: {
+        records: [rfq019Record, rfq020Record],
+      },
+    })
+
+    const filtered = await reader.listOutcomes({ limit: 1, rfqId: " rfq-019 " })
+
+    expect(filtered).toMatchObject({
+      commandOutcomeCount: 1,
+      recordCount: 1,
+      rfqIds: ["rfq-019"],
+      taskIds: ["follow-up-rfq-019"],
+    })
+    expect(filtered.records[0]?.outcomeFingerprint).toBe(rfq019Record.outcomeFingerprint)
+
+    filtered.records[0]?.taskIds.push("mutated-task")
+    expect(reader.snapshot().records[0]?.taskIds).toEqual(["follow-up-rfq-019"])
+
+    await expect(reader.listOutcomes({ limit: 0 })).resolves.toMatchObject({
+      recordCount: 0,
+      records: [],
+    })
+  })
+
+  it("rejects invalid local outcome read filters", async () => {
+    const reader = createLocalCalendarFollowUpRescheduleProviderOutcomeReader()
+
+    await expect(reader.listOutcomes({ rfqId: " " })).rejects.toThrow("rfqId must be a non-empty string")
+    await expect(reader.listOutcomes({ limit: -1 })).rejects.toThrow("limit must be a non-negative safe integer")
+  })
+
+  it("reads Convex provider outcome records with deterministic args and local filtering", async () => {
+    const rfq019Plan = readyPlan()
+    const rfq020Plan = readyPlanFor({ offerId: "offer-020", rfqId: "rfq-020" })
+    const rfq019Record = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: readyCommandOutcomes(rfq019Plan),
+      plan: rfq019Plan,
+      recordedAt: "2026-06-24T09:35:00+03:00",
+      recordedBy: "sales",
+      rfqId: "rfq-019",
+    })
+    const rfq020Record = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: readyCommandOutcomes(rfq020Plan),
+      plan: rfq020Plan,
+      recordedAt: "2026-06-24T09:45:00+03:00",
+      recordedBy: "ops",
+      rfqId: "rfq-020",
+    })
+    const queryArgs: Record<string, unknown>[] = []
+
+    const reader = createConvexCalendarFollowUpRescheduleProviderOutcomeReader({
+      queryRef: "calendarProviderOutcomeHistory",
+      runQuery: async (queryRef, args) => {
+        expect(queryRef).toBe("calendarProviderOutcomeHistory")
+        queryArgs.push(args)
+        return [rfq020Record, rfq019Record]
+      },
+    })
+
+    const snapshot = await reader.listOutcomes({ limit: 1, rfqId: "rfq-019" })
+
+    expect(queryArgs).toEqual([{ limit: 1, rfqId: "rfq-019" }])
+    expect(snapshot).toMatchObject({
+      recordCount: 1,
+      rfqIds: ["rfq-019"],
+    })
+    expect(snapshot.records[0]?.outcomeFingerprint).toBe(rfq019Record.outcomeFingerprint)
+
+    snapshot.records[0]?.taskIds.push("mutated-task")
+    expect(reader.snapshot().records[0]?.taskIds).toEqual(["follow-up-rfq-019"])
+  })
+
+  it("falls back to local provider outcome records when Convex read records are malformed", async () => {
+    const fallbackPlan = readyPlan()
+    const fallbackRecord = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: readyCommandOutcomes(fallbackPlan),
+      plan: fallbackPlan,
+      recordedAt: "2026-06-24T09:35:00+03:00",
+      recordedBy: "sales",
+      rfqId: "rfq-019",
+    })
+    const queryErrors: { args: Record<string, unknown>; message: string }[] = []
+
+    const reader = createConvexCalendarFollowUpRescheduleProviderOutcomeReader({
+      fallback: createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
+        initialSnapshot: {
+          records: [fallbackRecord],
+        },
+      }),
+      onQueryError: (error, args) => {
+        queryErrors.push({ args, message: error instanceof Error ? error.message : String(error) })
+        throw new Error("observer failure should not block fallback")
+      },
+      queryRef: "calendarProviderOutcomeHistory",
+      runQuery: async () => ({ records: [fallbackRecord] }),
+    })
+
+    const snapshot = await reader.listOutcomes({ rfqId: "rfq-019" })
+
+    expect(queryErrors).toEqual([
+      {
+        args: { rfqId: "rfq-019" },
+        message: "calendar provider outcome query must return an array",
+      },
+    ])
+    expect(snapshot).toMatchObject({
+      recordCount: 1,
+      rfqIds: ["rfq-019"],
+    })
+    expect(snapshot.records[0]?.outcomeFingerprint).toBe(fallbackRecord.outcomeFingerprint)
+  })
+
   it("rejects malformed command outcomes and restored records", () => {
     const plan = readyPlan()
     const commandOutcomes = readyCommandOutcomes(plan)
@@ -253,13 +386,25 @@ function readyCommandOutcomes(plan: CalendarFollowUpReschedulePlan) {
 }
 
 function readyPlan(): CalendarFollowUpReschedulePlan {
+  return readyPlanFor({ offerId: "offer-019", rfqId: "rfq-019" })
+}
+
+function readyPlanFor({ offerId, rfqId }: { offerId: string; rfqId: string }): CalendarFollowUpReschedulePlan {
   return buildCalendarFollowUpReschedulePlan({
-    rfqId: "rfq-019",
-    tasks: followUpStatus().tasks,
+    rfqId,
+    tasks: followUpStatus({ offerId, rfqId }).tasks,
   })
 }
 
-function followUpStatus(replySync?: GmailOfferReplySyncResult) {
+function followUpStatus({
+  offerId = "offer-019",
+  replySync,
+  rfqId = "rfq-019",
+}: {
+  offerId?: string
+  replySync?: GmailOfferReplySyncResult
+  rfqId?: string
+} = {}) {
   return buildCalendarFollowUpStatus({
     actions: [
       buildWorkspaceAction({
@@ -267,14 +412,14 @@ function followUpStatus(replySync?: GmailOfferReplySyncResult) {
         followUpDueAt: "2026-06-20T09:00:00+03:00",
         kind: "follow_up_created",
         occurredAt: "2026-06-20T10:10:00+03:00",
-        offerId: "offer-019",
-        rfqId: "rfq-019",
+        offerId,
+        rfqId,
       }),
     ],
     now: "2026-06-24T09:00:00+03:00",
-    offerId: "offer-019",
+    offerId,
     replySync,
-    rfqId: "rfq-019",
+    rfqId,
   })
 }
 

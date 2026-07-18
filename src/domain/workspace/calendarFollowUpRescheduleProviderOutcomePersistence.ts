@@ -63,6 +63,13 @@ export interface CalendarFollowUpRescheduleProviderOutcomePersistenceAdapter {
   snapshot(): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot
 }
 
+export interface CalendarFollowUpRescheduleProviderOutcomeReadAdapter {
+  listOutcomes(
+    options?: CalendarFollowUpRescheduleProviderOutcomeListOptions,
+  ): Promise<CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot>
+  snapshot(): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot
+}
+
 export interface CalendarFollowUpRescheduleProviderOutcomePersistenceRecordInput {
   commandOutcomes: CalendarFollowUpRescheduleCommandOutcomeInput[]
   plan: CalendarFollowUpReschedulePlan
@@ -71,8 +78,20 @@ export interface CalendarFollowUpRescheduleProviderOutcomePersistenceRecordInput
   rfqId: string
 }
 
+export interface CalendarFollowUpRescheduleProviderOutcomeListOptions {
+  limit?: number
+  rfqId?: unknown
+}
+
 export interface LocalCalendarFollowUpRescheduleProviderOutcomePersistenceOptions {
   initialSnapshot?: Partial<CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot>
+}
+
+export interface ConvexCalendarFollowUpRescheduleProviderOutcomeReadOptions {
+  fallback?: CalendarFollowUpRescheduleProviderOutcomeReadAdapter
+  onQueryError?: (error: unknown, args: Record<string, unknown>) => void
+  queryRef: unknown
+  runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
 }
 
 export function createLocalCalendarFollowUpRescheduleProviderOutcomePersistence({
@@ -90,6 +109,59 @@ export function createLocalCalendarFollowUpRescheduleProviderOutcomePersistence(
         ],
       })
       return snapshot()
+    },
+    snapshot,
+  }
+
+  function snapshot(): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot {
+    return cloneSnapshot(snapshotState)
+  }
+}
+
+export function createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
+  initialSnapshot,
+}: LocalCalendarFollowUpRescheduleProviderOutcomePersistenceOptions = {}): CalendarFollowUpRescheduleProviderOutcomeReadAdapter {
+  const sourceSnapshot = normalizeSnapshot(initialSnapshot)
+  let snapshotState = cloneSnapshot(sourceSnapshot)
+
+  return {
+    async listOutcomes(options = {}) {
+      snapshotState = filterSnapshot(sourceSnapshot, options)
+      return snapshot()
+    },
+    snapshot,
+  }
+
+  function snapshot(): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot {
+    return cloneSnapshot(snapshotState)
+  }
+}
+
+export function createConvexCalendarFollowUpRescheduleProviderOutcomeReader({
+  fallback,
+  onQueryError,
+  queryRef,
+  runQuery,
+}: ConvexCalendarFollowUpRescheduleProviderOutcomeReadOptions): CalendarFollowUpRescheduleProviderOutcomeReadAdapter {
+  const localFallback = fallback ?? createLocalCalendarFollowUpRescheduleProviderOutcomeReader()
+  let snapshotState = localFallback.snapshot()
+
+  return {
+    async listOutcomes(options = {}) {
+      const args = compactListArgs(options)
+      try {
+        const records = normalizeQueryRecords(await runQuery(queryRef, args))
+        snapshotState = filterSnapshot(normalizeSnapshot({ records }), options)
+        return snapshot()
+      } catch (error) {
+        try {
+          onQueryError?.(error, args)
+        } catch {
+          // Local fallback must remain available even if observers fail.
+        }
+        snapshotState = await localFallback.listOutcomes(options)
+        return snapshot()
+      }
     },
     snapshot,
   }
@@ -200,6 +272,18 @@ function normalizeRecord(
     recordedBy: record.recordedBy,
     rfqId: record.rfqId,
   })
+}
+
+function filterSnapshot(
+  snapshot: CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot,
+  options: CalendarFollowUpRescheduleProviderOutcomeListOptions,
+): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot {
+  const rfqId = options.rfqId === undefined ? undefined : nonBlankUnknown(options.rfqId, "rfqId")
+  const limit = options.limit === undefined ? undefined : nonNegativeInteger(options.limit, "limit")
+  const records = snapshot.records
+    .filter((record) => (rfqId ? record.rfqId === rfqId : true))
+    .slice(0, limit)
+  return normalizeSnapshot({ records })
 }
 
 function cloneSnapshot(
@@ -469,6 +553,41 @@ function normalizePersistenceVersion(
     throw new Error("calendar reschedule provider outcome persistence version is not supported")
   }
   return version
+}
+
+function compactListArgs(options: CalendarFollowUpRescheduleProviderOutcomeListOptions): Record<string, unknown> {
+  return {
+    ...(options.limit === undefined ? {} : { limit: nonNegativeInteger(options.limit, "limit") }),
+    ...(options.rfqId === undefined ? {} : { rfqId: nonBlankUnknown(options.rfqId, "rfqId") }),
+  }
+}
+
+function normalizeQueryRecords(records: unknown): CalendarFollowUpRescheduleProviderOutcomePersistenceRecord[] {
+  if (!Array.isArray(records)) {
+    throw new Error("calendar provider outcome query must return an array")
+  }
+  return records.map(normalizeQueryRecord)
+}
+
+function normalizeQueryRecord(record: unknown): CalendarFollowUpRescheduleProviderOutcomePersistenceRecord {
+  if (!record || typeof record !== "object") {
+    throw new Error("calendar provider outcome query record must be an object")
+  }
+  return record as CalendarFollowUpRescheduleProviderOutcomePersistenceRecord
+}
+
+function nonBlankUnknown(value: unknown, fieldName: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`${fieldName} must be a non-empty string`)
+  }
+  return value.trim()
+}
+
+function nonNegativeInteger(value: unknown, fieldName: string): number {
+  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+    throw new Error(`${fieldName} must be a non-negative safe integer`)
+  }
+  return Number(value)
 }
 
 function stableJson(value: unknown): string {
