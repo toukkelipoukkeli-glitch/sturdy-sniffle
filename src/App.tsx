@@ -362,6 +362,11 @@ import {
   summarizeCalendarFollowUpRescheduleExecutionHistory,
   type CalendarFollowUpRescheduleExecutionHistorySummary,
 } from "./domain/workspace/calendarFollowUpRescheduleExecutionHistorySummary"
+import { buildCalendarFollowUpRescheduleProviderCommandOutcomes } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomes"
+import {
+  buildCalendarFollowUpRescheduleProviderOutcomeReadModel,
+  type CalendarFollowUpRescheduleProviderOutcomeReadModel,
+} from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeReadModel"
 import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
@@ -5390,20 +5395,23 @@ function CalendarFollowUpStatusPanel({
 
     return buildCalendarFollowUpReschedulePlanReadModel({ summary: snapshot.summary })
   }, [now, reschedulePlan, rfqId])
-  const rescheduleExecutionSnapshot = useMemo(() => {
-    const run = reschedulePlan.summary.commandCount > 0
+  const rescheduleExecutionRun = useMemo(
+    () => reschedulePlan.summary.commandCount > 0
       ? buildCalendarFollowUpRescheduleExecutionRun({
         actor: "FactoryBid OS",
         executedAt: now,
         mode: "dry_run",
         plan: reschedulePlan,
       })
-      : undefined
+      : undefined,
+    [now, reschedulePlan],
+  )
+  const rescheduleExecutionSnapshot = useMemo(() => {
     const persistence = createLocalCalendarFollowUpRescheduleExecutionPersistence({
-      initialRuns: run ? [run] : [],
+      initialRuns: rescheduleExecutionRun ? [rescheduleExecutionRun] : [],
     })
     return persistence.snapshot()
-  }, [now, reschedulePlan])
+  }, [rescheduleExecutionRun])
   const rescheduleExecutionReadModel = useMemo(
     () => buildCalendarFollowUpRescheduleExecutionReadModel({ snapshot: rescheduleExecutionSnapshot }),
     [rescheduleExecutionSnapshot],
@@ -5411,6 +5419,22 @@ function CalendarFollowUpStatusPanel({
   const rescheduleExecutionHistorySummary = useMemo(
     () => summarizeCalendarFollowUpRescheduleExecutionHistory(rescheduleExecutionSnapshot),
     [rescheduleExecutionSnapshot],
+  )
+  const rescheduleProviderOutcomes = useMemo(
+    () =>
+      buildCalendarFollowUpRescheduleProviderCommandOutcomes({
+        plan: reschedulePlan,
+        reviewedExecution: rescheduleExecutionRun,
+      }),
+    [rescheduleExecutionRun, reschedulePlan],
+  )
+  const rescheduleProviderOutcomeReadModel = useMemo(
+    () =>
+      buildCalendarFollowUpRescheduleProviderOutcomeReadModel({
+        outcomes: rescheduleProviderOutcomes,
+        plan: reschedulePlan,
+      }),
+    [reschedulePlan, rescheduleProviderOutcomes],
   )
 
   return (
@@ -5438,6 +5462,7 @@ function CalendarFollowUpStatusPanel({
       </div>
       <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
       <CalendarFollowUpRescheduleExecutionReadModelPanel readModel={rescheduleExecutionReadModel} />
+      <CalendarFollowUpRescheduleProviderOutcomeReadModelPanel readModel={rescheduleProviderOutcomeReadModel} />
       <CalendarFollowUpRescheduleExecutionHistorySummaryPanel summary={rescheduleExecutionHistorySummary} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
@@ -5527,6 +5552,37 @@ function CalendarFollowUpRescheduleExecutionReadModelPanel({
         <Metric label="Commands" value={String(readModel.commandCount)} />
         <Metric label="Prepared" value={String(readModel.preparedCommandCount)} />
         <Metric label="Records" value={String(readModel.recordCount)} />
+      </div>
+      {readModel.nextActions.length > 0 ? (
+        <ul className="calendar-follow-up-reschedule-read-model-actions">
+          {readModel.nextActions.slice(0, 2).map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+function CalendarFollowUpRescheduleProviderOutcomeReadModelPanel({
+  readModel,
+}: {
+  readModel: CalendarFollowUpRescheduleProviderOutcomeReadModel
+}) {
+  return (
+    <div
+      className="calendar-follow-up-reschedule-provider-outcome-read-model"
+      data-status={readModel.status}
+      aria-label="Calendar follow-up reschedule provider outcome read model"
+    >
+      <div className="calendar-follow-up-reschedule-read-model-copy">
+        <strong>{readModel.title}</strong>
+        <span>{readModel.detail}</span>
+      </div>
+      <div className="calendar-follow-up-reschedule-read-model-metrics">
+        <Metric label="Expected" value={String(readModel.expectedOutcomeCount)} />
+        <Metric label="Created" value={String(readModel.createdOutcomeCount)} />
+        <Metric label="Missing" value={String(readModel.missingOutcomeCount)} />
       </div>
       {readModel.nextActions.length > 0 ? (
         <ul className="calendar-follow-up-reschedule-read-model-actions">
