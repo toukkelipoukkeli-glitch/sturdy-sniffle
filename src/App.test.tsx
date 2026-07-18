@@ -71,6 +71,14 @@ import {
 import { buildProcessDemoQuotes } from "./domain/quoting/processDemoQuotes"
 import { buildProcessQuotePreview } from "./domain/quoting/processQuotePreview"
 import { calculateQuote } from "./domain/quoting/registry"
+import { buildCalendarFollowUpRescheduleExecutionRun } from "./domain/workspace/calendarFollowUpRescheduleExecution"
+import {
+  buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord,
+} from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomePersistence"
+import { buildCalendarFollowUpRescheduleProviderCommandOutcomes } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomes"
+import { buildCalendarFollowUpReschedulePlan } from "./domain/workspace/calendarFollowUpReschedulePlan"
+import { buildCalendarFollowUpStatus } from "./domain/workspace/calendarFollowUpStatus"
+import { buildWorkspaceAction } from "./domain/workspace/workspaceActions"
 import { calculateWorkspaceCncQuote } from "./domain/workspace/workspaceCncQuote"
 import { normalizedWorkspaceTimestamp } from "./domain/workspace/workspaceTimestamp"
 
@@ -2665,6 +2673,88 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionHistorySummary).toHaveTextContent(
       "Review the dry-run execution before enabling calendar provider side effects.",
     )
+  })
+
+  it("hydrates calendar provider outcome history through the Convex browser bridge", async () => {
+    const user = userEvent.setup()
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    const persistedStatus = buildCalendarFollowUpStatus({
+      actions: [
+        buildWorkspaceAction({
+          actor: "Sari",
+          followUpDueAt: "2026-06-19T06:00:00.000Z",
+          kind: "follow_up_created",
+          occurredAt: "2026-06-20T07:10:00.000Z",
+          offerId: "offer-204",
+          rfqId: "convex-rfq-204",
+        }),
+      ],
+      now: "2026-06-24T09:00:00+03:00",
+      offerId: "offer-204",
+      rfqId: "convex-rfq-204",
+    })
+    const persistedPlan = buildCalendarFollowUpReschedulePlan({
+      rfqId: "convex-rfq-204",
+      tasks: persistedStatus.tasks,
+    })
+    const persistedExecution = buildCalendarFollowUpRescheduleExecutionRun({
+      actor: "Convex Calendar",
+      executedAt: "2026-06-24T10:00:00+03:00",
+      mode: "dry_run",
+      plan: persistedPlan,
+    })
+    const persistedRecord = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: buildCalendarFollowUpRescheduleProviderCommandOutcomes({
+        plan: persistedPlan,
+        reviewedExecution: persistedExecution,
+      }),
+      plan: persistedPlan,
+      recordedAt: "2026-06-24T10:05:00+03:00",
+      recordedBy: "Convex Calendar",
+      rfqId: "convex-rfq-204",
+    })
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      calendarFollowUpRescheduleProviderOutcomesQueryRef: "listCalendarRescheduleProviderOutcomes",
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        return [persistedRecord]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    await waitFor(() => {
+      expect(queryCalls).toEqual([
+        {
+          args: {
+            limit: 20,
+            rfqId: "convex-rfq-204",
+          },
+          queryRef: "listCalendarRescheduleProviderOutcomes",
+        },
+      ])
+    })
+    const followUpStatus = screen.getByLabelText("Calendar follow-up status")
+    const providerOutcomeHistorySummary = within(followUpStatus).getByLabelText(
+      "Calendar follow-up reschedule provider outcome history summary",
+    )
+    await waitFor(() => {
+      expect(providerOutcomeHistorySummary).toHaveTextContent("Calendar provider outcome history ready")
+      expect(providerOutcomeHistorySummary).toHaveTextContent(
+        "Latest provider outcome batch for convex-rfq-204 created 1 of 1 expected outcome(s) for the execution audit.",
+      )
+      expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
+      expect(providerOutcomeHistorySummary).toHaveTextContent("Latest ready")
+    })
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {
