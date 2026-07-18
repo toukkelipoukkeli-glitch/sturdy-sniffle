@@ -2558,6 +2558,11 @@ describe("FactoryBid workspace (component)", () => {
 
   it("surfaces overdue calendar follow-up reschedule previews", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     const { unmount } = render(<App />)
 
     await user.click(screen.getByRole("button", { name: "Triage" }))
@@ -2622,6 +2627,29 @@ describe("FactoryBid workspace (component)", () => {
     expect(providerOutcomeReadModel).toHaveTextContent(
       "Record the local provider outcomes in the calendar reschedule execution audit.",
     )
+
+    const providerOutcomeHistorySummary = within(followUpStatus).getByLabelText(
+      "Calendar follow-up reschedule provider outcome history summary",
+    )
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Calendar provider outcome history ready")
+    expect(providerOutcomeHistorySummary).toHaveTextContent(
+      "Latest provider outcome batch for rfq-204 created 1 of 1 expected outcome(s) for the execution audit.",
+    )
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Expected 1")
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Created 1")
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Failed 0")
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Latest ready")
+    expect(providerOutcomeHistorySummary).toHaveTextContent(
+      "Use the latest local provider outcomes when recording the calendar reschedule execution audit.",
+    )
+    await user.click(within(providerOutcomeHistorySummary).getByRole("button", { name: "Copy outcome history" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const [calendarProviderOutcomeHistoryExport] = writeText.mock.calls[0] ?? [""]
+    expect(calendarProviderOutcomeHistoryExport).toContain("Calendar provider outcome history: ready")
+    expect(calendarProviderOutcomeHistoryExport).toContain("Latest provider outcome batch: ready")
+    expect(calendarProviderOutcomeHistoryExport).toContain("Command outcomes:")
+    expect(providerOutcomeHistorySummary).toHaveTextContent("Calendar provider outcome history copied.")
 
     const executionHistorySummary = within(followUpStatus).getByLabelText(
       "Calendar follow-up reschedule execution history summary",

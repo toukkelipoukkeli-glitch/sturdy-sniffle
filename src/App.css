@@ -3827,6 +3827,7 @@
 .calendar-follow-up-reschedule-read-model,
 .calendar-follow-up-reschedule-execution-read-model,
 .calendar-follow-up-reschedule-provider-outcome-read-model,
+.calendar-follow-up-reschedule-provider-outcome-history-summary,
 .calendar-follow-up-reschedule-execution-history-summary {
   border: 1px solid oklch(0.86 0.03 235);
   border-radius: 8px;
@@ -3839,6 +3840,7 @@
 .calendar-follow-up-reschedule-execution-read-model[data-status="prepared"],
 .calendar-follow-up-reschedule-execution-read-model[data-status="succeeded"],
 .calendar-follow-up-reschedule-provider-outcome-read-model[data-status="ready"],
+.calendar-follow-up-reschedule-provider-outcome-history-summary[data-severity="healthy"],
 .calendar-follow-up-reschedule-execution-history-summary[data-severity="healthy"] {
   background: oklch(0.985 0.018 88);
   border-color: oklch(0.84 0.07 82);
@@ -3852,9 +3854,15 @@
 .calendar-follow-up-reschedule-provider-outcome-read-model[data-status="blocked"],
 .calendar-follow-up-reschedule-provider-outcome-read-model[data-status="needs_review"],
 .calendar-follow-up-reschedule-provider-outcome-read-model[data-status="partial"],
+.calendar-follow-up-reschedule-provider-outcome-history-summary[data-severity="critical"],
 .calendar-follow-up-reschedule-execution-history-summary[data-severity="warning"] {
   background: oklch(0.985 0.02 35);
   border-color: oklch(0.8 0.09 35);
+}
+
+.calendar-follow-up-reschedule-provider-outcome-history-summary[data-severity="warning"] {
+  background: oklch(0.99 0.025 78);
+  border-color: oklch(0.82 0.07 75);
 }
 
 .calendar-follow-up-reschedule-read-model[data-status="empty"],
@@ -3863,6 +3871,7 @@
 .calendar-follow-up-reschedule-execution-read-model[data-status="pending"],
 .calendar-follow-up-reschedule-execution-read-model[data-status="stale"],
 .calendar-follow-up-reschedule-provider-outcome-read-model[data-status="empty"],
+.calendar-follow-up-reschedule-provider-outcome-history-summary[data-severity="neutral"],
 .calendar-follow-up-reschedule-execution-history-summary[data-severity="info"] {
   background: oklch(0.98 0.01 245);
 }
@@ -3915,6 +3924,46 @@
   position: absolute;
   top: 0.48em;
   width: 4px;
+}
+
+.calendar-follow-up-reschedule-history-latest {
+  align-items: center;
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid oklch(0.88 0.025 235);
+  border-radius: 7px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px;
+}
+
+.calendar-follow-up-reschedule-history-latest div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.calendar-follow-up-reschedule-history-latest strong {
+  color: oklch(0.25 0.045 250);
+  font-size: 0.73rem;
+}
+
+.calendar-follow-up-reschedule-history-latest span,
+.calendar-follow-up-reschedule-history-latest small {
+  color: oklch(0.42 0.032 250);
+  font-size: 0.7rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-reschedule-history-latest small {
+  flex: 0 1 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  text-align: right;
+}
+
+.calendar-follow-up-reschedule-history-copy {
+  margin-top: 0;
 }
 
 .rfq-readiness-panel {

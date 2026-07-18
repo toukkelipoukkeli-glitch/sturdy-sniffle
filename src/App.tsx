@@ -368,6 +368,14 @@ import {
   type CalendarFollowUpRescheduleProviderOutcomeReadModel,
 } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeReadModel"
 import {
+  buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord,
+  createLocalCalendarFollowUpRescheduleProviderOutcomePersistence,
+} from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomePersistence"
+import {
+  summarizeCalendarFollowUpRescheduleProviderOutcomeHistory,
+  type CalendarFollowUpRescheduleProviderOutcomeHistorySummary,
+} from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeHistorySummary"
+import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
@@ -5436,6 +5444,26 @@ function CalendarFollowUpStatusPanel({
       }),
     [reschedulePlan, rescheduleProviderOutcomes],
   )
+  const rescheduleProviderOutcomeHistorySummary = useMemo(() => {
+    const persistence = createLocalCalendarFollowUpRescheduleProviderOutcomePersistence({
+      initialSnapshot: {
+        records:
+          reschedulePlan.summary.commandCount > 0
+            ? [
+                buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+                  commandOutcomes: rescheduleProviderOutcomes,
+                  plan: reschedulePlan,
+                  recordedAt: now,
+                  recordedBy: "FactoryBid OS",
+                  rfqId,
+                }),
+              ]
+            : [],
+      },
+    })
+
+    return summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(persistence.snapshot())
+  }, [now, reschedulePlan, rescheduleProviderOutcomes, rfqId])
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
@@ -5463,6 +5491,7 @@ function CalendarFollowUpStatusPanel({
       <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
       <CalendarFollowUpRescheduleExecutionReadModelPanel readModel={rescheduleExecutionReadModel} />
       <CalendarFollowUpRescheduleProviderOutcomeReadModelPanel readModel={rescheduleProviderOutcomeReadModel} />
+      <CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel summary={rescheduleProviderOutcomeHistorySummary} />
       <CalendarFollowUpRescheduleExecutionHistorySummaryPanel summary={rescheduleExecutionHistorySummary} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
@@ -5591,6 +5620,74 @@ function CalendarFollowUpRescheduleProviderOutcomeReadModelPanel({
           ))}
         </ul>
       ) : null}
+    </div>
+  )
+}
+
+function CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel({
+  summary,
+}: {
+  summary: CalendarFollowUpRescheduleProviderOutcomeHistorySummary
+}) {
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const latest = summary.latestOutcomeBatch
+  const handleCopyHistory = async () => {
+    const copied = await copyTextToClipboard(summary.exportText)
+    setCopyFeedback(copied ? "copied" : "error")
+  }
+
+  return (
+    <div
+      className="calendar-follow-up-reschedule-provider-outcome-history-summary"
+      data-severity={summary.severity}
+      aria-label="Calendar follow-up reschedule provider outcome history summary"
+    >
+      <div className="calendar-follow-up-reschedule-read-model-copy">
+        <span className="eyebrow">
+          <Database aria-hidden="true" />
+          Calendar outcome history
+        </span>
+        <strong>{summary.title}</strong>
+        <span>{summary.detail}</span>
+      </div>
+      <div className="calendar-follow-up-reschedule-read-model-metrics">
+        <Metric label="Batches" value={String(summary.totalOutcomeBatches)} />
+        <Metric label="Expected" value={String(summary.expectedOutcomeCount)} />
+        <Metric label="Created" value={String(summary.createdOutcomeCount)} />
+        <Metric label="Failed" value={String(summary.failedOutcomeCount)} />
+      </div>
+      {latest ? (
+        <div className="calendar-follow-up-reschedule-history-latest" data-status={latest.readModelStatus}>
+          <div>
+            <strong>Latest {humanizeKey(latest.readModelStatus)}</strong>
+            <span>
+              {latest.commandOutcomeCount} outcome{latest.commandOutcomeCount === 1 ? "" : "s"} · {latest.warningCount} warning
+              {latest.warningCount === 1 ? "" : "s"}
+            </span>
+          </div>
+          <small>{shortCalendarProviderOutcomeFingerprint(latest.outcomeFingerprint)}</small>
+        </div>
+      ) : null}
+      {summary.nextActions.length > 0 ? (
+        <ul className="calendar-follow-up-reschedule-read-model-actions">
+          {summary.nextActions.slice(0, 2).map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="integration-source-copy-actions calendar-follow-up-reschedule-history-copy">
+        <Button onClick={() => void handleCopyHistory()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {copyFeedback === "copied" ? "Copied" : "Copy outcome history"}
+        </Button>
+        <small role="status">
+          {copyFeedback === "copied"
+            ? "Calendar provider outcome history copied."
+            : copyFeedback === "error"
+              ? "Copy unavailable; inspect the outcome history manually."
+              : "Copy the deterministic calendar provider outcome history export."}
+        </small>
+      </div>
     </div>
   )
 }
@@ -10826,6 +10923,10 @@ function shortEmailDraftPackageFingerprint(fingerprint: string) {
 
 function shortProviderOutcomeFingerprint(fingerprint: string) {
   return fingerprint.replace(/^offer-release-provider-outcomes-/, "")
+}
+
+function shortCalendarProviderOutcomeFingerprint(fingerprint: string) {
+  return fingerprint.replace(/^calendar-follow-up-reschedule-provider-outcomes-/, "")
 }
 
 function shortProviderReadinessKey(readinessKey: string) {
