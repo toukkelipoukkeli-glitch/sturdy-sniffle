@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-17 Europe/Helsinki.
+Last refreshed: 2026-07-18 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f4fb9b8` (`Add calendar reschedule provider outcome read model (#360)`).
+- Main branch checkpoint: `5fc7353` (`Refresh calendar provider read model handoff (#361)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none; start the next slice from a fresh `origin/main`.
+- In-flight branch at this checkpoint: `codex/surface-calendar-provider-outcome-read-model` surfaces the local/mock calendar provider-outcome read model in the existing follow-up panel.
 - Latest merged sequence:
+  - `#361` refreshes the autonomous handoff after the calendar reschedule provider outcome read-model slice.
   - `#360` adds a deterministic calendar reschedule provider outcome read-model boundary for local/mock outcomes before UI wiring; CodeRabbit quota and Greptile trial blockers were recorded as nonblocking.
   - `#359` refreshes the autonomous handoff after the calendar reschedule provider outcome adapter slice.
   - `#358` adds deterministic local/mock calendar reschedule provider outcomes for reviewed commands while keeping real Calendar writes behind provider boundaries; CodeRabbit quota and Greptile trial blockers were recorded as nonblocking.
@@ -263,7 +264,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Quote workspace helpers for scenario comparison, revisions, queue priority, process workload, capacity planning, outside services, material availability, approval gates, and release gates.
 - Offer builder, offer document content, export fixtures, offer lifecycle, release plan, guarded email draft package descriptors, local email draft package persistence snapshots, email draft package history summaries and UI surface, local/mock email draft provider outcomes, provider-backed release command outcome helpers, local provider outcome batch persistence and history summaries/UI surface, provider outcome readiness gates/workspace execution gate/Convex payloads/workflow persistence/client adapter/runtime bridge/operator-visible snapshot UI/persisted-read adapter/runtime hydration, release execution audit/history/fingerprints plus persisted-read adapter/runtime hydration, and follow-up activity read adapters with runtime hydration plus duplicate-safe write planning/release dedupe/manual dedupe/readiness metadata/workspace panel/history summaries/local persistence/readiness-history UI/local-state persistence/unique manual follow-up audit keys/restored-action readiness replay/Convex readiness payload contracts/workflow persistence/client adapter/runtime bridge, operator-visible sync-source summaries, scoped sync-health fallback visibility, read/write fallback history details, reload-safe sync-health replay, global fallback indicator alignment, restored sync-health retention capping, per-operation latest fallback visibility, per-operation sync-health status labels, sync-health recovery actions, fallback recency state, sync-health operator summaries, sync-health severity labels, deterministic readiness read-model decisions, operator-visible readiness read-model UI, and Integration health surfacing for warning/critical sync-health fallback state.
 - Gmail offer reply ingestion and persistence that maps accepted, declined, acknowledgement, and follow-up signals into deterministic offer state.
-- Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries, including local/mock provider outcomes and read-model copy/status for reviewed reschedule commands while live Calendar writes remain deferred.
+- Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries, including local/mock provider outcomes, read-model copy/status, and the in-flight operator-visible provider outcome card for reviewed reschedule commands while live Calendar writes remain deferred.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, optional browser runtime read hydration for selected-RFQ terminal provider runs, operator-visible provider-run read sync health in Provider review and Integration health, deterministic provider-run read history summaries, local persistence snapshots for those read-history records, operator diagnostics/export copy for that persisted read-health trail, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, provider-read diagnostic next-action items, optional browser Convex bridge probe health for configured refs and local identity maps, and guarded browser bridge install-plan visibility.
 - CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
 - React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs with cross-RFQ history and stale-link recovery actions, calendar plan previews, calendar follow-up status with execution read-model/history summaries, offer reply state, release execution history, and audit visibility.

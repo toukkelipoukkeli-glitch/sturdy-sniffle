@@ -2609,6 +2609,20 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionReadModel).toHaveTextContent("Records 1")
     expect(executionReadModel).toHaveTextContent("Review the dry-run execution audit before committing provider calendar changes.")
 
+    const providerOutcomeReadModel = within(followUpStatus).getByLabelText(
+      "Calendar follow-up reschedule provider outcome read model",
+    )
+    expect(providerOutcomeReadModel).toHaveTextContent("Calendar provider outcomes ready")
+    expect(providerOutcomeReadModel).toHaveTextContent(
+      "1 local provider outcome(s) are ready for the calendar reschedule execution audit.",
+    )
+    expect(providerOutcomeReadModel).toHaveTextContent("Expected 1")
+    expect(providerOutcomeReadModel).toHaveTextContent("Created 1")
+    expect(providerOutcomeReadModel).toHaveTextContent("Missing 0")
+    expect(providerOutcomeReadModel).toHaveTextContent(
+      "Record the local provider outcomes in the calendar reschedule execution audit.",
+    )
+
     const executionHistorySummary = within(followUpStatus).getByLabelText(
       "Calendar follow-up reschedule execution history summary",
     )
