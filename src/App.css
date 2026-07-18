@@ -3898,6 +3898,53 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.calendar-follow-up-provider-outcome-sync-summary {
+  align-items: stretch;
+  border: 1px solid oklch(0.87 0.018 238);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.85fr);
+  padding: 8px;
+}
+
+.calendar-follow-up-provider-outcome-sync-summary[data-status="convex"] {
+  border-color: oklch(0.82 0.06 155);
+}
+
+.calendar-follow-up-provider-outcome-sync-summary[data-status="fallback"] {
+  background: oklch(0.985 0.018 70);
+  border-color: oklch(0.8 0.08 65);
+}
+
+.calendar-follow-up-provider-outcome-sync-summary[data-status="pending"] {
+  border-color: oklch(0.82 0.06 235);
+}
+
+.calendar-follow-up-provider-outcome-sync-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.calendar-follow-up-provider-outcome-sync-summary span {
+  color: oklch(0.26 0.04 250);
+  font-size: 0.73rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-provider-outcome-sync-summary small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.71rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.calendar-follow-up-provider-outcome-sync-counts {
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+}
+
 .calendar-follow-up-reschedule-read-model-actions {
   display: grid;
   gap: 5px;
@@ -7803,6 +7850,7 @@
   .offer-follow-up-readiness-history-current,
   .offer-reply-summary,
   .offer-reply-state-summary,
+  .calendar-follow-up-provider-outcome-sync-summary,
   .integration-source-row,
   .connector-drilldown-summary,
   .connector-drilldown-row {
