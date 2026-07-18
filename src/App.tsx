@@ -379,6 +379,13 @@ import {
   type CalendarFollowUpRescheduleProviderOutcomeHistorySummary,
 } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeHistorySummary"
 import {
+  buildCalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  calendarFollowUpRescheduleProviderOutcomeReadSyncLabel,
+  calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary,
+  type CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  type CalendarFollowUpRescheduleProviderOutcomeReadSyncStatus,
+} from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeReadSync"
+import {
   summarizeWorkspaceIntegrationStatus,
   type IntegrationStatusSource,
   type WorkspaceIntegrationStatus,
@@ -5390,6 +5397,9 @@ function CalendarFollowUpStatusPanel({
   const [providerOutcomeReadSnapshot, setProviderOutcomeReadSnapshot] = useState<
     { rfqId: string; snapshot: CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot } | undefined
   >()
+  const [providerOutcomeReadStatus, setProviderOutcomeReadStatus] = useState<
+    { rfqId: string; status: CalendarFollowUpRescheduleProviderOutcomeReadSyncStatus } | undefined
+  >()
   const providerOutcomeQueryKeysRef = useRef(new Set<string>())
   const status = useMemo(
     () => buildCalendarFollowUpStatus({ actions, filter, now, offerId, replySync, rfqId }),
@@ -5494,13 +5504,17 @@ function CalendarFollowUpStatusPanel({
     queriedProviderOutcomeKeys.add(queryKey)
     const queryRef = providerOutcomeBridge.queryRef
     const runQuery = providerOutcomeBridge.runQuery
+    let usedFallback = false
 
     const localReader = createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
       initialSnapshot: localRescheduleProviderOutcomeSnapshot,
     })
     const reader = createConvexCalendarFollowUpRescheduleProviderOutcomeReader({
       fallback: localReader,
-      onQueryError: onProviderOutcomeHistoryReadError,
+      onQueryError: () => {
+        usedFallback = true
+        onProviderOutcomeHistoryReadError?.()
+      },
       queryRef,
       runQuery,
     })
@@ -5511,12 +5525,14 @@ function CalendarFollowUpStatusPanel({
         settled = true
         if (!cancelled) {
           setProviderOutcomeReadSnapshot({ rfqId, snapshot })
+          setProviderOutcomeReadStatus({ rfqId, status: usedFallback ? "fallback" : "convex" })
         }
       })
       .catch(() => {
         settled = true
         if (!cancelled) {
           queriedProviderOutcomeKeys.delete(queryKey)
+          setProviderOutcomeReadStatus({ rfqId, status: "fallback" })
           onProviderOutcomeHistoryReadError?.()
         }
       })
@@ -5535,6 +5551,21 @@ function CalendarFollowUpStatusPanel({
     rfqId,
   ])
   const hydratedProviderOutcomeSnapshot = providerOutcomeReadSnapshot?.rfqId === rfqId ? providerOutcomeReadSnapshot.snapshot : undefined
+  const providerOutcomeReadSyncStatus =
+    providerOutcomeReadStatus?.rfqId === rfqId
+      ? providerOutcomeReadStatus.status
+      : providerOutcomeBridge && convexProviderOutcomeRfqId
+        ? "pending"
+        : "local"
+  const providerOutcomeReadSync = useMemo(
+    () =>
+      buildCalendarFollowUpRescheduleProviderOutcomeReadSyncState({
+        localBatchCount: localRescheduleProviderOutcomeSnapshot.recordCount,
+        persistedBatchCount: hydratedProviderOutcomeSnapshot?.recordCount ?? 0,
+        status: providerOutcomeReadSyncStatus,
+      }),
+    [hydratedProviderOutcomeSnapshot, localRescheduleProviderOutcomeSnapshot, providerOutcomeReadSyncStatus],
+  )
   const rescheduleProviderOutcomeHistorySummary = useMemo(
     () =>
       summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(
@@ -5569,7 +5600,10 @@ function CalendarFollowUpStatusPanel({
       <CalendarFollowUpRescheduleReadModelPanel readModel={rescheduleReadModel} />
       <CalendarFollowUpRescheduleExecutionReadModelPanel readModel={rescheduleExecutionReadModel} />
       <CalendarFollowUpRescheduleProviderOutcomeReadModelPanel readModel={rescheduleProviderOutcomeReadModel} />
-      <CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel summary={rescheduleProviderOutcomeHistorySummary} />
+      <CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel
+        readSync={providerOutcomeReadSync}
+        summary={rescheduleProviderOutcomeHistorySummary}
+      />
       <CalendarFollowUpRescheduleExecutionHistorySummaryPanel summary={rescheduleExecutionHistorySummary} />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
@@ -5703,8 +5737,10 @@ function CalendarFollowUpRescheduleProviderOutcomeReadModelPanel({
 }
 
 function CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel({
+  readSync,
   summary,
 }: {
+  readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState
   summary: CalendarFollowUpRescheduleProviderOutcomeHistorySummary
 }) {
   const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
@@ -5727,6 +5763,21 @@ function CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel({
         </span>
         <strong>{summary.title}</strong>
         <span>{summary.detail}</span>
+      </div>
+      <div
+        className="calendar-follow-up-provider-outcome-sync-summary"
+        data-status={readSync.status}
+        aria-label="Calendar provider outcome read sync"
+      >
+        <div>
+          <span>Sync source {calendarFollowUpRescheduleProviderOutcomeReadSyncLabel(readSync.status)}</span>
+          <small>{calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(readSync)}</small>
+        </div>
+        <div className="calendar-follow-up-provider-outcome-sync-counts">
+          <Metric label="Convex" value={String(readSync.persistedBatchCount)} />
+          <Metric label="Local" value={String(readSync.localBatchCount)} />
+          <Metric label="Fallback" value={String(readSync.fallbackCount)} />
+        </div>
       </div>
       <div className="calendar-follow-up-reschedule-read-model-metrics">
         <Metric label="Batches" value={String(summary.totalOutcomeBatches)} />

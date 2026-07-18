@@ -2643,6 +2643,16 @@ describe("FactoryBid workspace (component)", () => {
     expect(providerOutcomeHistorySummary).toHaveTextContent(
       "Latest provider outcome batch for rfq-204 created 1 of 1 expected outcome(s) for the execution audit.",
     )
+    const providerOutcomeReadSync = within(providerOutcomeHistorySummary).getByLabelText(
+      "Calendar provider outcome read sync",
+    )
+    expect(providerOutcomeReadSync).toHaveTextContent("Sync source Local")
+    expect(providerOutcomeReadSync).toHaveTextContent(
+      "1 local calendar provider outcome batch available; Convex outcome reads are not configured.",
+    )
+    expect(providerOutcomeReadSync).toHaveTextContent("Convex 0")
+    expect(providerOutcomeReadSync).toHaveTextContent("Local 1")
+    expect(providerOutcomeReadSync).toHaveTextContent("Fallback 0")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Expected 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Created 1")
@@ -2754,6 +2764,57 @@ describe("FactoryBid workspace (component)", () => {
       )
       expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
       expect(providerOutcomeHistorySummary).toHaveTextContent("Latest ready")
+      const providerOutcomeReadSync = within(providerOutcomeHistorySummary).getByLabelText(
+        "Calendar provider outcome read sync",
+      )
+      expect(providerOutcomeReadSync).toHaveTextContent("Sync source Convex")
+      expect(providerOutcomeReadSync).toHaveTextContent(
+        "1 persisted calendar provider outcome batch merged with 0 local fallback batches.",
+      )
+      expect(providerOutcomeReadSync).toHaveTextContent("Convex 1")
+      expect(providerOutcomeReadSync).toHaveTextContent("Local 0")
+      expect(providerOutcomeReadSync).toHaveTextContent("Fallback 0")
+    })
+  })
+
+  it("shows local fallback sync status when calendar provider outcome hydration fails", async () => {
+    const user = userEvent.setup()
+    const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      calendarFollowUpRescheduleProviderOutcomesQueryRef: "listCalendarRescheduleProviderOutcomes",
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        queryCalls.push({ args, queryRef })
+        throw new Error("Calendar provider outcome query unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    await waitFor(() => {
+      expect(queryCalls).toHaveLength(1)
+      const followUpStatus = screen.getByLabelText("Calendar follow-up status")
+      const providerOutcomeHistorySummary = within(followUpStatus).getByLabelText(
+        "Calendar follow-up reschedule provider outcome history summary",
+      )
+      const providerOutcomeReadSync = within(providerOutcomeHistorySummary).getByLabelText(
+        "Calendar provider outcome read sync",
+      )
+      expect(providerOutcomeReadSync).toHaveTextContent("Sync source Local fallback")
+      expect(providerOutcomeReadSync).toHaveTextContent(
+        "Convex calendar provider outcome read failed; showing 0 local provider outcome batches.",
+      )
+      expect(providerOutcomeReadSync).toHaveTextContent("Convex 0")
+      expect(providerOutcomeReadSync).toHaveTextContent("Local 0")
+      expect(providerOutcomeReadSync).toHaveTextContent("Fallback 1")
     })
   })
 
