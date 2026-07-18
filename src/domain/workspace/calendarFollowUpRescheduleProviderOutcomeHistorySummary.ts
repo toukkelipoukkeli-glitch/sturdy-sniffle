@@ -95,7 +95,7 @@ export function summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(
     historyVersion: CALENDAR_FOLLOW_UP_RESCHEDULE_PROVIDER_OUTCOME_HISTORY_SUMMARY_VERSION,
     ...(latestOutcomeBatch ? { latestOutcomeBatch } : {}),
     missingOutcomeCount: records.reduce((total, record) => total + record.missingOutcomeCount, 0),
-    nextActions: nextActionsForStatus(status),
+    nextActions: nextActionsForStatus(status, latestOutcomeBatch),
     outcomeStatusCounts: countOutcomeStatuses(records),
     planStatusCounts: countPlanStatuses(records),
     readModelStatusCounts: countReadModelStatuses(records),
@@ -104,7 +104,7 @@ export function summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(
     severity: severityForStatus(status),
     status,
     taskIds: uniqueSorted(records.flatMap((record) => record.taskIds)),
-    title: titleForStatus(status),
+    title: titleForStatus(status, latestOutcomeBatch),
     totalOutcomeBatches: records.length,
     unexpectedOutcomeCount: records.reduce((total, record) => total + record.unexpectedOutcomeCount, 0),
     warningCount: records.reduce((total, record) => total + record.warningCount, 0),
@@ -133,20 +133,30 @@ function normalizeRecordSummary(
   assertPersistenceVersion(record.persistenceVersion)
   const commandOutcomes = record.commandOutcomes.map(normalizeCommandOutcome).sort(sortOutcomes)
   const commandOutcomeCount = normalizeCount(record.commandOutcomeCount, "record.commandOutcomeCount")
+  const createdOutcomeCount = normalizeCount(record.createdOutcomeCount, "record.createdOutcomeCount")
+  const failedOutcomeCount = normalizeCount(record.failedOutcomeCount, "record.failedOutcomeCount")
+  const readyCommandIds = readyPlanCommandIds(record)
+  const matchedCommandOutcomes = commandOutcomes.filter((outcome) => readyCommandIds.has(outcome.commandId))
+  const normalizedCreatedCount = matchedCommandOutcomes.filter((outcome) => outcome.status === "created").length
+  const normalizedFailedCount = matchedCommandOutcomes.filter((outcome) => outcome.status === "failed").length
+
   if (commandOutcomeCount !== commandOutcomes.length) {
     throw new Error("record.commandOutcomeCount must match normalized provider outcome count")
+  }
+  if (createdOutcomeCount !== normalizedCreatedCount || failedOutcomeCount !== normalizedFailedCount) {
+    throw new Error("record outcome counts must match normalized provider outcome statuses")
   }
 
   return {
     blockedCommandCount: normalizeCount(record.blockedCommandCount, "record.blockedCommandCount"),
     commandOutcomeCount,
     commandOutcomes,
-    createdOutcomeCount: normalizeCount(record.createdOutcomeCount, "record.createdOutcomeCount"),
+    createdOutcomeCount,
     expectedOutcomeCount: normalizeCount(record.expectedOutcomeCount, "record.expectedOutcomeCount"),
     failedCommandIds: commandOutcomes
       .filter((outcome) => outcome.status === "failed")
       .map((outcome) => outcome.commandId),
-    failedOutcomeCount: normalizeCount(record.failedOutcomeCount, "record.failedOutcomeCount"),
+    failedOutcomeCount,
     missingOutcomeCount: normalizeCount(record.missingOutcomeCount, "record.missingOutcomeCount"),
     outcomeFingerprint: nonBlank(record.outcomeFingerprint, "record.outcomeFingerprint"),
     planStatus: normalizePlanStatus(record.planStatus, "record.planStatus"),
@@ -168,6 +178,17 @@ function normalizeCommandOutcome(
     status: normalizeOutcomeStatus(outcome.status),
     warningCount: [...new Set((outcome.warnings ?? []).map((warning) => warning.trim()).filter(Boolean))].length,
   }
+}
+
+function readyPlanCommandIds(record: CalendarFollowUpRescheduleProviderOutcomePersistenceRecord): Set<string> {
+  if (!Array.isArray(record.plan?.commands)) {
+    throw new Error("record.plan.commands must be an array")
+  }
+  return new Set(
+    record.plan.commands
+      .filter((command) => command.status === "ready")
+      .map((command, index) => nonBlank(command.commandId, `record.plan.commands[${index}].commandId`)),
+  )
 }
 
 function determineStatus(
@@ -202,12 +223,15 @@ function severityForStatus(
   }
 }
 
-function titleForStatus(status: CalendarFollowUpRescheduleProviderOutcomeHistorySummaryStatus): string {
+function titleForStatus(
+  status: CalendarFollowUpRescheduleProviderOutcomeHistorySummaryStatus,
+  latest: CalendarFollowUpRescheduleProviderOutcomeHistoryRecordSummary | undefined,
+): string {
   switch (status) {
     case "blocked":
       return "Calendar provider outcome history blocked"
     case "empty":
-      return "No calendar provider outcome history"
+      return latest ? "Calendar provider outcome history empty" : "No calendar provider outcome history"
     case "needs_review":
       return "Calendar provider outcome history needs review"
     case "partial":
@@ -228,7 +252,7 @@ function detailForStatus(
     case "blocked":
       return `Latest provider outcome batch for ${latest.rfqId} is blocked by ${latest.blockedCommandCount} reschedule command(s).`
     case "empty":
-      return "No calendar provider outcome batches have been recorded yet."
+      return `Latest provider outcome batch for ${latest.rfqId} has no expected provider outcomes.`
     case "needs_review":
       return `Latest provider outcome batch for ${latest.rfqId} has ${latest.failedOutcomeCount + latest.missingOutcomeCount + latest.unexpectedOutcomeCount} failed, missing, or unexpected outcome(s).`
     case "partial":
@@ -238,12 +262,17 @@ function detailForStatus(
   }
 }
 
-function nextActionsForStatus(status: CalendarFollowUpRescheduleProviderOutcomeHistorySummaryStatus): string[] {
+function nextActionsForStatus(
+  status: CalendarFollowUpRescheduleProviderOutcomeHistorySummaryStatus,
+  latest: CalendarFollowUpRescheduleProviderOutcomeHistoryRecordSummary | undefined,
+): string[] {
   switch (status) {
     case "blocked":
       return ["Resolve blocked reschedule commands before recording calendar provider outcomes."]
     case "empty":
-      return ["Record reviewed local calendar provider outcomes before commit execution."]
+      return latest
+        ? ["Create a reviewed calendar reschedule plan before recording provider outcomes."]
+        : ["Record reviewed local calendar provider outcomes before commit execution."]
     case "needs_review":
       return ["Review failed, missing, or unexpected calendar provider outcomes before commit execution."]
     case "partial":

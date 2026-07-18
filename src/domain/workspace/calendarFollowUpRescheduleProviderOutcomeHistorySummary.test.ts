@@ -54,6 +54,39 @@ describe("calendar follow-up reschedule provider outcome history summary", () =>
     ).toBe(summary.exportText)
   })
 
+  it("distinguishes existing empty provider outcome batches from absent history", () => {
+    const record = buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord({
+      commandOutcomes: [],
+      plan: emptyPlan(),
+      recordedAt: "2026-06-24T09:10:00+03:00",
+      recordedBy: "sales",
+      rfqId: "rfq-019",
+    })
+    const summary = summarizeCalendarFollowUpRescheduleProviderOutcomeHistory({
+      persistenceVersion: CALENDAR_FOLLOW_UP_RESCHEDULE_PROVIDER_OUTCOME_PERSISTENCE_VERSION,
+      records: [record],
+    })
+
+    expect(summary).toMatchObject({
+      commandOutcomeCount: 0,
+      detail: "Latest provider outcome batch for rfq-019 has no expected provider outcomes.",
+      nextActions: ["Create a reviewed calendar reschedule plan before recording provider outcomes."],
+      severity: "neutral",
+      status: "empty",
+      title: "Calendar provider outcome history empty",
+      totalOutcomeBatches: 1,
+    })
+    expect(summary.latestOutcomeBatch).toMatchObject({
+      outcomeFingerprint: record.outcomeFingerprint,
+      readModelStatus: "empty",
+      recordedAt: "2026-06-24T06:10:00.000Z",
+    })
+    expect(summary.exportText).toContain(
+      `Latest provider outcome batch: empty 2026-06-24T06:10:00.000Z ${record.outcomeFingerprint}`,
+    )
+    expect(summary.exportText).not.toContain("No calendar provider outcome batches have been recorded yet.")
+  })
+
   it("summarizes ready local provider outcome batches for execution audits", () => {
     const plan = readyPlan()
     const record = readyRecord(plan, "2026-06-24T09:35:00+03:00")
@@ -254,6 +287,30 @@ describe("calendar follow-up reschedule provider outcome history summary", () =>
         ],
       }),
     ).toThrow("record.commandOutcomeCount must match normalized provider outcome count")
+
+    expect(() =>
+      summarizeCalendarFollowUpRescheduleProviderOutcomeHistory({
+        persistenceVersion: CALENDAR_FOLLOW_UP_RESCHEDULE_PROVIDER_OUTCOME_PERSISTENCE_VERSION,
+        records: [
+          {
+            ...record,
+            createdOutcomeCount: 0,
+          },
+        ],
+      }),
+    ).toThrow("record outcome counts must match normalized provider outcome statuses")
+
+    expect(() =>
+      summarizeCalendarFollowUpRescheduleProviderOutcomeHistory({
+        persistenceVersion: CALENDAR_FOLLOW_UP_RESCHEDULE_PROVIDER_OUTCOME_PERSISTENCE_VERSION,
+        records: [
+          {
+            ...record,
+            failedOutcomeCount: 1,
+          },
+        ],
+      }),
+    ).toThrow("record outcome counts must match normalized provider outcome statuses")
   })
 })
 
@@ -281,6 +338,13 @@ function readyPlan(): CalendarFollowUpReschedulePlan {
   return buildCalendarFollowUpReschedulePlan({
     rfqId: "rfq-019",
     tasks: followUpStatus().tasks,
+  })
+}
+
+function emptyPlan(): CalendarFollowUpReschedulePlan {
+  return buildCalendarFollowUpReschedulePlan({
+    rfqId: "rfq-019",
+    tasks: [],
   })
 }
 
