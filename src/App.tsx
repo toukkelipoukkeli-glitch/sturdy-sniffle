@@ -369,7 +369,10 @@ import {
 } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomeReadModel"
 import {
   buildCalendarFollowUpRescheduleProviderOutcomePersistenceRecord,
+  createConvexCalendarFollowUpRescheduleProviderOutcomeReader,
   createLocalCalendarFollowUpRescheduleProviderOutcomePersistence,
+  createLocalCalendarFollowUpRescheduleProviderOutcomeReader,
+  type CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot,
 } from "./domain/workspace/calendarFollowUpRescheduleProviderOutcomePersistence"
 import {
   summarizeCalendarFollowUpRescheduleProviderOutcomeHistory,
@@ -1146,6 +1149,7 @@ function App() {
   const [persistenceSyncErrorCount, setPersistenceSyncErrorCount] = useState(
     () => workspaceLocalState?.followUpActivityReadinessSyncEvents.length ?? 0,
   )
+  const recordPersistenceSyncError = useCallback(() => setPersistenceSyncErrorCount((count) => count + 1), [])
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
@@ -2964,6 +2968,7 @@ function App() {
               onAdvanceStatus={advanceStatus}
               onCreateFollowUp={createFollowUp}
               onHandoffDraftChange={(value) => setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: value }))}
+              onProviderOutcomeHistoryReadError={recordPersistenceSyncError}
               onUpdateFields={updateSelectedRfqFields}
               onSaveScenario={saveScenario}
               readiness={rfqIntakeReadiness}
@@ -5106,6 +5111,7 @@ function TriageView({
   onAdvanceStatus,
   onCreateFollowUp,
   onHandoffDraftChange,
+  onProviderOutcomeHistoryReadError,
   onUpdateFields,
   onSaveScenario,
   readiness,
@@ -5120,6 +5126,7 @@ function TriageView({
   onAdvanceStatus: () => void
   onCreateFollowUp: () => void
   onHandoffDraftChange: (value: string) => void
+  onProviderOutcomeHistoryReadError?: () => void
   onUpdateFields: (patch: RfqFieldPatch) => void
   onSaveScenario: () => void
   readiness: RfqIntakeReadinessResult
@@ -5292,6 +5299,7 @@ function TriageView({
       <CalendarFollowUpStatusPanel
         actions={actions}
         now={followUpNow}
+        onProviderOutcomeHistoryReadError={onProviderOutcomeHistoryReadError}
         offerId={offerNumberFor(item).toLowerCase()}
         replySync={followUpReplySync}
         rfqId={item.id}
@@ -5366,17 +5374,23 @@ function RfqIntakeReadinessPanel({ readiness }: { readiness: RfqIntakeReadinessR
 function CalendarFollowUpStatusPanel({
   actions,
   now,
+  onProviderOutcomeHistoryReadError,
   offerId,
   replySync,
   rfqId,
 }: {
   actions: WorkspaceActionRecord[]
   now: string
+  onProviderOutcomeHistoryReadError?: () => void
   offerId: string
   replySync?: GmailOfferReplySyncResult
   rfqId: string
 }) {
   const [filter, setFilter] = useState<CalendarFollowUpStatusFilter>("all")
+  const [providerOutcomeReadSnapshot, setProviderOutcomeReadSnapshot] = useState<
+    { rfqId: string; snapshot: CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot } | undefined
+  >()
+  const providerOutcomeQueryKeysRef = useRef(new Set<string>())
   const status = useMemo(
     () => buildCalendarFollowUpStatus({ actions, filter, now, offerId, replySync, rfqId }),
     [actions, filter, now, offerId, replySync, rfqId],
@@ -5444,8 +5458,8 @@ function CalendarFollowUpStatusPanel({
       }),
     [reschedulePlan, rescheduleProviderOutcomes],
   )
-  const rescheduleProviderOutcomeHistorySummary = useMemo(() => {
-    const persistence = createLocalCalendarFollowUpRescheduleProviderOutcomePersistence({
+  const localRescheduleProviderOutcomeSnapshot = useMemo(() => {
+    return createLocalCalendarFollowUpRescheduleProviderOutcomePersistence({
       initialSnapshot: {
         records:
           reschedulePlan.summary.commandCount > 0
@@ -5460,10 +5474,74 @@ function CalendarFollowUpStatusPanel({
               ]
             : [],
       },
+    }).snapshot()
+  }, [now, reschedulePlan, rescheduleProviderOutcomes, rfqId])
+  const providerOutcomeBridge = useMemo(() => createBrowserConvexCalendarFollowUpRescheduleProviderOutcomeBridge(), [])
+  const convexProviderOutcomeRfqId = providerOutcomeBridge?.resolveRfqId(rfqId)
+  useEffect(() => {
+    let cancelled = false
+    let settled = false
+    const queryKey =
+      providerOutcomeBridge?.queryRef && convexProviderOutcomeRfqId
+        ? `${rfqId}::${convexProviderOutcomeRfqId}`
+        : undefined
+    const queriedProviderOutcomeKeys = providerOutcomeQueryKeysRef.current
+    if (!providerOutcomeBridge || !convexProviderOutcomeRfqId || !queryKey || queriedProviderOutcomeKeys.has(queryKey)) {
+      return () => {
+        cancelled = true
+      }
+    }
+    queriedProviderOutcomeKeys.add(queryKey)
+    const queryRef = providerOutcomeBridge.queryRef
+    const runQuery = providerOutcomeBridge.runQuery
+
+    const localReader = createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
+      initialSnapshot: localRescheduleProviderOutcomeSnapshot,
+    })
+    const reader = createConvexCalendarFollowUpRescheduleProviderOutcomeReader({
+      fallback: localReader,
+      onQueryError: onProviderOutcomeHistoryReadError,
+      queryRef,
+      runQuery,
     })
 
-    return summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(persistence.snapshot())
-  }, [now, reschedulePlan, rescheduleProviderOutcomes, rfqId])
+    void reader
+      .listOutcomes({ limit: 20, rfqId: convexProviderOutcomeRfqId })
+      .then((snapshot) => {
+        settled = true
+        if (!cancelled) {
+          setProviderOutcomeReadSnapshot({ rfqId, snapshot })
+        }
+      })
+      .catch(() => {
+        settled = true
+        if (!cancelled) {
+          queriedProviderOutcomeKeys.delete(queryKey)
+          onProviderOutcomeHistoryReadError?.()
+        }
+      })
+
+    return () => {
+      cancelled = true
+      if (!settled) {
+        queriedProviderOutcomeKeys.delete(queryKey)
+      }
+    }
+  }, [
+    convexProviderOutcomeRfqId,
+    localRescheduleProviderOutcomeSnapshot,
+    onProviderOutcomeHistoryReadError,
+    providerOutcomeBridge,
+    rfqId,
+  ])
+  const hydratedProviderOutcomeSnapshot = providerOutcomeReadSnapshot?.rfqId === rfqId ? providerOutcomeReadSnapshot.snapshot : undefined
+  const rescheduleProviderOutcomeHistorySummary = useMemo(
+    () =>
+      summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(
+        mergeCalendarProviderOutcomeSnapshots(localRescheduleProviderOutcomeSnapshot, hydratedProviderOutcomeSnapshot),
+      ),
+    [hydratedProviderOutcomeSnapshot, localRescheduleProviderOutcomeSnapshot],
+  )
 
   return (
     <section className="calendar-follow-up-panel" aria-label="Calendar follow-up status">
@@ -10978,6 +11056,25 @@ function mergeOfferProviderReadinessSnapshots(
   }).snapshot()
 }
 
+function mergeCalendarProviderOutcomeSnapshots(
+  localSnapshot: CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot,
+  persistedSnapshot: CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot | undefined,
+): CalendarFollowUpRescheduleProviderOutcomePersistenceSnapshot {
+  if (!persistedSnapshot || persistedSnapshot.recordCount === 0) {
+    return localSnapshot
+  }
+
+  const persistedFingerprints = new Set(persistedSnapshot.records.map((record) => record.outcomeFingerprint))
+  return createLocalCalendarFollowUpRescheduleProviderOutcomeReader({
+    initialSnapshot: {
+      records: [
+        ...localSnapshot.records.filter((record) => !persistedFingerprints.has(record.outcomeFingerprint)),
+        ...persistedSnapshot.records,
+      ],
+    },
+  }).snapshot()
+}
+
 function providerOutcomeCommandLabel(commandKey: string) {
   return commandKey
     .replace(/[-_:]+/g, " ")
@@ -12388,6 +12485,7 @@ function stableKeySegment(value: string): string {
 }
 
 interface BrowserConvexWorkspaceBridge {
+  calendarFollowUpRescheduleProviderOutcomesQueryRef?: unknown
   mutationRefs: WorkspacePersistenceBridge["mutationRefs"]
   offerFollowUpActivitiesQueryRef?: unknown
   offerFollowUpActivityReadinessMutationRef?: unknown
@@ -12446,6 +12544,12 @@ interface BrowserConvexOfferFollowUpActivityReadinessBridge {
   resolveRfqId: (rfqId: string) => string | undefined
   runMutation: WorkspacePersistenceBridge["runMutation"]
   runQuery?: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
+}
+
+interface BrowserConvexCalendarFollowUpRescheduleProviderOutcomeBridge {
+  queryRef: unknown
+  resolveRfqId: (rfqId: string) => string | undefined
+  runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
 }
 
 declare global {
@@ -12569,6 +12673,21 @@ function createBrowserConvexOfferFollowUpActivityReadinessBridge(): BrowserConve
     resolveOfferId: (offerId) => resolveWorkspaceConvexBridgeMappedId(bridge.offerIdsByLocalId, offerId),
     resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runMutation: bridge.runMutation,
+    runQuery: bridge.runQuery,
+  }
+}
+
+function createBrowserConvexCalendarFollowUpRescheduleProviderOutcomeBridge():
+  | BrowserConvexCalendarFollowUpRescheduleProviderOutcomeBridge
+  | undefined {
+  const bridge = typeof window === "undefined" ? undefined : window.__FACTORYBID_WORKSPACE_CONVEX__
+  if (!bridge?.calendarFollowUpRescheduleProviderOutcomesQueryRef || !bridge.runQuery) {
+    return undefined
+  }
+
+  return {
+    queryRef: bridge.calendarFollowUpRescheduleProviderOutcomesQueryRef,
+    resolveRfqId: (rfqId) => resolveWorkspaceConvexBridgeMappedId(bridge.rfqIdsByLocalId, rfqId),
     runQuery: bridge.runQuery,
   }
 }
