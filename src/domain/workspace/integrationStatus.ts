@@ -1,6 +1,10 @@
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
 import {
+  buildOfferFollowUpActivityReadinessHistoryExportSummary,
+  type OfferFollowUpActivityReadinessHistorySummary,
+} from "../offers/offerFollowUpActivityReadinessHistory"
+import {
   buildOfferFollowUpActivityReadinessReadModelExportSummary,
   type OfferFollowUpActivityReadinessReadModel,
 } from "../offers/offerFollowUpActivityReadinessReadModel"
@@ -82,6 +86,7 @@ export interface WorkspaceIntegrationStatusInput {
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   calendarProviderOutcomeReadSync?: CalendarFollowUpRescheduleProviderOutcomeReadSyncState
+  followUpReadinessHistory?: OfferFollowUpActivityReadinessHistorySummary
   followUpReadinessReadModel?: OfferFollowUpActivityReadinessReadModel
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
@@ -108,6 +113,7 @@ export function summarizeWorkspaceIntegrationStatus({
   connectorErrorCount = 0,
   connectorSnapshot,
   calendarProviderOutcomeReadSync,
+  followUpReadinessHistory,
   followUpReadinessReadModel,
   followUpReadinessSyncHealth,
   followUpScheduledAt,
@@ -122,7 +128,13 @@ export function summarizeWorkspaceIntegrationStatus({
     ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan, convexBridgeInstallerDecision)] : []),
     ...(!convexBridgeInstallPlan && convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
     ...(!convexBridgeInstallPlan && convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
-    persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth, followUpReadinessReadModel),
+    persistenceSource(
+      persistenceMode,
+      syncErrorCount,
+      followUpReadinessSyncHealth,
+      followUpReadinessReadModel,
+      followUpReadinessHistory,
+    ),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
     offerReplySource(replySync),
@@ -432,6 +444,7 @@ function persistenceSource(
   syncErrorCount: number,
   followUpReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary | undefined,
   followUpReadinessReadModel: OfferFollowUpActivityReadinessReadModel | undefined,
+  followUpReadinessHistory: OfferFollowUpActivityReadinessHistorySummary | undefined,
 ): IntegrationStatusSource {
   if (followUpReadinessSyncHealth && followUpReadinessSyncHealth.totalFallbackCount > 0) {
     const fallbackCount = followUpReadinessSyncHealth.totalFallbackCount
@@ -444,7 +457,7 @@ function persistenceSource(
     return {
       actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${fallbackCount} follow-up readiness persistence ${fallbackNoun} recorded (${operationText}); latest fallback is ${latestRecency}.${totalFallbackText}`,
-      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel, followUpReadinessHistory),
       key: "persistence",
       label: "Persistence",
       severity: followUpReadinessSyncHealth.severity === "critical" ? "blocked" : "attention",
@@ -457,7 +470,7 @@ function persistenceSource(
     return {
       actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${syncErrorCount} operation${syncErrorCount === 1 ? "" : "s"} used local fallback.`,
-      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel, followUpReadinessHistory),
       key: "persistence",
       label: "Persistence",
       severity: "attention",
@@ -472,7 +485,7 @@ function persistenceSource(
       detail: followUpReadinessReadModel
         ? `Workspace writes are routed through Convex. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
         : "Workspace writes are routed through Convex.",
-      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel, followUpReadinessHistory),
       key: "persistence",
       label: "Persistence",
       severity: followUpReadinessIntegrationSeverity(followUpReadinessReadModel, "healthy"),
@@ -485,7 +498,7 @@ function persistenceSource(
     detail: followUpReadinessReadModel
       ? `Workspace writes are kept in local fallback storage. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
       : "Workspace writes are kept in local fallback storage.",
-    diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
+    diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel, followUpReadinessHistory),
     key: "persistence",
     label: "Persistence",
     severity: "attention",
@@ -495,8 +508,14 @@ function persistenceSource(
 
 function followUpReadinessIntegrationDiagnosticExport(
   readModel: OfferFollowUpActivityReadinessReadModel | undefined,
+  history: OfferFollowUpActivityReadinessHistorySummary | undefined,
 ): string | undefined {
-  return readModel ? buildOfferFollowUpActivityReadinessReadModelExportSummary(readModel) : undefined
+  const sections = [
+    readModel ? buildOfferFollowUpActivityReadinessReadModelExportSummary(readModel) : undefined,
+    history ? buildOfferFollowUpActivityReadinessHistoryExportSummary(history) : undefined,
+  ].filter((section): section is string => Boolean(section))
+
+  return sections.length > 0 ? sections.join("\n\n") : undefined
 }
 
 function followUpReadinessIntegrationDetail(readModel: OfferFollowUpActivityReadinessReadModel): string {

@@ -1764,6 +1764,8 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText).toHaveBeenCalledTimes(2)
     expect(writeText.mock.calls[1]?.[0]).toContain("Follow-up readiness persisted read: ready")
     expect(writeText.mock.calls[1]?.[0]).toContain("Persisted read enabled: yes")
+    expect(writeText.mock.calls[1]?.[0]).toContain("Follow-up readiness history: offer-follow-up-activity-readiness-history.v1")
+    expect(writeText.mock.calls[1]?.[0]).toContain("Current readiness: recorded 1/1 tasks")
     expect(integrationHealth).toHaveTextContent("Persistence diagnostics copied.")
     await user.click(within(readinessHistory).getByRole("button", { name: "Copy read summary" }))
     expect(writeText).toHaveBeenCalledTimes(3)
