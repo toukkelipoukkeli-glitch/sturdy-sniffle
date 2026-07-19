@@ -883,11 +883,89 @@ describe("workspace integration status", () => {
 
     expect(status.status).toBe("live")
     expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Use persisted calendar provider outcome batches when reviewing reschedule execution audits; keep local fallback batches visible for comparison.",
+          key: "review_convex_calendar_outcomes",
+          label: "Review Convex outcomes",
+        },
+      ],
       count: 1,
       detail: "1 persisted calendar provider outcome batch read from Convex and merged with 0 local fallback batches.",
       label: "Calendar outcome reads",
       severity: "healthy",
       status: "convex",
+    })
+  })
+
+  it("surfaces local calendar provider outcome read setup actions", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      calendarProviderOutcomeReadSync: {
+        fallbackCount: 0,
+        localBatchCount: 1,
+        persistedBatchCount: 0,
+        status: "local",
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Configure the optional browser bridge calendar outcome query before expecting persisted calendar provider outcome history.",
+          key: "configure_calendar_outcome_read",
+          label: "Configure Convex read",
+        },
+      ],
+      count: 1,
+      detail: "1 local calendar provider outcome batch available; Convex calendar provider outcome reads are not configured.",
+      label: "Calendar outcome reads",
+      severity: "attention",
+      status: "local",
+    })
+  })
+
+  it("keeps pending calendar provider outcome reads actionable without marking them healthy", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      calendarProviderOutcomeReadSync: {
+        fallbackCount: 0,
+        localBatchCount: 1,
+        persistedBatchCount: 0,
+        status: "pending",
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("attention")
+    expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Keep local fallback batches visible while the optional Convex calendar provider outcome query is still loading.",
+          key: "wait_for_calendar_outcome_read",
+          label: "Wait for read result",
+        },
+      ],
+      count: 1,
+      detail: "Checking Convex calendar provider outcome history; 1 local fallback batch remains visible.",
+      label: "Calendar outcome reads",
+      severity: "attention",
+      status: "pending",
     })
   })
 
@@ -910,6 +988,14 @@ describe("workspace integration status", () => {
 
     expect(status.status).toBe("fallback")
     expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Keep local calendar provider outcome batches visible and retry the optional Convex read before committing provider-side calendar changes.",
+          key: "retry_calendar_outcome_read",
+          label: "Retry outcome read",
+        },
+      ],
       count: 1,
       detail: "Calendar provider outcome history fell back to 2 local calendar provider outcome batches after a Convex read failure.",
       label: "Calendar outcome reads",

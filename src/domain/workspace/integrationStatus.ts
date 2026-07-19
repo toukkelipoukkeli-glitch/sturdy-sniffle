@@ -719,7 +719,10 @@ function followUpSource(followUpScheduledAt: string | undefined): IntegrationSta
 function calendarProviderOutcomeReadSource(
   readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
 ): IntegrationStatusSource {
+  const actions = calendarProviderOutcomeReadActions(readSync)
+
   return {
+    actions: actions.length > 0 ? actions : undefined,
     count:
       readSync.status === "fallback"
         ? readSync.fallbackCount
@@ -731,6 +734,51 @@ function calendarProviderOutcomeReadSource(
     label: "Calendar outcome reads",
     severity: readSync.status === "convex" ? "healthy" : "attention",
     status: readSync.status,
+  }
+}
+
+function calendarProviderOutcomeReadActions(
+  readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedBatchCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted calendar provider outcome batches when reviewing reschedule execution audits; keep local fallback batches visible for comparison.",
+              key: "review_convex_calendar_outcomes",
+              label: "Review Convex outcomes",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local calendar provider outcome batches visible and retry the optional Convex read before committing provider-side calendar changes.",
+          key: "retry_calendar_outcome_read",
+          label: "Retry outcome read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail:
+            "Configure the optional browser bridge calendar outcome query before expecting persisted calendar provider outcome history.",
+          key: "configure_calendar_outcome_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail:
+            "Keep local fallback batches visible while the optional Convex calendar provider outcome query is still loading.",
+          key: "wait_for_calendar_outcome_read",
+          label: "Wait for read result",
+        },
+      ]
   }
 }
 
