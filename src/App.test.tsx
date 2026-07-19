@@ -835,6 +835,37 @@ describe("FactoryBid workspace (component)", () => {
     )
   })
 
+  it("surfaces the demo workspace import pre-write review in Integration health", async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
+
+    render(<App />)
+
+    const integrationHealth = screen.getByLabelText("Integration health")
+    const demoImportReview = within(integrationHealth).getByLabelText("Demo workspace import review")
+    expect(demoImportReview).toHaveAttribute("data-status", "ready")
+    expect(demoImportReview).toHaveTextContent("Demo import review")
+    expect(demoImportReview).toHaveTextContent("Review 11 deterministic demo import operations before applying them to a workspace.")
+    expect(demoImportReview).toHaveTextContent("Operations 11")
+    expect(demoImportReview).toHaveTextContent("Customers 3")
+    expect(demoImportReview).toHaveTextContent("RFQs 3")
+    expect(demoImportReview).toHaveTextContent("Activities 2")
+    expect(demoImportReview).toHaveTextContent("demo-import-1eb52340")
+    expect(demoImportReview).toHaveTextContent("Review-only seed plan ready; workspace writes remain deferred.")
+
+    await user.click(within(demoImportReview).getByRole("button", { name: "Copy import review" }))
+
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain("FactoryBid demo workspace import demo-workspace-import-plan.v1")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Operations: 11")
+    expect(writeText.mock.calls[0]?.[0]).toContain("- upsert_customer: 3")
+    expect(demoImportReview).toHaveTextContent("Demo import review copied.")
+  })
+
   it("keeps provider reads on local fallback when Convex bridge ID maps resolve blank", async () => {
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
     window.__FACTORYBID_WORKSPACE_CONVEX__ = {
