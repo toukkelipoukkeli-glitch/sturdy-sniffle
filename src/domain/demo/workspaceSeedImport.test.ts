@@ -7,6 +7,7 @@ import {
   DemoWorkspaceSeedValidationError,
   fingerprintDemoWorkspaceImportPlan,
   parseDemoWorkspaceSeedJson,
+  reviewDemoWorkspaceImportFromJson,
   summarizeDemoWorkspaceImportPlan,
   validateDemoWorkspaceSeed,
 } from "./workspaceSeedImport"
@@ -92,6 +93,47 @@ Operations: 11
     expect(fingerprintDemoWorkspaceImportPlan(retaggedPlan)).not.toBe(fingerprintDemoWorkspaceImportPlan(plan))
   })
 
+  it("builds a ready pre-write review envelope for valid seed JSON", () => {
+    const review = reviewDemoWorkspaceImportFromJson(serializeDemoWorkspaceSeed().seedJson)
+
+    expect(review).toMatchObject({
+      blockerLabels: [],
+      fingerprint: "demo-import-1eb52340",
+      importPlanVersion: "demo-workspace-import-plan.v1",
+      nextOperatorMessage: "Review 11 deterministic demo import operations before applying them to a workspace.",
+      operationCount: 11,
+      operationCounts: {
+        append_activity: 2,
+        upsert_customer: 3,
+        upsert_offer: 1,
+        upsert_quote: 2,
+        upsert_rfq: 3,
+      },
+      status: "ready",
+    })
+    expect(review.summaryText).toContain("FactoryBid demo workspace import demo-workspace-import-plan.v1")
+    expect(review.summaryText).toContain("- append_activity: 2")
+  })
+
+  it("blocks pre-write reviews for malformed seed JSON with stable operator copy", () => {
+    const review = reviewDemoWorkspaceImportFromJson("{not-json")
+
+    expect(review).toEqual({
+      blockerLabels: ["$ must be valid JSON"],
+      importPlanVersion: "demo-workspace-import-plan.v1",
+      nextOperatorMessage: "Fix 1 demo seed validation issue before import planning.",
+      operationCount: 0,
+      operationCounts: {
+        append_activity: 0,
+        upsert_customer: 0,
+        upsert_offer: 0,
+        upsert_quote: 0,
+        upsert_rfq: 0,
+      },
+      status: "blocked",
+    })
+  })
+
   it("reports duplicate IDs and broken references with stable paths", () => {
     const invalidSeed = cloneSeed(buildDemoWorkspaceSeed())
     invalidSeed.customers[1] = { ...invalidSeed.customers[1], id: "customer-baltic" }
@@ -108,6 +150,12 @@ Operations: 11
       path: "quote quote-204 rfqId",
     })
     expect(() => buildDemoWorkspaceImportPlan(invalidSeed)).toThrow(DemoWorkspaceSeedValidationError)
+
+    const review = reviewDemoWorkspaceImportFromJson(JSON.stringify(invalidSeed))
+    expect(review.status).toBe("blocked")
+    expect(review.blockerLabels).toContain("$.customers contains duplicate customer id customer-baltic")
+    expect(review.blockerLabels).toContain("quote quote-204 rfqId references missing id missing-rfq")
+    expect(review.nextOperatorMessage).toBe("Fix 3 demo seed validation issues before import planning.")
   })
 
   it("rejects malformed JSON and wrong seed versions before planning", () => {

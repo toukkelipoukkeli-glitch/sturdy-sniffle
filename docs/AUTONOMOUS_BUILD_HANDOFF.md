@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `ab1523b` (`Add queue empty-state e2e (#399)`).
+- Main branch checkpoint: `3016252` (`Refresh queue empty-state handoff (#400)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/demo-seed-import-error-e2e` adds a deterministic pre-write review envelope for demo workspace seed imports before any live/import-side writes.
 - Latest merged sequence:
+  - `#400` refreshes the autonomous handoff after the queue empty-state e2e slice.
   - `#399` adds deterministic desktop/mobile Playwright coverage for queue filter no-results recovery using local seeded workspace state.
   - `#398` was closed as superseded by `#399`.
   - `#397` refreshes the autonomous handoff after the non-CNC selector e2e slice.
