@@ -30,6 +30,8 @@ import {
 } from "lucide-react"
 
 import { Button } from "./components/ui/button"
+import { serializeDemoWorkspaceSeed } from "./domain/demo/workspaceSeed"
+import { reviewDemoWorkspaceImportFromJson, type DemoWorkspaceImportReview } from "./domain/demo/workspaceSeedImport"
 import type { CadMetadataResult } from "./domain/integrations/cadMetadata"
 import {
   createCalendarRfqScheduler,
@@ -1497,6 +1499,10 @@ function App() {
   const selectedQueueItem = rankedQueue.find((item) => item.id === selectedId) ?? rankedQueue[0]
   const processCapabilityMatrix = useMemo(() => buildProcessCapabilityMatrix(), [])
   const processDemoQuotes = useMemo(() => buildProcessDemoQuotes(), [])
+  const demoWorkspaceImportReview = useMemo(
+    () => reviewDemoWorkspaceImportFromJson(serializeDemoWorkspaceSeed().seedJson),
+    [],
+  )
   const rfqIntakeReadiness = useMemo(
     () => evaluateRfqIntakeReadiness(parsedRfqForWorkItem(selectedItem), { nowDate: workspaceToday }),
     [selectedItem, workspaceToday],
@@ -3135,6 +3141,7 @@ function App() {
           <IntegrationStatusPanel
             calendarPlan={selectedRfqCalendarPlan}
             connectorSnapshot={selectedConnectorSnapshot}
+            demoImportReview={demoWorkspaceImportReview}
             isConnectorSyncing={selectedConnectorSyncing}
             onSyncConnector={syncConnectorInbox}
             onSyncReplies={syncOfferReplies}
@@ -4467,6 +4474,7 @@ function PersistenceStatus({
 function IntegrationStatusPanel({
   calendarPlan,
   connectorSnapshot,
+  demoImportReview,
   isConnectorSyncing,
   onSyncConnector,
   onSyncReplies,
@@ -4476,6 +4484,7 @@ function IntegrationStatusPanel({
 }: {
   calendarPlan: CalendarRfqPlan
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
+  demoImportReview: DemoWorkspaceImportReview
   isConnectorSyncing: boolean
   onSyncConnector: () => void
   onSyncReplies: () => void
@@ -4540,6 +4549,7 @@ function IntegrationStatusPanel({
           <IntegrationSourceRow key={source.key} source={source} />
         ))}
       </div>
+      <DemoWorkspaceImportReviewPanel review={demoImportReview} />
       <div
         aria-label={`Provider read diagnostics: ${humanizeKey(providerDiagnosticSummary.status)}, ${providerDiagnosticSummary.severity}`}
         className="integration-provider-read-diagnostics"
@@ -4589,6 +4599,68 @@ function IntegrationStatusPanel({
           ))}
         </div>
       ) : null}
+    </section>
+  )
+}
+
+function DemoWorkspaceImportReviewPanel({ review }: { review: DemoWorkspaceImportReview }) {
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const copyText =
+    review.summaryText ??
+    [
+      `FactoryBid demo workspace import ${review.importPlanVersion}`,
+      `Status: ${review.status}`,
+      `Blockers: ${review.blockerLabels.length}`,
+      ...review.blockerLabels.map((label) => `- ${label}`),
+    ].join("\n")
+
+  const handleCopyReview = async () => {
+    const copied = await copyTextToClipboard(`${copyText.trim()}\n`)
+    setCopyFeedback(copied ? "copied" : "error")
+  }
+
+  return (
+    <section className="demo-import-review-panel" aria-label="Demo workspace import review" data-status={review.status}>
+      <div className="demo-import-review-heading">
+        <span>
+          <FileText aria-hidden="true" />
+          Demo import review
+        </span>
+        <strong>{humanizeKey(review.status)}</strong>
+      </div>
+      <p>{review.nextOperatorMessage}</p>
+      <div className="demo-import-review-summary">
+        <Metric label="Operations" value={String(review.operationCount)} />
+        <Metric label="Customers" value={String(review.operationCounts.upsert_customer)} />
+        <Metric label="RFQs" value={String(review.operationCounts.upsert_rfq)} />
+        <Metric label="Activities" value={String(review.operationCounts.append_activity)} />
+      </div>
+      {review.fingerprint ? <code>{review.fingerprint}</code> : null}
+      {review.blockerLabels.length > 0 ? (
+        <ul className="demo-import-review-blockers">
+          {review.blockerLabels.slice(0, 4).map((blocker) => (
+            <li key={blocker}>{blocker}</li>
+          ))}
+        </ul>
+      ) : (
+        <div className="flag ok">
+          <CheckCircle2 aria-hidden="true" />
+          <span>Review-only seed plan ready; workspace writes remain deferred.</span>
+        </div>
+      )}
+      <div className="demo-import-review-actions">
+        <Button onClick={() => void handleCopyReview()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {copyFeedback === "copied" ? "Copied" : "Copy import review"}
+        </Button>
+        <small role="status">
+          {copyFeedback === "copied"
+            ? "Demo import review copied."
+            : copyFeedback === "error"
+              ? "Copy unavailable; inspect the import review manually."
+              : "Copy the deterministic demo import review for operator handoff."}
+        </small>
+      </div>
     </section>
   )
 }

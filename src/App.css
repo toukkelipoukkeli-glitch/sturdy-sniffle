@@ -6964,6 +6964,106 @@
   overflow-wrap: anywhere;
 }
 
+.demo-import-review-panel {
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.demo-import-review-panel[data-status="ready"] {
+  background: oklch(0.97 0.025 155);
+  border-color: oklch(0.84 0.055 155);
+}
+
+.demo-import-review-panel[data-status="blocked"] {
+  background: oklch(0.985 0.02 35);
+  border-color: oklch(0.8 0.09 35);
+}
+
+.demo-import-review-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.demo-import-review-heading span,
+.demo-import-review-heading strong {
+  align-items: center;
+  color: oklch(0.29 0.036 250);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 850;
+  gap: 6px;
+}
+
+.demo-import-review-heading svg {
+  height: 15px;
+  width: 15px;
+}
+
+.demo-import-review-panel p,
+.demo-import-review-panel code,
+.demo-import-review-actions small,
+.demo-import-review-blockers li {
+  color: oklch(0.39 0.035 250);
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.demo-import-review-panel code {
+  background: rgb(255 255 255 / 75%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.demo-import-review-summary {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.demo-import-review-summary .metric {
+  background: rgb(255 255 255 / 72%);
+  min-width: 0;
+}
+
+.demo-import-review-blockers {
+  display: grid;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.demo-import-review-blockers li {
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid rgb(15 23 42 / 8%);
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.demo-import-review-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-import-review-actions [data-slot="button"] {
+  flex: 0 0 auto;
+}
+
+.demo-import-review-actions small {
+  flex: 1 1 170px;
+}
+
 .integration-source-row {
   align-items: start;
   background: oklch(0.985 0.004 240);
@@ -7855,6 +7955,7 @@
   .offer-reply-summary,
   .offer-reply-state-summary,
   .calendar-follow-up-provider-outcome-sync-summary,
+  .demo-import-review-summary,
   .integration-source-row,
   .connector-drilldown-summary,
   .connector-drilldown-row {
