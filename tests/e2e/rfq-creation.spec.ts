@@ -51,6 +51,37 @@ test("creates a manual RFQ and surfaces it in the queue", async ({ page }) => {
 })
 
 for (const viewport of operatorViewports) {
+  test(`blocks manual RFQ creation without a valid due date and recovers on ${viewport.label}`, async ({ page }) => {
+    await page.setViewportSize(viewport.size)
+    const dialog = await openCreateRfqDialog(page)
+
+    await dialog.getByLabel(/Customer/).fill("Oulu Automation")
+    await dialog.getByLabel(/Part number/).fill("OA-18")
+    await dialog.getByLabel("Subject").fill("Sensor rail pilot batch")
+    await dialog.getByLabel("Due date").fill("")
+    await expect(dialog.getByRole("button", { name: "Create RFQ" })).toBeDisabled()
+
+    await dialog.getByLabel("Due date").fill("2026-07-15")
+    await expect(dialog.getByRole("button", { name: "Create RFQ" })).toBeEnabled()
+    await dialog.getByRole("button", { name: "Create RFQ" }).click()
+
+    await expect(page.getByRole("dialog", { name: "Create RFQ" })).toHaveCount(0)
+    await expect(page.getByLabel("RFQ queue").getByRole("button", { name: /Oulu Automation/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Sensor rail pilot batch" })).toBeVisible()
+    await expect(page.getByLabel("Selected RFQ")).toContainText("MANUAL")
+    await expect(page.getByLabel("RFQ calendar plan preview")).toContainText("Quote work: Sensor rail pilot batch")
+    await expect(page.getByLabel("RFQ calendar plan preview")).toContainText("Quote due: Sensor rail pilot batch")
+    await expect(page.getByLabel("RFQ calendar plan preview")).toContainText("OA-18 qty 1")
+    await expect(page.getByLabel("RFQ intake readiness")).toContainText("Needs review")
+    await expect(page.getByLabel("RFQ intake readiness")).toContainText("Blockers 0")
+    await expect(page.getByLabel("RFQ intake readiness")).toContainText("No CAD model or drawing is attached.")
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    )
+    expect(hasHorizontalOverflow).toBe(false)
+  })
+
   test(`creates a manual RFQ and exposes offer copy controls on ${viewport.label}`, async ({ context, page }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"])
     await page.setViewportSize(viewport.size)
