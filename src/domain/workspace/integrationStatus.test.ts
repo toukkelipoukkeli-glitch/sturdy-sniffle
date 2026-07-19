@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
+import type { OfferFollowUpActivityReadinessHistorySummary } from "../offers/offerFollowUpActivityReadinessHistory"
 import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFollowUpActivityReadinessReadModel"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
@@ -840,6 +841,9 @@ describe("workspace integration status", () => {
         status: "ready",
         totalReadinessRecords: 2,
       }),
+      followUpReadinessHistory: followUpReadinessHistory({
+        totalReadinessRecords: 2,
+      }),
       followUpScheduledAt: "2026-06-27T06:00:00.000Z",
       persistenceMode: "convex",
       providerRuns: [providerAudit({ status: "succeeded" })],
@@ -865,6 +869,12 @@ describe("workspace integration status", () => {
         "Persisted read enabled: yes",
         "Summary: No current follow-up readiness record is available across 0 persisted record(s).",
         "Next actions: Use persisted follow-up readiness to avoid duplicate follow-up activity writes.",
+        "",
+        "Follow-up readiness history: offer-follow-up-activity-readiness-history.v1",
+        "Records: total 2, recorded 1, partial 0, pending 1, review 0",
+        "Task gaps: missing 0, unexpected 0, unmatched activity 0",
+        "Latest recorded at: 2026-07-03T07:10:00.000Z",
+        "Current readiness: recorded 1/1 tasks readiness:offer-204:recorded",
       ].join("\n"),
       detail: "Workspace writes are routed through Convex. Follow-up persisted read is ready from convex with 2 readiness records.",
       severity: "healthy",
@@ -1131,6 +1141,40 @@ function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): Connecto
       },
     ],
     syncCount: 1,
+  }
+}
+
+function followUpReadinessHistory(
+  overrides: Partial<OfferFollowUpActivityReadinessHistorySummary> = {},
+): OfferFollowUpActivityReadinessHistorySummary {
+  return {
+    currentReadiness: {
+      expectedTaskCount: 1,
+      missingTaskCount: 0,
+      nextActionCount: 0,
+      offerId: "offer-204",
+      readinessKey: "readiness:offer-204:recorded",
+      readinessVersion: "offer-follow-up-activity-readiness.v1",
+      recordedAt: "2026-07-03T07:10:00.000Z",
+      recordedTaskCount: 1,
+      rfqId: "rfq-204",
+      status: "recorded",
+      totalActivities: 1,
+      unexpectedTaskCount: 0,
+      unmatchedActivityCount: 0,
+    },
+    historyVersion: "offer-follow-up-activity-readiness-history.v1",
+    latestRecordedAt: "2026-07-03T07:10:00.000Z",
+    missingTaskTotal: 0,
+    partialRecordCount: 0,
+    pendingRecordCount: 1,
+    recordedRecordCount: 1,
+    reviewRecordCount: 0,
+    statusCounts: { pending: 1, recorded: 1 },
+    totalReadinessRecords: 2,
+    unexpectedTaskTotal: 0,
+    unmatchedActivityTotal: 0,
+    ...overrides,
   }
 }
 
