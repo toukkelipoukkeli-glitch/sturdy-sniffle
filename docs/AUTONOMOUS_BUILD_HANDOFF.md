@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `115e374` (`Refresh follow-up copy label handoff (#391)`).
+- Main branch checkpoint: `0544e8f` (`Add manual RFQ offer export e2e (#392)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/manual-rfq-offer-export-e2e` broadens deterministic Playwright coverage for manual RFQ creation into queue selection plus Offer export copy controls on desktop and mobile.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#392` broadens deterministic Playwright coverage for manual RFQ creation into queue selection plus Offer export copy controls on desktop and mobile.
   - `#391` refreshes the autonomous handoff after the follow-up history diagnostic copy-label slice.
   - `#390` makes Integration health persistence diagnostics explicitly advertise bundled readiness-history context when present.
   - `#389` refreshes the autonomous handoff after the follow-up history Integration health diagnostics slice.
