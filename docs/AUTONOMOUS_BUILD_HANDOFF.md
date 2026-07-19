@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `78f39d9` (`Add workspace audit feed copy (#406)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/workspace-audit-feed-export-domain` moves the audit-feed clipboard export into the deterministic domain helper layer with focused coverage.
 - Latest merged sequence:
   - `#406` adds a deterministic copy/export action to the selected-RFQ workspace audit feed without live connector writes.
   - `#405` refreshes the autonomous handoff after the workspace audit feed UI slice.

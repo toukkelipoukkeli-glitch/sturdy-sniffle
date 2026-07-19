@@ -103,6 +103,30 @@ export function buildWorkspaceAuditFeed(
   }
 }
 
+export function formatWorkspaceAuditFeedExport(feed: WorkspaceAuditFeed): string {
+  const lines = [
+    `FactoryBid workspace audit feed ${feed.auditVersion}`,
+    `Generated: ${feed.generatedAt}`,
+    `Events: ${feed.summary.eventCount}`,
+    `Attention: ${feed.summary.attentionCount}`,
+    `Blocked: ${feed.summary.blockedCount}`,
+    `Latest: ${feed.summary.latestEventAt ?? "none"}`,
+  ]
+
+  if (feed.events.length === 0) {
+    lines.push("No audit events for this RFQ yet.")
+  } else {
+    lines.push(
+      ...feed.events.map(
+        (event) =>
+          `- [${event.severity}] ${event.occurredAt} ${event.source}/${event.status ?? "event"}: ${event.label} - ${event.message}`,
+      ),
+    )
+  }
+
+  return `${lines.join("\n")}\n`
+}
+
 function actionEvent(action: WorkspaceActionRecord): WorkspaceAuditEvent {
   return compactEvent({
     actor: action.actor,
