@@ -68,6 +68,25 @@ export function calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(
   }
 }
 
+export function calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(
+  sync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+): string {
+  const localProviderOutcomeBatchText = `${sync.localBatchCount} local calendar provider outcome ${batchNoun(sync.localBatchCount)}`
+  const persistedBatchText = `${sync.persistedBatchCount} persisted calendar provider outcome ${batchNoun(sync.persistedBatchCount)}`
+  switch (sync.status) {
+    case "convex":
+      return sync.persistedBatchCount > 0
+        ? `${persistedBatchText} read from Convex and merged with ${sync.localBatchCount} local fallback ${batchNoun(sync.localBatchCount)}.`
+        : `Convex returned no persisted calendar provider outcome batches; ${localProviderOutcomeBatchText} ${visibleVerb(sync.localBatchCount)} visible.`
+    case "fallback":
+      return `Calendar provider outcome history fell back to ${localProviderOutcomeBatchText} after a Convex read failure.`
+    case "local":
+      return `${localProviderOutcomeBatchText} available; Convex calendar provider outcome reads are not configured.`
+    case "pending":
+      return `Checking Convex calendar provider outcome history; ${sync.localBatchCount} local fallback ${batchNoun(sync.localBatchCount)} ${visibleVerb(sync.localBatchCount)} visible.`
+  }
+}
+
 function batchNoun(count: number): string {
   return count === 1 ? "batch" : "batches"
 }

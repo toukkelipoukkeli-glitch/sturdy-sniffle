@@ -863,6 +863,63 @@ describe("workspace integration status", () => {
       "Provider runs: Provider run history fell back to 1 local audit after a Convex read failure.",
     )
   })
+
+  it("surfaces Convex calendar provider outcome read health as a separate source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      calendarProviderOutcomeReadSync: {
+        fallbackCount: 0,
+        localBatchCount: 0,
+        persistedBatchCount: 1,
+        status: "convex",
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      count: 1,
+      detail: "1 persisted calendar provider outcome batch read from Convex and merged with 0 local fallback batches.",
+      label: "Calendar outcome reads",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("surfaces calendar provider outcome read fallbacks as integration warnings", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      calendarProviderOutcomeReadSync: {
+        fallbackCount: 1,
+        localBatchCount: 2,
+        persistedBatchCount: 0,
+        status: "fallback",
+      },
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "calendar_provider_outcome_reads")).toMatchObject({
+      count: 1,
+      detail: "Calendar provider outcome history fell back to 2 local calendar provider outcome batches after a Convex read failure.",
+      label: "Calendar outcome reads",
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Calendar outcome reads: Calendar provider outcome history fell back to 2 local calendar provider outcome batches after a Convex read failure.",
+    )
+  })
 })
 
 function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): ConnectorSyncPersistenceSnapshot {

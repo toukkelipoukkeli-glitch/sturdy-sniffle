@@ -2653,6 +2653,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(providerOutcomeReadSync).toHaveTextContent("Convex 0")
     expect(providerOutcomeReadSync).toHaveTextContent("Local 1")
     expect(providerOutcomeReadSync).toHaveTextContent("Fallback 0")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    await waitFor(() => {
+      expect(integrationHealth).toHaveTextContent("Calendar outcome reads")
+      expect(integrationHealth).toHaveTextContent(
+        "1 local calendar provider outcome batch available; Convex calendar provider outcome reads are not configured.",
+      )
+    })
     expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Expected 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Created 1")
@@ -2774,6 +2781,11 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerOutcomeReadSync).toHaveTextContent("Convex 1")
       expect(providerOutcomeReadSync).toHaveTextContent("Local 0")
       expect(providerOutcomeReadSync).toHaveTextContent("Fallback 0")
+      const integrationHealth = screen.getByLabelText("Integration health")
+      expect(integrationHealth).toHaveTextContent("Calendar outcome reads")
+      expect(integrationHealth).toHaveTextContent(
+        "1 persisted calendar provider outcome batch read from Convex and merged with 0 local fallback batches.",
+      )
     })
   })
 
@@ -2815,6 +2827,11 @@ describe("FactoryBid workspace (component)", () => {
       expect(providerOutcomeReadSync).toHaveTextContent("Convex 0")
       expect(providerOutcomeReadSync).toHaveTextContent("Local 0")
       expect(providerOutcomeReadSync).toHaveTextContent("Fallback 1")
+      const integrationHealth = screen.getByLabelText("Integration health")
+      expect(integrationHealth).toHaveTextContent("Calendar outcome reads")
+      expect(integrationHealth).toHaveTextContent(
+        "Calendar provider outcome history fell back to 0 local calendar provider outcome batches after a Convex read failure.",
+      )
     })
   })
 

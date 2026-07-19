@@ -1126,6 +1126,9 @@ function App() {
   const [offerReplyPersistenceSnapshotsById, setOfferReplyPersistenceSnapshotsById] = useState<Record<string, OfferReplySyncPersistenceSnapshot>>({})
   const [providerRunAuditsById, setProviderRunAuditsById] = useState<Record<string, ProviderRunAudit[]>>({})
   const [providerRunReadSyncById, setProviderRunReadSyncById] = useState<Record<string, ProviderRunReadSyncState>>({})
+  const [calendarProviderOutcomeReadSyncById, setCalendarProviderOutcomeReadSyncById] = useState<
+    Record<string, CalendarFollowUpRescheduleProviderOutcomeReadSyncState>
+  >({})
   const providerRunAuditsRef = useRef<Record<string, ProviderRunAudit[]>>({})
   const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
     Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
@@ -1157,6 +1160,25 @@ function App() {
     () => workspaceLocalState?.followUpActivityReadinessSyncEvents.length ?? 0,
   )
   const recordPersistenceSyncError = useCallback(() => setPersistenceSyncErrorCount((count) => count + 1), [])
+  const recordCalendarProviderOutcomeReadSync = useCallback(
+    (rfqId: string, readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState) => {
+      setCalendarProviderOutcomeReadSyncById((current) => {
+        const previous = current[rfqId]
+        if (
+          previous &&
+          previous.fallbackCount === readSync.fallbackCount &&
+          previous.localBatchCount === readSync.localBatchCount &&
+          previous.persistedBatchCount === readSync.persistedBatchCount &&
+          previous.status === readSync.status
+        ) {
+          return current
+        }
+
+        return { ...current, [rfqId]: readSync }
+      })
+    },
+    [],
+  )
   const [statusById, setStatusById] = useState<Record<string, QuoteQueueStatus>>(workspaceLocalState?.statusById ?? {})
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
@@ -1253,6 +1275,7 @@ function App() {
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
+  const selectedCalendarProviderOutcomeReadSync = calendarProviderOutcomeReadSyncById[selectedId]
   const selectedRfqCalendarPlan = useMemo(
     () =>
       buildRfqCalendarPlan({
@@ -2375,6 +2398,7 @@ function App() {
   const integrationStatus = useMemo(
     () =>
       summarizeWorkspaceIntegrationStatus({
+        calendarProviderOutcomeReadSync: selectedCalendarProviderOutcomeReadSync,
         convexBridgeHealth,
         convexBridgeInstallPlan,
         convexBridgeInstallerDecision,
@@ -2402,6 +2426,7 @@ function App() {
       selectedConnectorSyncErrorCount,
       selectedConnectorSnapshot,
       selectedItem.id,
+      selectedCalendarProviderOutcomeReadSync,
       selectedProviderRunReadSync,
       selectedProviderRuns,
       workspacePersistenceRuntime.mode,
@@ -2975,6 +3000,7 @@ function App() {
               onAdvanceStatus={advanceStatus}
               onCreateFollowUp={createFollowUp}
               onHandoffDraftChange={(value) => setHandoffDraftById((current) => ({ ...current, [selectedItem.id]: value }))}
+              onProviderOutcomeReadSyncChange={recordCalendarProviderOutcomeReadSync}
               onProviderOutcomeHistoryReadError={recordPersistenceSyncError}
               onUpdateFields={updateSelectedRfqFields}
               onSaveScenario={saveScenario}
@@ -4794,7 +4820,7 @@ function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) 
   if (source.key === "connector" || source.key === "offer_replies") {
     return <Mail aria-hidden="true" />
   }
-  if (source.key === "calendar_follow_up") {
+  if (source.key === "calendar_follow_up" || source.key === "calendar_provider_outcome_reads") {
     return <CalendarDays aria-hidden="true" />
   }
   if (source.key === "provider_runs") {
@@ -5118,6 +5144,7 @@ function TriageView({
   onAdvanceStatus,
   onCreateFollowUp,
   onHandoffDraftChange,
+  onProviderOutcomeReadSyncChange,
   onProviderOutcomeHistoryReadError,
   onUpdateFields,
   onSaveScenario,
@@ -5133,6 +5160,10 @@ function TriageView({
   onAdvanceStatus: () => void
   onCreateFollowUp: () => void
   onHandoffDraftChange: (value: string) => void
+  onProviderOutcomeReadSyncChange?: (
+    rfqId: string,
+    readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  ) => void
   onProviderOutcomeHistoryReadError?: () => void
   onUpdateFields: (patch: RfqFieldPatch) => void
   onSaveScenario: () => void
@@ -5306,6 +5337,7 @@ function TriageView({
       <CalendarFollowUpStatusPanel
         actions={actions}
         now={followUpNow}
+        onProviderOutcomeReadSyncChange={onProviderOutcomeReadSyncChange}
         onProviderOutcomeHistoryReadError={onProviderOutcomeHistoryReadError}
         offerId={offerNumberFor(item).toLowerCase()}
         replySync={followUpReplySync}
@@ -5381,6 +5413,7 @@ function RfqIntakeReadinessPanel({ readiness }: { readiness: RfqIntakeReadinessR
 function CalendarFollowUpStatusPanel({
   actions,
   now,
+  onProviderOutcomeReadSyncChange,
   onProviderOutcomeHistoryReadError,
   offerId,
   replySync,
@@ -5388,6 +5421,10 @@ function CalendarFollowUpStatusPanel({
 }: {
   actions: WorkspaceActionRecord[]
   now: string
+  onProviderOutcomeReadSyncChange?: (
+    rfqId: string,
+    readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  ) => void
   onProviderOutcomeHistoryReadError?: () => void
   offerId: string
   replySync?: GmailOfferReplySyncResult
@@ -5566,6 +5603,9 @@ function CalendarFollowUpStatusPanel({
       }),
     [hydratedProviderOutcomeSnapshot, localRescheduleProviderOutcomeSnapshot, providerOutcomeReadSyncStatus],
   )
+  useEffect(() => {
+    onProviderOutcomeReadSyncChange?.(rfqId, providerOutcomeReadSync)
+  }, [onProviderOutcomeReadSyncChange, providerOutcomeReadSync, rfqId])
   const rescheduleProviderOutcomeHistorySummary = useMemo(
     () =>
       summarizeCalendarFollowUpRescheduleProviderOutcomeHistory(
