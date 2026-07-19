@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8c48473` (`Add manual RFQ validation e2e (#394)`).
+- Main branch checkpoint: `30f27f0` (`Add non-CNC selector e2e (#396)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-selector-e2e` (adding deterministic desktop/mobile Playwright coverage for guarded non-CNC process preview selection).
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#396` adds deterministic desktop/mobile Playwright coverage for guarded non-CNC process preview selection across sheet metal, plastics, wire EDM, and fabrication.
+  - `#395` refreshes the autonomous handoff after the manual RFQ validation e2e slice.
   - `#394` adds deterministic desktop/mobile Playwright coverage for manual RFQ due-date validation recovery, calendar draft surfacing, readiness warnings, and no-overflow checks.
   - `#393` refreshes the autonomous handoff after the manual RFQ offer export e2e slice.
   - `#392` broadens deterministic Playwright coverage for manual RFQ creation into queue selection plus Offer export copy controls on desktop and mobile.
