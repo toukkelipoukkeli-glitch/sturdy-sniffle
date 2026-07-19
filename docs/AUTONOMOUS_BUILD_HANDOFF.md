@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d67d44f` (`Refresh non-CNC e2e handoff (#397)`).
+- Main branch checkpoint: `ab1523b` (`Add queue empty-state e2e (#399)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/empty-error-state-e2e` is adding deterministic desktop/mobile Playwright coverage for queue filter no-results recovery.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#399` adds deterministic desktop/mobile Playwright coverage for queue filter no-results recovery using local seeded workspace state.
+  - `#398` was closed as superseded by `#399`.
   - `#397` refreshes the autonomous handoff after the non-CNC selector e2e slice.
   - `#396` adds deterministic desktop/mobile Playwright coverage for guarded non-CNC process preview selection across sheet metal, plastics, wire EDM, and fabrication.
   - `#395` refreshes the autonomous handoff after the manual RFQ validation e2e slice.
