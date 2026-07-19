@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `30f27f0` (`Add non-CNC selector e2e (#396)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/queue-empty-state-e2e` (adding deterministic desktop/mobile Playwright coverage for filtered queue empty-state recovery).
 - Latest merged sequence:
   - `#396` adds deterministic desktop/mobile Playwright coverage for guarded non-CNC process preview selection across sheet metal, plastics, wire EDM, and fabrication.
   - `#395` refreshes the autonomous handoff after the manual RFQ validation e2e slice.
