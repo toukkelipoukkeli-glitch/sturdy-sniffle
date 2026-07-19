@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   buildCalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail,
   calendarFollowUpRescheduleProviderOutcomeReadSyncLabel,
   calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary,
 } from "./calendarFollowUpRescheduleProviderOutcomeReadSync"
@@ -22,6 +23,9 @@ describe("calendar follow-up reschedule provider outcome read sync", () => {
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncLabel(sync.status)).toBe("Local")
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(sync)).toBe(
       "1 local calendar provider outcome batch available; Convex outcome reads are not configured.",
+    )
+    expect(calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(sync)).toBe(
+      "1 local calendar provider outcome batch available; Convex calendar provider outcome reads are not configured.",
     )
   })
 
@@ -47,6 +51,9 @@ describe("calendar follow-up reschedule provider outcome read sync", () => {
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(convexSync)).toBe(
       "3 persisted calendar provider outcome batches merged with 2 local fallback batches.",
     )
+    expect(calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(convexSync)).toBe(
+      "3 persisted calendar provider outcome batches read from Convex and merged with 2 local fallback batches.",
+    )
     expect(fallbackSync).toMatchObject({
       fallbackCount: 1,
       persistedBatchCount: 0,
@@ -55,6 +62,9 @@ describe("calendar follow-up reschedule provider outcome read sync", () => {
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncLabel(fallbackSync.status)).toBe("Local fallback")
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(fallbackSync)).toBe(
       "Convex calendar provider outcome read failed; showing 2 local provider outcome batches.",
+    )
+    expect(calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(fallbackSync)).toBe(
+      "Calendar provider outcome history fell back to 2 local calendar provider outcome batches after a Convex read failure.",
     )
   })
 
@@ -74,6 +84,9 @@ describe("calendar follow-up reschedule provider outcome read sync", () => {
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncLabel(sync.status)).toBe("Checking Convex")
     expect(calendarFollowUpRescheduleProviderOutcomeReadSyncPanelSummary(sync)).toBe(
       "Checking Convex for calendar provider outcome batches; 1 local fallback batch remains visible.",
+    )
+    expect(calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(sync)).toBe(
+      "Checking Convex calendar provider outcome history; 1 local fallback batch remains visible.",
     )
   })
 

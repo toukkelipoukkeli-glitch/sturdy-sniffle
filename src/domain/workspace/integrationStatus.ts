@@ -7,6 +7,10 @@ import {
   providerRunReadSyncIntegrationReviewSuffix,
   type ProviderRunReadSyncState,
 } from "../providers/providerRunReadSync"
+import {
+  calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail,
+  type CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+} from "./calendarFollowUpRescheduleProviderOutcomeReadSync"
 import type { WorkspaceConvexBrowserBridgeInstallPlan } from "./convexBrowserBridgeInstallPlan"
 import type { WorkspaceConvexBrowserBridgeInstallerDecision } from "./convexBrowserBridgeInstaller"
 import type { WorkspaceConvexBridgeHealth, WorkspaceConvexRuntimeConfigHealth } from "./convexBridgeHealth"
@@ -15,6 +19,7 @@ import type { WorkspacePersistenceMode } from "./workspacePersistenceRuntime"
 export type IntegrationHealthStatus = "live" | "fallback" | "attention" | "blocked"
 export type IntegrationSourceSeverity = "healthy" | "attention" | "blocked"
 export type IntegrationStatusSourceKey =
+  | "calendar_provider_outcome_reads"
   | "calendar_follow_up"
   | "connector"
   | "convex_bridge"
@@ -72,6 +77,7 @@ export interface WorkspaceIntegrationStatusInput {
   convexRuntimeConfigHealth?: WorkspaceConvexRuntimeConfigHealth
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
+  calendarProviderOutcomeReadSync?: CalendarFollowUpRescheduleProviderOutcomeReadSyncState
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
@@ -96,6 +102,7 @@ export function summarizeWorkspaceIntegrationStatus({
   convexRuntimeConfigHealth,
   connectorErrorCount = 0,
   connectorSnapshot,
+  calendarProviderOutcomeReadSync,
   followUpReadinessSyncHealth,
   followUpScheduledAt,
   persistenceMode,
@@ -114,6 +121,7 @@ export function summarizeWorkspaceIntegrationStatus({
     providerRunSource(providerRuns, providerRunReadSync),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
+    ...(calendarProviderOutcomeReadSync ? [calendarProviderOutcomeReadSource(calendarProviderOutcomeReadSync)] : []),
   ]
   const warnings = sources
     .filter((source) => source.severity !== "healthy")
@@ -705,6 +713,24 @@ function followUpSource(followUpScheduledAt: string | undefined): IntegrationSta
     label: "Calendar follow-up",
     severity: "attention",
     status: "pending",
+  }
+}
+
+function calendarProviderOutcomeReadSource(
+  readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+): IntegrationStatusSource {
+  return {
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedBatchCount
+          : readSync.localBatchCount,
+    detail: calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(readSync),
+    key: "calendar_provider_outcome_reads",
+    label: "Calendar outcome reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
   }
 }
 
