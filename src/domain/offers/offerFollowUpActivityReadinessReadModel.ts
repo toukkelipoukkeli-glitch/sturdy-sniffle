@@ -41,6 +41,36 @@ export interface OfferFollowUpActivityReadinessReadModel {
   warningLabels: string[]
 }
 
+export function buildOfferFollowUpActivityReadinessReadModelExportSummary(
+  readModel: OfferFollowUpActivityReadinessReadModel,
+): string {
+  const lines = [
+    `Follow-up readiness persisted read: ${readModel.status}`,
+    `Source: ${readModel.source}`,
+    `Sync health: ${readModel.syncHealthStatus}`,
+    `Records: ${readModel.totalReadinessRecords}`,
+    `Persisted read enabled: ${readModel.canUsePersistedRead ? "yes" : "no"}`,
+    `Summary: ${readModel.operatorSummary}`,
+  ]
+
+  if (readModel.currentReadiness) {
+    lines.push(
+      `Current readiness: ${readModel.currentReadiness.status} ${readModel.currentReadiness.recordedTaskCount}/${readModel.currentReadiness.expectedTaskCount} tasks ${readModel.currentReadiness.readinessKey}`,
+    )
+  }
+  if (readModel.blockerLabels.length > 0) {
+    lines.push(`Blockers: ${readModel.blockerLabels.join(" | ")}`)
+  }
+  if (readModel.warningLabels.length > 0) {
+    lines.push(`Warnings: ${readModel.warningLabels.join(" | ")}`)
+  }
+  if (readModel.nextActionLabels.length > 0) {
+    lines.push(`Next actions: ${readModel.nextActionLabels.join(" | ")}`)
+  }
+
+  return lines.join("\n")
+}
+
 export function buildOfferFollowUpActivityReadinessReadModel({
   history,
   sync,

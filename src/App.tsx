@@ -103,6 +103,7 @@ import {
   type OfferFollowUpActivityReadinessSyncSummary,
 } from "./domain/offers/offerFollowUpActivityReadinessHistory"
 import {
+  buildOfferFollowUpActivityReadinessReadModelExportSummary,
   buildOfferFollowUpActivityReadinessReadModel,
   type OfferFollowUpActivityReadinessReadModelStatus,
 } from "./domain/offers/offerFollowUpActivityReadinessReadModel"
@@ -10448,8 +10449,14 @@ function OfferFollowUpActivityReadinessHistoryPanel({
     .filter((fallback) => fallbackFilter === "all" || fallback.operation === fallbackFilter)
   const visibleFallbacks = filteredFallbacks.slice(0, 6)
   const hiddenFallbackCount = Math.max(0, filteredFallbacks.length - visibleFallbacks.length)
+  const readModelExportSummary = buildOfferFollowUpActivityReadinessReadModelExportSummary(readModel)
   const syncHealthExportSummary = buildOfferFollowUpActivityReadinessSyncHealthExportSummary(syncHealth)
+  const [readModelCopyFeedback, setReadModelCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
   const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopyReadModelSummary = async () => {
+    const copied = await copyTextToClipboard(readModelExportSummary)
+    setReadModelCopyFeedback(copied ? "copied" : "error")
+  }
   const handleCopySyncHealthSummary = async () => {
     const copied = await copyTextToClipboard(syncHealthExportSummary)
     setCopyFeedback(copied ? "copied" : "error")
@@ -10513,6 +10520,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
           kind="action"
           label="Follow-up readiness read next actions"
         />
+        <div className="offer-follow-up-readiness-read-model-actions">
+          <Button onClick={() => void handleCopyReadModelSummary()} size="sm" type="button" variant="outline">
+            <Copy aria-hidden="true" />
+            {readModelCopyFeedback === "copied" ? "Copied" : "Copy read summary"}
+          </Button>
+          <small role="status">
+            {readModelCopyFeedback === "copied"
+              ? "Persisted-read summary copied for diagnostics."
+              : readModelCopyFeedback === "error"
+                ? "Copy unavailable; select the persisted-read details manually."
+                : "Copy a deterministic persisted-read summary for diagnostics."}
+          </small>
+        </div>
       </div>
       <div
         aria-label={`Follow-up readiness sync health: ${syncHealthLabel}, ${totalFallbackCount} fallback${totalFallbackCount === 1 ? "" : "s"}`}
