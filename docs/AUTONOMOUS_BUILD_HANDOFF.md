@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c61c7c8` (`Refresh calendar outcome health handoff (#376)`).
-- Open PRs at this checkpoint: none on `main`; this branch is adding deterministic Integration health recovery actions for calendar provider outcome reads.
-- In-flight branch at this checkpoint: `codex/calendar-outcome-read-actions` adds Convex/local/pending/fallback next-action guidance for calendar provider outcome reads while live Calendar writes remain deferred.
+- Main branch checkpoint: `1cfb2ca` (`Add calendar outcome read recovery actions (#377)`).
+- Open PRs at this checkpoint: none on `main`.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#377` adds Convex/local/pending/fallback next-action guidance for calendar provider outcome reads in Integration health while live Calendar writes remain deferred.
   - `#376` refreshes the autonomous handoff after the calendar provider outcome read-source Integration health slice.
   - `#375` surfaces calendar provider outcome read-source/fallback health in Integration health while live Calendar writes remain deferred.
   - `#374` refreshes the autonomous handoff after the calendar provider read-sync status slice.
