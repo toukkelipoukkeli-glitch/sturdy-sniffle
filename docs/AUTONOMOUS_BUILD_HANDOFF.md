@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `dd3cbd2` (`Surface follow-up readiness in integration health (#382)`).
+- Main branch checkpoint: `6f3c3db` (`Refresh follow-up readiness integration handoff (#383)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/followup-readiness-integration-diagnostics` makes the Integration health follow-up readiness persisted-read summary copyable without live connector writes.
 - Latest merged sequence:
+  - `#383` refreshes the autonomous handoff after the follow-up readiness Integration health slice.
   - `#382` surfaces the deterministic follow-up readiness persisted-read model in Integration health without live connector writes.
   - `#381` adds a deterministic follow-up readiness persisted-read diagnostic export/copy path in the Offer readiness history panel.
   - `#380` refreshes the autonomous handoff after the calendar outcome read diagnostics slice.

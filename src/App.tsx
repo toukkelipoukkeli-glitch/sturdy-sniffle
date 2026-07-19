@@ -4848,6 +4848,15 @@ function integrationSourceDiagnosticCopy(source: IntegrationStatusSource) {
     }
   }
 
+  if (source.key === "persistence") {
+    return {
+      buttonLabel: "Copy persistence diagnostics",
+      copiedMessage: "Persistence diagnostics copied.",
+      errorMessage: "Copy unavailable; inspect the persistence status details manually.",
+      idleMessage: "Copy the follow-up readiness persisted-read diagnostic export.",
+    }
+  }
+
   return {
     buttonLabel: "Copy diagnostics",
     copiedMessage: `${source.label} diagnostics copied.`,
