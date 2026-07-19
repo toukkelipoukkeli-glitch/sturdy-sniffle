@@ -4,7 +4,7 @@ import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConvexConnectorRfqSyncPayload } from "../integrations/convexConnectorSync"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import { buildWorkspaceAction } from "./workspaceActions"
-import { buildWorkspaceAuditFeed } from "./workspaceAuditFeed"
+import { buildWorkspaceAuditFeed, formatWorkspaceAuditFeedExport } from "./workspaceAuditFeed"
 
 describe("workspace audit feed", () => {
   it("merges workspace, connector, provider, reply, and follow-up events newest first", () => {
@@ -145,6 +145,56 @@ describe("workspace audit feed", () => {
     const originalKeys = original.events.map((event) => event.key).toSorted()
     const reversedKeys = reversed.events.map((event) => event.key).toSorted()
     expect(originalKeys).toEqual(reversedKeys)
+  })
+
+  it("formats deterministic operator exports for non-empty feeds", () => {
+    const feed = buildWorkspaceAuditFeed(
+      {
+        actions: [
+          buildWorkspaceAction({
+            actor: "Sari",
+            fromStatus: "triage",
+            kind: "status_change",
+            occurredAt: "2026-06-20T08:00:00.000Z",
+            rfqId: "rfq-204",
+            toStatus: "estimating",
+          }),
+        ],
+        providerRuns: [providerAudit({ status: "failed" })],
+      },
+      { generatedAt: "2026-06-20T09:00:00.000Z" },
+    )
+
+    expect(formatWorkspaceAuditFeedExport(feed)).toBe(
+      [
+        "FactoryBid workspace audit feed workspace-audit-feed.v1",
+        "Generated: 2026-06-20T09:00:00.000Z",
+        "Events: 2",
+        "Attention: 0",
+        "Blocked: 1",
+        "Latest: 2026-06-20T08:10:00.000Z",
+        "- [blocked] 2026-06-20T08:10:00.000Z provider_run/failed: mock summarize - Provider unavailable.",
+        "- [info] 2026-06-20T08:00:00.000Z workspace_action/status_change: Workspace action - Moved RFQ from triage to estimating.",
+        "",
+      ].join("\n"),
+    )
+  })
+
+  it("formats empty audit feeds with explicit no-event copy", () => {
+    const feed = buildWorkspaceAuditFeed({}, { generatedAt: "2026-06-20T09:00:00.000Z" })
+
+    expect(formatWorkspaceAuditFeedExport(feed)).toBe(
+      [
+        "FactoryBid workspace audit feed workspace-audit-feed.v1",
+        "Generated: 2026-06-20T09:00:00.000Z",
+        "Events: 0",
+        "Attention: 0",
+        "Blocked: 0",
+        "Latest: none",
+        "No audit events for this RFQ yet.",
+        "",
+      ].join("\n"),
+    )
   })
 
   it("rejects invalid generated timestamps and limits", () => {
