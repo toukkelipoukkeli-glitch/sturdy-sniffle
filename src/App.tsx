@@ -4852,11 +4852,17 @@ function integrationSourceDiagnosticCopy(source: IntegrationStatusSource) {
   }
 
   if (source.key === "persistence") {
+    const includesReadinessHistory = source.diagnosticExport?.includes("Follow-up readiness history:")
+
     return {
-      buttonLabel: "Copy persistence diagnostics",
-      copiedMessage: "Persistence diagnostics copied.",
+      buttonLabel: includesReadinessHistory ? "Copy readiness diagnostics" : "Copy persistence diagnostics",
+      copiedMessage: includesReadinessHistory
+        ? "Persistence diagnostics copied with readiness history."
+        : "Persistence diagnostics copied.",
       errorMessage: "Copy unavailable; inspect the persistence status details manually.",
-      idleMessage: "Copy the follow-up readiness persisted-read diagnostic export.",
+      idleMessage: includesReadinessHistory
+        ? "Copy the follow-up readiness persisted-read and history diagnostic export."
+        : "Copy the follow-up readiness persisted-read diagnostic export.",
     }
   }
 
