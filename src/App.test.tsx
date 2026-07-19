@@ -2659,6 +2659,13 @@ describe("FactoryBid workspace (component)", () => {
       expect(integrationHealth).toHaveTextContent(
         "1 local calendar provider outcome batch available; Convex calendar provider outcome reads are not configured.",
       )
+      const calendarOutcomeReadActions = within(integrationHealth).getByLabelText(
+        "Calendar outcome reads recovery actions",
+      )
+      expect(calendarOutcomeReadActions).toHaveTextContent("Configure Convex read")
+      expect(calendarOutcomeReadActions).toHaveTextContent(
+        "Configure the optional browser bridge calendar outcome query before expecting persisted calendar provider outcome history.",
+      )
     })
     expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Expected 1")
@@ -2786,6 +2793,13 @@ describe("FactoryBid workspace (component)", () => {
       expect(integrationHealth).toHaveTextContent(
         "1 persisted calendar provider outcome batch read from Convex and merged with 0 local fallback batches.",
       )
+      const calendarOutcomeReadActions = within(integrationHealth).getByLabelText(
+        "Calendar outcome reads recovery actions",
+      )
+      expect(calendarOutcomeReadActions).toHaveTextContent("Review Convex outcomes")
+      expect(calendarOutcomeReadActions).toHaveTextContent(
+        "Use persisted calendar provider outcome batches when reviewing reschedule execution audits; keep local fallback batches visible for comparison.",
+      )
     })
   })
 
@@ -2831,6 +2845,13 @@ describe("FactoryBid workspace (component)", () => {
       expect(integrationHealth).toHaveTextContent("Calendar outcome reads")
       expect(integrationHealth).toHaveTextContent(
         "Calendar provider outcome history fell back to 0 local calendar provider outcome batches after a Convex read failure.",
+      )
+      const calendarOutcomeReadActions = within(integrationHealth).getByLabelText(
+        "Calendar outcome reads recovery actions",
+      )
+      expect(calendarOutcomeReadActions).toHaveTextContent("Retry outcome read")
+      expect(calendarOutcomeReadActions).toHaveTextContent(
+        "Keep local calendar provider outcome batches visible and retry the optional Convex read before committing provider-side calendar changes.",
       )
     })
   })
