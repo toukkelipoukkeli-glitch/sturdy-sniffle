@@ -1,6 +1,9 @@
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
-import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFollowUpActivityReadinessReadModel"
+import {
+  buildOfferFollowUpActivityReadinessReadModelExportSummary,
+  type OfferFollowUpActivityReadinessReadModel,
+} from "../offers/offerFollowUpActivityReadinessReadModel"
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
@@ -441,6 +444,7 @@ function persistenceSource(
     return {
       actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${fallbackCount} follow-up readiness persistence ${fallbackNoun} recorded (${operationText}); latest fallback is ${latestRecency}.${totalFallbackText}`,
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
       key: "persistence",
       label: "Persistence",
       severity: followUpReadinessSyncHealth.severity === "critical" ? "blocked" : "attention",
@@ -453,6 +457,7 @@ function persistenceSource(
     return {
       actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${syncErrorCount} operation${syncErrorCount === 1 ? "" : "s"} used local fallback.`,
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
       key: "persistence",
       label: "Persistence",
       severity: "attention",
@@ -467,6 +472,7 @@ function persistenceSource(
       detail: followUpReadinessReadModel
         ? `Workspace writes are routed through Convex. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
         : "Workspace writes are routed through Convex.",
+      diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
       key: "persistence",
       label: "Persistence",
       severity: followUpReadinessIntegrationSeverity(followUpReadinessReadModel, "healthy"),
@@ -479,11 +485,18 @@ function persistenceSource(
     detail: followUpReadinessReadModel
       ? `Workspace writes are kept in local fallback storage. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
       : "Workspace writes are kept in local fallback storage.",
+    diagnosticExport: followUpReadinessIntegrationDiagnosticExport(followUpReadinessReadModel),
     key: "persistence",
     label: "Persistence",
     severity: "attention",
     status: "local",
   }
+}
+
+function followUpReadinessIntegrationDiagnosticExport(
+  readModel: OfferFollowUpActivityReadinessReadModel | undefined,
+): string | undefined {
+  return readModel ? buildOfferFollowUpActivityReadinessReadModelExportSummary(readModel) : undefined
 }
 
 function followUpReadinessIntegrationDetail(readModel: OfferFollowUpActivityReadinessReadModel): string {
