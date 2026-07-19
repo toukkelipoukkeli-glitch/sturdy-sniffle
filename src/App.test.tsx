@@ -2625,6 +2625,27 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByRole("heading", { name: "RFQ intake" })).toBeInTheDocument()
   })
 
+  it("surfaces selected RFQ workspace audit feed in triage", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+
+    const auditFeed = screen.getByLabelText("Workspace audit feed")
+    expect(auditFeed).toHaveTextContent("workspace-audit-feed.v1")
+    expect(auditFeed).toHaveTextContent("Events 2")
+    expect(auditFeed).toHaveTextContent("Attention 2")
+    expect(auditFeed).toHaveTextContent("Blocked 0")
+    expect(auditFeed).toHaveTextContent("Latest")
+    expect(auditFeed).toHaveTextContent("mock summarize")
+    expect(auditFeed).toHaveTextContent("mock extract")
+    expect(auditFeed).toHaveTextContent(
+      "Summarized customer constraints and highlighted deburr requirement for estimator review.",
+    )
+    expect(auditFeed).toHaveTextContent("Detected CNC milling RFQ, 25 pcs, aluminum 6082, STEP and drawing attached.")
+    expect(auditFeed).toHaveTextContent("provider run")
+  })
+
   it("surfaces overdue calendar follow-up reschedule previews", async () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)

@@ -3670,6 +3670,101 @@
   padding-top: 14px;
 }
 
+.workspace-audit-feed {
+  border-top: 1px solid oklch(0.9 0.016 235);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.workspace-audit-feed .section-title > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.workspace-audit-summary {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.workspace-audit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.workspace-audit-row {
+  align-items: start;
+  background: oklch(0.985 0.004 240);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  min-height: 58px;
+  padding: 9px;
+}
+
+.workspace-audit-row[data-severity="attention"] {
+  background: oklch(0.98 0.018 85);
+  border-color: oklch(0.84 0.07 82);
+}
+
+.workspace-audit-row[data-severity="blocked"] {
+  background: oklch(0.985 0.02 35);
+  border-color: oklch(0.8 0.09 35);
+}
+
+.workspace-audit-row[data-severity="info"] .integration-source-icon {
+  background: oklch(0.94 0.035 155);
+  color: oklch(0.31 0.08 155);
+}
+
+.workspace-audit-row[data-severity="attention"] .integration-source-icon {
+  background: oklch(0.96 0.05 82);
+  color: oklch(0.36 0.09 75);
+}
+
+.workspace-audit-row[data-severity="blocked"] .integration-source-icon {
+  background: oklch(0.96 0.04 35);
+  color: oklch(0.42 0.11 35);
+}
+
+.workspace-audit-row div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workspace-audit-row strong {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.workspace-audit-row span,
+.workspace-audit-row small {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.workspace-audit-row .integration-source-status {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  text-transform: none;
+}
+
+.workspace-audit-row .integration-source-status small {
+  color: inherit;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
 .calendar-follow-up-panel {
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -7916,6 +8011,8 @@
   .calendar-follow-up-row,
   .rfq-readiness-summary,
   .rfq-readiness-checks,
+  .workspace-audit-summary,
+  .workspace-audit-row,
   .offer-export-summary,
   .offer-draft-grid,
   .offer-export-history-row,

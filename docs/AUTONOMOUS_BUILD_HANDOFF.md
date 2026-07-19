@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e6dfe6d` (`Surface demo seed import review (#402)`).
+- Main branch checkpoint: `ac81c8d` (`Refresh demo import review handoff (#403)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/workspace-audit-feed-ui` surfaces selected-RFQ audit feed visibility in Triage from existing deterministic local/provider/calendar records.
 - Latest merged sequence:
+  - `#403` refreshes the autonomous handoff after the demo import review UI slice.
   - `#402` surfaces the deterministic demo workspace import review in Integration health with desktop/mobile Playwright coverage and no import/workspace writes.
   - `#401` adds a deterministic ready/blocked pre-write review envelope for demo workspace seed imports before future import UI or live writes.
   - `#400` refreshes the autonomous handoff after the queue empty-state e2e slice.
