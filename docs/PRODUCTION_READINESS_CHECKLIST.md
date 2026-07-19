@@ -39,11 +39,11 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 
 ## §2 Full quote workspace
 
-- ✅ Operator can select RFQs, see workload/capacity/material/outside-services/approval/release panels (`App.tsx` triage/costing/offer views).
+- ✅ Operator can select RFQs, see workload/capacity/material/outside-services/approval/release panels plus a selected-RFQ workspace audit feed (`App.tsx` triage/costing/offer views).
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
 - 🟡 **Approval/release gates operable** — manager release review and local release execution controls now persist audited runs and feed the deterministic release planner; real connector send/commit remains behind provider boundaries. → **Slice D/G**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
-- 🟡 **Loading/empty/stale/error polish** — queue empty states, demo import review states, and a tested workspace error boundary exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
+- 🟡 **Loading/empty/stale/error polish** — queue empty states, demo import review states, selected-RFQ audit visibility, and a tested workspace error boundary exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 
 ## §3 Deterministic calculators
 
@@ -103,7 +103,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ CI covers lint / unit / e2e / build (`.github/workflows/ci.yml`).
 - 🟡 **Convex codegen/backend typecheck is a CI gate** — deferred: needs either committed `convex/_generated` or a `CONVEX_DEPLOY_KEY` secret (cloud auth), neither available without a policy change. Codegen works locally (`bun run convex:codegen`, exit 0, no drift). Tracked as a secret-gated follow-up.
 - ✅ **Component/unit coverage for `App.tsx`** — `src/App.test.tsx` renders the workspace in jsdom and covers the quote recompute, queue filtering, and view switching; test setup now auto-cleans React trees between tests. (Slice D)
-- 🟡 **e2e breadth** — manual creation, desktop/mobile validation recovery, guarded non-CNC selector previews, queue no-results recovery, demo import pre-write review, and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; broader error-state e2e coverage remains pending. → grows with each slice
+- 🟡 **e2e breadth** — manual creation, desktop/mobile validation recovery, guarded non-CNC selector previews, queue no-results recovery, demo import pre-write review, selected-RFQ audit feed visibility, and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; broader error-state e2e coverage remains pending. → grows with each slice
 
 ## Cross-cutting correctness
 

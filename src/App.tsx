@@ -430,6 +430,11 @@ import {
   type WorkspacePersistenceBridge,
   type WorkspacePersistenceMode,
 } from "./domain/workspace/workspacePersistenceRuntime"
+import {
+  buildWorkspaceAuditFeed,
+  type WorkspaceAuditEvent,
+  type WorkspaceAuditFeed,
+} from "./domain/workspace/workspaceAuditFeed"
 import "./App.css"
 
 type WorkspaceView = "triage" | "costing" | "offer"
@@ -1279,6 +1284,8 @@ function App() {
   const selectedConnectorSnapshot = connectorSnapshotsById[selectedId] ?? emptyConnectorSnapshot
   const selectedConnectorSyncErrorCount = connectorSyncErrorCountById[selectedId] ?? 0
   const selectedConnectorSyncing = connectorSyncingById[selectedId] ?? false
+  const offerReplySync = offerRepliesById[selectedId]
+  const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const selectedCalendarProviderOutcomeReadSync = calendarProviderOutcomeReadSyncById[selectedId]
   const selectedRfqCalendarPlan = useMemo(
     () =>
@@ -1741,6 +1748,48 @@ function App() {
       selectedStatus,
       workspaceOperatorName,
       workspaceTimezone,
+    ],
+  )
+  const selectedWorkspaceAuditFeed = useMemo(
+    () =>
+      buildWorkspaceAuditFeed(
+        {
+          actions: selectedActions,
+          connectorSyncs: selectedConnectorSnapshot.payloads.map((payload) => ({
+            payload,
+            recordedAt: workspaceNow,
+          })),
+          followUps: (offerReleasePlan.calendarPlan?.events ?? []).map((event) => ({
+            offerId: offer.offerNumber.toLowerCase(),
+            offerNumber: offer.offerNumber,
+            rfqId: selectedItem.id,
+            scheduledAt: event.startAt,
+          })),
+          offerReplySyncs: offerReplySync
+            ? [
+                {
+                  result: offerReplySync,
+                  syncedAt: workspaceNow,
+                },
+              ]
+            : [],
+          providerRuns: selectedProviderRuns,
+        },
+        {
+          generatedAt: workspaceNow,
+          limit: 6,
+          rfqId: selectedItem.id,
+        },
+      ),
+    [
+      offer.offerNumber,
+      offerReleasePlan,
+      offerReplySync,
+      selectedActions,
+      selectedConnectorSnapshot,
+      selectedItem.id,
+      selectedProviderRuns,
+      workspaceNow,
     ],
   )
   const offerReleaseExecutionPreview = useMemo(
@@ -2385,8 +2434,6 @@ function App() {
     offerReleaseProviderOutcomeReadinessPersistenceKey,
     selectedId,
   ])
-  const offerReplySync = offerRepliesById[selectedId]
-  const offerReplySnapshot = offerReplyPersistenceSnapshotsById[selectedId]
   const convexBridgeHealth = useMemo(() => summarizeBrowserConvexBridgeHealth(), [])
   const convexRuntimeConfigHealth = useMemo(
     () =>
@@ -3013,6 +3060,7 @@ function App() {
           {activeView === "triage" ? (
             <TriageView
               actions={selectedActions}
+              auditFeed={selectedWorkspaceAuditFeed}
               followUpNow={queueNow}
               followUpReplySync={offerReplySync}
               handoffDraft={handoffDraft}
@@ -5266,6 +5314,7 @@ function mergeProviderRunAudits(localAudits: ProviderRunAudit[], persistedAudits
 
 function TriageView({
   actions,
+  auditFeed,
   followUpNow,
   followUpReplySync,
   handoffDraft,
@@ -5282,6 +5331,7 @@ function TriageView({
   status,
 }: {
   actions: WorkspaceActionRecord[]
+  auditFeed: WorkspaceAuditFeed
   followUpNow: string
   followUpReplySync?: GmailOfferReplySyncResult
   handoffDraft: string
@@ -5482,6 +5532,7 @@ function TriageView({
         ))}
       </div>
       <ActionTimeline actions={actions} />
+      <WorkspaceAuditFeedPanel feed={auditFeed} />
     </div>
   )
 }
@@ -6182,6 +6233,70 @@ function ActionTimeline({ actions }: { actions: WorkspaceActionRecord[] }) {
       )}
     </section>
   )
+}
+
+function WorkspaceAuditFeedPanel({ feed }: { feed: WorkspaceAuditFeed }) {
+  return (
+    <section className="workspace-audit-feed" aria-label="Workspace audit feed">
+      <div className="section-title">
+        <div>
+          <h3>Workspace audit feed</h3>
+          <span className="eyebrow">{feed.auditVersion}</span>
+        </div>
+        <span className="queue-count">{feed.summary.eventCount}</span>
+      </div>
+      <div className="workspace-audit-summary">
+        <Metric label="Events" value={String(feed.summary.eventCount)} />
+        <Metric label="Attention" value={String(feed.summary.attentionCount)} />
+        <Metric label="Blocked" value={String(feed.summary.blockedCount)} />
+        <Metric label="Latest" value={feed.summary.latestEventAt ? formatShortDateTime(feed.summary.latestEventAt) : "None"} />
+      </div>
+      {feed.events.length === 0 ? (
+        <div className="empty-action-state">No audit events for this RFQ yet.</div>
+      ) : (
+        <div className="workspace-audit-list">
+          {feed.events.map((event) => (
+            <WorkspaceAuditFeedRow event={event} key={event.key} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function WorkspaceAuditFeedRow({ event }: { event: WorkspaceAuditEvent }) {
+  return (
+    <article className="workspace-audit-row" data-severity={event.severity} data-source={event.source}>
+      <span className="integration-source-icon" aria-hidden="true">
+        <WorkspaceAuditEventIcon event={event} />
+      </span>
+      <div>
+        <strong>{event.label}</strong>
+        <span>{event.message}</span>
+        {event.actor ? <small>{event.actor}</small> : null}
+      </div>
+      <span className="integration-source-status">
+        {humanizeKey(event.source)}
+        <small>{formatShortDateTime(event.occurredAt)}</small>
+      </span>
+    </article>
+  )
+}
+
+function WorkspaceAuditEventIcon({ event }: { event: WorkspaceAuditEvent }) {
+  if (event.source === "calendar_follow_up") {
+    return <CalendarDays aria-hidden="true" />
+  }
+  if (event.source === "connector" || event.source === "offer_reply") {
+    return <Mail aria-hidden="true" />
+  }
+  if (event.source === "provider_run") {
+    return <ShieldCheck aria-hidden="true" />
+  }
+  if (event.severity === "blocked" || event.severity === "attention") {
+    return <AlertTriangle aria-hidden="true" />
+  }
+  return <CheckCircle2 aria-hidden="true" />
 }
 
 function WorkloadPanel({
