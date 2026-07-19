@@ -3690,6 +3690,20 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.workspace-audit-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-audit-actions p {
+  color: oklch(0.43 0.025 250);
+  font-size: 0.76rem;
+  font-weight: 750;
+  margin: 0;
+}
+
 .workspace-audit-list {
   display: grid;
   gap: 8px;
@@ -8012,6 +8026,7 @@
   .rfq-readiness-summary,
   .rfq-readiness-checks,
   .workspace-audit-summary,
+  .workspace-audit-actions,
   .workspace-audit-row,
   .offer-export-summary,
   .offer-draft-grid,

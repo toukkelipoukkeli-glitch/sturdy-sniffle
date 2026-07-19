@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `fea41ff` (`Surface workspace audit feed (#404)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/workspace-audit-feed-copy` adds a deterministic copy/export action to the selected-RFQ audit feed without live connector writes.
 - Latest merged sequence:
   - `#404` surfaces selected-RFQ workspace audit feed visibility in Triage from existing deterministic local/provider/calendar records with desktop/mobile Playwright coverage.
   - `#403` refreshes the autonomous handoff after the demo import review UI slice.
