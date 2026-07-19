@@ -730,6 +730,7 @@ function calendarProviderOutcomeReadSource(
           ? readSync.persistedBatchCount
           : readSync.localBatchCount,
     detail: calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(readSync),
+    diagnosticExport: calendarProviderOutcomeReadDiagnosticExport(readSync, actions),
     key: "calendar_provider_outcome_reads",
     label: "Calendar outcome reads",
     severity: readSync.status === "convex" ? "healthy" : "attention",
@@ -780,6 +781,20 @@ function calendarProviderOutcomeReadActions(
         },
       ]
   }
+}
+
+function calendarProviderOutcomeReadDiagnosticExport(
+  readSync: CalendarFollowUpRescheduleProviderOutcomeReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Calendar provider outcome read diagnostics",
+    `Status: ${readSync.status}`,
+    `Batches: persisted ${readSync.persistedBatchCount}, local ${readSync.localBatchCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${calendarFollowUpRescheduleProviderOutcomeReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
 }
 
 function overallStatus(sources: IntegrationStatusSource[]): IntegrationHealthStatus {
