@@ -6236,6 +6236,12 @@ function ActionTimeline({ actions }: { actions: WorkspaceActionRecord[] }) {
 }
 
 function WorkspaceAuditFeedPanel({ feed }: { feed: WorkspaceAuditFeed }) {
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopyAuditFeed = async () => {
+    const copied = await copyTextToClipboard(formatWorkspaceAuditFeedExport(feed))
+    setCopyFeedback(copied ? "copied" : "error")
+  }
+
   return (
     <section className="workspace-audit-feed" aria-label="Workspace audit feed">
       <div className="section-title">
@@ -6244,6 +6250,19 @@ function WorkspaceAuditFeedPanel({ feed }: { feed: WorkspaceAuditFeed }) {
           <span className="eyebrow">{feed.auditVersion}</span>
         </div>
         <span className="queue-count">{feed.summary.eventCount}</span>
+      </div>
+      <div className="workspace-audit-actions">
+        <Button onClick={() => void handleCopyAuditFeed()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {copyFeedback === "copied" ? "Copied" : "Copy audit feed"}
+        </Button>
+        <p aria-live="polite" className={copyFeedback === "error" ? "is-error" : ""} role="status">
+          {copyFeedback === "copied"
+            ? "Workspace audit feed copied for review."
+            : copyFeedback === "error"
+              ? "Copy unavailable; inspect the audit feed manually."
+              : "Copy the selected RFQ audit feed for operator review."}
+        </p>
       </div>
       <div className="workspace-audit-summary">
         <Metric label="Events" value={String(feed.summary.eventCount)} />
@@ -6262,6 +6281,30 @@ function WorkspaceAuditFeedPanel({ feed }: { feed: WorkspaceAuditFeed }) {
       )}
     </section>
   )
+}
+
+function formatWorkspaceAuditFeedExport(feed: WorkspaceAuditFeed): string {
+  const lines = [
+    `FactoryBid workspace audit feed ${feed.auditVersion}`,
+    `Generated: ${feed.generatedAt}`,
+    `Events: ${feed.summary.eventCount}`,
+    `Attention: ${feed.summary.attentionCount}`,
+    `Blocked: ${feed.summary.blockedCount}`,
+    `Latest: ${feed.summary.latestEventAt ?? "none"}`,
+  ]
+
+  if (feed.events.length === 0) {
+    lines.push("No audit events for this RFQ yet.")
+  } else {
+    lines.push(
+      ...feed.events.map(
+        (event) =>
+          `- [${event.severity}] ${event.occurredAt} ${event.source}/${event.status ?? "event"}: ${event.label} - ${event.message}`,
+      ),
+    )
+  }
+
+  return `${lines.join("\n")}\n`
 }
 
 function WorkspaceAuditFeedRow({ event }: { event: WorkspaceAuditEvent }) {

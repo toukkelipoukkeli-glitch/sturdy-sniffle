@@ -2627,6 +2627,11 @@ describe("FactoryBid workspace (component)", () => {
 
   it("surfaces selected RFQ workspace audit feed in triage", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     render(<App />)
 
     await user.click(screen.getByRole("button", { name: "Triage" }))
@@ -2644,6 +2649,18 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(auditFeed).toHaveTextContent("Detected CNC milling RFQ, 25 pcs, aluminum 6082, STEP and drawing attached.")
     expect(auditFeed).toHaveTextContent("provider run")
+
+    await user.click(within(auditFeed).getByRole("button", { name: "Copy audit feed" }))
+
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain("FactoryBid workspace audit feed workspace-audit-feed.v1")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Events: 2")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Attention: 2")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Blocked: 0")
+    expect(writeText.mock.calls[0]?.[0]).toContain(
+      "[attention] 2026-06-20T05:31:02.000Z provider_run/succeeded: mock summarize",
+    )
+    expect(auditFeed).toHaveTextContent("Workspace audit feed copied for review.")
   })
 
   it("surfaces overdue calendar follow-up reschedule previews", async () => {
