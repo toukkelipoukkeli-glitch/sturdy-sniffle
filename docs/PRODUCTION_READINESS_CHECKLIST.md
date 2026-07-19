@@ -103,7 +103,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ CI covers lint / unit / e2e / build (`.github/workflows/ci.yml`).
 - 🟡 **Convex codegen/backend typecheck is a CI gate** — deferred: needs either committed `convex/_generated` or a `CONVEX_DEPLOY_KEY` secret (cloud auth), neither available without a policy change. Codegen works locally (`bun run convex:codegen`, exit 0, no drift). Tracked as a secret-gated follow-up.
 - ✅ **Component/unit coverage for `App.tsx`** — `src/App.test.tsx` renders the workspace in jsdom and covers the quote recompute, queue filtering, and view switching; test setup now auto-cleans React trees between tests. (Slice D)
-- 🟡 **e2e breadth** — manual creation and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; multi-process and error-state e2e coverage remain pending. → grows with each slice
+- 🟡 **e2e breadth** — manual creation, desktop/mobile validation recovery, and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; multi-process and broader error-state e2e coverage remain pending. → grows with each slice
 
 ## Cross-cutting correctness
 
