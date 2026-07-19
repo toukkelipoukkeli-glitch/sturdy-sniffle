@@ -97,6 +97,7 @@ import {
   type OfferFollowUpActivityReadinessStatus,
 } from "./domain/offers/offerFollowUpActivityReadiness"
 import {
+  buildOfferFollowUpActivityReadinessHistoryExportSummary,
   summarizeOfferFollowUpActivityReadinessSync,
   summarizeOfferFollowUpActivityReadinessHistory,
   type OfferFollowUpActivityReadinessHistorySummary,
@@ -10469,10 +10470,16 @@ function OfferFollowUpActivityReadinessHistoryPanel({
     .filter((fallback) => fallbackFilter === "all" || fallback.operation === fallbackFilter)
   const visibleFallbacks = filteredFallbacks.slice(0, 6)
   const hiddenFallbackCount = Math.max(0, filteredFallbacks.length - visibleFallbacks.length)
+  const historyExportSummary = buildOfferFollowUpActivityReadinessHistoryExportSummary(history)
   const readModelExportSummary = buildOfferFollowUpActivityReadinessReadModelExportSummary(readModel)
   const syncHealthExportSummary = buildOfferFollowUpActivityReadinessSyncHealthExportSummary(syncHealth)
+  const [historyCopyFeedback, setHistoryCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
   const [readModelCopyFeedback, setReadModelCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
   const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopyHistorySummary = async () => {
+    const copied = await copyTextToClipboard(historyExportSummary)
+    setHistoryCopyFeedback(copied ? "copied" : "error")
+  }
   const handleCopyReadModelSummary = async () => {
     const copied = await copyTextToClipboard(readModelExportSummary)
     setReadModelCopyFeedback(copied ? "copied" : "error")
@@ -10504,6 +10511,19 @@ function OfferFollowUpActivityReadinessHistoryPanel({
         <Metric label="Partial" value={String(history.partialRecordCount)} />
         <Metric label="Review" value={String(history.reviewRecordCount)} />
         <Metric label="Missing" value={String(history.missingTaskTotal)} />
+      </div>
+      <div className="offer-follow-up-readiness-history-actions">
+        <Button onClick={() => void handleCopyHistorySummary()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {historyCopyFeedback === "copied" ? "Copied" : "Copy history summary"}
+        </Button>
+        <small role="status">
+          {historyCopyFeedback === "copied"
+            ? "Readiness history summary copied for diagnostics."
+            : historyCopyFeedback === "error"
+              ? "Copy unavailable; select the readiness history details manually."
+              : "Copy a deterministic readiness history summary for diagnostics."}
+        </small>
       </div>
       <div className="offer-follow-up-readiness-sync-summary" aria-label="Follow-up readiness sync source">
         <Metric label="Sync source" value={syncLabel} />

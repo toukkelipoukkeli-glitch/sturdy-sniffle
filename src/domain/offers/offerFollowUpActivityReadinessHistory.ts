@@ -96,6 +96,27 @@ export function summarizeOfferFollowUpActivityReadinessHistory(
   }
 }
 
+export function buildOfferFollowUpActivityReadinessHistoryExportSummary(
+  history: OfferFollowUpActivityReadinessHistorySummary,
+): string {
+  const lines = [
+    `Follow-up readiness history: ${history.historyVersion}`,
+    `Records: total ${history.totalReadinessRecords}, recorded ${history.recordedRecordCount}, partial ${history.partialRecordCount}, pending ${history.pendingRecordCount}, review ${history.reviewRecordCount}`,
+    `Task gaps: missing ${history.missingTaskTotal}, unexpected ${history.unexpectedTaskTotal}, unmatched activity ${history.unmatchedActivityTotal}`,
+    `Latest recorded at: ${history.latestRecordedAt ?? "none"}`,
+  ]
+
+  if (history.currentReadiness) {
+    lines.push(
+      `Current readiness: ${history.currentReadiness.status} ${history.currentReadiness.recordedTaskCount}/${history.currentReadiness.expectedTaskCount} tasks ${history.currentReadiness.readinessKey}`,
+    )
+  } else {
+    lines.push("Current readiness: none")
+  }
+
+  return lines.join("\n")
+}
+
 export function summarizeOfferFollowUpActivityReadinessSync({
   convexOfferId,
   convexRfqId,

@@ -6212,6 +6212,7 @@
   overflow-wrap: anywhere;
 }
 
+.offer-follow-up-readiness-history-actions,
 .offer-follow-up-readiness-read-model-actions,
 .offer-follow-up-readiness-sync-actions {
   align-items: center;
@@ -6221,6 +6222,7 @@
   margin-top: 4px;
 }
 
+.offer-follow-up-readiness-history-actions small,
 .offer-follow-up-readiness-read-model-actions small,
 .offer-follow-up-readiness-sync-actions small {
   min-width: min(100%, 220px);

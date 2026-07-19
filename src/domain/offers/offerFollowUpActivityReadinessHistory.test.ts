@@ -7,6 +7,7 @@ import {
   type OfferFollowUpActivityReadiness,
 } from "./offerFollowUpActivityReadiness"
 import {
+  buildOfferFollowUpActivityReadinessHistoryExportSummary,
   summarizeOfferFollowUpActivityReadinessSync,
   summarizeOfferFollowUpActivityReadinessHistory,
   type OfferFollowUpActivityReadinessHistoryRecord,
@@ -66,6 +67,34 @@ describe("offer follow-up activity readiness history", () => {
       unexpectedTaskTotal: 0,
       unmatchedActivityTotal: 0,
     })
+  })
+
+  it("builds a deterministic readiness history export summary", () => {
+    const summary = summarizeOfferFollowUpActivityReadinessHistory(historyRecords(), "readiness:offer-204:recorded")
+
+    expect(buildOfferFollowUpActivityReadinessHistoryExportSummary(summary)).toBe(
+      [
+        "Follow-up readiness history: offer-follow-up-activity-readiness-history.v1",
+        "Records: total 4, recorded 1, partial 1, pending 1, review 1",
+        "Task gaps: missing 1, unexpected 1, unmatched activity 0",
+        "Latest recorded at: 2026-07-03T07:10:00.000Z",
+        "Current readiness: recorded 2/2 tasks readiness:offer-204:recorded",
+      ].join("\n"),
+    )
+  })
+
+  it("builds a deterministic empty readiness history export summary", () => {
+    const summary = summarizeOfferFollowUpActivityReadinessHistory(undefined, "readiness:missing")
+
+    expect(buildOfferFollowUpActivityReadinessHistoryExportSummary(summary)).toBe(
+      [
+        "Follow-up readiness history: offer-follow-up-activity-readiness-history.v1",
+        "Records: total 0, recorded 0, partial 0, pending 0, review 0",
+        "Task gaps: missing 0, unexpected 0, unmatched activity 0",
+        "Latest recorded at: none",
+        "Current readiness: none",
+      ].join("\n"),
+    )
   })
 
   it("summarizes local fallback readiness sync records", () => {

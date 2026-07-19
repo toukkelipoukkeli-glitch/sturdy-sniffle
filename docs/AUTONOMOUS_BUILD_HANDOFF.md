@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b458c02` (`Add follow-up readiness integration diagnostics (#384)`).
+- Main branch checkpoint: `5a7adbe` (`Refresh follow-up readiness diagnostics handoff (#385)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/followup-readiness-history-export` adds a deterministic follow-up readiness history export/copy path without live connector writes.
 - Latest merged sequence:
+  - `#385` refreshes the autonomous handoff after the follow-up readiness Integration health diagnostics slice.
   - `#384` makes the Integration health follow-up readiness persisted-read summary copyable without live connector writes.
   - `#383` refreshes the autonomous handoff after the follow-up readiness Integration health slice.
   - `#382` surfaces the deterministic follow-up readiness persisted-read model in Integration health without live connector writes.
