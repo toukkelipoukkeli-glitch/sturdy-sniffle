@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test"
 
+const operatorViewports = [
+  { label: "desktop", size: { width: 1440, height: 1000 } },
+  { label: "mobile", size: { width: 390, height: 900 } },
+]
+
 async function openCreateRfqDialog(page: Page) {
   await page.goto("/")
   await page.getByLabel("RFQ queue").getByRole("button", { name: "New RFQ" }).click()
@@ -44,6 +49,52 @@ test("creates a manual RFQ and surfaces it in the queue", async ({ page }) => {
   await expect(queue.getByRole("button", { name: /Helsinki Robotics/ })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Gripper mount" })).toBeVisible()
 })
+
+for (const viewport of operatorViewports) {
+  test(`creates a manual RFQ and exposes offer copy controls on ${viewport.label}`, async ({ context, page }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"])
+    await page.setViewportSize(viewport.size)
+    await page.goto("/")
+    const queue = page.getByLabel("RFQ queue")
+
+    await queue.getByRole("button", { name: "New RFQ" }).click()
+    const dialog = page.getByRole("dialog", { name: "Create RFQ" })
+    await dialog.getByLabel(/Customer/).fill("Vaasa Pumps")
+    await dialog.getByLabel(/Part number/).fill("VP-42")
+    await dialog.getByLabel("Subject").fill("Seal inspection cover")
+    await dialog.getByLabel("Material").selectOption({ label: "Aluminum 6082" })
+    await dialog.getByLabel("Quantity").fill("24")
+    await dialog.getByRole("button", { name: "Create RFQ" }).click()
+
+    const createdRfq = queue.getByRole("button", { name: /Vaasa Pumps/ })
+    await expect(createdRfq).toBeVisible()
+    await createdRfq.click()
+    await expect(page.getByRole("heading", { name: "Seal inspection cover" })).toBeVisible()
+    await expect(page.getByLabel("Selected RFQ")).toContainText("MANUAL")
+
+    await page.getByRole("button", { exact: true, name: "Offer" }).click()
+    await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
+    await expect(page.getByLabel("Plain text offer")).toHaveValue(/Vaasa Pumps/)
+    await expect(page.getByLabel("Plain text offer")).toHaveValue(/Seal inspection cover/)
+
+    const exportActions = page.getByLabel("Offer export actions")
+    await expect(exportActions.getByRole("button", { name: "Copy text" })).toBeVisible()
+    await expect(exportActions.getByRole("button", { name: "Download .txt" })).toBeVisible()
+    await expect(exportActions.getByRole("button", { name: "Download PDF" })).toBeVisible()
+    await exportActions.getByRole("button", { name: "Copy text" }).click()
+    await expect(exportActions.getByRole("button", { name: "Copied" })).toBeVisible()
+    await expect(exportActions).toContainText("Offer text copied to the clipboard.")
+    const copiedOffer = await page.evaluate(() => navigator.clipboard.readText())
+    expect(copiedOffer).toContain("Vaasa Pumps")
+    expect(copiedOffer).toContain("Seal inspection cover")
+    await expect(page.getByLabel("Offer export history")).toContainText(/Copied OFFER-[A-Z0-9-]+ plain text\./)
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    )
+    expect(hasHorizontalOverflow).toBe(false)
+  })
+}
 
 test("edits selected RFQ intake fields inline", async ({ page }) => {
   await page.goto("/")
