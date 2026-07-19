@@ -27,6 +27,19 @@ export interface DemoWorkspaceImportPlan {
   operations: DemoWorkspaceImportOperation[]
 }
 
+export type DemoWorkspaceImportReviewStatus = "blocked" | "ready"
+
+export interface DemoWorkspaceImportReview {
+  importPlanVersion: typeof DEMO_WORKSPACE_IMPORT_PLAN_VERSION
+  status: DemoWorkspaceImportReviewStatus
+  blockerLabels: string[]
+  nextOperatorMessage: string
+  operationCount: number
+  operationCounts: Record<DemoWorkspaceImportOperationKind, number>
+  fingerprint?: string
+  summaryText?: string
+}
+
 export interface DemoWorkspaceSeedValidationIssue {
   path: string
   message: string
@@ -129,6 +142,35 @@ export function parseDemoWorkspaceSeedJson(seedJson: string): DemoWorkspaceSeed 
 
 export function buildDemoWorkspaceImportPlanFromJson(seedJson: string): DemoWorkspaceImportPlan {
   return buildDemoWorkspaceImportPlan(parseDemoWorkspaceSeedJson(seedJson))
+}
+
+export function reviewDemoWorkspaceImportFromJson(seedJson: string): DemoWorkspaceImportReview {
+  try {
+    const plan = buildDemoWorkspaceImportPlanFromJson(seedJson)
+    return {
+      importPlanVersion: DEMO_WORKSPACE_IMPORT_PLAN_VERSION,
+      status: "ready",
+      blockerLabels: [],
+      nextOperatorMessage: `Review ${plan.operations.length} deterministic demo import operations before applying them to a workspace.`,
+      operationCount: plan.operations.length,
+      operationCounts: completeOperationCounts(plan.operations),
+      fingerprint: fingerprintDemoWorkspaceImportPlan(plan),
+      summaryText: summarizeDemoWorkspaceImportPlan(plan),
+    }
+  } catch (error) {
+    const issues =
+      error instanceof DemoWorkspaceSeedValidationError
+        ? error.issues
+        : [{ path: "$", message: error instanceof Error ? error.message : "must be a valid demo workspace seed" }]
+    return {
+      importPlanVersion: DEMO_WORKSPACE_IMPORT_PLAN_VERSION,
+      status: "blocked",
+      blockerLabels: issues.map((issue) => `${issue.path} ${issue.message}`),
+      nextOperatorMessage: `Fix ${issues.length} demo seed validation issue${issues.length === 1 ? "" : "s"} before import planning.`,
+      operationCount: 0,
+      operationCounts: emptyOperationCounts(),
+    }
+  }
 }
 
 export function fingerprintDemoWorkspaceImportPlan(plan: DemoWorkspaceImportPlan): string {
@@ -412,6 +454,18 @@ function countOperations(operations: DemoWorkspaceImportOperation[]): Partial<Re
     counts[operation.kind] = (counts[operation.kind] ?? 0) + 1
     return counts
   }, {})
+}
+
+function completeOperationCounts(operations: DemoWorkspaceImportOperation[]): Record<DemoWorkspaceImportOperationKind, number> {
+  const counts = countOperations(operations)
+  return Object.fromEntries(operationOrder.map((kind) => [kind, counts[kind] ?? 0])) as Record<
+    DemoWorkspaceImportOperationKind,
+    number
+  >
+}
+
+function emptyOperationCounts(): Record<DemoWorkspaceImportOperationKind, number> {
+  return Object.fromEntries(operationOrder.map((kind) => [kind, 0])) as Record<DemoWorkspaceImportOperationKind, number>
 }
 
 function operationKey(kind: DemoWorkspaceImportOperationKind, id: string) {
