@@ -4755,6 +4755,7 @@ function connectorLinkDrilldownFilterLabel(
 
 function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
   const [diagnosticCopyFeedback, setDiagnosticCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const diagnosticCopy = integrationSourceDiagnosticCopy(source)
   const handleCopyDiagnosticExport = async () => {
     if (!source.diagnosticExport) {
       return
@@ -4796,14 +4797,14 @@ function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
           <div className="integration-source-copy-actions">
             <Button onClick={() => void handleCopyDiagnosticExport()} size="sm" type="button" variant="outline">
               <Copy aria-hidden="true" />
-              {diagnosticCopyFeedback === "copied" ? "Copied" : "Copy bridge diagnostics"}
+              {diagnosticCopyFeedback === "copied" ? "Copied" : diagnosticCopy.buttonLabel}
             </Button>
             <small role="status">
               {diagnosticCopyFeedback === "copied"
-                ? "Convex bridge diagnostics copied."
+                ? diagnosticCopy.copiedMessage
                 : diagnosticCopyFeedback === "error"
-                  ? "Copy unavailable; inspect the bridge status details manually."
-                  : "Copy the Convex bridge capability diagnostic export."}
+                  ? diagnosticCopy.errorMessage
+                  : diagnosticCopy.idleMessage}
             </small>
           </div>
         ) : null}
@@ -4814,6 +4815,33 @@ function IntegrationSourceRow({ source }: { source: IntegrationStatusSource }) {
       </span>
     </article>
   )
+}
+
+function integrationSourceDiagnosticCopy(source: IntegrationStatusSource) {
+  if (source.key === "convex_bridge") {
+    return {
+      buttonLabel: "Copy bridge diagnostics",
+      copiedMessage: "Convex bridge diagnostics copied.",
+      errorMessage: "Copy unavailable; inspect the bridge status details manually.",
+      idleMessage: "Copy the Convex bridge capability diagnostic export.",
+    }
+  }
+
+  if (source.key === "calendar_provider_outcome_reads") {
+    return {
+      buttonLabel: "Copy outcome read diagnostics",
+      copiedMessage: "Calendar outcome read diagnostics copied.",
+      errorMessage: "Copy unavailable; inspect the calendar outcome read details manually.",
+      idleMessage: "Copy the calendar provider outcome read diagnostic export.",
+    }
+  }
+
+  return {
+    buttonLabel: "Copy diagnostics",
+    copiedMessage: `${source.label} diagnostics copied.`,
+    errorMessage: `Copy unavailable; inspect the ${source.label.toLowerCase()} status details manually.`,
+    idleMessage: `Copy the ${source.label.toLowerCase()} diagnostic export.`,
+  }
 }
 
 function IntegrationSourceIcon({ source }: { source: IntegrationStatusSource }) {

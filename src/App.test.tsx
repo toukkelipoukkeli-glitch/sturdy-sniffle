@@ -2667,6 +2667,14 @@ describe("FactoryBid workspace (component)", () => {
         "Configure the optional browser bridge calendar outcome query before expecting persisted calendar provider outcome history.",
       )
     })
+    expect(integrationHealth).toHaveTextContent("Copy the calendar provider outcome read diagnostic export.")
+    await user.click(within(integrationHealth).getByRole("button", { name: "Copy outcome read diagnostics" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0]?.[0]).toContain("Calendar provider outcome read diagnostics")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Status: local")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 0, local 1, fallback 0")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Configure Convex read")
+    expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Batches 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Expected 1")
     expect(providerOutcomeHistorySummary).toHaveTextContent("Created 1")
@@ -2676,8 +2684,8 @@ describe("FactoryBid workspace (component)", () => {
       "Use the latest local provider outcomes when recording the calendar reschedule execution audit.",
     )
     await user.click(within(providerOutcomeHistorySummary).getByRole("button", { name: "Copy outcome history" }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
-    const [calendarProviderOutcomeHistoryExport] = writeText.mock.calls[0] ?? [""]
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2))
+    const [calendarProviderOutcomeHistoryExport] = writeText.mock.calls[1] ?? [""]
     expect(calendarProviderOutcomeHistoryExport).toContain("Calendar provider outcome history: ready")
     expect(calendarProviderOutcomeHistoryExport).toContain("Latest provider outcome batch: ready")
     expect(calendarProviderOutcomeHistoryExport).toContain("Command outcomes:")
@@ -2701,6 +2709,11 @@ describe("FactoryBid workspace (component)", () => {
 
   it("hydrates calendar provider outcome history through the Convex browser bridge", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
     const persistedStatus = buildCalendarFollowUpStatus({
       actions: [
@@ -2801,10 +2814,24 @@ describe("FactoryBid workspace (component)", () => {
         "Use persisted calendar provider outcome batches when reviewing reschedule execution audits; keep local fallback batches visible for comparison.",
       )
     })
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Copy the calendar provider outcome read diagnostic export.")
+    await user.click(within(integrationHealth).getByRole("button", { name: "Copy outcome read diagnostics" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0]?.[0]).toContain("Calendar provider outcome read diagnostics")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Status: convex")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 1, local 0, fallback 0")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Review Convex outcomes")
+    expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
   })
 
   it("shows local fallback sync status when calendar provider outcome hydration fails", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     const queryCalls: Array<{ args: Record<string, unknown>; queryRef: unknown }> = []
     window.__FACTORYBID_WORKSPACE_CONVEX__ = {
       calendarFollowUpRescheduleProviderOutcomesQueryRef: "listCalendarRescheduleProviderOutcomes",
@@ -2854,6 +2881,15 @@ describe("FactoryBid workspace (component)", () => {
         "Keep local calendar provider outcome batches visible and retry the optional Convex read before committing provider-side calendar changes.",
       )
     })
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Copy the calendar provider outcome read diagnostic export.")
+    await user.click(within(integrationHealth).getByRole("button", { name: "Copy outcome read diagnostics" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0]?.[0]).toContain("Calendar provider outcome read diagnostics")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Status: fallback")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 0, local 0, fallback 1")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Retry outcome read")
+    expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
   })
 
   it("records workspace actions with the deterministic local operator context", async () => {
