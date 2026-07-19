@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
+import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFollowUpActivityReadinessReadModel"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
@@ -788,6 +789,10 @@ describe("workspace integration status", () => {
 
     const status = summarizeWorkspaceIntegrationStatus({
       connectorSnapshot: connectorSnapshot("linked"),
+      followUpReadinessReadModel: followUpReadinessReadModel({
+        nextActionLabels: ["Check Convex readiness reads before trusting remote follow-up history."],
+        status: "fallback",
+      }),
       followUpReadinessSyncHealth: syncHealth,
       followUpScheduledAt: "2026-06-27T06:00:00.000Z",
       persistenceMode: "convex",
@@ -801,12 +806,52 @@ describe("workspace integration status", () => {
     expect(status.sources.find((source) => source.key === "persistence")).toMatchObject({
       count: 2,
       detail: "2 follow-up readiness persistence fallbacks recorded (read 1, write 1); latest fallback is stale.",
+      actions: [
+        {
+          detail: "Check Convex readiness reads before trusting remote follow-up history.",
+          key: "follow_up_readiness_read_1",
+          label: "Recover readiness reads",
+        },
+      ],
       severity: "blocked",
       status: "stale",
     })
     expect(status.warnings).toContain(
       "Persistence: 2 follow-up readiness persistence fallbacks recorded (read 1, write 1); latest fallback is stale.",
     )
+  })
+
+  it("surfaces ready follow-up readiness persisted reads on the persistence source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpReadinessReadModel: followUpReadinessReadModel({
+        canUsePersistedRead: true,
+        nextActionLabels: ["Use persisted follow-up readiness to avoid duplicate follow-up activity writes."],
+        source: "convex",
+        status: "ready",
+        totalReadinessRecords: 2,
+      }),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "persistence")).toMatchObject({
+      actions: [
+        {
+          detail: "Use persisted follow-up readiness to avoid duplicate follow-up activity writes.",
+          key: "follow_up_readiness_read_1",
+          label: "Use persisted readiness",
+        },
+      ],
+      detail: "Workspace writes are routed through Convex. Follow-up persisted read is ready from convex with 2 readiness records.",
+      severity: "healthy",
+      status: "convex",
+    })
   })
 
   it("surfaces Convex provider-run read health on the provider source", () => {
@@ -1068,6 +1113,24 @@ function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): Connecto
       },
     ],
     syncCount: 1,
+  }
+}
+
+function followUpReadinessReadModel(
+  overrides: Partial<OfferFollowUpActivityReadinessReadModel> = {},
+): OfferFollowUpActivityReadinessReadModel {
+  return {
+    blockerLabels: [],
+    canUsePersistedRead: false,
+    nextActionLabels: [],
+    operatorSummary: "No current follow-up readiness record is available across 0 persisted record(s).",
+    readModelVersion: "offer-follow-up-activity-readiness-read-model.v1",
+    source: "none",
+    status: "pending",
+    syncHealthStatus: "healthy",
+    totalReadinessRecords: 0,
+    warningLabels: [],
+    ...overrides,
   }
 }
 

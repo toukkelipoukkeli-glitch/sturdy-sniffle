@@ -1749,6 +1749,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessHistory).toHaveTextContent("Persisted read Ready")
     expect(readinessHistory).toHaveTextContent("Persisted read enabled")
     expect(readinessHistory).toHaveTextContent("Use persisted follow-up readiness to avoid duplicate follow-up activity writes.")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent(
+      "Workspace writes are kept in local fallback storage. Follow-up persisted read is ready from local with 2 readiness records.",
+    )
+    expect(integrationHealth).toHaveTextContent("Use persisted readiness")
     await user.click(within(readinessHistory).getByRole("button", { name: "Copy read summary" }))
     expect(writeText).toHaveBeenCalledTimes(1)
     expect(writeText.mock.calls[0]?.[0]).toContain("Follow-up readiness persisted read: ready")

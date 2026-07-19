@@ -1,5 +1,6 @@
 import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { ConnectorSyncPersistenceSnapshot } from "../integrations/connectorSyncPersistence"
+import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFollowUpActivityReadinessReadModel"
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
@@ -78,6 +79,7 @@ export interface WorkspaceIntegrationStatusInput {
   connectorErrorCount?: number
   connectorSnapshot: ConnectorSyncPersistenceSnapshot
   calendarProviderOutcomeReadSync?: CalendarFollowUpRescheduleProviderOutcomeReadSyncState
+  followUpReadinessReadModel?: OfferFollowUpActivityReadinessReadModel
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
@@ -103,6 +105,7 @@ export function summarizeWorkspaceIntegrationStatus({
   connectorErrorCount = 0,
   connectorSnapshot,
   calendarProviderOutcomeReadSync,
+  followUpReadinessReadModel,
   followUpReadinessSyncHealth,
   followUpScheduledAt,
   persistenceMode,
@@ -116,7 +119,7 @@ export function summarizeWorkspaceIntegrationStatus({
     ...(convexBridgeInstallPlan ? [convexBridgeInstallPlanSource(convexBridgeInstallPlan, convexBridgeInstallerDecision)] : []),
     ...(!convexBridgeInstallPlan && convexRuntimeConfigHealth ? [convexRuntimeSource(convexRuntimeConfigHealth)] : []),
     ...(!convexBridgeInstallPlan && convexBridgeHealth ? [convexBridgeSource(convexBridgeHealth)] : []),
-    persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth),
+    persistenceSource(persistenceMode, syncErrorCount, followUpReadinessSyncHealth, followUpReadinessReadModel),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
     offerReplySource(replySync),
@@ -425,6 +428,7 @@ function persistenceSource(
   mode: WorkspacePersistenceMode,
   syncErrorCount: number,
   followUpReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary | undefined,
+  followUpReadinessReadModel: OfferFollowUpActivityReadinessReadModel | undefined,
 ): IntegrationStatusSource {
   if (followUpReadinessSyncHealth && followUpReadinessSyncHealth.totalFallbackCount > 0) {
     const fallbackCount = followUpReadinessSyncHealth.totalFallbackCount
@@ -435,6 +439,7 @@ function persistenceSource(
       syncErrorCount > fallbackCount ? ` ${syncErrorCount} total workspace fallback operations recorded.` : ""
 
     return {
+      actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${fallbackCount} follow-up readiness persistence ${fallbackNoun} recorded (${operationText}); latest fallback is ${latestRecency}.${totalFallbackText}`,
       key: "persistence",
       label: "Persistence",
@@ -446,6 +451,7 @@ function persistenceSource(
 
   if (syncErrorCount > 0) {
     return {
+      actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
       detail: `${syncErrorCount} operation${syncErrorCount === 1 ? "" : "s"} used local fallback.`,
       key: "persistence",
       label: "Persistence",
@@ -457,21 +463,75 @@ function persistenceSource(
 
   if (mode === "convex") {
     return {
-      detail: "Workspace writes are routed through Convex.",
+      actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
+      detail: followUpReadinessReadModel
+        ? `Workspace writes are routed through Convex. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
+        : "Workspace writes are routed through Convex.",
       key: "persistence",
       label: "Persistence",
-      severity: "healthy",
+      severity: followUpReadinessIntegrationSeverity(followUpReadinessReadModel, "healthy"),
       status: "convex",
     }
   }
 
   return {
-    detail: "Workspace writes are kept in local fallback storage.",
+    actions: followUpReadinessIntegrationActions(followUpReadinessReadModel),
+    detail: followUpReadinessReadModel
+      ? `Workspace writes are kept in local fallback storage. ${followUpReadinessIntegrationDetail(followUpReadinessReadModel)}`
+      : "Workspace writes are kept in local fallback storage.",
     key: "persistence",
     label: "Persistence",
     severity: "attention",
     status: "local",
   }
+}
+
+function followUpReadinessIntegrationDetail(readModel: OfferFollowUpActivityReadinessReadModel): string {
+  const sourceText = readModel.source === "none" ? "no source" : readModel.source
+  const recordText = `${readModel.totalReadinessRecords} readiness record${readModel.totalReadinessRecords === 1 ? "" : "s"}`
+  if (readModel.canUsePersistedRead) {
+    return `Follow-up persisted read is ready from ${sourceText} with ${recordText}.`
+  }
+  return `Follow-up persisted read is ${readModel.status} from ${sourceText} with ${recordText}; local fallback remains guarded.`
+}
+
+function followUpReadinessIntegrationActions(
+  readModel: OfferFollowUpActivityReadinessReadModel | undefined,
+): IntegrationStatusSourceAction[] | undefined {
+  if (!readModel || readModel.nextActionLabels.length === 0) {
+    return undefined
+  }
+
+  return readModel.nextActionLabels.slice(0, 3).map((detail, index) => ({
+    detail,
+    key: `follow_up_readiness_read_${index + 1}`,
+    label: followUpReadinessIntegrationActionLabel(readModel.status),
+  }))
+}
+
+function followUpReadinessIntegrationActionLabel(status: OfferFollowUpActivityReadinessReadModel["status"]): string {
+  switch (status) {
+    case "ready":
+      return "Use persisted readiness"
+    case "partial":
+      return "Record missing readiness"
+    case "pending":
+      return "Read readiness history"
+    case "review":
+      return "Review readiness read"
+    case "fallback":
+      return "Recover readiness reads"
+  }
+}
+
+function followUpReadinessIntegrationSeverity(
+  readModel: OfferFollowUpActivityReadinessReadModel | undefined,
+  fallbackSeverity: IntegrationSourceSeverity,
+): IntegrationSourceSeverity {
+  if (!readModel || readModel.status === "ready") {
+    return fallbackSeverity
+  }
+  return readModel.status === "fallback" ? "blocked" : "attention"
 }
 
 function connectorSource(

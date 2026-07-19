@@ -2033,8 +2033,17 @@ function App() {
             event.offerId === localOfferFollowUpActivityReadinessOfferId && event.rfqId === localOfferFollowUpActivityReadinessRfqId,
         ),
         { now: workspaceNow },
-      ),
+    ),
     [followUpActivityReadinessSyncEvents, localOfferFollowUpActivityReadinessOfferId, localOfferFollowUpActivityReadinessRfqId, workspaceNow],
+  )
+  const offerFollowUpActivityReadinessReadModel = useMemo(
+    () =>
+      buildOfferFollowUpActivityReadinessReadModel({
+        history: offerFollowUpActivityReadinessHistory,
+        sync: offerFollowUpActivityReadinessSync,
+        syncHealth: followUpActivityReadinessSyncHealth,
+      }),
+    [offerFollowUpActivityReadinessHistory, offerFollowUpActivityReadinessSync, followUpActivityReadinessSyncHealth],
   )
   const recordFollowUpActivityReadinessSyncError = useCallback((operation: OfferFollowUpActivityReadinessSyncOperation) => {
     setPersistenceSyncErrorCount((count) => count + 1)
@@ -2406,6 +2415,7 @@ function App() {
         convexRuntimeConfigHealth,
         connectorErrorCount: selectedConnectorSyncErrorCount,
         connectorSnapshot: selectedConnectorSnapshot,
+        followUpReadinessReadModel: offerFollowUpActivityReadinessReadModel,
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
@@ -2421,6 +2431,7 @@ function App() {
       convexBridgeInstallerDecision,
       convexRuntimeConfigHealth,
       followUpActivityReadinessSyncHealth,
+      offerFollowUpActivityReadinessReadModel,
       offerFollowUpScheduledAt,
       offerReplySync,
       persistenceSyncErrorCount,
