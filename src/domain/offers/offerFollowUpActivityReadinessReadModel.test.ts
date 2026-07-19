@@ -12,6 +12,7 @@ import {
 } from "./offerFollowUpActivityReadinessSyncHealth"
 import {
   OFFER_FOLLOW_UP_ACTIVITY_READINESS_READ_MODEL_VERSION,
+  buildOfferFollowUpActivityReadinessReadModelExportSummary,
   buildOfferFollowUpActivityReadinessReadModel,
 } from "./offerFollowUpActivityReadinessReadModel"
 
@@ -188,6 +189,52 @@ describe("offer follow-up activity readiness read model", () => {
 
     expect(model.currentReadiness).toEqual(currentReadiness)
     expect(model.currentReadiness).not.toBe(currentReadiness)
+  })
+
+  it("builds a deterministic persisted-read export summary for ready coverage", () => {
+    const model = buildOfferFollowUpActivityReadinessReadModel({
+      history: historySummary({ currentReadiness: recordSummary({ status: "recorded" }) }),
+      sync: syncSummary({ currentSource: "convex", mode: "convex" }),
+      syncHealth: syncHealthSummary({ status: "healthy" }),
+    })
+
+    expect(buildOfferFollowUpActivityReadinessReadModelExportSummary(model)).toBe(
+      [
+        "Follow-up readiness persisted read: ready",
+        "Source: convex",
+        "Sync health: healthy",
+        "Records: 1",
+        "Persisted read enabled: yes",
+        "Summary: Current follow-up readiness is recorded from convex; persisted read coverage is ready.",
+        "Current readiness: recorded 2/2 tasks readiness:offer-204:recorded",
+        "Next actions: Use persisted follow-up readiness to avoid duplicate follow-up activity writes.",
+      ].join("\n"),
+    )
+  })
+
+  it("includes blockers and warnings in persisted-read export summaries", () => {
+    const model = buildOfferFollowUpActivityReadinessReadModel({
+      history: historySummary({ currentReadiness: recordSummary({ status: "recorded" }) }),
+      sync: syncSummary({ currentSource: "local", mode: "mixed" }),
+      syncHealth: syncHealthSummary({
+        operatorSummary: "Follow-up readiness persistence used 1 fallback (read 0, write 1); latest fallback is current.",
+        recoveryActionLabels: ["Retry readiness writes after Convex persistence recovers."],
+        severity: "warning",
+        status: "write_fallback",
+        totalFallbackCount: 1,
+        writeFallbackCount: 1,
+      }),
+    })
+
+    expect(buildOfferFollowUpActivityReadinessReadModelExportSummary(model)).toContain(
+      "Blockers: Follow-up readiness persisted reads are using local fallback.",
+    )
+    expect(buildOfferFollowUpActivityReadinessReadModelExportSummary(model)).toContain(
+      "Warnings: Follow-up readiness records are split across Convex/local/other sources. | Follow-up readiness persistence used 1 fallback (read 0, write 1); latest fallback is current.",
+    )
+    expect(buildOfferFollowUpActivityReadinessReadModelExportSummary(model)).toContain(
+      "Next actions: Retry readiness writes after Convex persistence recovers. | Keep local readiness history visible until persisted reads recover.",
+    )
   })
 })
 

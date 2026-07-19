@@ -1712,6 +1712,11 @@ describe("FactoryBid workspace (component)", () => {
 
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
     const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    })
     const { unmount } = render(<App />)
 
     await user.click(screen.getByRole("button", { name: "Triage" }))
@@ -1744,6 +1749,12 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessHistory).toHaveTextContent("Persisted read Ready")
     expect(readinessHistory).toHaveTextContent("Persisted read enabled")
     expect(readinessHistory).toHaveTextContent("Use persisted follow-up readiness to avoid duplicate follow-up activity writes.")
+    await user.click(within(readinessHistory).getByRole("button", { name: "Copy read summary" }))
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(writeText.mock.calls[0]?.[0]).toContain("Follow-up readiness persisted read: ready")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Persisted read enabled: yes")
+    expect(writeText.mock.calls[0]?.[0]).toContain("Current readiness: recorded 1/1 tasks")
+    expect(readinessHistory).toHaveTextContent("Persisted-read summary copied for diagnostics.")
   })
 
   it("rejects malformed restored follow-up activity readiness history snapshots", async () => {

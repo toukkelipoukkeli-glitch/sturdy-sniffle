@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `81c29a5` (`Add calendar outcome read diagnostics (#379)`).
+- Main branch checkpoint: `731bebb` (`Refresh calendar diagnostics handoff (#380)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/calendar-outcome-read-diagnostic-summary` adds a deterministic follow-up readiness persisted-read diagnostic export/copy path in the Offer readiness history panel.
 - Latest merged sequence:
+  - `#380` refreshes the autonomous handoff after the calendar outcome read diagnostics slice.
   - `#379` adds copyable Calendar outcome read diagnostics in Integration health while live Calendar writes remain deferred.
   - `#378` refreshes the autonomous handoff after the calendar outcome read recovery-actions slice.
   - `#377` adds Convex/local/pending/fallback next-action guidance for calendar provider outcome reads in Integration health while live Calendar writes remain deferred.
