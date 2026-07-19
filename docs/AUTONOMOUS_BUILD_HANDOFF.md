@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a51362f` (`Refresh manual RFQ e2e handoff (#393)`).
+- Main branch checkpoint: `8c48473` (`Add manual RFQ validation e2e (#394)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/manual-rfq-validation-e2e` (broadening deterministic Playwright coverage for manual RFQ validation recovery on desktop/mobile).
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#394` adds deterministic desktop/mobile Playwright coverage for manual RFQ due-date validation recovery, calendar draft surfacing, readiness warnings, and no-overflow checks.
   - `#393` refreshes the autonomous handoff after the manual RFQ offer export e2e slice.
   - `#392` broadens deterministic Playwright coverage for manual RFQ creation into queue selection plus Offer export copy controls on desktop and mobile.
   - `#391` refreshes the autonomous handoff after the follow-up history diagnostic copy-label slice.
