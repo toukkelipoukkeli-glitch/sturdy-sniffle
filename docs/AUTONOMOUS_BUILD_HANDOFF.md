@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `4ca1e98` (`Refresh restored readiness fallback handoff (#416)`).
+- Main branch checkpoint: `e353329` (`Add offer reply state filter e2e (#417)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#417` adds deterministic desktop/mobile Playwright coverage for Offer reply state filters, applied/warning rows, empty fallback rows, fallback Integration health copy, and no-overflow checks.
   - `#416` refreshes the autonomous handoff after the restored follow-up readiness fallback e2e slice.
   - `#415` extends deterministic desktop/mobile Playwright coverage for restored stale follow-up readiness read/write fallback history after reload, including critical persistence status, filter, copy/export, and Browser/Playwright fallback QA.
   - `#414` refreshes the autonomous handoff after the follow-up readiness fallback e2e slice.
