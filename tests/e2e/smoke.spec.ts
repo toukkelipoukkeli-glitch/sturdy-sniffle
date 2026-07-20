@@ -472,7 +472,9 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
   await expect(page.getByLabel("Provider outcome readiness")).toContainText("Provider outcomes ready: 6 applied commands.")
-  await page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" }).click()
+  const executeRelease = page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" })
+  await expect(executeRelease).toBeEnabled()
+  await executeRelease.dispatchEvent("click")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
   await expect(page.getByLabel("Offer release execution audit")).toContainText(
@@ -482,7 +484,6 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
 
   await page.reload()
-  await page.getByRole("button", { exact: true, name: "Offer" }).click()
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
   await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
   await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")

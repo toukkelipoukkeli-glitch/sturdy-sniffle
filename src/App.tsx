@@ -542,6 +542,7 @@ interface WorkspaceLocalState {
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
   offerLifecycleEventsById: Record<string, OfferLifecycleEventInput[]>
+  offerProviderReadinessSnapshotsById: Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
   followUpActivityReadinessHistoryById: Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
   followUpActivityReadinessSyncEvents: OfferFollowUpActivityReadinessSyncHealthEvent[]
   primaryAttachmentById: Record<string, string>
@@ -1142,7 +1143,7 @@ function App() {
   const providerRunAuditsRef = useRef<Record<string, ProviderRunAudit[]>>({})
   const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
     Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
-  >({})
+  >(workspaceLocalState?.offerProviderReadinessSnapshotsById ?? {})
   const offerProviderReadinessSnapshotsRef = useRef<Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>>({})
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
@@ -1241,6 +1242,7 @@ function App() {
       offerDraftEditsById,
       offerExportEventsById,
       offerLifecycleEventsById,
+      offerProviderReadinessSnapshotsById,
       followUpActivityReadinessHistoryById,
       followUpActivityReadinessSyncEvents,
       primaryAttachmentById,
@@ -1260,6 +1262,7 @@ function App() {
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    offerProviderReadinessSnapshotsById,
     followUpActivityReadinessHistoryById,
     followUpActivityReadinessSyncEvents,
     primaryAttachmentById,
@@ -3264,6 +3267,9 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
   const offerLifecycleEventsById = optionalRecordOfArrays(value.offerLifecycleEventsById, isOfferLifecycleEventInput)
+  const offerProviderReadinessSnapshotsById = optionalOfferProviderReadinessSnapshotsById(
+    value.offerProviderReadinessSnapshotsById,
+  )
   const followUpActivityReadinessHistoryById = optionalFollowUpActivityReadinessHistoryById(
     value.followUpActivityReadinessHistoryById,
   )
@@ -3282,6 +3288,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !offerDraftEditsById ||
     !offerExportEventsById ||
     !offerLifecycleEventsById ||
+    !offerProviderReadinessSnapshotsById ||
     !followUpActivityReadinessHistoryById ||
     !followUpActivityReadinessSyncEvents ||
     !primaryAttachmentById ||
@@ -3307,6 +3314,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     offerDraftEditsById,
     offerExportEventsById,
     offerLifecycleEventsById,
+    offerProviderReadinessSnapshotsById,
     followUpActivityReadinessHistoryById,
     followUpActivityReadinessSyncEvents,
     primaryAttachmentById,
@@ -3382,6 +3390,32 @@ function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => i
     return undefined
   }
   return Object.fromEntries(entries) as Record<string, T[]>
+}
+
+function optionalOfferProviderReadinessSnapshotsById(
+  value: unknown,
+): Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const normalized: Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot> = {}
+  for (const [rfqId, snapshot] of Object.entries(value)) {
+    if (!isObjectRecord(snapshot)) {
+      return undefined
+    }
+    try {
+      normalized[rfqId] = createLocalOfferReleaseProviderOutcomeReadinessReader({
+        initialSnapshot: snapshot as Partial<OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>,
+      }).snapshot()
+    } catch {
+      return undefined
+    }
+  }
+  return normalized
 }
 
 function optionalFollowUpActivityReadinessHistoryById(

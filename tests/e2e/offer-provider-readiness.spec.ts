@@ -1,0 +1,84 @@
+import { expect, test, type Page } from "@playwright/test"
+
+const operatorViewports = [
+  { label: "desktop", size: { width: 1440, height: 1000 } },
+  { label: "mobile", size: { width: 390, height: 900 } },
+]
+
+async function assertNoHorizontalOverflow(page: Page) {
+  const hasHorizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  )
+  expect(hasHorizontalOverflow).toBe(false)
+}
+
+async function prepareReviewedRelease(page: Page) {
+  await page.goto("/")
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+  await page.getByLabel("Quote release gate").getByRole("button", { name: "Mark reviewed" }).click()
+  await expect(page.getByLabel("Quote release gate")).toContainText("Reviewed by Sari")
+
+  await page.getByRole("button", { exact: true, name: "Triage" }).click()
+  await page.getByRole("button", { name: "Create follow-up" }).click()
+  await page.getByRole("button", { name: "Move to ready" }).click()
+  await page.getByRole("button", { exact: true, name: "Offer" }).click()
+}
+
+for (const viewport of operatorViewports) {
+  test.describe(`offer provider readiness on ${viewport.label}`, () => {
+    test.use({ viewport: viewport.size })
+
+    test("persists release provider readiness and local execution history after reload", async ({ page }) => {
+      await prepareReviewedRelease(page)
+
+      await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
+      await expect(page.getByLabel("Offer release send summary")).toContainText(
+        "Offer OFFER-204 is ready to send to sari.virtanen@example.test with OFFER-204-rev1.pdf.",
+      )
+
+      const emailDraftHistory = page.getByLabel("Offer email draft package history")
+      await expect(emailDraftHistory).toContainText("1 draft package")
+      await expect(emailDraftHistory).toContainText("Provider-safe")
+      await expect(emailDraftHistory).toContainText("sari.virtanen@example.test")
+      await expect(emailDraftHistory.getByLabel("Email draft package recipients")).toContainText("ready")
+
+      const providerOutcomeHistory = page.getByLabel("Offer provider outcome history")
+      await expect(providerOutcomeHistory).toContainText("1 outcome batch")
+      await expect(providerOutcomeHistory).toContainText("Provider-ready")
+      await expect(providerOutcomeHistory.getByLabel("Provider outcome command summaries")).toContainText("Email Draft")
+      await expect(providerOutcomeHistory.getByLabel("Provider outcome command summaries")).toContainText("Calendar Follow Up")
+
+      const readinessHistory = page.getByLabel("Readiness persistence history")
+      await expect(readinessHistory).toContainText("2 readiness records")
+      await expect(readinessHistory).toContainText("Recorded")
+      await expect(readinessHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
+      await expect(readinessHistory.locator(".metric", { hasText: /^Blocked 1$/ })).toBeVisible()
+      await expect(readinessHistory).toContainText("Current readiness recorded")
+      await expect(readinessHistory).toContainText("6/6 command outcomes recorded")
+
+      const executionAudit = page.getByLabel("Offer release execution audit")
+      await expect(executionAudit).toContainText("Dry-run prepared")
+      await expect(page.getByLabel("Provider outcome readiness")).toContainText("Provider outcomes ready: 6 applied commands.")
+      const executeRelease = executionAudit.getByRole("button", { name: "Execute release" })
+      await expect(executeRelease).toBeEnabled()
+      await executeRelease.dispatchEvent("click")
+      await expect(executionAudit).toContainText("Execution completed")
+      await expect(executionAudit.locator(".metric", { hasText: "Mode" })).toContainText("commit")
+      await expect(executionAudit).toContainText("Local adapter recorded the command; no external connector call was made.")
+      await expect(executionAudit.getByRole("button", { name: "Release executed" })).toBeDisabled()
+      await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
+
+      await page.reload()
+      await expect(page.getByLabel("Offer release execution audit")).toContainText("Execution completed")
+      await expect(page.getByLabel("Offer release execution audit").locator(".metric", { hasText: "Mode" })).toContainText("commit")
+      await expect(page.getByLabel("Offer release execution audit").getByRole("button", { name: "Release executed" })).toBeDisabled()
+      await expect(page.getByLabel("Offer release execution history")).toContainText("2 recorded runs")
+      const restoredReadinessHistory = page.getByLabel("Readiness persistence history")
+      await expect(restoredReadinessHistory).toContainText("2 readiness records")
+      await expect(restoredReadinessHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
+      await expect(restoredReadinessHistory.locator(".metric", { hasText: /^Blocked 1$/ })).toBeVisible()
+      await expect(restoredReadinessHistory).toContainText("Current readiness needs review")
+      await assertNoHorizontalOverflow(page)
+    })
+  })
+}
