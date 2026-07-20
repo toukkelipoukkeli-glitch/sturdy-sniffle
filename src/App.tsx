@@ -363,6 +363,7 @@ import {
   type CalendarFollowUpRescheduleExecutionReadModel,
 } from "./domain/workspace/calendarFollowUpRescheduleExecutionReadModel"
 import {
+  buildCalendarFollowUpRescheduleExecutionHistoryExportSummary,
   summarizeCalendarFollowUpRescheduleExecutionHistory,
   type CalendarFollowUpRescheduleExecutionHistorySummary,
 } from "./domain/workspace/calendarFollowUpRescheduleExecutionHistorySummary"
@@ -5705,6 +5706,10 @@ function CalendarFollowUpStatusPanel({
     () => summarizeCalendarFollowUpRescheduleExecutionHistory(rescheduleExecutionSnapshot),
     [rescheduleExecutionSnapshot],
   )
+  const rescheduleExecutionHistoryExportText = useMemo(
+    () => buildCalendarFollowUpRescheduleExecutionHistoryExportSummary(rescheduleExecutionSnapshot),
+    [rescheduleExecutionSnapshot],
+  )
   const rescheduleProviderOutcomes = useMemo(
     () =>
       buildCalendarFollowUpRescheduleProviderCommandOutcomes({
@@ -5860,7 +5865,10 @@ function CalendarFollowUpStatusPanel({
         readSync={providerOutcomeReadSync}
         summary={rescheduleProviderOutcomeHistorySummary}
       />
-      <CalendarFollowUpRescheduleExecutionHistorySummaryPanel summary={rescheduleExecutionHistorySummary} />
+      <CalendarFollowUpRescheduleExecutionHistorySummaryPanel
+        exportText={rescheduleExecutionHistoryExportText}
+        summary={rescheduleExecutionHistorySummary}
+      />
       <div className="calendar-follow-up-filters" aria-label="Calendar follow-up filters">
         {calendarFollowUpStatusFilters.map((statusFilter) => (
           <Button
@@ -6078,10 +6086,18 @@ function CalendarFollowUpRescheduleProviderOutcomeHistorySummaryPanel({
 }
 
 function CalendarFollowUpRescheduleExecutionHistorySummaryPanel({
+  exportText,
   summary,
 }: {
+  exportText: string
   summary: CalendarFollowUpRescheduleExecutionHistorySummary
 }) {
+  const [copyFeedback, setCopyFeedback] = useState<"copied" | "error" | "idle">("idle")
+  const handleCopyHistory = async () => {
+    const copied = await copyTextToClipboard(exportText)
+    setCopyFeedback(copied ? "copied" : "error")
+  }
+
   return (
     <div
       className="calendar-follow-up-reschedule-execution-history-summary"
@@ -6106,6 +6122,19 @@ function CalendarFollowUpRescheduleExecutionHistorySummaryPanel({
           ))}
         </ul>
       ) : null}
+      <div className="integration-source-copy-actions calendar-follow-up-reschedule-history-copy">
+        <Button onClick={() => void handleCopyHistory()} size="sm" type="button" variant="outline">
+          <Copy aria-hidden="true" />
+          {copyFeedback === "copied" ? "Copied" : "Copy execution history"}
+        </Button>
+        <small role="status">
+          {copyFeedback === "copied"
+            ? "Calendar reschedule execution history copied."
+            : copyFeedback === "error"
+              ? "Copy unavailable; inspect the execution history manually."
+              : "Copy the deterministic calendar reschedule execution history export."}
+        </small>
+      </div>
     </div>
   )
 }
