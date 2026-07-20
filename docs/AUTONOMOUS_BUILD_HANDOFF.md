@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0d598be` (`Add offer provider readiness e2e (#431)`).
+- Main branch checkpoint: `2cd6bc4` (`Add workspace error boundary e2e (#433)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#433` adds deterministic desktop/mobile Playwright coverage for workspace error-boundary recovery through a hidden one-shot render-failure fixture, reload recovery assertions, and Browser/Playwright fallback QA.
+  - `#432` refreshes the autonomous handoff after the offer provider readiness e2e slice.
   - `#431` persists restored offer provider-readiness snapshots in local workspace state and adds deterministic desktop/mobile Playwright coverage for provider-readiness release execution reload history.
   - `#430` refreshes the autonomous handoff after the offer export download e2e slice.
   - `#429` adds deterministic desktop/mobile Playwright coverage for offer `.txt` and real PDF downloads, persistent export history after reload, and no-overflow checks.
