@@ -7,6 +7,7 @@ const operatorSafeErrorMessage = "Workspace render failed. Please reload and con
 
 type WorkspaceErrorBoundaryProps = {
   children: ReactNode
+  onReset?: () => void
 }
 
 type WorkspaceErrorBoundaryState = {
@@ -29,6 +30,7 @@ class WorkspaceErrorBoundary extends Component<WorkspaceErrorBoundaryProps, Work
   }
 
   resetWorkspace = () => {
+    this.props.onReset?.()
     this.setState({ error: null, errorInfo: null })
   }
 
