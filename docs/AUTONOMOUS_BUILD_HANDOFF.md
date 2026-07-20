@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `149e387` (`Add calendar provider outcome history e2e (#439)`).
+- Main branch checkpoint: `2b0ba44` (`Add calendar reschedule execution history e2e (#441)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#441` adds deterministic desktop/mobile Playwright coverage and an operator copy action for calendar reschedule execution-history exports, including reload persistence and no-overflow checks.
+  - `#440` refreshes the autonomous handoff after the calendar provider outcome history e2e slice.
   - `#439` adds deterministic desktop/mobile Playwright coverage for calendar provider outcome history cards, ready/read-source copy, clipboard export, reload persistence, and no-overflow checks.
   - `#438` refreshes the autonomous handoff after the offer provider outcome history e2e slice.
   - `#437` adds deterministic desktop/mobile Playwright coverage for offer provider outcome history batches, command summaries, reload persistence, and no-overflow checks.
