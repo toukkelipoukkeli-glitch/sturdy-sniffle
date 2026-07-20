@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `19f20b3` (`Extract workspace audit feed export (#408)`).
+- Main branch checkpoint: `d166bae` (`Refresh workspace audit export handoff (#409)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/provider-read-fallback-e2e` adds deterministic desktop/mobile Playwright coverage for the provider-run read fallback diagnostics path.
 - Latest merged sequence:
+  - `#409` refreshes the autonomous handoff after the workspace audit feed export-domain slice.
   - `#408` moves the selected-RFQ audit-feed clipboard export into the deterministic domain helper layer with focused coverage.
   - `#407` refreshes the autonomous handoff after the workspace audit feed copy slice.
   - `#406` adds a deterministic copy/export action to the selected-RFQ workspace audit feed without live connector writes.
