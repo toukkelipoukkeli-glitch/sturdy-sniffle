@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `77782e9` (`[codex] Add provider read fallback e2e (#410)`).
+- Main branch checkpoint: `0f33f80` (`[codex] Refresh provider read fallback handoff (#411)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/followup-readiness-fallback-e2e` is adding deterministic desktop/mobile Playwright coverage for follow-up readiness fallback diagnostics without live connector writes.
 - Latest merged sequence:
+  - `#411` refreshes the autonomous handoff after the provider-read fallback e2e slice.
   - `#410` adds deterministic desktop/mobile Playwright coverage for the provider-run read fallback diagnostics path, including Integration health copy/export assertions and Browser/Playwright fallback QA.
   - `#409` refreshes the autonomous handoff after the workspace audit feed export-domain slice.
   - `#408` moves the selected-RFQ audit-feed clipboard export into the deterministic domain helper layer with focused coverage.
