@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d4f2f6b` (`Add offer email draft history e2e (#435)`).
+- Main branch checkpoint: `afc74d6` (`Add offer provider outcome history e2e (#437)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#437` adds deterministic desktop/mobile Playwright coverage for offer provider outcome history batches, command summaries, reload persistence, and no-overflow checks.
+  - `#436` refreshes the autonomous handoff after the offer email draft history e2e slice.
   - `#435` adds deterministic desktop/mobile Playwright coverage for offer email draft package history, provider-safe metrics, recipient readiness, reload persistence, and no-overflow checks.
   - `#434` refreshes the autonomous handoff after the workspace error-boundary e2e slice.
   - `#433` adds deterministic desktop/mobile Playwright coverage for workspace error-boundary recovery through a hidden one-shot render-failure fixture, reload recovery assertions, and Browser/Playwright fallback QA.
