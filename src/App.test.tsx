@@ -1741,6 +1741,69 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent("12 stale")
   })
 
+  it("restores connector sync snapshots with stale and blocked recovery actions", async () => {
+    const { unmount } = render(<App />)
+    const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
+    stored.connectorSnapshotsById = {
+      [stored.selectedId]: {
+        payloads: [
+          {
+            activities: [
+              {
+                actorName: "FactoryBid connector",
+                kind: "note",
+                message: "Restored connector recovery audit.",
+                rfqId: stored.selectedId,
+              },
+            ],
+            links: [
+              {
+                externalId: "thread-stale-001",
+                provider: "gmail",
+                rfqId: stored.selectedId,
+                syncStatus: "stale",
+              },
+              {
+                externalId: "calendar-blocked-001",
+                provider: "calendar",
+                rfqId: stored.selectedId,
+                syncStatus: "blocked",
+              },
+              {
+                externalId: "thread-shared-001",
+                provider: "gmail",
+                rfqId: "rfq-301",
+                syncStatus: "linked",
+              },
+              {
+                externalId: "thread-shared-001",
+                provider: "gmail",
+                rfqId: stored.selectedId,
+                syncStatus: "linked",
+              },
+            ],
+          },
+        ],
+        syncCount: 1,
+      },
+    }
+    window.localStorage.setItem("factorybid.workspace.v1", JSON.stringify(stored))
+    unmount()
+
+    render(<App />)
+    const connectorDrilldown = screen.getByLabelText("Connector link drill-down")
+    expect(connectorDrilldown).toHaveTextContent("Refresh Gmail sync for thread-stale-001.")
+    expect(connectorDrilldown).toHaveTextContent("Reconnect Calendar before resyncing calendar-blocked-001.")
+    expect(connectorDrilldown).toHaveTextContent("1 shared")
+    expect(connectorDrilldown).toHaveTextContent("Gmail message thread shared with 1 RFQ")
+
+    await userEvent.click(within(connectorDrilldown).getByRole("button", { name: "Attention 2" }))
+    const connectorRows = connectorDrilldown.querySelector(".connector-drilldown-list")
+    expect(connectorRows).toHaveTextContent("thread-stale-001")
+    expect(connectorRows).toHaveTextContent("calendar-blocked-001")
+    expect(connectorRows).not.toHaveTextContent("thread-shared-001")
+  })
+
   it("replays restored manual follow-up actions into local activity readiness after reload", async () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)
