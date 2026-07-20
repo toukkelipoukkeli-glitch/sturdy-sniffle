@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-19 Europe/Helsinki.
+Last refreshed: 2026-07-20 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d166bae` (`Refresh workspace audit export handoff (#409)`).
+- Main branch checkpoint: `77782e9` (`[codex] Add provider read fallback e2e (#410)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/provider-read-fallback-e2e` adds deterministic desktop/mobile Playwright coverage for the provider-run read fallback diagnostics path.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#410` adds deterministic desktop/mobile Playwright coverage for the provider-run read fallback diagnostics path, including Integration health copy/export assertions and Browser/Playwright fallback QA.
   - `#409` refreshes the autonomous handoff after the workspace audit feed export-domain slice.
   - `#408` moves the selected-RFQ audit-feed clipboard export into the deterministic domain helper layer with focused coverage.
   - `#407` refreshes the autonomous handoff after the workspace audit feed copy slice.
