@@ -45,6 +45,14 @@ import {
   type ConnectorRfqSyncRecord,
   type ConnectorRfqSyncResult,
 } from "./domain/integrations/connectorSync"
+import type {
+  ConvexConnectorActivityKind,
+  ConvexConnectorActivityPayload,
+  ConvexConnectorIntegrationLinkPayload,
+  ConvexConnectorProvider,
+  ConvexConnectorRfqSyncPayload,
+  ConvexConnectorSyncStatus,
+} from "./domain/integrations/convexConnectorSync"
 import {
   buildConnectorLinkDrilldown,
   type ConnectorLinkDrilldown,
@@ -539,6 +547,7 @@ interface WorkspaceLocalState {
   activeView: WorkspaceView
   cadReviewOverrideEventsById: Record<string, CadReviewOverrideEvent[]>
   cadReviewOverridesById: Record<string, CadReviewOverrideState>
+  connectorSnapshotsById: Record<string, ConnectorSyncPersistenceSnapshot>
   editsById: Record<string, Partial<QuoteEditState>>
   offerDraftEditsById: Record<string, Partial<OfferDraftEditState>>
   offerExportEventsById: Record<string, OfferExportHistoryEvent[]>
@@ -1124,7 +1133,9 @@ function App() {
   )
   const [cadReviewDraftById, setCadReviewDraftById] = useState<Record<string, string>>({})
   const [cadCorrectionDraftById, setCadCorrectionDraftById] = useState<Record<string, CadReviewCorrectionNotes>>({})
-  const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>({})
+  const [connectorSnapshotsById, setConnectorSnapshotsById] = useState<Record<string, ConnectorSyncPersistenceSnapshot>>(
+    workspaceLocalState?.connectorSnapshotsById ?? {},
+  )
   const [connectorSyncErrorCountById, setConnectorSyncErrorCountById] = useState<Record<string, number>>({})
   const [editsById, setEditsById] = useState<Record<string, Partial<QuoteEditState>>>(workspaceLocalState?.editsById ?? {})
   const [handoffDraftById, setHandoffDraftById] = useState<Record<string, string>>({})
@@ -1239,6 +1250,7 @@ function App() {
       activeView,
       cadReviewOverrideEventsById,
       cadReviewOverridesById,
+      connectorSnapshotsById,
       editsById,
       offerDraftEditsById,
       offerExportEventsById,
@@ -1259,6 +1271,7 @@ function App() {
     activeView,
     cadReviewOverrideEventsById,
     cadReviewOverridesById,
+    connectorSnapshotsById,
     editsById,
     offerDraftEditsById,
     offerExportEventsById,
@@ -3264,6 +3277,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
   const actionsById = optionalRecordOfArrays(value.actionsById, isWorkspaceActionRecord)
   const cadReviewOverrideEventsById = optionalRecordOfArrays(value.cadReviewOverrideEventsById, isCadReviewOverrideEvent)
   const cadReviewOverridesById = optionalRecordOfValues(value.cadReviewOverridesById, isCadReviewOverrideState)
+  const connectorSnapshotsById = optionalConnectorSnapshotsById(value.connectorSnapshotsById)
   const editsById = optionalRecordOfValues(value.editsById, isQuoteEditStatePatch)
   const offerDraftEditsById = optionalRecordOfValues(value.offerDraftEditsById, isOfferDraftEditStatePatch)
   const offerExportEventsById = optionalRecordOfArrays(value.offerExportEventsById, isOfferExportHistoryEvent)
@@ -3285,6 +3299,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     !actionsById ||
     !cadReviewOverrideEventsById ||
     !cadReviewOverridesById ||
+    !connectorSnapshotsById ||
     !editsById ||
     !offerDraftEditsById ||
     !offerExportEventsById ||
@@ -3311,6 +3326,7 @@ function parseWorkspaceLocalState(value: unknown): WorkspaceLocalState | undefin
     activeView,
     cadReviewOverrideEventsById,
     cadReviewOverridesById,
+    connectorSnapshotsById,
     editsById,
     offerDraftEditsById,
     offerExportEventsById,
@@ -3391,6 +3407,32 @@ function optionalRecordOfArrays<T>(value: unknown, isValue: (item: unknown) => i
     return undefined
   }
   return Object.fromEntries(entries) as Record<string, T[]>
+}
+
+function optionalConnectorSnapshotsById(
+  value: unknown,
+): Record<string, ConnectorSyncPersistenceSnapshot> | undefined {
+  if (value === undefined) {
+    return {}
+  }
+  if (!isObjectRecord(value)) {
+    return undefined
+  }
+
+  const normalized: Record<string, ConnectorSyncPersistenceSnapshot> = {}
+  for (const [rfqId, snapshot] of Object.entries(value)) {
+    if (!isConnectorSyncPersistenceSnapshot(snapshot)) {
+      return undefined
+    }
+    normalized[rfqId] = {
+      payloads: snapshot.payloads.map((payload) => ({
+        activities: payload.activities.map((activity) => ({ ...activity })),
+        links: payload.links.map((link) => ({ ...link })),
+      })),
+      syncCount: snapshot.syncCount,
+    }
+  }
+  return normalized
 }
 
 function optionalOfferProviderReadinessSnapshotsById(
@@ -3494,6 +3536,62 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
 
 function isRecordOfStrings(value: unknown): value is Record<string, string> {
   return isObjectRecord(value) && Object.values(value).every((item) => typeof item === "string")
+}
+
+function isConnectorSyncPersistenceSnapshot(value: unknown): value is ConnectorSyncPersistenceSnapshot {
+  return (
+    isObjectRecord(value) &&
+    isNonNegativeInteger(value.syncCount) &&
+    Array.isArray(value.payloads) &&
+    value.payloads.every(isConvexConnectorRfqSyncPayload)
+  )
+}
+
+function isConvexConnectorRfqSyncPayload(value: unknown): value is ConvexConnectorRfqSyncPayload {
+  return (
+    isObjectRecord(value) &&
+    Array.isArray(value.activities) &&
+    value.activities.every(isConvexConnectorActivityPayload) &&
+    Array.isArray(value.links) &&
+    value.links.every(isConvexConnectorIntegrationLinkPayload)
+  )
+}
+
+function isConvexConnectorActivityPayload(value: unknown): value is ConvexConnectorActivityPayload {
+  return (
+    isObjectRecord(value) &&
+    isConvexConnectorActivityKind(value.kind) &&
+    typeof value.message === "string" &&
+    (value.actorName === undefined || typeof value.actorName === "string") &&
+    (value.rfqId === undefined || typeof value.rfqId === "string")
+  )
+}
+
+function isConvexConnectorIntegrationLinkPayload(value: unknown): value is ConvexConnectorIntegrationLinkPayload {
+  return (
+    isObjectRecord(value) &&
+    isConvexConnectorProvider(value.provider) &&
+    typeof value.externalId === "string" &&
+    isConvexConnectorSyncStatus(value.syncStatus) &&
+    (value.externalUrl === undefined || typeof value.externalUrl === "string") &&
+    (value.rfqId === undefined || typeof value.rfqId === "string")
+  )
+}
+
+function isConvexConnectorActivityKind(value: unknown): value is ConvexConnectorActivityKind {
+  return value === "email_received" || value === "calendar_event" || value === "note"
+}
+
+function isConvexConnectorProvider(value: unknown): value is ConvexConnectorProvider {
+  return value === "gmail" || value === "calendar"
+}
+
+function isConvexConnectorSyncStatus(value: unknown): value is ConvexConnectorSyncStatus {
+  return value === "linked" || value === "stale" || value === "blocked"
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
 }
 
 function isPersistedQuoteWorkItem(value: unknown): value is QuoteWorkItem {
