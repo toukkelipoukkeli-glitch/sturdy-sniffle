@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e78f8f8` (`Add provider run filter e2e (#419)`).
+- Main branch checkpoint: `a11bba3` (`Add calendar outcome read diagnostics e2e (#421)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#421` adds deterministic desktop/mobile Playwright coverage for Calendar outcome read fallback diagnostics, Integration health recovery copy, diagnostic clipboard export, and no-overflow checks.
+  - `#420` refreshes the autonomous handoff after the provider-run filter e2e slice.
   - `#419` adds deterministic desktop/mobile Playwright coverage for Provider review history filters, warning/fallback/succeeded counts, failed/skipped empty states, redacted prompt text, and no-overflow checks.
   - `#418` refreshes the autonomous handoff after the offer reply state filter e2e slice.
   - `#417` adds deterministic desktop/mobile Playwright coverage for Offer reply state filters, applied/warning rows, empty fallback rows, fallback Integration health copy, and no-overflow checks.
