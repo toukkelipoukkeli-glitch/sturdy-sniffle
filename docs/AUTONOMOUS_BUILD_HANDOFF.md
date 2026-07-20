@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0b1decc` (`Add CAD review override e2e (#423)`).
+- Main branch checkpoint: `287cbec` (`Add offer lifecycle persistence e2e (#425)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#425` adds deterministic desktop/mobile Playwright coverage for offer lifecycle reload persistence, follow-up completion, terminal declined-state guards, and no-overflow checks.
+  - `#424` refreshes the autonomous handoff after the CAD review override e2e slice.
   - `#423` adds deterministic desktop/mobile Playwright coverage for CAD review override acknowledgement, reload persistence, reopen recovery, event history, and no-overflow checks.
   - `#422` refreshes the autonomous handoff after the calendar outcome read diagnostics e2e slice.
   - `#421` adds deterministic desktop/mobile Playwright coverage for Calendar outcome read fallback diagnostics, Integration health recovery copy, diagnostic clipboard export, and no-overflow checks.
