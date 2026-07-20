@@ -65,7 +65,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **Plain-text export exercisable** — read-only offer text remains inspectable and can be copied or downloaded as `.txt` from `OfferView`.
 - ✅ **PDF export/rendering verified** — `offerPdf.ts` renders deterministic `pdf-lib` bytes with fixture coverage and smoke-tested download flow.
 - ✅ **Operator can copy/download** — `OfferView` exposes Copy, Download `.txt`, and Download PDF buttons with aria-live feedback.
-- ✅ **Offer lifecycle actions/history** — `OfferLifecyclePanel` wires deterministic sent/accept/decline/follow-up controls to `buildOfferLifecycleTimeline` with smoke coverage.
+- ✅ **Offer lifecycle actions/history** — `OfferLifecyclePanel` wires deterministic sent/accept/decline/follow-up controls to `buildOfferLifecycleTimeline` with smoke coverage plus dedicated desktop/mobile reload coverage for follow-up persistence and terminal-state guards.
 - ✅ **Offer export/revision history is durable** — revision reason and copy/download/PDF export events persist in the local workspace state with deterministic audit rows. (Slice A3)
 - ✅ **Offer is an editable artifact** — validity date, customer-facing terms, revision note, and offer notes are editable in the workspace and feed plain-text/PDF-ready exports. (Slice A3)
 
@@ -103,7 +103,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ CI covers lint / unit / e2e / build (`.github/workflows/ci.yml`).
 - 🟡 **Convex codegen/backend typecheck is a CI gate** — deferred: needs either committed `convex/_generated` or a `CONVEX_DEPLOY_KEY` secret (cloud auth), neither available without a policy change. Codegen works locally (`bun run convex:codegen`, exit 0, no drift). Tracked as a secret-gated follow-up.
 - ✅ **Component/unit coverage for `App.tsx`** — `src/App.test.tsx` renders the workspace in jsdom and covers the quote recompute, queue filtering, and view switching; test setup now auto-cleans React trees between tests. (Slice D)
-- 🟡 **e2e breadth** — manual creation, desktop/mobile validation recovery, guarded non-CNC selector previews, queue no-results recovery, demo import pre-write review, selected-RFQ audit feed visibility/copy, provider-read fallback diagnostics, provider-run filter empty states, follow-up readiness fallback diagnostics, offer reply state filter/empty-state coverage, calendar outcome read fallback diagnostics, CAD review override recovery, and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; broader error-state e2e coverage remains pending. → grows with each slice
+- 🟡 **e2e breadth** — manual creation, desktop/mobile validation recovery, guarded non-CNC selector previews, queue no-results recovery, demo import pre-write review, selected-RFQ audit feed visibility/copy, provider-read fallback diagnostics, provider-run filter empty states, follow-up readiness fallback diagnostics, offer reply state filter/empty-state coverage, offer lifecycle reload/terminal-state coverage, calendar outcome read fallback diagnostics, CAD review override recovery, and desktop/mobile offer-copy coverage are now expanding through deterministic Playwright smoke paths; broader error-state e2e coverage remains pending. → grows with each slice
 
 ## Cross-cutting correctness
 
