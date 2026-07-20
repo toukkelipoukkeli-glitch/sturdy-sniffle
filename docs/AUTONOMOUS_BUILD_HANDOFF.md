@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e71a3c4` (`Refresh calendar execution history e2e handoff (#442)`).
+- Main branch checkpoint: `e32f050` (`Add connector recovery reload e2e (#443)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#443` persists selected-RFQ connector sync snapshots in local workspace state and adds deterministic desktop/mobile Playwright coverage for restored stale/blocked connector recovery actions after reload.
   - `#442` refreshes the autonomous handoff after the calendar reschedule execution-history e2e slice.
   - `#441` adds deterministic desktop/mobile Playwright coverage and an operator copy action for calendar reschedule execution-history exports, including reload persistence and no-overflow checks.
   - `#440` refreshes the autonomous handoff after the calendar provider outcome history e2e slice.
