@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `2d1a6bf` (`Add follow-up readiness fallback e2e (#412)`).
+- Main branch checkpoint: `1142c0f` (`Add restored follow-up readiness fallback e2e (#415)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/followup-readiness-restored-fallback-e2e` extends deterministic desktop/mobile Playwright coverage for restored stale follow-up readiness read/write fallback history without live connector writes.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#415` extends deterministic desktop/mobile Playwright coverage for restored stale follow-up readiness read/write fallback history after reload, including critical persistence status, filter, copy/export, and Browser/Playwright fallback QA.
+  - `#414` refreshes the autonomous handoff after the follow-up readiness fallback e2e slice.
   - `#412` adds deterministic desktop/mobile Playwright coverage for follow-up readiness read fallback diagnostics, including persistence drill-down recovery, copy/export assertions, and Browser/Playwright fallback QA while live connector writes stay disabled.
   - `#411` refreshes the autonomous handoff after the provider-read fallback e2e slice.
   - `#410` adds deterministic desktop/mobile Playwright coverage for the provider-run read fallback diagnostics path, including Integration health copy/export assertions and Browser/Playwright fallback QA.
