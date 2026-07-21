@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f8e7c01` (`Refresh provider read loading handoff (#460)`).
+- Main branch checkpoint: `6f1bf6e` (`Add offer release read loading status (#461)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/offer-release-read-loading` adds a compact offer release execution history read-source indicator plus desktop/mobile Playwright coverage for pending optional Convex reads while local release execution history remains visible.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#461` adds a compact pending/local/Convex/fallback read-source indicator to the Offer release execution history panel plus desktop/mobile Playwright coverage proving pending optional Convex reads keep local release execution history visible, with Browser/Playwright fallback QA after Computer Use was blocked by the Codex app safety policy.
   - `#460` refreshes the autonomous handoff after the provider read loading e2e slice.
   - `#459` adds deterministic desktop/mobile Playwright coverage for pending provider-run reads while the optional Convex bridge is still loading, including Provider review and Integration health pending diagnostics, clipboard export assertions, no-overflow checks, and Browser/Playwright fallback QA after Computer Use was blocked by the Codex app safety policy.
   - `#458` refreshes the autonomous handoff after the calendar outcome read loading e2e slice.
