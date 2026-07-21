@@ -20,7 +20,7 @@ async function installFailingProviderReadBridge(page: Page) {
         providerRunsByRfqQueryRef: string
         rfqIdsByLocalId: Record<string, string>
         runMutation: () => Promise<void>
-        runQuery: () => Promise<never>
+        runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
       }
     }).__FACTORYBID_WORKSPACE_CONVEX__ = {
       mutationRefs: {
@@ -59,7 +59,15 @@ async function installPendingProviderReadBridge(page: Page) {
         "rfq-204": "convex-rfq-204",
       },
       runMutation: async () => {},
-      runQuery: async () => new Promise<never>(() => {}),
+      runQuery: async (queryRef, args) => {
+        if (queryRef !== "listProviderRunsByRfq") {
+          throw new Error(`Unexpected query ref: ${String(queryRef)}`)
+        }
+        if (args.rfqId !== "convex-rfq-204") {
+          throw new Error(`Unexpected provider read RFQ id: ${String(args.rfqId)}`)
+        }
+        return new Promise<never>(() => {})
+      },
     }
   })
 }
