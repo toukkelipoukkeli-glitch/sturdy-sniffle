@@ -24,6 +24,39 @@ async function prepareReviewedRelease(page: Page) {
   await page.getByRole("button", { exact: true, name: "Offer" }).click()
 }
 
+async function installPendingReleaseExecutionReadBridge(page: Page) {
+  await page.addInitScript(() => {
+    ;(window as typeof window & {
+      __FACTORYBID_WORKSPACE_CONVEX__?: {
+        mutationRefs: Record<string, string>
+        offerIdsByLocalId: Record<string, string>
+        offerReleaseExecutionsQueryRef: string
+        runMutation: () => Promise<void>
+        runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<never>
+      }
+    }).__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        if (queryRef !== "listOfferReleaseExecutions") {
+          throw new Error(`Unexpected release execution query ref: ${String(queryRef)}`)
+        }
+        if (args.offerId !== "convex-offer-204") {
+          throw new Error(`Unexpected release execution offer id: ${String(args.offerId)}`)
+        }
+        return new Promise<never>(() => {})
+      },
+    }
+  })
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`offer provider readiness on ${viewport.label}`, () => {
     test.use({ viewport: viewport.size })
@@ -78,6 +111,30 @@ for (const viewport of operatorViewports) {
       await expect(restoredReadinessHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
       await expect(restoredReadinessHistory.locator(".metric", { hasText: /^Blocked 1$/ })).toBeVisible()
       await expect(restoredReadinessHistory).toContainText("Current readiness needs review")
+      await assertNoHorizontalOverflow(page)
+    })
+
+    test("keeps release execution history visible while persisted reads are pending", async ({ page }) => {
+      await installPendingReleaseExecutionReadBridge(page)
+      await prepareReviewedRelease(page)
+
+      await expect(page.getByLabel("Offer release command plan")).toContainText("Release commands ready")
+      const executionAudit = page.getByLabel("Offer release execution audit")
+      await expect(executionAudit).toContainText("Dry-run prepared")
+      await executionAudit.getByRole("button", { name: "Execute release" }).dispatchEvent("click")
+      await expect(executionAudit).toContainText("Execution completed")
+
+      const releaseHistory = page.getByLabel("Offer release execution history")
+      await expect(releaseHistory).toContainText("2 recorded runs")
+      await expect(releaseHistory.getByLabel("Offer release execution read source: Checking Convex")).toHaveAttribute(
+        "data-status",
+        "pending",
+      )
+      await expect(releaseHistory).toContainText(
+        "Checking Convex for release execution history; 2 release runs remain visible.",
+      )
+      await expect(releaseHistory.locator(".metric", { hasText: "Latest" })).toContainText("succeeded")
+
       await assertNoHorizontalOverflow(page)
     })
   })
