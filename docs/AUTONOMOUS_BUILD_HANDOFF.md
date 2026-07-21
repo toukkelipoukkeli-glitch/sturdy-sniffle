@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `feb5d10` (`Add non-CNC summary copy e2e (#453)`).
+- Main branch checkpoint: `98d5f48` (`Add dense workspace accessibility e2e (#455)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#455` adds deterministic desktop/mobile Playwright accessibility smoke for dense workspace controls, including keyboard-operated queue filters, attachment disclosure, view tabs with `aria-pressed`, non-CNC selector state, and Browser/Playwright fallback QA.
+  - `#454` refreshes the autonomous handoff after the non-CNC estimator-summary copy e2e slice.
   - `#453` adds deterministic desktop/mobile Playwright coverage for non-CNC estimator-summary copy, including clipboard content checks and Browser/Playwright fallback QA while active RFQ quote/offer/release state remains unchanged.
   - `#452` refreshes the autonomous handoff after the demo import review reload e2e slice.
   - `#451` adds deterministic desktop/mobile Playwright coverage that the demo seed import pre-write review remains ready after reload, with per-viewport clipboard setup and Browser/Playwright fallback QA.
@@ -358,7 +360,7 @@ FactoryBid OS is no longer just a scaffold. The repository currently includes:
 - Calendar planning for RFQ due holds and offer follow-ups behind adapter boundaries, including local/mock provider outcomes, read-model copy/status, operator-visible provider outcome cards, local provider outcome persistence snapshots, provider outcome history summaries/export copy, operator-visible history card/export copy, local/Convex-style provider outcome read adapters, optional browser-bridge hydration, operator-visible read-source status copy, Integration health surfacing for reviewed reschedule command outcome reads, and deterministic recovery actions for Convex/local/pending/fallback outcome reads while live Calendar writes remain deferred.
 - Provider adapter boundaries for mock/local/provider AI work, with Convex-backed provider run audit records, query APIs, optional browser runtime read hydration for selected-RFQ terminal provider runs, operator-visible provider-run read sync health in Provider review and Integration health, deterministic provider-run read history summaries, local persistence snapshots for those read-history records, operator diagnostics/export copy for that persisted read-health trail, Provider review UI surfaces for reading/copying those diagnostics, Integration health diagnostic status/recovery/export copy, provider-read diagnostic next-action items, optional browser Convex bridge probe health for configured refs and local identity maps, and guarded browser bridge install-plan visibility.
 - CAD-like attachment preview models, CAD metadata and geometry descriptor adapter boundaries, review state, manufacturability flags, deterministic preview/thumbnail labels, viewport metadata cards, compact thumbnail cards, metadata-derived geometry preview output contracts, geometry preview UI rendering, geometry review summary checks and UI surfaces, persisted CAD action context, and boundary-aware CAD metadata matching.
-- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs with cross-RFQ history and stale-link recovery actions, calendar plan previews, calendar follow-up status with execution read-model/history summaries/provider outcome read-source state, offer reply state, release execution history, and audit visibility.
+- React workspace surfaces for quote queue, workload, capacity, material/outside service planning, provider review filters, CAD metadata review, integration health, connector link drill-downs with cross-RFQ history and stale-link recovery actions, calendar plan previews, calendar follow-up status with execution read-model/history summaries/provider outcome read-source state, offer reply state, release execution history, audit visibility, and dense-control accessibility smoke.
 
 Core quote math must remain deterministic and usable without AI. AI/provider work belongs behind explicit server-side adapters with mock/local fallbacks.
 
@@ -474,7 +476,7 @@ Work in small, reviewed slices. Good next candidates from the current checkpoint
 
 6. Production hardening pass.
    - Add loading/error/empty states for persisted workspace reads.
-   - Add accessibility checks for dense workspace controls.
+   - Extend accessibility checks beyond the first dense-control keyboard/ARIA smoke into any newly added dense operator surfaces.
    - Keep screenshots or Playwright artifacts out of git unless intentionally documenting visual baselines.
 
 ## Review Notes
