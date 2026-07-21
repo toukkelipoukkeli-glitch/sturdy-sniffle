@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d07fc76` (`[codex] Add provider read loading e2e (#459)`).
+- Main branch checkpoint: `f8e7c01` (`Refresh provider read loading handoff (#460)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/offer-release-read-loading` adds a compact offer release execution history read-source indicator plus desktop/mobile Playwright coverage for pending optional Convex reads while local release execution history remains visible.
 - Latest merged sequence:
+  - `#460` refreshes the autonomous handoff after the provider read loading e2e slice.
   - `#459` adds deterministic desktop/mobile Playwright coverage for pending provider-run reads while the optional Convex bridge is still loading, including Provider review and Integration health pending diagnostics, clipboard export assertions, no-overflow checks, and Browser/Playwright fallback QA after Computer Use was blocked by the Codex app safety policy.
   - `#458` refreshes the autonomous handoff after the calendar outcome read loading e2e slice.
   - `#457` adds deterministic desktop/mobile Playwright coverage for pending Calendar provider outcome reads while the optional Convex bridge is still loading, including Integration health recovery copy, diagnostic clipboard export, no-overflow checks, and Browser/Playwright fallback QA.

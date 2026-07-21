@@ -564,6 +564,8 @@ interface WorkspaceLocalState {
   workItems: QuoteWorkItem[]
 }
 
+type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
+
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const followUpActivityReadinessSyncHealthEventLimit = 12
 export const pdfPreviewLoadTimeoutMs = 8_000
@@ -1165,6 +1167,7 @@ function App() {
     workspaceLocalState?.releaseExecutionRunsById ?? {},
   )
   const [releaseExecutionHistoryById, setReleaseExecutionHistoryById] = useState<Record<string, OfferReleaseExecutionHistorySummary>>({})
+  const [releaseExecutionReadSourceById, setReleaseExecutionReadSourceById] = useState<Record<string, OfferReleaseExecutionReadSource>>({})
   const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>(
     () => replayFollowUpActivitySummaries(actionsById),
   )
@@ -1206,7 +1209,9 @@ function App() {
   const connectorSyncLocksRef = useRef(new Set<string>())
   const manualRfqCountRef = useRef(highestManualRfqCounter(workItems))
   const releaseExecutionLocksRef = useRef(new Set<string>())
-  const releaseExecutionQueryKeysRef = useRef(new Map<string, Promise<OfferReleaseExecutionHistorySummary>>())
+  const releaseExecutionQueryKeysRef = useRef(
+    new Map<string, Promise<{ history: OfferReleaseExecutionHistorySummary; source: OfferReleaseExecutionReadSource }>>(),
+  )
   const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
@@ -1827,6 +1832,9 @@ function App() {
   )
   const offerReleaseExecutionBridge = useMemo(() => createBrowserConvexOfferReleaseExecutionBridge(), [])
   const convexOfferReleaseExecutionOfferId = offerReleaseExecutionBridge?.resolveOfferId(offer.offerNumber.toLowerCase())
+  const offerReleaseExecutionReadSource =
+    releaseExecutionReadSourceById[selectedId] ??
+    (offerReleaseExecutionBridge && convexOfferReleaseExecutionOfferId ? "pending" : "local")
   useEffect(() => {
     let cancelled = false
     const releaseExecutionQueries = releaseExecutionQueryKeysRef.current
@@ -1843,9 +1851,13 @@ function App() {
     if (!historyPromise) {
       const queryRef = offerReleaseExecutionBridge.queryRef
       const runQuery = offerReleaseExecutionBridge.runQuery
+      let usedFallback = false
 
       const reader = createConvexOfferReleaseExecutionReader({
-        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        onQueryError: () => {
+          usedFallback = true
+          setPersistenceSyncErrorCount((count) => count + 1)
+        },
         queryRef,
         runQuery,
       })
@@ -1853,19 +1865,29 @@ function App() {
         limit: 20,
         offerId: convexOfferReleaseExecutionOfferId,
         offerNumber: offer.offerNumber,
-      })
+      }).then((history) => ({
+        history,
+        source: usedFallback ? "fallback" : history.totalRuns > 0 ? "convex" : "local",
+      }))
       releaseExecutionQueries.set(queryKey, historyPromise)
     }
 
     void historyPromise
-      .then((history) => {
-        if (!cancelled && history.totalRuns > 0) {
-          setReleaseExecutionHistoryById((current) => ({ ...current, [selectedId]: history }))
+      .then(({ history, source }) => {
+        if (!cancelled) {
+          setReleaseExecutionReadSourceById((current) => ({
+            ...current,
+            [selectedId]: source,
+          }))
+          if (history.totalRuns > 0) {
+            setReleaseExecutionHistoryById((current) => ({ ...current, [selectedId]: history }))
+          }
         }
       })
       .catch(() => {
         releaseExecutionQueries.delete(queryKey)
         if (!cancelled) {
+          setReleaseExecutionReadSourceById((current) => ({ ...current, [selectedId]: "fallback" }))
           setPersistenceSyncErrorCount((count) => count + 1)
         }
       })
@@ -3154,6 +3176,7 @@ function App() {
               releaseFollowUpActivityReadinessSyncHealth={followUpActivityReadinessSyncHealth}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
+              releaseHistoryReadSource={offerReleaseExecutionReadSource}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
               releaseProviderOutcomeReadinessHistory={offerReleaseProviderOutcomeReadinessHistory}
@@ -10354,6 +10377,7 @@ function OfferView({
   releaseFollowUpActivityReadinessSyncHealth,
   releaseFollowUpActivitySummary,
   releaseHistory,
+  releaseHistoryReadSource,
   releasePlan,
   releaseProviderOutcomeHistory,
   releaseProviderOutcomeReadinessHistory,
@@ -10388,6 +10412,7 @@ function OfferView({
   releaseFollowUpActivityReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
+  releaseHistoryReadSource: OfferReleaseExecutionReadSource
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
   releaseProviderOutcomeReadinessHistory: OfferReleaseProviderOutcomeReadinessHistorySummary
@@ -10546,7 +10571,7 @@ function OfferView({
         releasePlan={releasePlan}
         releaseProviderOutcomeReadiness={releaseProviderOutcomeReadiness}
       />
-      <OfferReleaseHistoryPanel history={releaseHistory} />
+      <OfferReleaseHistoryPanel history={releaseHistory} readSource={releaseHistoryReadSource} />
       <OfferReplyPanel replySnapshot={replySnapshot} replySync={replySync} onSyncReplies={onSyncReplies} />
       <section className="offer-export-actions" aria-label="Offer export actions">
         <div className="offer-export-buttons" role="group">
@@ -10689,9 +10714,17 @@ function triggerBlobDownload(fileName: string, blob: Blob): void {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionHistorySummary }) {
+function OfferReleaseHistoryPanel({
+  history,
+  readSource,
+}: {
+  history: OfferReleaseExecutionHistorySummary
+  readSource: OfferReleaseExecutionReadSource
+}) {
   const repeatedCount = history.repeatedFingerprints.length
   const latestStatus = history.latestRun ? humanizeKey(history.latestRun.status) : "None"
+  const sourceLabel = offerReleaseExecutionReadSourceLabel(readSource)
+  const sourceDetail = offerReleaseExecutionReadSourceDetail(readSource, history.totalRuns)
 
   return (
     <section className="offer-release-history-panel" aria-label="Offer release execution history">
@@ -10712,6 +10745,15 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
         >
           {repeatedCount === 0 ? "Stable" : "Review retries"}
         </span>
+      </div>
+      <div
+        className="offer-release-history-source"
+        aria-label={`Offer release execution read source: ${sourceLabel}`}
+        data-status={readSource}
+      >
+        <Clock3 aria-hidden="true" />
+        <strong>{sourceLabel}</strong>
+        <span>{sourceDetail}</span>
       </div>
       <div className="offer-release-history-summary">
         <Metric label="Runs" value={String(history.totalRuns)} />
@@ -10738,6 +10780,34 @@ function OfferReleaseHistoryPanel({ history }: { history: OfferReleaseExecutionH
       )}
     </section>
   )
+}
+
+function offerReleaseExecutionReadSourceLabel(source: OfferReleaseExecutionReadSource) {
+  switch (source) {
+    case "convex":
+      return "Convex read"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local history"
+  }
+}
+
+function offerReleaseExecutionReadSourceDetail(source: OfferReleaseExecutionReadSource, totalRuns: number) {
+  const runText = totalRuns === 1 ? "1 release run" : `${totalRuns} release runs`
+  const verb = totalRuns === 1 ? "remains" : "remain"
+  switch (source) {
+    case "convex":
+      return `Merged persisted release execution history with ${runText}.`
+    case "fallback":
+      return `Convex release execution history fell back to ${runText}.`
+    case "pending":
+      return `Checking Convex for release execution history; ${runText} ${verb} visible.`
+    case "local":
+      return `Release execution history is using ${runText}.`
+  }
 }
 
 function OfferFollowUpActivityReadPanel({
