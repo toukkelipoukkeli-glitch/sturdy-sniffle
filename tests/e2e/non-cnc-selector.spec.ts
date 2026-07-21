@@ -40,25 +40,38 @@ async function assertNoHorizontalOverflow(page: Page) {
 }
 
 for (const viewport of operatorViewports) {
-  test(`reviews guarded non-CNC process previews on ${viewport.label}`, async ({ page }) => {
-    await page.setViewportSize(viewport.size)
-    await page.goto("/")
-    await page.getByRole("button", { exact: true, name: "Costing" }).click()
+  test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
+    test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
 
-    const nonCncDemos = page.getByLabel("Non-CNC registry demos")
-    await expect(nonCncDemos.getByLabel("Process quote preview selector")).toBeVisible()
+    test("reviews previews and copies the estimator summary", async ({ page }) => {
+      await page.goto("/")
+      await page.getByRole("button", { exact: true, name: "Costing" }).click()
 
-    for (const processPreview of processPreviews) {
-      await nonCncDemos.getByRole("button", { name: processPreview.buttonName }).click()
-      await expect(nonCncDemos.getByLabel("Selected non-CNC quote preview")).toContainText(processPreview.partNumber)
-      await expect(nonCncDemos.getByLabel(processPreview.editorLabel)).toContainText(processPreview.editorStatus)
-      await expect(nonCncDemos.getByLabel("Non-CNC input edit adapter status")).toContainText("Preview controls enabled")
-      await expect(nonCncDemos.getByLabel("Read-only process input draft")).toContainText("Fixture draft")
-      await expect(nonCncDemos.getByLabel("Non-CNC quote path gate")).toContainText("Quote path")
-      await expect(nonCncDemos.getByLabel("Non-CNC offer handoff readiness")).toContainText("Offer candidate")
-      await expect(nonCncDemos.getByLabel("Non-CNC quote promotion plan")).toContainText("Promotion")
-      await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Offer wiring pending")
+      const nonCncDemos = page.getByLabel("Non-CNC registry demos")
+      await expect(nonCncDemos.getByLabel("Process quote preview selector")).toBeVisible()
+
+      for (const processPreview of processPreviews) {
+        await nonCncDemos.getByRole("button", { name: processPreview.buttonName }).click()
+        await expect(nonCncDemos.getByLabel("Selected non-CNC quote preview")).toContainText(processPreview.partNumber)
+        await expect(nonCncDemos.getByLabel(processPreview.editorLabel)).toContainText(processPreview.editorStatus)
+        await expect(nonCncDemos.getByLabel("Non-CNC input edit adapter status")).toContainText("Preview controls enabled")
+        await expect(nonCncDemos.getByLabel("Read-only process input draft")).toContainText("Fixture draft")
+        await expect(nonCncDemos.getByLabel("Non-CNC quote path gate")).toContainText("Quote path")
+        await expect(nonCncDemos.getByLabel("Non-CNC offer handoff readiness")).toContainText("Offer candidate")
+        await expect(nonCncDemos.getByLabel("Non-CNC quote promotion plan")).toContainText("Promotion")
+        await expect(nonCncDemos.getByLabel("Process quote operator checklist")).toContainText("Offer wiring pending")
+        await assertNoHorizontalOverflow(page)
+      }
+
+      await nonCncDemos.getByRole("button", { name: "Copy summary" }).click()
+      await expect(nonCncDemos.getByLabel("Process quote preview actions").getByRole("status")).toContainText(
+        "Process preview summary copied.",
+      )
+      const copiedSummary = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedSummary).toContain("FAB-FRAME-508")
+      expect(copiedSummary).toContain("Input edit adapter:")
+      expect(copiedSummary).toContain("- UI controls: preview controls enabled for supported fields")
       await assertNoHorizontalOverflow(page)
-    }
+    })
   })
 }
