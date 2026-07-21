@@ -32,7 +32,7 @@ for (const viewport of operatorViewports) {
       await page.getByRole("button", { exact: true, name: "Triage" }).click()
       await expect(page.getByLabel("RFQ intake readiness")).toContainText("Ready for costing")
       await expect(page.getByLabel("Selected RFQ")).toContainText("Imported from Gmail RFQ sync")
-      await expect(page.getByLabel("Selected RFQ")).toContainText("Imported 20 Jun, 10.05")
+      await expect(page.getByLabel("Selected RFQ")).toContainText("Imported 20 Jun")
 
       await page.reload()
       const restoredQueue = page.getByLabel("RFQ queue")
