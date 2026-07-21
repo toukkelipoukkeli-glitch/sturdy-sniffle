@@ -1,16 +1,18 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-20 Europe/Helsinki.
+Last refreshed: 2026-07-21 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a39b7ae` (`Add workspace audit feed reload e2e (#445)`).
+- Main branch checkpoint: `7e5895f` (`[codex] Add RFQ sync import reload e2e (#447)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#447` adds deterministic desktop/mobile Playwright coverage for reload-safe Gmail RFQ sync imports, including selected imported RFQ readiness/provenance checks and no-overflow validation.
+  - `#446` refreshes the autonomous handoff after the workspace audit feed reload e2e slice.
   - `#445` adds deterministic desktop/mobile Playwright coverage for selected-RFQ workspace audit feed reload persistence after a ready-state workspace action, including clipboard export and no-overflow checks.
   - `#444` refreshes the autonomous handoff after the connector recovery reload e2e slice.
   - `#443` persists selected-RFQ connector sync snapshots in local workspace state and adds deterministic desktop/mobile Playwright coverage for restored stale/blocked connector recovery actions after reload.
