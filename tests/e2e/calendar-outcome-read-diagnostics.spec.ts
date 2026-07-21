@@ -39,6 +39,31 @@ async function installFailingCalendarOutcomeReadBridge(page: Page) {
   })
 }
 
+async function installPendingCalendarOutcomeReadBridge(page: Page) {
+  await page.addInitScript(() => {
+    ;(window as typeof window & {
+      __FACTORYBID_WORKSPACE_CONVEX__?: {
+        calendarFollowUpRescheduleProviderOutcomesQueryRef: string
+        mutationRefs: Record<string, string>
+        rfqIdsByLocalId: Record<string, string>
+        runMutation: () => Promise<void>
+        runQuery: () => Promise<never>
+      }
+    }).__FACTORYBID_WORKSPACE_CONVEX__ = {
+      calendarFollowUpRescheduleProviderOutcomesQueryRef: "listCalendarRescheduleProviderOutcomes",
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => new Promise<never>(() => {}),
+    }
+  })
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`calendar outcome read diagnostics on ${viewport.label}`, () => {
     test.use({
@@ -82,6 +107,46 @@ for (const viewport of operatorViewports) {
       expect(copiedDiagnostics).toContain("Status: fallback")
       expect(copiedDiagnostics).toContain("Batches: persisted 0, local 0, fallback 1")
       expect(copiedDiagnostics).toContain("Retry outcome read")
+
+      await assertNoHorizontalOverflow(page)
+    })
+
+    test("keeps pending outcome reads visible and copyable while Convex is loading", async ({ page }) => {
+      await installPendingCalendarOutcomeReadBridge(page)
+      await page.goto("/")
+      await page.getByRole("button", { exact: true, name: "Triage" }).click()
+
+      const followUpStatus = page.getByLabel("Calendar follow-up status")
+      const providerOutcomeHistory = followUpStatus.getByLabel(
+        "Calendar follow-up reschedule provider outcome history summary",
+      )
+      const readSync = providerOutcomeHistory.getByLabel("Calendar provider outcome read sync")
+      await expect(readSync).toContainText("Sync source Checking Convex")
+      await expect(readSync).toContainText(
+        "Checking Convex for calendar provider outcome batches; 0 local fallback batches remain visible.",
+      )
+      await expect(readSync.locator(".metric", { hasText: "Convex" })).toContainText("0")
+      await expect(readSync.locator(".metric", { hasText: "Local" })).toContainText("0")
+      await expect(readSync.locator(".metric", { hasText: "Fallback" })).toContainText("0")
+
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText("Calendar outcome reads")
+      await expect(integrationHealth).toContainText(
+        "Checking Convex calendar provider outcome history; 0 local fallback batches remain visible.",
+      )
+      const recoveryActions = integrationHealth.getByLabel("Calendar outcome reads recovery actions")
+      await expect(recoveryActions).toContainText("Wait for read result")
+      await expect(recoveryActions).toContainText(
+        "Keep local fallback batches visible while the optional Convex calendar provider outcome query is still loading.",
+      )
+
+      await integrationHealth.getByRole("button", { name: "Copy outcome read diagnostics" }).click()
+      await expect(integrationHealth).toContainText("Calendar outcome read diagnostics copied.")
+      const copiedDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedDiagnostics).toContain("Calendar provider outcome read diagnostics")
+      expect(copiedDiagnostics).toContain("Status: pending")
+      expect(copiedDiagnostics).toContain("Batches: persisted 0, local 0, fallback 0")
+      expect(copiedDiagnostics).toContain("Wait for read result")
 
       await assertNoHorizontalOverflow(page)
     })

@@ -43,7 +43,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
 - 🟡 **Approval/release gates operable** — manager release review and local release execution controls now persist audited runs and feed the deterministic release planner; release-gate review restore is covered on desktop/mobile; real connector send/commit remains behind provider boundaries. → **Slice D/G**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
-- 🟡 **Loading/empty/stale/error polish** — queue empty states, reload-safe demo import review states, selected-RFQ audit visibility, dense-control accessibility smoke, and a tested workspace error boundary with desktop/mobile recovery coverage exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
+- 🟡 **Loading/empty/stale/error polish** — queue empty states, reload-safe demo import review states, selected-RFQ audit visibility, dense-control accessibility smoke, calendar outcome read loading/fallback diagnostics, and a tested workspace error boundary with desktop/mobile recovery coverage exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 
 ## §3 Deterministic calculators
 
