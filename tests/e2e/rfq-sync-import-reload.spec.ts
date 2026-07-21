@@ -43,5 +43,27 @@ for (const viewport of operatorViewports) {
       await expect(page.getByLabel("RFQ intake readiness")).toContainText("Ready for costing")
       await assertNoHorizontalOverflow(page)
     })
+
+    test("keeps repeated Gmail RFQ sync imports deduplicated after reload", async ({ page }) => {
+      await page.goto("/")
+
+      const integrationHealth = page.getByLabel("Integration health")
+      await integrationHealth.getByRole("button", { name: "RFQ sync" }).click()
+      await expect(integrationHealth).toContainText("3 Gmail/calendar links attached")
+      await integrationHealth.getByRole("button", { name: "RFQ sync" }).click()
+      await expect(integrationHealth).toContainText("6 Gmail/calendar links attached")
+
+      const queue = page.getByLabel("RFQ queue")
+      await expect(queue.getByRole("button", { name: /Tampere Robotics/ })).toHaveCount(1)
+
+      await page.reload()
+      const restoredQueue = page.getByLabel("RFQ queue")
+      await expect(restoredQueue.getByRole("button", { name: /Tampere Robotics/ })).toHaveCount(1)
+      await restoredQueue.getByRole("button", { name: /Tampere Robotics/ }).click()
+      await expect(page.getByRole("heading", { name: "RFQ: CNC fixture PN TR-301" })).toBeVisible()
+      await page.getByRole("button", { exact: true, name: "Triage" }).click()
+      await expect(page.getByLabel("Selected RFQ")).toContainText("Imported from Gmail RFQ sync")
+      await assertNoHorizontalOverflow(page)
+    })
   })
 }
