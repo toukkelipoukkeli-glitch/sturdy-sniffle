@@ -12320,7 +12320,7 @@ function SegmentButton({
   onClick: () => void
 }) {
   return (
-    <button className="segment-button" data-active={active} onClick={onClick} type="button">
+    <button aria-pressed={active} className="segment-button" data-active={active} onClick={onClick} type="button">
       {icon}
       <span>{children}</span>
     </button>
