@@ -52,7 +52,7 @@ FactoryBid OS is a production-grade automatic tarjouslaskenta (quote calculation
 ## Implemented Foundation
 
 - Convex schema, local generation workflow, and workflow API queries/mutations for RFQ queue reads, quote scenarios, process workload buckets, provider runs, connector integration links, and offer follow-up calendar activities. Managed worktrees use `.worktreeinclude` for ignored `.env.local` propagation while keeping secrets uncommitted.
-- Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, and provenance fields.
+- Deterministic RFQ intake with Gmail adapter fallback, strict received timestamp validation, attachment classification, provenance fields, and reload-safe imported-RFQ operator review coverage.
 - Deterministic quoting engines for CNC, sheet metal, plastics, wire/EDM, and fabrication, plus shared rate card presets.
 - Quote workspace domain helpers for scenario comparison, revision audit trails, queue prioritization, process workload summaries, capacity commitment planning, selected-RFQ audit feed exports, and quote approval policy gates.
 - Convex workspace persistence and authorization guard boundaries for RFQ status transitions, workspace activities, offer workflow reads/writes, and migration-safe single-tenant role defaults.
