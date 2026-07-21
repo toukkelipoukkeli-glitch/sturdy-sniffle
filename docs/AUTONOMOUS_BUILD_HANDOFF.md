@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8adb2e9` (`Add demo import review reload e2e (#451)`).
+- Main branch checkpoint: `feb5d10` (`Add non-CNC summary copy e2e (#453)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#453` adds deterministic desktop/mobile Playwright coverage for non-CNC estimator-summary copy, including clipboard content checks and Browser/Playwright fallback QA while active RFQ quote/offer/release state remains unchanged.
+  - `#452` refreshes the autonomous handoff after the demo import review reload e2e slice.
   - `#451` adds deterministic desktop/mobile Playwright coverage that the demo seed import pre-write review remains ready after reload, with per-viewport clipboard setup and Browser/Playwright fallback QA.
   - `#450` refreshes the autonomous handoff after the RFQ sync import dedupe e2e slice.
   - `#449` adds deterministic desktop/mobile Playwright coverage that repeated RFQ syncs keep imported Gmail RFQs deduped in the queue after reload while connector activity history can still grow.
