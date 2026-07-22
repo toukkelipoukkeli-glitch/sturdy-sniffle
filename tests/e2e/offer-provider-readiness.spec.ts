@@ -208,6 +208,16 @@ for (const viewport of operatorViewports) {
         "Checking Convex for release execution history; 2 release runs remain visible.",
       )
       await expect(releaseHistory.locator(".metric", { hasText: "Latest" })).toContainText("succeeded")
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText("Release execution reads")
+      await expect(integrationHealth).toContainText(
+        "Checking Convex release execution history; 2 local fallback runs remain visible.",
+      )
+      const recoveryActions = integrationHealth.getByLabel("Release execution reads recovery actions")
+      await expect(recoveryActions).toContainText("Wait for read result")
+      await expect(recoveryActions).toContainText(
+        "Keep local fallback release execution runs visible while the optional Convex execution query is still loading.",
+      )
 
       await assertNoHorizontalOverflow(page)
     })

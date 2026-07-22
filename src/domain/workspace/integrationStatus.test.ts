@@ -937,6 +937,121 @@ describe("workspace integration status", () => {
     )
   })
 
+  it("surfaces Convex release execution read health as a separate source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      offerReleaseExecutionReadSync: {
+        fallbackCount: 0,
+        localRunCount: 1,
+        persistedRunCount: 2,
+        status: "convex",
+      },
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "offer_release_execution_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Use persisted release execution runs when reviewing release audits; keep local fallback runs visible for comparison.",
+          key: "review_convex_release_executions",
+          label: "Review Convex executions",
+        },
+      ],
+      count: 2,
+      detail: "2 persisted release execution runs read from Convex and merged with 1 local fallback run.",
+      diagnosticExport: [
+        "Release execution read diagnostics",
+        "Status: convex",
+        "Runs: persisted 2, local 1, fallback 0",
+        "Detail: 2 persisted release execution runs read from Convex and merged with 1 local fallback run.",
+        "Recovery actions:",
+        "- Review Convex executions: Use persisted release execution runs when reviewing release audits; keep local fallback runs visible for comparison.",
+      ].join("\n"),
+      label: "Release execution reads",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("keeps pending release execution reads actionable without marking them healthy", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      offerReleaseExecutionReadSync: {
+        fallbackCount: 0,
+        localRunCount: 2,
+        persistedRunCount: 0,
+        status: "pending",
+      },
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("attention")
+    expect(status.sources.find((source) => source.key === "offer_release_execution_reads")).toMatchObject({
+      actions: [
+        {
+          detail: "Keep local fallback release execution runs visible while the optional Convex execution query is still loading.",
+          key: "wait_for_release_execution_read",
+          label: "Wait for read result",
+        },
+      ],
+      count: 2,
+      detail: "Checking Convex release execution history; 2 local fallback runs remain visible.",
+      label: "Release execution reads",
+      severity: "attention",
+      status: "pending",
+    })
+  })
+
+  it("surfaces release execution read fallbacks as integration warnings", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      offerReleaseExecutionReadSync: {
+        fallbackCount: 1,
+        localRunCount: 2,
+        persistedRunCount: 0,
+        status: "fallback",
+      },
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "offer_release_execution_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Keep local release execution runs visible and retry the optional Convex read before committing more release actions.",
+          key: "retry_release_execution_read",
+          label: "Retry execution read",
+        },
+      ],
+      count: 1,
+      detail: "Release execution history fell back to 2 local release runs after a Convex read failure.",
+      label: "Release execution reads",
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Release execution reads: Release execution history fell back to 2 local release runs after a Convex read failure.",
+    )
+  })
+
   it("surfaces Convex calendar provider outcome read health as a separate source", () => {
     const status = summarizeWorkspaceIntegrationStatus({
       calendarProviderOutcomeReadSync: {

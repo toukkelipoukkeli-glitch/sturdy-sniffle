@@ -13,6 +13,10 @@ import {
   offerFollowUpActivityReadSyncIntegrationDetail,
   type OfferFollowUpActivityReadSyncState,
 } from "../offers/offerFollowUpActivityReadSync"
+import {
+  offerReleaseExecutionReadSyncIntegrationDetail,
+  type OfferReleaseExecutionReadSyncState,
+} from "../offers/offerReleaseExecutionReadSync"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
   offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail,
@@ -43,6 +47,7 @@ export type IntegrationStatusSourceKey =
   | "convex_runtime"
   | "follow_up_activity_reads"
   | "offer_replies"
+  | "offer_release_execution_reads"
   | "persistence"
   | "provider_readiness_reads"
   | "provider_runs"
@@ -101,6 +106,7 @@ export interface WorkspaceIntegrationStatusInput {
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpActivityReadSync?: OfferFollowUpActivityReadSyncState
   followUpScheduledAt?: string
+  offerReleaseExecutionReadSync?: OfferReleaseExecutionReadSyncState
   persistenceMode: WorkspacePersistenceMode
   providerReadinessReadSync?: OfferReleaseProviderOutcomeReadinessReadSyncState
   providerRunReadSync?: ProviderRunReadSyncState
@@ -130,6 +136,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpReadinessSyncHealth,
   followUpActivityReadSync,
   followUpScheduledAt,
+  offerReleaseExecutionReadSync,
   persistenceMode,
   providerReadinessReadSync,
   providerRunReadSync,
@@ -153,6 +160,7 @@ export function summarizeWorkspaceIntegrationStatus({
     providerRunSource(providerRuns, providerRunReadSync),
     ...(providerReadinessReadSync ? [providerReadinessReadSource(providerReadinessReadSync)] : []),
     ...(followUpActivityReadSync ? [followUpActivityReadSource(followUpActivityReadSync)] : []),
+    ...(offerReleaseExecutionReadSync ? [offerReleaseExecutionReadSource(offerReleaseExecutionReadSync)] : []),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
     ...(calendarProviderOutcomeReadSync ? [calendarProviderOutcomeReadSource(calendarProviderOutcomeReadSync)] : []),
@@ -895,6 +903,81 @@ function followUpActivityReadDiagnosticExport(
     `Status: ${readSync.status}`,
     `Activities: persisted ${readSync.persistedActivityCount}, local ${readSync.localActivityCount}, fallback ${readSync.fallbackCount}`,
     `Detail: ${offerFollowUpActivityReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
+}
+
+function offerReleaseExecutionReadSource(readSync: OfferReleaseExecutionReadSyncState): IntegrationStatusSource {
+  const actions = offerReleaseExecutionReadActions(readSync)
+
+  return {
+    actions: actions.length > 0 ? actions : undefined,
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedRunCount
+          : readSync.localRunCount,
+    detail: offerReleaseExecutionReadSyncIntegrationDetail(readSync),
+    diagnosticExport: offerReleaseExecutionReadDiagnosticExport(readSync, actions),
+    key: "offer_release_execution_reads",
+    label: "Release execution reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
+  }
+}
+
+function offerReleaseExecutionReadActions(readSync: OfferReleaseExecutionReadSyncState): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedRunCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted release execution runs when reviewing release audits; keep local fallback runs visible for comparison.",
+              key: "review_convex_release_executions",
+              label: "Review Convex executions",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local release execution runs visible and retry the optional Convex read before committing more release actions.",
+          key: "retry_release_execution_read",
+          label: "Retry execution read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail: "Configure the optional browser bridge release execution query before expecting persisted release execution history.",
+          key: "configure_release_execution_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Keep local fallback release execution runs visible while the optional Convex execution query is still loading.",
+          key: "wait_for_release_execution_read",
+          label: "Wait for read result",
+        },
+      ]
+  }
+}
+
+function offerReleaseExecutionReadDiagnosticExport(
+  readSync: OfferReleaseExecutionReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Release execution read diagnostics",
+    `Status: ${readSync.status}`,
+    `Runs: persisted ${readSync.persistedRunCount}, local ${readSync.localRunCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${offerReleaseExecutionReadSyncIntegrationDetail(readSync)}`,
     "Recovery actions:",
     ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
   ].join("\n")

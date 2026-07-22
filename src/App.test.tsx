@@ -1473,6 +1473,13 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(releaseHistory).toHaveTextContent("2 recorded runs")
     })
+    const integrationHealth = screen.getByLabelText("Integration health")
+    await waitFor(() => {
+      expect(integrationHealth).toHaveTextContent("Release execution reads")
+      expect(integrationHealth).toHaveTextContent(
+        "1 persisted release execution run read from Convex and merged with 1 local fallback run.",
+      )
+    })
 
     const releaseGate = screen.getByLabelText("Quote release gate")
     await user.click(within(releaseGate).getByRole("button", { name: "Mark reviewed" }))
@@ -1486,6 +1493,97 @@ describe("FactoryBid workspace (component)", () => {
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("3 recorded runs")
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("Latest succeeded")
     })
+  })
+
+  it("keeps release execution history visible while persisted reads are pending", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        expect(queryRef).toBe("listOfferReleaseExecutions")
+        expect(args).toEqual({
+          limit: 20,
+          offerId: "convex-offer-204",
+        })
+        return await new Promise<never>(() => {})
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await user.click(within(screen.getByLabelText("Quote release gate")).getByRole("button", { name: "Mark reviewed" }))
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Move to ready" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+    await user.click(within(screen.getByLabelText("Offer release execution audit")).getByRole("button", { name: "Execute release" }))
+
+    const releaseHistory = screen.getByLabelText("Offer release execution history")
+    await waitFor(() => {
+      expect(releaseHistory).toHaveTextContent("2 recorded runs")
+      expect(
+        within(releaseHistory).getByLabelText("Offer release execution read source: Checking Convex"),
+      ).toHaveAttribute("data-status", "pending")
+    })
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Release execution reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Checking Convex release execution history; 2 local fallback runs remain visible.",
+    )
+    expect(within(integrationHealth).getByLabelText("Release execution reads recovery actions")).toHaveTextContent(
+      "Wait for read result",
+    )
+  })
+
+  it("keeps release execution history visible after persisted read fallback", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const releaseHistory = screen.getByLabelText("Offer release execution history")
+    await waitFor(() => {
+      expect(
+        within(releaseHistory).getByLabelText("Offer release execution read source: Local fallback"),
+      ).toHaveAttribute("data-status", "fallback")
+    })
+    expect(releaseHistory).toHaveTextContent("1 recorded run")
+    expect(releaseHistory).toHaveTextContent("Convex release execution history fell back to 1 release run.")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Release execution reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Release execution history fell back to 1 local release run after a Convex read failure.",
+    )
+    expect(within(integrationHealth).getByLabelText("Release execution reads recovery actions")).toHaveTextContent(
+      "Retry execution read",
+    )
   })
 
   it("marks the persistence chip as warning when a generic Convex fallback is recorded", async () => {
