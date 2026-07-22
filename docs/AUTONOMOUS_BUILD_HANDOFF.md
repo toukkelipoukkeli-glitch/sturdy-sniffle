@@ -1,16 +1,18 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-21 Europe/Helsinki.
+Last refreshed: 2026-07-22 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `dcf9307` (`Surface follow-up activity read loading (#463)`).
+- Main branch checkpoint: `0fbd947` (`Surface provider readiness read loading (#465)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/provider-readiness-read-loading` is adding pending/local/Convex/fallback read-source visibility to the Offer provider outcome readiness persistence panel plus deterministic desktop/mobile Playwright coverage.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#465` adds a compact pending/local/Convex/fallback read-source indicator to the Offer provider outcome readiness persistence panel, preserves replayed local readiness records while optional persisted reads are pending/fallback/empty, and adds deterministic App plus desktop/mobile Playwright coverage with Browser/Playwright fallback QA.
+  - `#464` refreshes the autonomous handoff after the follow-up activity read loading slice.
   - `#463` adds a compact pending/local/Convex/fallback read-source indicator to the Offer follow-up activity reads panel, preserves replayed local follow-up activity history while optional persisted reads are pending/fallback/empty, and adds deterministic App plus desktop/mobile Playwright coverage with Browser/Playwright fallback QA.
   - `#462` refreshes the autonomous handoff after the offer release read loading slice.
   - `#461` adds a compact pending/local/Convex/fallback read-source indicator to the Offer release execution history panel plus desktop/mobile Playwright coverage proving pending optional Convex reads keep local release execution history visible, with Browser/Playwright fallback QA after Computer Use was blocked by the Codex app safety policy.
