@@ -129,6 +129,46 @@ async function installPendingProviderOutcomeReadinessBridge(page: Page) {
   })
 }
 
+async function installFailingOfferReadBridge(page: Page) {
+  await page.addInitScript(() => {
+    ;(window as typeof window & {
+      __FACTORYBID_WORKSPACE_CONVEX__?: {
+        mutationRefs: Record<string, string>
+        offerFollowUpActivitiesQueryRef: string
+        offerIdsByLocalId: Record<string, string>
+        offerProviderOutcomeReadinessMutationRef: string
+        offerProviderOutcomeReadinessQueryRef: string
+        offerReleaseExecutionsQueryRef: string
+        rfqIdsByLocalId: Record<string, string>
+        runMutation: () => Promise<void>
+        runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<unknown>
+      }
+    }).__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      offerProviderOutcomeReadinessQueryRef: "listOfferProviderOutcomeReadiness",
+      offerReleaseExecutionsQueryRef: "listOfferReleaseExecutions",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        if (args.offerId !== "convex-offer-204") {
+          throw new Error(`Unexpected offer read fixture id: ${String(args.offerId)}`)
+        }
+        throw new Error(`Fixture ${String(queryRef)} read failed`)
+      },
+    }
+  })
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`offer provider readiness on ${viewport.label}`, () => {
     test.use({ viewport: viewport.size })
@@ -292,6 +332,63 @@ for (const viewport of operatorViewports) {
       await expect(recoveryActions).toContainText("Wait for read result")
       await expect(recoveryActions).toContainText(
         "Keep local fallback readiness records visible while the optional Convex provider readiness query is still loading.",
+      )
+
+      await assertNoHorizontalOverflow(page)
+    })
+
+    test("keeps offer read histories visible after Convex read failures", async ({ page }) => {
+      await installFailingOfferReadBridge(page)
+      await prepareReviewedRelease(page)
+
+      const executionAudit = page.getByLabel("Offer release execution audit")
+      await expect(executionAudit).toContainText("Dry-run prepared")
+      await executionAudit.getByRole("button", { name: "Execute release" }).dispatchEvent("click")
+      await expect(executionAudit).toContainText("Execution completed")
+
+      const releaseHistory = page.getByLabel("Offer release execution history")
+      await expect(releaseHistory).toContainText("2 recorded runs")
+      await expect(releaseHistory.getByLabel("Offer release execution read source: Local fallback")).toHaveAttribute(
+        "data-status",
+        "fallback",
+      )
+      await expect(releaseHistory).toContainText("Convex release execution history fell back to 2 release runs.")
+
+      const activityReads = page.getByLabel("Offer follow-up activity reads")
+      await expect(activityReads).toContainText("1 persisted activity")
+      await expect(activityReads).toContainText("follow-up-rfq-204")
+      await expect(activityReads.getByLabel("Offer follow-up activity read source: Local fallback")).toHaveAttribute(
+        "data-status",
+        "fallback",
+      )
+      await expect(activityReads).toContainText("Convex follow-up activity history fell back to 1 follow-up activity.")
+
+      const readinessHistory = page.getByLabel("Readiness persistence history")
+      await expect(readinessHistory).toContainText("2 readiness records")
+      await expect(readinessHistory.getByLabel("Provider outcome readiness read source: Local fallback")).toHaveAttribute(
+        "data-status",
+        "fallback",
+      )
+      await expect(readinessHistory).toContainText("Convex provider readiness history fell back to 2 readiness records.")
+
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText(
+        "Release execution history fell back to 2 local release runs after a Convex read failure.",
+      )
+      await expect(integrationHealth.getByLabel("Release execution reads recovery actions")).toContainText(
+        "Retry execution read",
+      )
+      await expect(integrationHealth).toContainText(
+        "Follow-up activity history fell back to 1 local follow-up activity after a Convex read failure.",
+      )
+      await expect(integrationHealth.getByLabel("Follow-up activity reads recovery actions")).toContainText(
+        "Retry activity read",
+      )
+      await expect(integrationHealth).toContainText(
+        "Provider readiness history fell back to 2 local readiness records after a Convex read failure.",
+      )
+      await expect(integrationHealth.getByLabel("Provider readiness reads recovery actions")).toContainText(
+        "Retry readiness read",
       )
 
       await assertNoHorizontalOverflow(page)
