@@ -32,6 +32,9 @@ const processPreviews = [
   },
 ]
 
+const fabricationMutationApplyPlanId =
+  "non-cnc-promoted-quote-application-mutation-apply-plan:unassigned-rfq:non-cnc-promoted-quote-application-mutation-package-registry-demo-non-cnc-promoted-quote-application-registry-demo-non-cnc-promotion-command-package-non-cnc-promotion-registry-demo-fabrication-fab-frame-508-fabrication-v1-unassigned-rfq-persist-quote-snapshot-refresh-offer-readiness-enable-offer-builder"
+
 async function assertNoHorizontalOverflow(page: Page) {
   const hasHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -68,15 +71,19 @@ async function assertMutationApplyHistory(nonCncDemos: Locator, page: Page) {
 
   const mutationApplyHistory = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation apply history")
   await expect(mutationApplyHistory).toContainText("Local mutation apply history")
+  await expect(mutationApplyHistory).toContainText("5 records")
+  await expect(mutationApplyHistory).toContainText(fabricationMutationApplyPlanId)
   await expect(mutationApplyHistory).toContainText("Active RFQ quote, offer, and release state stay unchanged.")
-  await expect(mutationApplyHistory).toContainText("Status counts:")
+  await expect(mutationApplyHistory).toContainText("Status counts: blocked 5")
 
   const mutationApplyExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote application mutation apply execution history",
   )
   await expect(mutationApplyExecutionHistory).toContainText("Local mutation apply audit history")
+  await expect(mutationApplyExecutionHistory).toContainText("11 records")
+  await expect(mutationApplyExecutionHistory).toContainText(fabricationMutationApplyPlanId)
   await expect(mutationApplyExecutionHistory).toContainText("Active RFQ quote, offer, and release state stay unchanged.")
-  await expect(mutationApplyExecutionHistory).toContainText("Status counts:")
+  await expect(mutationApplyExecutionHistory).toContainText("Status counts: blocked 11")
 
   await assertNoHorizontalOverflow(page)
 }
