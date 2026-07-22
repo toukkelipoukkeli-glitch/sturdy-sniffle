@@ -171,7 +171,10 @@ async function installFailingOfferReadBridge(page: Page) {
 
 for (const viewport of operatorViewports) {
   test.describe(`offer provider readiness on ${viewport.label}`, () => {
-    test.use({ viewport: viewport.size })
+    test.use({
+      permissions: ["clipboard-read", "clipboard-write"],
+      viewport: viewport.size,
+    })
 
     test("persists release provider readiness and local execution history after reload", async ({ page }) => {
       await prepareReviewedRelease(page)
@@ -378,18 +381,48 @@ for (const viewport of operatorViewports) {
       await expect(integrationHealth.getByLabel("Release execution reads recovery actions")).toContainText(
         "Retry execution read",
       )
+      const releaseExecutionSource = integrationHealth.locator(".integration-source-row", {
+        hasText: "Release execution reads",
+      })
+      await releaseExecutionSource.getByRole("button", { name: "Copy diagnostics" }).click()
+      await expect(releaseExecutionSource).toContainText("Release execution reads diagnostics copied.")
+      const copiedReleaseDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedReleaseDiagnostics).toContain("Release execution read diagnostics")
+      expect(copiedReleaseDiagnostics).toContain("Status: fallback")
+      expect(copiedReleaseDiagnostics).toContain("Runs: persisted 0, local 2, fallback 1")
+      expect(copiedReleaseDiagnostics).toContain("Retry execution read")
       await expect(integrationHealth).toContainText(
         "Follow-up activity history fell back to 1 local follow-up activity after a Convex read failure.",
       )
       await expect(integrationHealth.getByLabel("Follow-up activity reads recovery actions")).toContainText(
         "Retry activity read",
       )
+      const followUpActivitySource = integrationHealth.locator(".integration-source-row", {
+        hasText: "Follow-up activity reads",
+      })
+      await followUpActivitySource.getByRole("button", { name: "Copy diagnostics" }).click()
+      await expect(followUpActivitySource).toContainText("Follow-up activity reads diagnostics copied.")
+      const copiedActivityDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedActivityDiagnostics).toContain("Follow-up activity read diagnostics")
+      expect(copiedActivityDiagnostics).toContain("Status: fallback")
+      expect(copiedActivityDiagnostics).toContain("Activities: persisted 0, local 1, fallback 1")
+      expect(copiedActivityDiagnostics).toContain("Retry activity read")
       await expect(integrationHealth).toContainText(
         "Provider readiness history fell back to 2 local readiness records after a Convex read failure.",
       )
       await expect(integrationHealth.getByLabel("Provider readiness reads recovery actions")).toContainText(
         "Retry readiness read",
       )
+      const providerReadinessSource = integrationHealth.locator(".integration-source-row", {
+        hasText: "Provider readiness reads",
+      })
+      await providerReadinessSource.getByRole("button", { name: "Copy diagnostics" }).click()
+      await expect(providerReadinessSource).toContainText("Provider readiness reads diagnostics copied.")
+      const copiedReadinessDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedReadinessDiagnostics).toContain("Provider readiness read diagnostics")
+      expect(copiedReadinessDiagnostics).toContain("Status: fallback")
+      expect(copiedReadinessDiagnostics).toContain("Records: persisted 0, local 2, fallback 1")
+      expect(copiedReadinessDiagnostics).toContain("Retry readiness read")
 
       await assertNoHorizontalOverflow(page)
     })
