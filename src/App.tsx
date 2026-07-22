@@ -566,6 +566,7 @@ interface WorkspaceLocalState {
 
 type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
 type OfferFollowUpActivityReadSource = "convex" | "fallback" | "local" | "pending"
+type OfferProviderOutcomeReadinessReadSource = "convex" | "fallback" | "local" | "pending"
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const followUpActivityReadinessSyncHealthEventLimit = 12
@@ -1159,6 +1160,9 @@ function App() {
   const [offerProviderReadinessSnapshotsById, setOfferProviderReadinessSnapshotsById] = useState<
     Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>
   >(workspaceLocalState?.offerProviderReadinessSnapshotsById ?? {})
+  const [offerProviderReadinessReadSourceById, setOfferProviderReadinessReadSourceById] = useState<
+    Record<string, OfferProviderOutcomeReadinessReadSource>
+  >({})
   const offerProviderReadinessSnapshotsRef = useRef<Record<string, OfferReleaseProviderOutcomeReadinessPersistenceSnapshot>>({})
   const [offerLifecycleEventsById, setOfferLifecycleEventsById] = useState<Record<string, OfferLifecycleEventInput[]>>(
     workspaceLocalState?.offerLifecycleEventsById ?? {},
@@ -2374,6 +2378,9 @@ function App() {
       ),
     [offerReleaseProviderOutcomeReadinessRecordKey, selectedOfferProviderReadinessSnapshot],
   )
+  const offerProviderReadinessReadSource =
+    offerProviderReadinessReadSourceById[selectedId] ??
+    (offerProviderReadinessBridge?.queryRef && convexOfferProviderReadinessOfferId ? "pending" : "local")
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -2392,11 +2399,15 @@ function App() {
     const localReader = createLocalOfferReleaseProviderOutcomeReadinessReader({
       initialSnapshot: offerProviderReadinessSnapshotsRef.current[selectedId],
     })
+    let usedFallback = false
     const reader =
       offerProviderReadinessBridge?.queryRef && offerProviderReadinessBridge.runQuery
         ? createConvexOfferReleaseProviderOutcomeReadinessReader({
             fallback: localReader,
-            onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+            onQueryError: () => {
+              usedFallback = true
+              setPersistenceSyncErrorCount((count) => count + 1)
+            },
             queryRef: offerProviderReadinessBridge.queryRef,
             runQuery: offerProviderReadinessBridge.runQuery,
           })
@@ -2407,6 +2418,10 @@ function App() {
       .then((snapshot) => {
         settled = true
         if (!cancelled) {
+          setOfferProviderReadinessReadSourceById((current) => ({
+            ...current,
+            [selectedId]: usedFallback ? "fallback" : snapshot.recordCount > 0 ? "convex" : "local",
+          }))
           setOfferProviderReadinessSnapshotsById((current) => ({
             ...current,
             [selectedId]: mergeOfferProviderReadinessSnapshots(current[selectedId], snapshot),
@@ -2417,6 +2432,7 @@ function App() {
         settled = true
         if (!cancelled) {
           queriedReadinessKeys.delete(queryKey)
+          setOfferProviderReadinessReadSourceById((current) => ({ ...current, [selectedId]: "fallback" }))
           setPersistenceSyncErrorCount((count) => count + 1)
         }
       })
@@ -3200,6 +3216,7 @@ function App() {
               releaseHistoryReadSource={offerReleaseExecutionReadSource}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
+              releaseProviderOutcomeReadinessReadSource={offerProviderReadinessReadSource}
               releaseProviderOutcomeReadinessHistory={offerReleaseProviderOutcomeReadinessHistory}
               releaseProviderOutcomeReadiness={offerReleaseProviderOutcomeReadiness}
               releaseReview={selectedReleaseReview}
@@ -10402,6 +10419,7 @@ function OfferView({
   releaseHistoryReadSource,
   releasePlan,
   releaseProviderOutcomeHistory,
+  releaseProviderOutcomeReadinessReadSource,
   releaseProviderOutcomeReadinessHistory,
   releaseProviderOutcomeReadiness,
   releaseReview,
@@ -10438,6 +10456,7 @@ function OfferView({
   releaseHistoryReadSource: OfferReleaseExecutionReadSource
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
+  releaseProviderOutcomeReadinessReadSource: OfferProviderOutcomeReadinessReadSource
   releaseProviderOutcomeReadinessHistory: OfferReleaseProviderOutcomeReadinessHistorySummary
   releaseProviderOutcomeReadiness: OfferReleaseProviderOutcomeReadiness
   releaseReview?: ReleaseReviewState
@@ -10588,7 +10607,10 @@ function OfferView({
       />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
-      <OfferReleaseProviderOutcomeReadinessHistoryPanel history={releaseProviderOutcomeReadinessHistory} />
+      <OfferReleaseProviderOutcomeReadinessHistoryPanel
+        history={releaseProviderOutcomeReadinessHistory}
+        readSource={releaseProviderOutcomeReadinessReadSource}
+      />
       <OfferReleaseExecutionPanel
         execution={releaseExecution}
         onExecuteRelease={onExecuteRelease}
@@ -11478,11 +11500,15 @@ function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferRe
 
 function OfferReleaseProviderOutcomeReadinessHistoryPanel({
   history,
+  readSource,
 }: {
   history: OfferReleaseProviderOutcomeReadinessHistorySummary
+  readSource: OfferProviderOutcomeReadinessReadSource
 }) {
   const current = history.currentReadiness
   const statusLabel = history.totalReadinessRecords === 0 ? "Pending" : current ? "Recorded" : "Historical"
+  const sourceLabel = offerProviderOutcomeReadinessReadSourceLabel(readSource)
+  const sourceDetail = offerProviderOutcomeReadinessReadSourceDetail(readSource, history.totalReadinessRecords)
 
   return (
     <section className="offer-provider-readiness-history-panel" aria-label="Readiness persistence history">
@@ -11505,6 +11531,15 @@ function OfferReleaseProviderOutcomeReadinessHistoryPanel({
         >
           {statusLabel}
         </span>
+      </div>
+      <div
+        className="offer-provider-readiness-history-source"
+        aria-label={`Provider outcome readiness read source: ${sourceLabel}`}
+        data-status={readSource}
+      >
+        <Clock3 aria-hidden="true" />
+        <strong>{sourceLabel}</strong>
+        <span>{sourceDetail}</span>
       </div>
       <div className="offer-provider-readiness-history-summary">
         <Metric label="Records" value={String(history.totalReadinessRecords)} />
@@ -11531,6 +11566,34 @@ function OfferReleaseProviderOutcomeReadinessHistoryPanel({
       )}
     </section>
   )
+}
+
+function offerProviderOutcomeReadinessReadSourceLabel(source: OfferProviderOutcomeReadinessReadSource) {
+  switch (source) {
+    case "convex":
+      return "Convex read"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local readiness"
+  }
+}
+
+function offerProviderOutcomeReadinessReadSourceDetail(source: OfferProviderOutcomeReadinessReadSource, recordCount: number) {
+  const recordText = recordCount === 1 ? "1 readiness record" : `${recordCount} readiness records`
+  const verb = recordCount === 1 ? "remains" : "remain"
+  switch (source) {
+    case "convex":
+      return `Merged persisted provider readiness history with ${recordText}.`
+    case "fallback":
+      return `Convex provider readiness history fell back to ${recordText}.`
+    case "pending":
+      return `Checking Convex for provider readiness history; ${recordText} ${verb} visible.`
+    case "local":
+      return `Provider readiness history is using ${recordText}.`
+  }
 }
 
 function OfferReleaseExecutionPanel({

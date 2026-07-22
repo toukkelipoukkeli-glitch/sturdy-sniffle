@@ -471,7 +471,9 @@ test("executes a reviewed release plan through the local adapter", async ({ page
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("03 Jul, 10.00 - 03 Jul, 10.30")
   await expect(page.getByLabel("Offer release calendar drafts")).toContainText("Europe/Helsinki")
   await expect(page.getByLabel("Offer release execution audit")).toContainText("Dry-run prepared")
-  await expect(page.getByLabel("Provider outcome readiness")).toContainText("Provider outcomes ready: 6 applied commands.")
+  await expect(page.getByLabel("Provider outcome readiness", { exact: true })).toContainText(
+    "Provider outcomes ready: 6 applied commands.",
+  )
   const executeRelease = page.getByLabel("Offer release execution audit").getByRole("button", { name: "Execute release" })
   await expect(executeRelease).toBeEnabled()
   await executeRelease.dispatchEvent("click")
