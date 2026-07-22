@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `6e9e2a5` (`Add offer read local diagnostics e2e (#485)`).
+- Main branch checkpoint: `9a10145` (`Add CAD preview fallback e2e (#486)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/cad-preview-fallback-e2e` is adding deterministic desktop/mobile Playwright coverage for drawing/CAD-metadata fallback preview states without changing quote math or live parser/provider wiring.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#486` adds deterministic desktop/mobile Playwright coverage for drawing/CAD-metadata fallback preview states without changing quote math or live parser/provider wiring.
   - `#485` adds deterministic desktop/mobile Playwright coverage for local email draft package and provider outcome read diagnostic exports in Integration health.
   - `#484` refreshes the autonomous handoff after the offer-read fallback diagnostic e2e slice.
   - `#483` extends the offer-read fallback smoke with copyable Integration health diagnostic exports for release execution, follow-up activity, and provider readiness read failures.
