@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `4c54fca` (`Surface provider readiness in integration health (#467)`).
+- Main branch checkpoint: `5bea646` (`Refresh provider readiness health handoff (#468)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/followup-activity-integration-health` is surfacing follow-up activity persisted-read source state and recovery actions in Integration health without live connector writes.
 - Latest merged sequence:
+  - `#468` refreshes the autonomous handoff after the provider readiness Integration health slice.
   - `#467` surfaces provider-readiness persisted-read source state and recovery actions in Integration health, backed by a deterministic read-sync helper plus App/domain and desktop/mobile Playwright coverage while live connector writes remain deferred.
   - `#466` refreshes the autonomous handoff after the provider readiness read loading slice.
   - `#465` adds a compact pending/local/Convex/fallback read-source indicator to the Offer provider outcome readiness persistence panel, preserves replayed local readiness records while optional persisted reads are pending/fallback/empty, and adds deterministic App plus desktop/mobile Playwright coverage with Browser/Playwright fallback QA.

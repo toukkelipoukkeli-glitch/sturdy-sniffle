@@ -1226,6 +1226,121 @@ describe("workspace integration status", () => {
       "Provider readiness reads: Provider readiness history fell back to 2 local readiness records after a Convex read failure.",
     )
   })
+
+  it("surfaces Convex follow-up activity read health as a separate source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpActivityReadSync: {
+        fallbackCount: 0,
+        localActivityCount: 0,
+        persistedActivityCount: 2,
+        status: "convex",
+      },
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "follow_up_activity_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Use persisted follow-up activity records when reviewing follow-up readiness; keep local fallback records visible for comparison.",
+          key: "review_convex_follow_up_activities",
+          label: "Review Convex activities",
+        },
+      ],
+      count: 2,
+      detail: "2 persisted follow-up activities read from Convex and merged with 0 local fallback activities.",
+      diagnosticExport: [
+        "Follow-up activity read diagnostics",
+        "Status: convex",
+        "Activities: persisted 2, local 0, fallback 0",
+        "Detail: 2 persisted follow-up activities read from Convex and merged with 0 local fallback activities.",
+        "Recovery actions:",
+        "- Review Convex activities: Use persisted follow-up activity records when reviewing follow-up readiness; keep local fallback records visible for comparison.",
+      ].join("\n"),
+      label: "Follow-up activity reads",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("keeps pending follow-up activity reads actionable without marking them healthy", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpActivityReadSync: {
+        fallbackCount: 0,
+        localActivityCount: 1,
+        persistedActivityCount: 0,
+        status: "pending",
+      },
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("attention")
+    expect(status.sources.find((source) => source.key === "follow_up_activity_reads")).toMatchObject({
+      actions: [
+        {
+          detail: "Keep local fallback follow-up activity records visible while the optional Convex activity query is still loading.",
+          key: "wait_for_follow_up_activity_read",
+          label: "Wait for read result",
+        },
+      ],
+      count: 1,
+      detail: "Checking Convex follow-up activity history; 1 local fallback activity remains visible.",
+      label: "Follow-up activity reads",
+      severity: "attention",
+      status: "pending",
+    })
+  })
+
+  it("surfaces follow-up activity read fallbacks as integration warnings", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpActivityReadSync: {
+        fallbackCount: 1,
+        localActivityCount: 2,
+        persistedActivityCount: 0,
+        status: "fallback",
+      },
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "follow_up_activity_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Keep local follow-up activity records visible and retry the optional Convex read before committing follow-up lifecycle actions.",
+          key: "retry_follow_up_activity_read",
+          label: "Retry activity read",
+        },
+      ],
+      count: 1,
+      detail: "Follow-up activity history fell back to 2 local follow-up activities after a Convex read failure.",
+      label: "Follow-up activity reads",
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Follow-up activity reads: Follow-up activity history fell back to 2 local follow-up activities after a Convex read failure.",
+    )
+  })
 })
 
 function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): ConnectorSyncPersistenceSnapshot {
