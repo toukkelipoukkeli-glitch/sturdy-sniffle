@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a2a977b` (`Refresh CAD preview fallback handoff (#487)`).
+- Main branch checkpoint: `f896dbc` (`Add non-CNC apply history e2e (#488)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-apply-history-e2e` broadens deterministic desktop/mobile Playwright coverage for the existing guarded non-CNC mutation apply/history path while keeping active RFQ quote, offer, and release state unchanged.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#488` adds deterministic desktop/mobile Playwright coverage for the existing guarded non-CNC mutation apply/history path, including exact local history counts and fixture keys while active RFQ quote, offer, and release state stay unchanged.
   - `#487` refreshes the autonomous handoff after the CAD preview fallback e2e slice.
   - `#486` adds deterministic desktop/mobile Playwright coverage for drawing/CAD-metadata fallback preview states without changing quote math or live parser/provider wiring.
   - `#485` adds deterministic desktop/mobile Playwright coverage for local email draft package and provider outcome read diagnostic exports in Integration health.
