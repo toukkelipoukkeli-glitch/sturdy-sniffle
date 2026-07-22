@@ -1101,6 +1101,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessPersistence).toHaveTextContent(
       "Merged persisted provider readiness history with 2 readiness records.",
     )
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider readiness reads")
+    expect(integrationHealth).toHaveTextContent("2 persisted provider readiness records read from Convex")
   })
 
   it("keeps provider outcome readiness visible while persisted reads are pending", async () => {
@@ -1143,6 +1146,14 @@ describe("FactoryBid workspace (component)", () => {
       "Checking Convex for provider readiness history; 1 readiness record remains visible.",
     )
     expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider readiness reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Checking Convex provider readiness history; 1 local fallback record remains visible.",
+    )
+    expect(within(integrationHealth).getByLabelText("Provider readiness reads recovery actions")).toHaveTextContent(
+      "Wait for read result",
+    )
   })
 
   it("keeps provider outcome readiness visible after persisted read fallback", async () => {
@@ -1178,6 +1189,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(readinessPersistence).toHaveTextContent("1 readiness record")
     expect(readinessPersistence).toHaveTextContent("Convex provider readiness history fell back to 1 readiness record.")
     expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider readiness reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Provider readiness history fell back to 1 local readiness record after a Convex read failure.",
+    )
+    expect(within(integrationHealth).getByLabelText("Provider readiness reads recovery actions")).toHaveTextContent(
+      "Retry readiness read",
+    )
   })
 
   it("routes follow-up activity readiness through the Convex browser bridge", async () => {
@@ -2197,6 +2216,11 @@ describe("FactoryBid workspace (component)", () => {
       within(readinessPersistence).getByLabelText("Provider outcome readiness read source: Local readiness"),
     ).toHaveAttribute("data-status", "local")
     expect(readinessPersistence).toHaveTextContent("Provider readiness history is using 1 readiness record.")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Provider readiness reads")
+    expect(integrationHealth).toHaveTextContent(
+      "1 local readiness record available; Convex provider readiness reads are not configured.",
+    )
     expect(readinessPersistence).toHaveTextContent("Current blocked")
     expect(readinessPersistence).toHaveTextContent("0/0 command outcomes recorded")
     expect(readinessPersistence).toHaveTextContent("offer-204:rfq-204")

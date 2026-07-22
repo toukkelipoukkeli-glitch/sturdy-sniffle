@@ -248,6 +248,16 @@ for (const viewport of operatorViewports) {
       await expect(readinessHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
       await expect(readinessHistory.locator(".metric", { hasText: /^Blocked 1$/ })).toBeVisible()
       await expect(readinessHistory).toContainText("Current readiness recorded")
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText("Provider readiness reads")
+      await expect(integrationHealth).toContainText(
+        "Checking Convex provider readiness history; 2 local fallback records remain visible.",
+      )
+      const recoveryActions = integrationHealth.getByLabel("Provider readiness reads recovery actions")
+      await expect(recoveryActions).toContainText("Wait for read result")
+      await expect(recoveryActions).toContainText(
+        "Keep local fallback readiness records visible while the optional Convex provider readiness query is still loading.",
+      )
 
       await assertNoHorizontalOverflow(page)
     })
