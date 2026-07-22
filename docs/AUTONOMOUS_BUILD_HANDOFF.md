@@ -11,7 +11,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
-  - `#479` surfaces the existing local-first provider outcome read-source state in the Offer provider outcome history panel, adds deterministic App coverage for local/Convex/fallback/pending source labels, and keeps live provider/Convex writes deferred.
+  - `#479` surfaces the existing local-first provider outcome read-source state in the Offer provider outcome history panel, adds deterministic App coverage for local/Convex/fallback/pending source labels, and keeps live provider-side writes deferred.
   - `#478` refreshes the autonomous handoff after the email draft read-source UI slice.
   - `#477` surfaces the existing local-first email draft package read-source state in the Offer history panel, adds deterministic App coverage for local/Convex/fallback/pending source labels, and keeps live Gmail/Convex writes deferred.
   - `#476` refreshes the autonomous handoff after the provider outcome Integration health slice.
