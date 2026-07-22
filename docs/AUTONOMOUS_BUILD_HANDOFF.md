@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d8ad2e9` (`Surface follow-up activity reads in integration health (#469)`).
+- Main branch checkpoint: `b1af9f7` (`Refresh follow-up activity health handoff (#470)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/release-execution-integration-health` is surfacing release execution persisted-read source state and recovery actions in Integration health without live connector writes.
 - Latest merged sequence:
+  - `#470` refreshes the autonomous handoff after the follow-up activity Integration health slice.
   - `#469` surfaces follow-up activity persisted-read source state and recovery actions in Integration health, backed by a deterministic read-sync helper plus App/domain and desktop/mobile Playwright coverage while live connector writes remain deferred.
   - `#468` refreshes the autonomous handoff after the provider readiness Integration health slice.
   - `#467` surfaces provider-readiness persisted-read source state and recovery actions in Integration health, backed by a deterministic read-sync helper plus App/domain and desktop/mobile Playwright coverage while live connector writes remain deferred.

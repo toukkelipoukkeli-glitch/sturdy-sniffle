@@ -96,6 +96,10 @@ import {
 } from "./domain/offers/offerReleaseExecutionHistory"
 import { createConvexOfferReleaseExecutionReader } from "./domain/offers/offerReleaseExecutionReadPersistence"
 import {
+  buildOfferReleaseExecutionReadSyncState,
+  type OfferReleaseExecutionReadSyncStatus,
+} from "./domain/offers/offerReleaseExecutionReadSync"
+import {
   createConvexOfferFollowUpActivityReader,
   summarizeOfferFollowUpActivities,
   type ConvexOfferFollowUpActivityRecord,
@@ -572,7 +576,7 @@ interface WorkspaceLocalState {
   workItems: QuoteWorkItem[]
 }
 
-type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
+type OfferReleaseExecutionReadSource = OfferReleaseExecutionReadSyncStatus
 type OfferFollowUpActivityReadSource = OfferFollowUpActivityReadSyncStatus
 type OfferProviderOutcomeReadinessReadSource = OfferReleaseProviderOutcomeReadinessReadSyncStatus
 
@@ -1851,6 +1855,7 @@ function App() {
   const offerReleaseExecutionReadSource =
     releaseExecutionReadSourceById[selectedId] ??
     (offerReleaseExecutionBridge && convexOfferReleaseExecutionOfferId ? "pending" : "local")
+  const persistedOfferReleaseHistory = releaseExecutionHistoryById[selectedId]
   useEffect(() => {
     let cancelled = false
     const releaseExecutionQueries = releaseExecutionQueryKeysRef.current
@@ -1915,6 +1920,21 @@ function App() {
   const offerReleaseHistory = mergeOfferReleaseExecutionHistories(
     releaseExecutionHistoryById[selectedId],
     localOfferReleaseHistory,
+  )
+  const offerReleaseExecutionReadSync = useMemo(
+    () =>
+      buildOfferReleaseExecutionReadSyncState({
+        localRunCount: offerReleaseExecutionReadSource === "convex" ? localOfferReleaseHistory.totalRuns : offerReleaseHistory.totalRuns,
+        persistedRunCount:
+          offerReleaseExecutionReadSource === "convex" ? (persistedOfferReleaseHistory?.totalRuns ?? 0) : 0,
+        status: offerReleaseExecutionReadSource,
+      }),
+    [
+      localOfferReleaseHistory.totalRuns,
+      offerReleaseExecutionReadSource,
+      offerReleaseHistory.totalRuns,
+      persistedOfferReleaseHistory?.totalRuns,
+    ],
   )
   const providerRunBridge = useMemo(() => createBrowserConvexProviderRunBridge(), [])
   const convexProviderRunRfqId = providerRunBridge?.resolveRfqId(selectedItem.id)
@@ -2580,6 +2600,7 @@ function App() {
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpActivityReadSync: offerFollowUpActivityReadSync,
         followUpScheduledAt: offerFollowUpScheduledAt,
+        offerReleaseExecutionReadSync,
         persistenceMode: workspacePersistenceRuntime.mode,
         providerReadinessReadSync: offerProviderReadinessReadSync,
         providerRunReadSync: selectedProviderRunReadSync,
@@ -2598,6 +2619,7 @@ function App() {
       offerFollowUpActivityReadinessHistory,
       offerFollowUpActivityReadinessReadModel,
       offerFollowUpScheduledAt,
+      offerReleaseExecutionReadSync,
       offerReplySync,
       offerProviderReadinessReadSync,
       persistenceSyncErrorCount,
