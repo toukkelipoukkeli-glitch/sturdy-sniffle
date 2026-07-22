@@ -3848,6 +3848,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(draftHistory).toHaveTextContent("sari.virtanen@example.test")
     expect(draftHistory).toHaveTextContent("1 attachment")
     expect(draftHistory).toHaveTextContent("ready")
+    expect(within(draftHistory).getByLabelText("Email draft package read source: Local drafts")).toHaveAttribute(
+      "data-status",
+      "local",
+    )
+    expect(draftHistory).toHaveTextContent(
+      "1 local email draft package available; Convex email draft package reads are not configured.",
+    )
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Email draft package reads")
     expect(integrationHealth).toHaveTextContent(
