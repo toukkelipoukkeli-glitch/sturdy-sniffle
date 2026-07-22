@@ -1595,6 +1595,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent("Expected 0")
     expect(followUpActivity).toHaveTextContent("Missing 0")
     expect(followUpActivity).toHaveTextContent("Latest None")
+    expect(followUpActivity.getAttribute("aria-label")).toBe("Offer follow-up activity reads")
+    expect(
+      within(followUpActivity).getByLabelText("Offer follow-up activity read source: Local activity"),
+    ).toHaveAttribute("data-status", "local")
+    expect(followUpActivity).toHaveTextContent("Follow-up activity history is using 0 follow-up activities.")
     expect(followUpActivity).toHaveTextContent("No persisted calendar follow-up activity records are available yet.")
     expect(followUpActivity).toHaveTextContent("No persisted follow-up activities have been recorded yet.")
     expect(followUpActivity).not.toHaveTextContent("activity-follow-up")
@@ -1613,6 +1618,173 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Sync health Healthy")
     })
     expect(within(readinessHistory).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
+  })
+
+  it("keeps local follow-up activity visible while persisted activity reads are pending", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        expect(queryRef).toBe("listOfferFollowUpActivities")
+        expect(args).toEqual({
+          limit: 20,
+          offerId: "convex-offer-204",
+        })
+        return await new Promise<never>(() => {})
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    expect(followUpActivity).toHaveTextContent("1 persisted activity")
+    expect(followUpActivity).toHaveTextContent("Task IDs 1")
+    expect(followUpActivity).toHaveTextContent("Expected 1")
+    expect(followUpActivity).toHaveTextContent("Missing 0")
+    expect(followUpActivity).toHaveTextContent("follow-up-rfq-204")
+    expect(
+      within(followUpActivity).getByLabelText("Offer follow-up activity read source: Checking Convex"),
+    ).toHaveAttribute("data-status", "pending")
+    expect(followUpActivity).toHaveTextContent(
+      "Checking Convex for follow-up activity history; 1 follow-up activity remains visible.",
+    )
+  })
+
+  it("labels empty persisted follow-up activity reads as local activity", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => [],
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    await waitFor(() => {
+      expect(
+        within(followUpActivity).getByLabelText("Offer follow-up activity read source: Local activity"),
+      ).toHaveAttribute("data-status", "local")
+    })
+    expect(followUpActivity).toHaveTextContent("1 persisted activity")
+    expect(followUpActivity).toHaveTextContent("Follow-up activity history is using 1 follow-up activity.")
+    expect(followUpActivity).not.toHaveTextContent("Merged persisted follow-up activity history")
+  })
+
+  it("labels non-empty persisted follow-up activity reads as Convex activity", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        expect(queryRef).toBe("listOfferFollowUpActivities")
+        expect(args).toEqual({
+          limit: 20,
+          offerId: "convex-offer-204",
+        })
+        return [
+          {
+            _id: "activity-follow-up-convex-204",
+            actorName: "Sari",
+            createdAt: Date.parse("2026-06-20T06:30:00.000Z"),
+            kind: "calendar_event",
+            message: "Scheduled offer follow-up follow-up-rfq-204 for convex-offer-204 at 2026-07-03T07:00:00.000Z.",
+            offerId: "convex-offer-204",
+            rfqId: "convex-rfq-204",
+          },
+        ]
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    await waitFor(() => {
+      expect(
+        within(followUpActivity).getByLabelText("Offer follow-up activity read source: Convex read"),
+      ).toHaveAttribute("data-status", "convex")
+    })
+    expect(followUpActivity).toHaveTextContent("1 persisted activity")
+    expect(followUpActivity).toHaveTextContent("Merged persisted follow-up activity history with 1 follow-up activity.")
+    expect(followUpActivity).toHaveTextContent("activity-follow-up-convex-204")
+    expect(followUpActivity).toHaveTextContent("follow-up-rfq-204")
+  })
+
+  it("labels rejected persisted follow-up activity reads as fallback while preserving local activity", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: "Triage" }))
+    await user.click(screen.getByRole("button", { name: "Create follow-up" }))
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const followUpActivity = screen.getByLabelText("Offer follow-up activity reads")
+    await waitFor(() => {
+      expect(
+        within(followUpActivity).getByLabelText("Offer follow-up activity read source: Local fallback"),
+      ).toHaveAttribute("data-status", "fallback")
+    })
+    expect(followUpActivity).toHaveTextContent("1 persisted activity")
+    expect(followUpActivity).toHaveTextContent("Convex follow-up activity history fell back to 1 follow-up activity.")
+    expect(followUpActivity).toHaveTextContent("follow-up-rfq-204")
+    expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
   })
 
   it("restores follow-up activity readiness history snapshots from local storage", async () => {

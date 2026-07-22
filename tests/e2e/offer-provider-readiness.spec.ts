@@ -57,6 +57,39 @@ async function installPendingReleaseExecutionReadBridge(page: Page) {
   })
 }
 
+async function installPendingFollowUpActivityReadBridge(page: Page) {
+  await page.addInitScript(() => {
+    ;(window as typeof window & {
+      __FACTORYBID_WORKSPACE_CONVEX__?: {
+        mutationRefs: Record<string, string>
+        offerFollowUpActivitiesQueryRef: string
+        offerIdsByLocalId: Record<string, string>
+        runMutation: () => Promise<void>
+        runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<never>
+      }
+    }).__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerFollowUpActivitiesQueryRef: "listOfferFollowUpActivities",
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        if (queryRef !== "listOfferFollowUpActivities") {
+          throw new Error(`Unexpected follow-up activity query ref: ${String(queryRef)}`)
+        }
+        if (args.offerId !== "convex-offer-204") {
+          throw new Error(`Unexpected follow-up activity offer id: ${String(args.offerId)}`)
+        }
+        return new Promise<never>(() => {})
+      },
+    }
+  })
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`offer provider readiness on ${viewport.label}`, () => {
     test.use({ viewport: viewport.size })
@@ -134,6 +167,26 @@ for (const viewport of operatorViewports) {
         "Checking Convex for release execution history; 2 release runs remain visible.",
       )
       await expect(releaseHistory.locator(".metric", { hasText: "Latest" })).toContainText("succeeded")
+
+      await assertNoHorizontalOverflow(page)
+    })
+
+    test("keeps follow-up activity history visible while persisted reads are pending", async ({ page }) => {
+      await installPendingFollowUpActivityReadBridge(page)
+      await prepareReviewedRelease(page)
+
+      const activityReads = page.getByLabel("Offer follow-up activity reads")
+      await expect(activityReads).toContainText("1 persisted activity")
+      await expect(activityReads).toContainText("follow-up-rfq-204")
+      await expect(activityReads.getByLabel("Offer follow-up activity read source: Checking Convex")).toHaveAttribute(
+        "data-status",
+        "pending",
+      )
+      await expect(activityReads).toContainText(
+        "Checking Convex for follow-up activity history; 1 follow-up activity remains visible.",
+      )
+      await expect(activityReads.locator(".metric", { hasText: "Task IDs" })).toContainText("1")
+      await expect(activityReads.locator(".metric", { hasText: "Missing" })).toContainText("0")
 
       await assertNoHorizontalOverflow(page)
     })

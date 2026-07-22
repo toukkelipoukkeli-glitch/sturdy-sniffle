@@ -565,6 +565,7 @@ interface WorkspaceLocalState {
 }
 
 type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
+type OfferFollowUpActivityReadSource = "convex" | "fallback" | "local" | "pending"
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const followUpActivityReadinessSyncHealthEventLimit = 12
@@ -1171,6 +1172,7 @@ function App() {
   const [followUpActivitySummaryById, setFollowUpActivitySummaryById] = useState<Record<string, OfferFollowUpActivityReadSummary>>(
     () => replayFollowUpActivitySummaries(actionsById),
   )
+  const [followUpActivityReadSourceById, setFollowUpActivityReadSourceById] = useState<Record<string, OfferFollowUpActivityReadSource>>({})
   const [followUpActivityReadinessHistoryById, setFollowUpActivityReadinessHistoryById] = useState<
     Record<string, OfferFollowUpActivityReadinessHistoryPersistenceSnapshot>
   >(workspaceLocalState?.followUpActivityReadinessHistoryById ?? {})
@@ -1212,7 +1214,9 @@ function App() {
   const releaseExecutionQueryKeysRef = useRef(
     new Map<string, Promise<{ history: OfferReleaseExecutionHistorySummary; source: OfferReleaseExecutionReadSource }>>(),
   )
-  const followUpActivityQueryKeysRef = useRef(new Map<string, Promise<OfferFollowUpActivityReadSummary>>())
+  const followUpActivityQueryKeysRef = useRef(
+    new Map<string, Promise<{ source: OfferFollowUpActivityReadSource; summary: OfferFollowUpActivityReadSummary }>>(),
+  )
   const followUpActivityReadinessPersistenceKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessQueryKeysRef = useRef(new Set<string>())
   const followUpActivityReadinessSyncEventCounterRef = useRef(0)
@@ -2011,30 +2015,43 @@ function App() {
       const queryRef = offerFollowUpActivityBridge.queryRef
       const runQuery = offerFollowUpActivityBridge.runQuery
 
+      let usedFallback = false
       const reader = createConvexOfferFollowUpActivityReader({
-        onQueryError: () => setPersistenceSyncErrorCount((count) => count + 1),
+        onQueryError: () => {
+          usedFallback = true
+          setPersistenceSyncErrorCount((count) => count + 1)
+        },
         queryRef,
         runQuery,
       })
-      activityPromise = reader.listActivities({
-        limit: 20,
-        offerId: convexOfferFollowUpActivityOfferId,
-      })
+      activityPromise = reader
+        .listActivities({
+          limit: 20,
+          offerId: convexOfferFollowUpActivityOfferId,
+        })
+        .then((summary) => ({
+          source: usedFallback ? "fallback" : summary.totalActivities > 0 ? "convex" : "local",
+          summary,
+        }))
       followUpActivityQueries.set(queryKey, activityPromise)
     }
 
     void activityPromise
-      .then((summary) => {
-        if (!cancelled && summary.totalActivities > 0) {
-          setFollowUpActivitySummaryById((current) => {
-            const nextSummary = mergeOfferFollowUpActivitySummaries(current[selectedId], summary)
-            return { ...current, [selectedId]: nextSummary }
-          })
+      .then(({ source, summary }) => {
+        if (!cancelled) {
+          setFollowUpActivityReadSourceById((current) => ({ ...current, [selectedId]: source }))
+          if (summary.totalActivities > 0) {
+            setFollowUpActivitySummaryById((current) => {
+              const nextSummary = mergeOfferFollowUpActivitySummaries(current[selectedId], summary)
+              return { ...current, [selectedId]: nextSummary }
+            })
+          }
         }
       })
       .catch(() => {
         followUpActivityQueries.delete(queryKey)
         if (!cancelled) {
+          setFollowUpActivityReadSourceById((current) => ({ ...current, [selectedId]: "fallback" }))
           setPersistenceSyncErrorCount((count) => count + 1)
         }
       })
@@ -2044,6 +2061,9 @@ function App() {
     }
   }, [convexOfferFollowUpActivityOfferId, offerFollowUpActivityBridge, selectedId])
   const offerFollowUpActivitySummary = followUpActivitySummaryById[selectedId] ?? localFollowUpActivitySummary
+  const offerFollowUpActivityReadSource =
+    followUpActivityReadSourceById[selectedId] ??
+    (offerFollowUpActivityBridge && convexOfferFollowUpActivityOfferId ? "pending" : "local")
   const expectedFollowUpActivityTaskIds = useMemo(() => expectedWorkspaceFollowUpTaskIds(selectedActions), [selectedActions])
   const offerFollowUpActivityReadiness = useMemo(
     () =>
@@ -3174,6 +3194,7 @@ function App() {
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
               releaseFollowUpActivityReadinessSyncHealth={followUpActivityReadinessSyncHealth}
+              releaseFollowUpActivityReadSource={offerFollowUpActivityReadSource}
               releaseFollowUpActivitySummary={offerFollowUpActivitySummary}
               releaseHistory={offerReleaseHistory}
               releaseHistoryReadSource={offerReleaseExecutionReadSource}
@@ -10375,6 +10396,7 @@ function OfferView({
   releaseFollowUpActivityReadinessHistory,
   releaseFollowUpActivityReadinessSync,
   releaseFollowUpActivityReadinessSyncHealth,
+  releaseFollowUpActivityReadSource,
   releaseFollowUpActivitySummary,
   releaseHistory,
   releaseHistoryReadSource,
@@ -10410,6 +10432,7 @@ function OfferView({
   releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
   releaseFollowUpActivityReadinessSync: OfferFollowUpActivityReadinessSyncSummary
   releaseFollowUpActivityReadinessSyncHealth: OfferFollowUpActivityReadinessSyncHealthSummary
+  releaseFollowUpActivityReadSource: OfferFollowUpActivityReadSource
   releaseFollowUpActivitySummary: OfferFollowUpActivityReadSummary
   releaseHistory: OfferReleaseExecutionHistorySummary
   releaseHistoryReadSource: OfferReleaseExecutionReadSource
@@ -10555,6 +10578,7 @@ function OfferView({
       <OfferReleasePlanPanel releasePlan={releasePlan} />
       <OfferFollowUpActivityReadPanel
         readiness={releaseFollowUpActivityReadiness}
+        readSource={releaseFollowUpActivityReadSource}
         summary={releaseFollowUpActivitySummary}
       />
       <OfferFollowUpActivityReadinessHistoryPanel
@@ -10812,13 +10836,17 @@ function offerReleaseExecutionReadSourceDetail(source: OfferReleaseExecutionRead
 
 function OfferFollowUpActivityReadPanel({
   readiness,
+  readSource,
   summary,
 }: {
   readiness: OfferFollowUpActivityReadiness
+  readSource: OfferFollowUpActivityReadSource
   summary: OfferFollowUpActivityReadSummary
 }) {
   const latest = summary.latestActivity
   const taskCount = summary.recordedFollowUpTaskIds.length
+  const sourceLabel = offerFollowUpActivityReadSourceLabel(readSource)
+  const sourceDetail = offerFollowUpActivityReadSourceDetail(readSource, summary.totalActivities)
 
   return (
     <section className="offer-follow-up-activity-panel" aria-label="Offer follow-up activity reads">
@@ -10837,6 +10865,15 @@ function OfferFollowUpActivityReadPanel({
         >
           {followUpActivityReadinessLabel(readiness.status)}
         </span>
+      </div>
+      <div
+        className="offer-follow-up-activity-source"
+        aria-label={`Offer follow-up activity read source: ${sourceLabel}`}
+        data-status={readSource}
+      >
+        <Clock3 aria-hidden="true" />
+        <strong>{sourceLabel}</strong>
+        <span>{sourceDetail}</span>
       </div>
       <div className="offer-follow-up-activity-summary">
         <Metric label="Activities" value={String(summary.totalActivities)} />
@@ -10879,6 +10916,34 @@ function OfferFollowUpActivityReadPanel({
       ) : null}
     </section>
   )
+}
+
+function offerFollowUpActivityReadSourceLabel(source: OfferFollowUpActivityReadSource) {
+  switch (source) {
+    case "convex":
+      return "Convex read"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local activity"
+  }
+}
+
+function offerFollowUpActivityReadSourceDetail(source: OfferFollowUpActivityReadSource, totalActivities: number) {
+  const activityText = totalActivities === 1 ? "1 follow-up activity" : `${totalActivities} follow-up activities`
+  const verb = totalActivities === 1 ? "remains" : "remain"
+  switch (source) {
+    case "convex":
+      return `Merged persisted follow-up activity history with ${activityText}.`
+    case "fallback":
+      return `Convex follow-up activity history fell back to ${activityText}.`
+    case "pending":
+      return `Checking Convex for follow-up activity history; ${activityText} ${verb} visible.`
+    case "local":
+      return `Follow-up activity history is using ${activityText}.`
+  }
 }
 
 function OfferFollowUpActivityReadinessHistoryPanel({
