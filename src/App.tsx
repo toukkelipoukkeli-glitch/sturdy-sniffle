@@ -11448,7 +11448,7 @@ function followUpActivityReadinessLabel(status: OfferFollowUpActivityReadinessSt
   }
 }
 
-function OfferEmailDraftPackageHistoryPanel({
+export function OfferEmailDraftPackageHistoryPanel({
   history,
   readSync,
 }: {
