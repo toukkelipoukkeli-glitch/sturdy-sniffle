@@ -3863,6 +3863,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(providerOutcomeHistory).toHaveTextContent("0")
     expect(providerOutcomeHistory).toHaveTextContent("Email Draft")
     expect(providerOutcomeHistory).toHaveTextContent("Applied")
+    expect(integrationHealth).toHaveTextContent("Provider outcome reads")
+    expect(integrationHealth).toHaveTextContent(
+      "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+    )
+    expect(within(integrationHealth).getByLabelText("Provider outcome reads recovery actions")).toHaveTextContent(
+      "Configure Convex read",
+    )
     const calendarDrafts = within(releasePlan).getByLabelText("Offer release calendar drafts")
     expect(calendarDrafts).toHaveTextContent("Follow up: OFFER-204")
     expect(calendarDrafts).toHaveTextContent("03 Jul, 10.00 - 03 Jul, 10.30")

@@ -21,6 +21,10 @@ import {
   offerReleaseExecutionReadSyncIntegrationDetail,
   type OfferReleaseExecutionReadSyncState,
 } from "../offers/offerReleaseExecutionReadSync"
+import {
+  offerReleaseProviderOutcomeReadSyncIntegrationDetail,
+  type OfferReleaseProviderOutcomeReadSyncState,
+} from "../offers/offerReleaseProviderOutcomeReadSync"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
   offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail,
@@ -52,6 +56,7 @@ export type IntegrationStatusSourceKey =
   | "email_draft_package_reads"
   | "follow_up_activity_reads"
   | "offer_replies"
+  | "offer_provider_outcome_reads"
   | "offer_release_execution_reads"
   | "persistence"
   | "provider_readiness_reads"
@@ -112,6 +117,7 @@ export interface WorkspaceIntegrationStatusInput {
   followUpActivityReadSync?: OfferFollowUpActivityReadSyncState
   followUpScheduledAt?: string
   offerEmailDraftPackageReadSync?: OfferEmailDraftPackageReadSyncState
+  offerProviderOutcomeReadSync?: OfferReleaseProviderOutcomeReadSyncState
   offerReleaseExecutionReadSync?: OfferReleaseExecutionReadSyncState
   persistenceMode: WorkspacePersistenceMode
   providerReadinessReadSync?: OfferReleaseProviderOutcomeReadinessReadSyncState
@@ -143,6 +149,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpActivityReadSync,
   followUpScheduledAt,
   offerEmailDraftPackageReadSync,
+  offerProviderOutcomeReadSync,
   offerReleaseExecutionReadSync,
   persistenceMode,
   providerReadinessReadSync,
@@ -167,6 +174,7 @@ export function summarizeWorkspaceIntegrationStatus({
     providerRunSource(providerRuns, providerRunReadSync),
     ...(providerReadinessReadSync ? [providerReadinessReadSource(providerReadinessReadSync)] : []),
     ...(offerEmailDraftPackageReadSync ? [offerEmailDraftPackageReadSource(offerEmailDraftPackageReadSync)] : []),
+    ...(offerProviderOutcomeReadSync ? [offerProviderOutcomeReadSource(offerProviderOutcomeReadSync)] : []),
     ...(followUpActivityReadSync ? [followUpActivityReadSource(followUpActivityReadSync)] : []),
     ...(offerReleaseExecutionReadSync ? [offerReleaseExecutionReadSource(offerReleaseExecutionReadSync)] : []),
     offerReplySource(replySync),
@@ -838,6 +846,81 @@ function followUpSource(followUpScheduledAt: string | undefined): IntegrationSta
     severity: "attention",
     status: "pending",
   }
+}
+
+function offerProviderOutcomeReadSource(readSync: OfferReleaseProviderOutcomeReadSyncState): IntegrationStatusSource {
+  const actions = offerProviderOutcomeReadActions(readSync)
+
+  return {
+    actions: actions.length > 0 ? actions : undefined,
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedBatchCount
+          : readSync.localBatchCount,
+    detail: offerReleaseProviderOutcomeReadSyncIntegrationDetail(readSync),
+    diagnosticExport: offerProviderOutcomeReadDiagnosticExport(readSync, actions),
+    key: "offer_provider_outcome_reads",
+    label: "Provider outcome reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
+  }
+}
+
+function offerProviderOutcomeReadActions(readSync: OfferReleaseProviderOutcomeReadSyncState): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedBatchCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted provider outcome batches when reviewing release side effects; keep local fallback batches visible for comparison.",
+              key: "review_convex_provider_outcomes",
+              label: "Review Convex outcomes",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local provider outcome batches visible and retry the optional Convex read before committing more provider-side release actions.",
+          key: "retry_provider_outcome_read",
+          label: "Retry outcome read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail: "Configure an optional browser bridge provider outcome query before expecting persisted release side-effect history.",
+          key: "configure_provider_outcome_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Keep local fallback provider outcome batches visible while the optional Convex outcome query is still loading.",
+          key: "wait_for_provider_outcome_read",
+          label: "Wait for read result",
+        },
+      ]
+  }
+}
+
+function offerProviderOutcomeReadDiagnosticExport(
+  readSync: OfferReleaseProviderOutcomeReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Provider outcome read diagnostics",
+    `Status: ${readSync.status}`,
+    `Outcome batches: persisted ${readSync.persistedBatchCount}, local ${readSync.localBatchCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${offerReleaseProviderOutcomeReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
 }
 
 function offerEmailDraftPackageReadSource(readSync: OfferEmailDraftPackageReadSyncState): IntegrationStatusSource {
