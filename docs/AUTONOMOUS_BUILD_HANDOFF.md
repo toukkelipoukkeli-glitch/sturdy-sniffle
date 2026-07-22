@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `71672fa` (`Refresh provider outcome read handoff (#480)`).
+- Main branch checkpoint: `00491ee` (`Add offer read fallback e2e (#481)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/offer-read-fallback-e2e` adds deterministic desktop/mobile Playwright coverage that optional Convex read failures for offer release execution, follow-up activity, and provider readiness keep local histories visible with Integration health retry actions.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#481` adds deterministic desktop/mobile Playwright coverage that optional Convex read failures for offer release execution, follow-up activity, and provider readiness keep local histories visible with fallback labels, Integration health retry actions, and no horizontal overflow.
   - `#480` refreshes the autonomous handoff after the provider outcome read-source UI slice.
   - `#479` surfaces the existing local-first provider outcome read-source state in the Offer provider outcome history panel, adds deterministic App coverage for local/Convex/fallback/pending source labels, and keeps live provider-side writes deferred.
   - `#478` refreshes the autonomous handoff after the email draft read-source UI slice.
