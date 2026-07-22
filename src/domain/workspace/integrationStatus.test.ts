@@ -1111,6 +1111,121 @@ describe("workspace integration status", () => {
       "Calendar outcome reads: Calendar provider outcome history fell back to 2 local calendar provider outcome batches after a Convex read failure.",
     )
   })
+
+  it("surfaces provider readiness read health as a separate source", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerReadinessReadSync: {
+        fallbackCount: 0,
+        localRecordCount: 0,
+        persistedRecordCount: 2,
+        status: "convex",
+      },
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("live")
+    expect(status.sources.find((source) => source.key === "provider_readiness_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Use persisted provider readiness records when reviewing release execution gates; keep local fallback records visible for comparison.",
+          key: "review_convex_provider_readiness",
+          label: "Review Convex readiness",
+        },
+      ],
+      count: 2,
+      detail: "2 persisted provider readiness records read from Convex and merged with 0 local fallback records.",
+      diagnosticExport: [
+        "Provider readiness read diagnostics",
+        "Status: convex",
+        "Records: persisted 2, local 0, fallback 0",
+        "Detail: 2 persisted provider readiness records read from Convex and merged with 0 local fallback records.",
+        "Recovery actions:",
+        "- Review Convex readiness: Use persisted provider readiness records when reviewing release execution gates; keep local fallback records visible for comparison.",
+      ].join("\n"),
+      label: "Provider readiness reads",
+      severity: "healthy",
+      status: "convex",
+    })
+  })
+
+  it("keeps pending provider readiness reads actionable without marking them healthy", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerReadinessReadSync: {
+        fallbackCount: 0,
+        localRecordCount: 1,
+        persistedRecordCount: 0,
+        status: "pending",
+      },
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("attention")
+    expect(status.sources.find((source) => source.key === "provider_readiness_reads")).toMatchObject({
+      actions: [
+        {
+          detail: "Keep local fallback readiness records visible while the optional Convex provider readiness query is still loading.",
+          key: "wait_for_provider_readiness_read",
+          label: "Wait for read result",
+        },
+      ],
+      count: 1,
+      detail: "Checking Convex provider readiness history; 1 local fallback record remains visible.",
+      label: "Provider readiness reads",
+      severity: "attention",
+      status: "pending",
+    })
+  })
+
+  it("surfaces provider readiness read fallbacks as integration warnings", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      followUpScheduledAt: "2026-06-27T06:00:00.000Z",
+      persistenceMode: "convex",
+      providerReadinessReadSync: {
+        fallbackCount: 1,
+        localRecordCount: 2,
+        persistedRecordCount: 0,
+        status: "fallback",
+      },
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      replySync: replySync({ matched: true, status: "succeeded" }),
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    expect(status.status).toBe("fallback")
+    expect(status.sources.find((source) => source.key === "provider_readiness_reads")).toMatchObject({
+      actions: [
+        {
+          detail:
+            "Keep local provider readiness records visible and retry the optional Convex read before committing provider-side release actions.",
+          key: "retry_provider_readiness_read",
+          label: "Retry readiness read",
+        },
+      ],
+      count: 1,
+      detail: "Provider readiness history fell back to 2 local readiness records after a Convex read failure.",
+      label: "Provider readiness reads",
+      severity: "attention",
+      status: "fallback",
+    })
+    expect(status.warnings).toContain(
+      "Provider readiness reads: Provider readiness history fell back to 2 local readiness records after a Convex read failure.",
+    )
+  })
 })
 
 function connectorSnapshot(syncStatus: "linked" | "stale" | "blocked"): ConnectorSyncPersistenceSnapshot {

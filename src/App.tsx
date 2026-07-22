@@ -170,6 +170,10 @@ import {
   createLocalOfferReleaseProviderOutcomeReadinessReader,
   type OfferReleaseProviderOutcomeReadinessPersistenceSnapshot,
 } from "./domain/offers/offerReleaseProviderOutcomeReadinessPersistence"
+import {
+  buildOfferReleaseProviderOutcomeReadinessReadSyncState,
+  type OfferReleaseProviderOutcomeReadinessReadSyncStatus,
+} from "./domain/offers/offerReleaseProviderOutcomeReadinessReadSync"
 import { buildConvexOfferReleaseProviderOutcomeReadinessPayload } from "./domain/offers/convexOfferReleaseProviderOutcomeReadiness"
 import {
   buildOfferReleasePlan,
@@ -566,7 +570,7 @@ interface WorkspaceLocalState {
 
 type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
 type OfferFollowUpActivityReadSource = "convex" | "fallback" | "local" | "pending"
-type OfferProviderOutcomeReadinessReadSource = "convex" | "fallback" | "local" | "pending"
+type OfferProviderOutcomeReadinessReadSource = OfferReleaseProviderOutcomeReadinessReadSyncStatus
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
 const followUpActivityReadinessSyncHealthEventLimit = 12
@@ -2381,6 +2385,19 @@ function App() {
   const offerProviderReadinessReadSource =
     offerProviderReadinessReadSourceById[selectedId] ??
     (offerProviderReadinessBridge?.queryRef && convexOfferProviderReadinessOfferId ? "pending" : "local")
+  const offerProviderReadinessReadSync = useMemo(
+    () =>
+      buildOfferReleaseProviderOutcomeReadinessReadSyncState({
+        localRecordCount:
+          offerProviderReadinessReadSource === "convex" ? 0 : offerReleaseProviderOutcomeReadinessHistory.totalReadinessRecords,
+        persistedRecordCount:
+          offerProviderReadinessReadSource === "convex"
+            ? offerReleaseProviderOutcomeReadinessHistory.totalReadinessRecords
+            : 0,
+        status: offerProviderReadinessReadSource,
+      }),
+    [offerProviderReadinessReadSource, offerReleaseProviderOutcomeReadinessHistory.totalReadinessRecords],
+  )
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -2550,6 +2567,7 @@ function App() {
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
+        providerReadinessReadSync: offerProviderReadinessReadSync,
         providerRunReadSync: selectedProviderRunReadSync,
         providerRuns: selectedProviderRuns,
         replySync: offerReplySync,
@@ -2566,6 +2584,7 @@ function App() {
       offerFollowUpActivityReadinessReadModel,
       offerFollowUpScheduledAt,
       offerReplySync,
+      offerProviderReadinessReadSync,
       persistenceSyncErrorCount,
       selectedConnectorSyncErrorCount,
       selectedConnectorSnapshot,

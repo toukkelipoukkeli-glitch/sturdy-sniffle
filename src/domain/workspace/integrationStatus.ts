@@ -11,6 +11,10 @@ import {
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
+  offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail,
+  type OfferReleaseProviderOutcomeReadinessReadSyncState,
+} from "../offers/offerReleaseProviderOutcomeReadinessReadSync"
+import {
   providerRunReadSyncIntegrationDetail,
   providerRunReadSyncIntegrationReviewSuffix,
   type ProviderRunReadSyncState,
@@ -35,6 +39,7 @@ export type IntegrationStatusSourceKey =
   | "convex_runtime"
   | "offer_replies"
   | "persistence"
+  | "provider_readiness_reads"
   | "provider_runs"
 export type IntegrationStatusSourceStatus =
   | "audited"
@@ -91,6 +96,7 @@ export interface WorkspaceIntegrationStatusInput {
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
+  providerReadinessReadSync?: OfferReleaseProviderOutcomeReadinessReadSyncState
   providerRunReadSync?: ProviderRunReadSyncState
   providerRuns: ProviderRunAudit[]
   replySync?: GmailOfferReplySyncResult
@@ -118,6 +124,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpReadinessSyncHealth,
   followUpScheduledAt,
   persistenceMode,
+  providerReadinessReadSync,
   providerRunReadSync,
   providerRuns,
   replySync,
@@ -137,6 +144,7 @@ export function summarizeWorkspaceIntegrationStatus({
     ),
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
+    ...(providerReadinessReadSync ? [providerReadinessReadSource(providerReadinessReadSync)] : []),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
     ...(calendarProviderOutcomeReadSync ? [calendarProviderOutcomeReadSource(calendarProviderOutcomeReadSync)] : []),
@@ -828,6 +836,86 @@ function calendarProviderOutcomeReadSource(
     severity: readSync.status === "convex" ? "healthy" : "attention",
     status: readSync.status,
   }
+}
+
+function providerReadinessReadSource(
+  readSync: OfferReleaseProviderOutcomeReadinessReadSyncState,
+): IntegrationStatusSource {
+  const actions = providerReadinessReadActions(readSync)
+
+  return {
+    actions: actions.length > 0 ? actions : undefined,
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedRecordCount
+          : readSync.localRecordCount,
+    detail: offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail(readSync),
+    diagnosticExport: providerReadinessReadDiagnosticExport(readSync, actions),
+    key: "provider_readiness_reads",
+    label: "Provider readiness reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
+  }
+}
+
+function providerReadinessReadActions(
+  readSync: OfferReleaseProviderOutcomeReadinessReadSyncState,
+): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedRecordCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted provider readiness records when reviewing release execution gates; keep local fallback records visible for comparison.",
+              key: "review_convex_provider_readiness",
+              label: "Review Convex readiness",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local provider readiness records visible and retry the optional Convex read before committing provider-side release actions.",
+          key: "retry_provider_readiness_read",
+          label: "Retry readiness read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail:
+            "Configure the optional browser bridge provider readiness query before expecting persisted provider readiness history.",
+          key: "configure_provider_readiness_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Keep local fallback readiness records visible while the optional Convex provider readiness query is still loading.",
+          key: "wait_for_provider_readiness_read",
+          label: "Wait for read result",
+        },
+      ]
+  }
+}
+
+function providerReadinessReadDiagnosticExport(
+  readSync: OfferReleaseProviderOutcomeReadinessReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Provider readiness read diagnostics",
+    `Status: ${readSync.status}`,
+    `Records: persisted ${readSync.persistedRecordCount}, local ${readSync.localRecordCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
 }
 
 function calendarProviderOutcomeReadActions(
