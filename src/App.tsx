@@ -13194,6 +13194,10 @@ function buildCadMetadataResult({
 }
 
 function offerNumberFor(item: QuoteWorkItem) {
+  const manualMatch = item.id.match(/^rfq-manual-(\d+)$/)
+  if (manualMatch) {
+    return `OFFER-M${manualMatch[1]!.padStart(3, "0")}`
+  }
   return `OFFER-${item.id.slice(-3).toUpperCase()}`
 }
 

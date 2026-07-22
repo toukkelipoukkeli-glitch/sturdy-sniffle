@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import { expect, test, type Page } from "@playwright/test"
 
 const operatorViewports = [
@@ -82,7 +84,10 @@ for (const viewport of operatorViewports) {
     expect(hasHorizontalOverflow).toBe(false)
   })
 
-  test(`creates a manual RFQ and exposes offer copy controls on ${viewport.label}`, async ({ context, page }) => {
+  test(`creates a manual RFQ and exports customer-ready offer artifacts on ${viewport.label}`, async ({
+    context,
+    page,
+  }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"])
     await page.setViewportSize(viewport.size)
     await page.goto("/")
@@ -105,8 +110,13 @@ for (const viewport of operatorViewports) {
 
     await page.getByRole("button", { exact: true, name: "Offer" }).click()
     await expect(page.getByRole("heading", { name: "Offer draft" })).toBeVisible()
+    await expect(page.locator(".offer-number")).toHaveText("OFFER-M001")
     await expect(page.getByLabel("Plain text offer")).toHaveValue(/Vaasa Pumps/)
     await expect(page.getByLabel("Plain text offer")).toHaveValue(/Seal inspection cover/)
+
+    const exportPackage = page.getByLabel("Offer export package")
+    await expect(exportPackage).toContainText("PDF ready")
+    await expect(exportPackage).toContainText("OFFER-M001-rev1.pdf")
 
     const exportActions = page.getByLabel("Offer export actions")
     await expect(exportActions.getByRole("button", { name: "Copy text" })).toBeVisible()
@@ -118,7 +128,35 @@ for (const viewport of operatorViewports) {
     const copiedOffer = await page.evaluate(() => navigator.clipboard.readText())
     expect(copiedOffer).toContain("Vaasa Pumps")
     expect(copiedOffer).toContain("Seal inspection cover")
-    await expect(page.getByLabel("Offer export history")).toContainText(/Copied OFFER-[A-Z0-9-]+ plain text\./)
+    await expect(page.getByLabel("Offer export history")).toContainText("Copied OFFER-M001 plain text.")
+
+    const textDownloadPromise = page.waitForEvent("download")
+    await exportActions.getByRole("button", { name: "Download .txt" }).click()
+    const textDownload = await textDownloadPromise
+    expect(textDownload.suggestedFilename()).toBe("OFFER-M001-rev1.txt")
+    const textPath = await textDownload.path()
+    expect(textPath).toBeTruthy()
+    const textContent = readFileSync(textPath!, "utf8")
+    expect(textContent).toContain("Vaasa Pumps")
+    expect(textContent).toContain("Seal inspection cover")
+    expect(textContent).toContain("VP-42")
+    await expect(exportActions).toContainText("Saved OFFER-M001-rev1.txt")
+
+    const pdfDownloadPromise = page.waitForEvent("download")
+    await exportActions.getByRole("button", { name: "Download PDF" }).click()
+    const pdfDownload = await pdfDownloadPromise
+    expect(pdfDownload.suggestedFilename()).toBe("OFFER-M001-rev1.pdf")
+    const pdfPath = await pdfDownload.path()
+    expect(pdfPath).toBeTruthy()
+    const pdfBytes = readFileSync(pdfPath!)
+    expect(pdfBytes.byteLength).toBeGreaterThan(800)
+    expect(pdfBytes.subarray(0, 7).toString("latin1")).toBe("%PDF-1.")
+    expect(pdfBytes.subarray(-6).toString("latin1")).toContain("%%EOF")
+    await expect(exportActions).toContainText("Saved OFFER-M001-rev1.pdf (1 page)")
+
+    const exportHistory = page.getByLabel("Offer export history")
+    await expect(exportHistory).toContainText("Downloaded OFFER-M001-rev1.txt.")
+    await expect(exportHistory).toContainText("Downloaded OFFER-M001-rev1.pdf (1 page).")
 
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
