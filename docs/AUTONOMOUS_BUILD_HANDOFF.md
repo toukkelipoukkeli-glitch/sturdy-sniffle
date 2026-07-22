@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a8e9ec4` (`Refresh release execution health handoff (#472)`).
+- Main branch checkpoint: `8339f04` (`Surface email draft reads in integration health (#473)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/email-draft-integration-health` is surfacing local-first email draft package read-source state and recovery actions in Integration health without live Gmail/Convex writes.
+- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
 - Latest merged sequence:
+  - `#473` surfaces local-first email draft package read-source state and recovery actions in Integration health without live Gmail/Convex writes.
   - `#472` refreshes the autonomous handoff after the release execution Integration health slice.
   - `#471` surfaces release execution persisted-read source state and recovery actions in Integration health, backed by a deterministic read-sync helper plus App/domain and desktop/mobile Playwright coverage while live connector writes remain deferred.
   - `#470` refreshes the autonomous handoff after the follow-up activity Integration health slice.
