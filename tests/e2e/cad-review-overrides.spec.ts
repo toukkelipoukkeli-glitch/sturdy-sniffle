@@ -23,6 +23,38 @@ for (const viewport of operatorViewports) {
   test.describe(`CAD review overrides on ${viewport.label}`, () => {
     test.use({ viewport: viewport.size })
 
+    test("surfaces deterministic drawing and CAD metadata fallback states", async ({ page }) => {
+      await selectBalticHydraulicsCosting(page)
+
+      const partPreview = page.getByLabel("Part preview")
+      await expect(partPreview.locator(".preview-viewport")).toHaveAttribute("data-mode", "drawing")
+      await expect(partPreview).toContainText("Drawing")
+      await expect(partPreview).toContainText("FB-TURN-019.pdf")
+      await expect(partPreview).toContainText("PDF drawing preview")
+      await expect(partPreview).toContainText("CAD geometry is unavailable; using drawing preview.")
+      await expect(partPreview).toContainText("FB-TURN-019.pdf uses metadata-only CAD review.")
+
+      const cadMetadata = page.getByLabel("CAD metadata")
+      await expect(cadMetadata).toContainText("FB-TURN-019.pdf")
+      await expect(cadMetadata).toContainText("metadata fallback")
+      await expect(cadMetadata).toContainText("fallback")
+      await expect(cadMetadata).toContainText("Stainless steel 316L")
+      await expect(cadMetadata).toContainText("cnc turning")
+
+      const attachments = page.getByLabel("Attachments", { exact: true })
+      const drawingAttachment = attachments.locator(".attachment-row", { hasText: "FB-TURN-019.pdf" })
+      await expect(drawingAttachment).toContainText("PDF drawing")
+      await expect(drawingAttachment).toContainText("metadata only")
+      await expect(drawingAttachment).toContainText("PDF renderer unavailable; using deterministic drawing placeholder.")
+      await expect(drawingAttachment).toContainText("Primary · metadata only")
+
+      const manufacturabilityFlags = page.getByLabel("Manufacturability flags")
+      await expect(manufacturabilityFlags).toContainText("cad geometry missing")
+      await expect(manufacturabilityFlags).toContainText("metadata only review")
+
+      await assertNoHorizontalOverflow(page)
+    })
+
     test("acknowledges and reopens manufacturability flags", async ({ page }) => {
       await selectBalticHydraulicsCosting(page)
 
