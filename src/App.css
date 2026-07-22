@@ -5946,6 +5946,7 @@
 .offer-release-execution-controls,
 .offer-release-execution-command-list,
 .offer-release-execution-actions,
+.offer-email-draft-history-source,
 .offer-email-draft-history-summary,
 .offer-email-draft-history-latest,
 .offer-email-draft-history-recipients,
@@ -6178,6 +6179,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.offer-email-draft-history-source,
 .offer-provider-readiness-history-source,
 .offer-release-history-source,
 .offer-follow-up-activity-source {
@@ -6190,6 +6192,7 @@
   padding: 8px 10px;
 }
 
+.offer-email-draft-history-source[data-status="convex"],
 .offer-provider-readiness-history-source[data-status="convex"],
 .offer-release-history-source[data-status="convex"],
 .offer-follow-up-activity-source[data-status="convex"] {
@@ -6197,6 +6200,8 @@
   color: oklch(0.3 0.08 155);
 }
 
+.offer-email-draft-history-source[data-status="fallback"],
+.offer-email-draft-history-source[data-status="pending"],
 .offer-provider-readiness-history-source[data-status="fallback"],
 .offer-provider-readiness-history-source[data-status="pending"],
 .offer-release-history-source[data-status="fallback"],
@@ -6207,6 +6212,7 @@
   color: oklch(0.36 0.08 75);
 }
 
+.offer-email-draft-history-source[data-status="local"],
 .offer-provider-readiness-history-source[data-status="local"],
 .offer-release-history-source[data-status="local"],
 .offer-follow-up-activity-source[data-status="local"] {
@@ -6214,6 +6220,7 @@
   color: oklch(0.34 0.04 250);
 }
 
+.offer-email-draft-history-source svg,
 .offer-provider-readiness-history-source svg,
 .offer-release-history-source svg,
 .offer-follow-up-activity-source svg {
@@ -6221,12 +6228,14 @@
   width: 16px;
 }
 
+.offer-email-draft-history-source strong,
 .offer-provider-readiness-history-source strong,
 .offer-release-history-source strong,
 .offer-follow-up-activity-source strong {
   font-size: 0.78rem;
 }
 
+.offer-email-draft-history-source span,
 .offer-provider-readiness-history-source span,
 .offer-release-history-source span,
 .offer-follow-up-activity-source span {
@@ -8106,6 +8115,7 @@
   .offer-release-command-list,
   .offer-release-execution-summary,
   .offer-release-execution-command-list,
+  .offer-email-draft-history-source,
   .offer-email-draft-history-summary,
   .offer-email-draft-history-latest,
   .offer-email-draft-history-recipients,

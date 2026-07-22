@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a31a129` (`Surface provider outcome reads in integration health (#475)`).
+- Main branch checkpoint: `f305dae` (`Refresh provider outcome health handoff (#476)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/email-draft-read-loading` (surface the existing local-first email draft package read-source state in the Offer history panel; no live Gmail/Convex writes).
 - Latest merged sequence:
+  - `#476` refreshes the autonomous handoff after the provider outcome Integration health slice.
   - `#475` surfaces local-first provider outcome batch read-source state and recovery actions in Integration health without live provider/Convex writes.
   - `#474` refreshes the autonomous handoff after the email draft Integration health slice.
   - `#473` surfaces local-first email draft package read-source state and recovery actions in Integration health without live Gmail/Convex writes.

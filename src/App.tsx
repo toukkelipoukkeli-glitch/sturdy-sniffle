@@ -157,7 +157,12 @@ import {
   summarizeOfferEmailDraftPackageHistory,
   type OfferEmailDraftPackageHistorySummary,
 } from "./domain/offers/offerEmailDraftPackageHistory"
-import { buildOfferEmailDraftPackageReadSyncState } from "./domain/offers/offerEmailDraftPackageReadSync"
+import {
+  buildOfferEmailDraftPackageReadSyncState,
+  offerEmailDraftPackageReadSyncIntegrationDetail,
+  type OfferEmailDraftPackageReadSyncState,
+  type OfferEmailDraftPackageReadSyncStatus,
+} from "./domain/offers/offerEmailDraftPackageReadSync"
 import { buildOfferEmailDraftPackagePersistenceRecord } from "./domain/offers/offerEmailDraftPackagePersistence"
 import {
   summarizeOfferReleaseProviderOutcomeHistory,
@@ -3284,6 +3289,7 @@ function App() {
               releaseGate={quoteReleaseGate}
               releaseExecution={offerReleaseExecution}
               releaseEmailDraftHistory={offerEmailDraftPackageHistory}
+              releaseEmailDraftReadSync={offerEmailDraftPackageReadSync}
               releaseFollowUpActivityReadiness={offerFollowUpActivityReadiness}
               releaseFollowUpActivityReadinessHistory={offerFollowUpActivityReadinessHistory}
               releaseFollowUpActivityReadinessSync={offerFollowUpActivityReadinessSync}
@@ -10487,6 +10493,7 @@ function OfferView({
   releaseGate,
   releaseExecution,
   releaseEmailDraftHistory,
+  releaseEmailDraftReadSync,
   releaseFollowUpActivityReadiness,
   releaseFollowUpActivityReadinessHistory,
   releaseFollowUpActivityReadinessSync,
@@ -10524,6 +10531,7 @@ function OfferView({
   releaseGate: QuoteReleaseGateDecision
   releaseExecution: OfferReleaseExecutionRun
   releaseEmailDraftHistory: OfferEmailDraftPackageHistorySummary
+  releaseEmailDraftReadSync: OfferEmailDraftPackageReadSyncState
   releaseFollowUpActivityReadiness: OfferFollowUpActivityReadiness
   releaseFollowUpActivityReadinessHistory: OfferFollowUpActivityReadinessHistorySummary
   releaseFollowUpActivityReadinessSync: OfferFollowUpActivityReadinessSyncSummary
@@ -10683,7 +10691,7 @@ function OfferView({
         sync={releaseFollowUpActivityReadinessSync}
         syncHealth={releaseFollowUpActivityReadinessSyncHealth}
       />
-      <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} />
+      <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} readSync={releaseEmailDraftReadSync} />
       <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel
         history={releaseProviderOutcomeReadinessHistory}
@@ -11440,10 +11448,17 @@ function followUpActivityReadinessLabel(status: OfferFollowUpActivityReadinessSt
   }
 }
 
-function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDraftPackageHistorySummary }) {
+export function OfferEmailDraftPackageHistoryPanel({
+  history,
+  readSync,
+}: {
+  history: OfferEmailDraftPackageHistorySummary
+  readSync: OfferEmailDraftPackageReadSyncState
+}) {
   const latest = history.latestPackage
   const latestStatus = latest ? humanizeKey(latest.status) : "None"
   const latestRecipient = latest?.recipient ?? "Recipient pending"
+  const sourceLabel = offerEmailDraftPackageReadSourceLabel(readSync.status)
 
   return (
     <section className="offer-email-draft-history-panel" aria-label="Offer email draft package history">
@@ -11464,6 +11479,15 @@ function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDr
         >
           {history.blockedPackageCount > 0 ? "Review" : "Provider-safe"}
         </span>
+      </div>
+      <div
+        className="offer-email-draft-history-source"
+        aria-label={`Email draft package read source: ${sourceLabel}`}
+        data-status={readSync.status}
+      >
+        <Clock3 aria-hidden="true" />
+        <strong>{sourceLabel}</strong>
+        <span>{offerEmailDraftPackageReadSyncIntegrationDetail(readSync)}</span>
       </div>
       <div className="offer-email-draft-history-summary">
         <Metric label="Packages" value={String(history.totalPackages)} />
@@ -11503,6 +11527,19 @@ function OfferEmailDraftPackageHistoryPanel({ history }: { history: OfferEmailDr
       ) : null}
     </section>
   )
+}
+
+function offerEmailDraftPackageReadSourceLabel(source: OfferEmailDraftPackageReadSyncStatus) {
+  switch (source) {
+    case "convex":
+      return "Convex read"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local drafts"
+  }
 }
 
 function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferReleaseProviderOutcomeHistorySummary }) {

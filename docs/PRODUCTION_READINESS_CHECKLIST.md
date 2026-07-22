@@ -1,6 +1,6 @@
 # FactoryBid OS — Production Readiness Checklist
 
-Last updated: 2026-07-18 (Europe/Helsinki). Owner: autonomous build loop.
+Last updated: 2026-07-22 (Europe/Helsinki). Owner: autonomous build loop.
 
 This checklist tracks the gap between the current `main` and a production-grade local-first
 factory tarjouslaskenta system, as defined by the mission Definition of Done (DoD §1–§10).
@@ -43,7 +43,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - 🟡 **Edit costing assumptions** — quantity/setup/cycle/rush plus material cost, machine hourly rate, and margin are editable; deeper material/process/rate-card presets remain pending. → **Slice D/E**
 - 🟡 **Approval/release gates operable** — manager release review and local release execution controls now persist audited runs and feed the deterministic release planner; release-gate review restore is covered on desktop/mobile; real connector send/commit remains behind provider boundaries. → **Slice D/G**
 - 🟡 **Persistence** — localStorage now restores operator-owned workspace state (RFQs, selected view, edits, actions/status, offer lifecycle events) across reloads; Convex-backed app reads remain optional/future. → **Slice H (optional Convex)**
-- 🟡 **Loading/empty/stale/error polish** — queue empty states, reload-safe demo import review states, selected-RFQ audit visibility, dense-control accessibility smoke, provider-run read loading/fallback diagnostics, calendar outcome read loading/fallback diagnostics, offer release execution read-source loading visibility plus Integration health recovery surfacing, follow-up activity read-source loading visibility plus Integration health recovery surfacing, provider readiness read-source loading visibility, and a tested workspace error boundary with desktop/mobile recovery coverage exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
+- 🟡 **Loading/empty/stale/error polish** — queue empty states, reload-safe demo import review states, selected-RFQ audit visibility, dense-control accessibility smoke, provider-run read loading/fallback diagnostics, calendar outcome read loading/fallback diagnostics, offer email draft package read-source visibility, offer release execution read-source loading visibility plus Integration health recovery surfacing, follow-up activity read-source loading visibility plus Integration health recovery surfacing, provider readiness read-source loading visibility, and a tested workspace error boundary with desktop/mobile recovery coverage exist; broader skeleton/loading and stale-data states remain pending. → **Slice D**
 
 ## §3 Deterministic calculators
 
@@ -96,7 +96,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 - ✅ **No dead controls** — queue filters (Due soon/Rush/CNC) are real `aria-pressed` toggles that narrow the ranked queue with an empty state; "Open attachments" is a real disclosure of the selected RFQ's files. (Slice B)
 - ✅ **Desktop + mobile responsive** — `src/App.css` has `@media` breakpoints at 1180px/820px; verified usable at 375px (no horizontal overflow, no overlapping text).
 - 🟡 **Loading/empty/error states + error boundary** — queue has an empty/no-results state with deterministic desktop/mobile recovery coverage, and the app entrypoint wraps the workspace in a tested recovery boundary with deterministic desktop/mobile recovery coverage; broader skeleton/loading states remain pending. → **Slice D**
-- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); local release execution controls now record deterministic command outcomes, provider-readiness reload/loading coverage, email draft package history coverage plus Integration health local read-source surfacing, provider outcome history coverage plus Integration health local read-source surfacing, and visible pending/local/Convex/fallback read-source state plus Integration health recovery surfacing for provider readiness, release execution history, and follow-up activity history; real connector-backed send remains pending. → **Slice D/G**
+- 🟡 **Offer/release pipeline actionable** — copy/download shipped (Slice A); lifecycle controls shipped (Slice A2); local release execution controls now record deterministic command outcomes, provider-readiness reload/loading coverage, email draft package history/read-source coverage plus Integration health local read-source surfacing, provider outcome history coverage plus Integration health local read-source surfacing, and visible pending/local/Convex/fallback read-source state plus Integration health recovery surfacing for provider readiness, release execution history, and follow-up activity history; real connector-backed send remains pending. → **Slice D/G**
 
 ## §10 Quality gates & test coverage
 

@@ -38,6 +38,13 @@ for (const viewport of operatorViewports) {
       const draftHistory = page.getByLabel("Offer email draft package history")
       await expect(draftHistory).toContainText("1 draft package")
       await expect(draftHistory).toContainText("Provider-safe")
+      await expect(draftHistory.getByLabel("Email draft package read source: Local drafts")).toHaveAttribute(
+        "data-status",
+        "local",
+      )
+      await expect(draftHistory).toContainText(
+        "1 local email draft package available; Convex email draft package reads are not configured.",
+      )
       await expect(draftHistory.locator(".metric", { hasText: /^Packages 1$/ })).toBeVisible()
       await expect(draftHistory.locator(".metric", { hasText: /^Latest ready$/i })).toBeVisible()
       await expect(draftHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
@@ -53,6 +60,13 @@ for (const viewport of operatorViewports) {
       const restoredDraftHistory = page.getByLabel("Offer email draft package history")
       await expect(restoredDraftHistory).toContainText("1 draft package")
       await expect(restoredDraftHistory).toContainText("Provider-safe")
+      await expect(restoredDraftHistory.getByLabel("Email draft package read source: Local drafts")).toHaveAttribute(
+        "data-status",
+        "local",
+      )
+      await expect(restoredDraftHistory).toContainText(
+        "1 local email draft package available; Convex email draft package reads are not configured.",
+      )
       await expect(restoredDraftHistory).toContainText("sari.virtanen@example.test")
       await expect(restoredDraftHistory).toContainText("1 attachment · 6 next actions")
       await expect(restoredDraftHistory.getByLabel("Email draft package recipients")).toContainText(

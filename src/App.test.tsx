@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import App, { ProcessQuotePreviewCard, pdfPreviewLoadTimeoutMs } from "./App"
+import App, { OfferEmailDraftPackageHistoryPanel, ProcessQuotePreviewCard, pdfPreviewLoadTimeoutMs } from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
@@ -63,6 +63,14 @@ import {
 import { OFFER_RELEASE_PROVIDER_OUTCOME_READINESS_VERSION } from "./domain/offers/offerReleaseProviderOutcomeReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_VERSION } from "./domain/offers/offerFollowUpActivityReadiness"
 import { OFFER_FOLLOW_UP_ACTIVITY_READINESS_HISTORY_VERSION } from "./domain/offers/offerFollowUpActivityReadinessHistory"
+import {
+  OFFER_EMAIL_DRAFT_PACKAGE_HISTORY_VERSION,
+  type OfferEmailDraftPackageHistorySummary,
+} from "./domain/offers/offerEmailDraftPackageHistory"
+import {
+  buildOfferEmailDraftPackageReadSyncState,
+  type OfferEmailDraftPackageReadSyncStatus,
+} from "./domain/offers/offerEmailDraftPackageReadSync"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
@@ -154,6 +162,20 @@ function emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot(): NonCncPro
     recordCount: 0,
     records: [],
     statusCounts: {},
+    warningCount: 0,
+  }
+}
+
+function emptyEmailDraftPackageHistory(): OfferEmailDraftPackageHistorySummary {
+  return {
+    attachmentCount: 0,
+    blockedPackageCount: 0,
+    blockerCount: 0,
+    historyVersion: OFFER_EMAIL_DRAFT_PACKAGE_HISTORY_VERSION,
+    readyPackageCount: 0,
+    recipientSummaries: [],
+    statusCounts: {},
+    totalPackages: 0,
     warningCount: 0,
   }
 }
@@ -3848,6 +3870,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(draftHistory).toHaveTextContent("sari.virtanen@example.test")
     expect(draftHistory).toHaveTextContent("1 attachment")
     expect(draftHistory).toHaveTextContent("ready")
+    expect(within(draftHistory).getByLabelText("Email draft package read source: Local drafts")).toHaveAttribute(
+      "data-status",
+      "local",
+    )
+    expect(draftHistory).toHaveTextContent(
+      "1 local email draft package available; Convex email draft package reads are not configured.",
+    )
     const integrationHealth = screen.getByLabelText("Integration health")
     expect(integrationHealth).toHaveTextContent("Email draft package reads")
     expect(integrationHealth).toHaveTextContent(
@@ -3887,6 +3916,55 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionAudit).toHaveTextContent("Release execution has been recorded.")
     expect(within(executionAudit).getByRole("button", { name: "Release executed" })).toBeDisabled()
   })
+
+  it.each([
+    {
+      expectedCopy: "3 persisted email draft packages read from Convex and merged with 1 local fallback package.",
+      label: "Convex read",
+      localPackageCount: 1,
+      persistedPackageCount: 3,
+      status: "convex",
+    },
+    {
+      expectedCopy: "Email draft package history fell back to 2 local email draft packages after a Convex read failure.",
+      label: "Local fallback",
+      localPackageCount: 2,
+      persistedPackageCount: 0,
+      status: "fallback",
+    },
+    {
+      expectedCopy: "Checking Convex email draft package history; 2 local fallback packages remain visible.",
+      label: "Checking Convex",
+      localPackageCount: 2,
+      persistedPackageCount: 0,
+      status: "pending",
+    },
+  ] satisfies Array<{
+    expectedCopy: string
+    label: string
+    localPackageCount: number
+    persistedPackageCount: number
+    status: OfferEmailDraftPackageReadSyncStatus
+  }>)(
+    "renders email draft package read-source state for $status",
+    ({ expectedCopy, label, localPackageCount, persistedPackageCount, status }) => {
+      render(
+        <OfferEmailDraftPackageHistoryPanel
+          history={emptyEmailDraftPackageHistory()}
+          readSync={buildOfferEmailDraftPackageReadSyncState({
+            localPackageCount,
+            persistedPackageCount,
+            status,
+          })}
+        />,
+      )
+
+      const source = screen.getByLabelText(`Email draft package read source: ${label}`)
+      expect(source).toHaveAttribute("data-status", status)
+      expect(source).toHaveTextContent(label)
+      expect(source).toHaveTextContent(expectedCopy)
+    },
+  )
 
   it("guards local release execution against duplicate clicks", async () => {
     const user = userEvent.setup()
