@@ -5957,6 +5957,7 @@
 .offer-release-history-source,
 .offer-release-history-summary,
 .offer-release-history-retries,
+.offer-follow-up-activity-source,
 .offer-follow-up-activity-summary,
 .offer-follow-up-activity-actions,
 .offer-follow-up-activity-latest,
@@ -6176,7 +6177,8 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.offer-release-history-source {
+.offer-release-history-source,
+.offer-follow-up-activity-source {
   align-items: center;
   border: 1px solid oklch(0.88 0.018 235);
   border-radius: 8px;
@@ -6186,32 +6188,39 @@
   padding: 8px 10px;
 }
 
-.offer-release-history-source[data-status="convex"] {
+.offer-release-history-source[data-status="convex"],
+.offer-follow-up-activity-source[data-status="convex"] {
   background: oklch(0.96 0.035 155);
   color: oklch(0.3 0.08 155);
 }
 
 .offer-release-history-source[data-status="fallback"],
-.offer-release-history-source[data-status="pending"] {
+.offer-release-history-source[data-status="pending"],
+.offer-follow-up-activity-source[data-status="fallback"],
+.offer-follow-up-activity-source[data-status="pending"] {
   background: oklch(0.97 0.035 82);
   color: oklch(0.36 0.08 75);
 }
 
-.offer-release-history-source[data-status="local"] {
+.offer-release-history-source[data-status="local"],
+.offer-follow-up-activity-source[data-status="local"] {
   background: oklch(0.97 0.02 235);
   color: oklch(0.34 0.04 250);
 }
 
-.offer-release-history-source svg {
+.offer-release-history-source svg,
+.offer-follow-up-activity-source svg {
   height: 16px;
   width: 16px;
 }
 
-.offer-release-history-source strong {
+.offer-release-history-source strong,
+.offer-follow-up-activity-source strong {
   font-size: 0.78rem;
 }
 
-.offer-release-history-source span {
+.offer-release-history-source span,
+.offer-follow-up-activity-source span {
   color: inherit;
   font-size: 0.76rem;
   font-weight: 700;
