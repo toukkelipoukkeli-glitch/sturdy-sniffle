@@ -146,6 +146,14 @@ for (const viewport of operatorViewports) {
       await expect(emailDraftHistory).toContainText("Provider-safe")
       await expect(emailDraftHistory).toContainText("sari.virtanen@example.test")
       await expect(emailDraftHistory.getByLabel("Email draft package recipients")).toContainText("ready")
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText("Email draft package reads")
+      await expect(integrationHealth).toContainText(
+        "1 local email draft package available; Convex email draft package reads are not configured.",
+      )
+      await expect(integrationHealth.getByLabel("Email draft package reads recovery actions")).toContainText(
+        "Configure Convex read",
+      )
 
       const providerOutcomeHistory = page.getByLabel("Offer provider outcome history")
       await expect(providerOutcomeHistory).toContainText("1 outcome batch")
