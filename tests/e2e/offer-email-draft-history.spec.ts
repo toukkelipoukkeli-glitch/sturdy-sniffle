@@ -26,7 +26,10 @@ async function prepareEmailDraftPackage(page: Page) {
 
 for (const viewport of operatorViewports) {
   test.describe(`offer email draft history on ${viewport.label}`, () => {
-    test.use({ viewport: viewport.size })
+    test.use({
+      permissions: ["clipboard-read", "clipboard-write"],
+      viewport: viewport.size,
+    })
 
     test("surfaces provider-safe draft package details after reload", async ({ page }) => {
       await prepareEmailDraftPackage(page)
@@ -54,6 +57,23 @@ for (const viewport of operatorViewports) {
       await expect(draftHistory.getByLabel("Email draft package recipients")).toContainText(
         "sari.virtanen@example.test · 1 package · ready",
       )
+      const integrationHealth = page.getByLabel("Integration health")
+      const draftReadSource = integrationHealth.locator(".integration-source-row", {
+        hasText: "Email draft package reads",
+      })
+      await expect(draftReadSource).toContainText(
+        "1 local email draft package available; Convex email draft package reads are not configured.",
+      )
+      await expect(draftReadSource.getByLabel("Email draft package reads recovery actions")).toContainText(
+        "Configure Convex read",
+      )
+      await draftReadSource.getByRole("button", { name: "Copy diagnostics" }).click()
+      await expect(draftReadSource).toContainText("Email draft package reads diagnostics copied.")
+      const copiedDraftDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedDraftDiagnostics).toContain("Email draft package read diagnostics")
+      expect(copiedDraftDiagnostics).toContain("Status: local")
+      expect(copiedDraftDiagnostics).toContain("Draft packages: persisted 0, local 1, fallback 0")
+      expect(copiedDraftDiagnostics).toContain("Configure Convex read")
       await assertNoHorizontalOverflow(page)
 
       await page.reload()

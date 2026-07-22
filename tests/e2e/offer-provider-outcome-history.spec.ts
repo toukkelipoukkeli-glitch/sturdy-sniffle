@@ -26,7 +26,10 @@ async function prepareProviderOutcomeBatch(page: Page) {
 
 for (const viewport of operatorViewports) {
   test.describe(`offer provider outcome history on ${viewport.label}`, () => {
-    test.use({ viewport: viewport.size })
+    test.use({
+      permissions: ["clipboard-read", "clipboard-write"],
+      viewport: viewport.size,
+    })
 
     test("surfaces local provider outcome batch details after reload", async ({ page }) => {
       await prepareProviderOutcomeBatch(page)
@@ -52,6 +55,23 @@ for (const viewport of operatorViewports) {
       await expect(commandSummaries).toContainText("Email Draft")
       await expect(commandSummaries).toContainText("Calendar Follow Up")
       await expect(commandSummaries).toContainText("1 outcome · applied")
+      const integrationHealth = page.getByLabel("Integration health")
+      const providerOutcomeSource = integrationHealth.locator(".integration-source-row", {
+        hasText: /^Provider outcome reads/,
+      })
+      await expect(providerOutcomeSource).toContainText(
+        "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+      )
+      await expect(providerOutcomeSource.getByLabel("Provider outcome reads recovery actions")).toContainText(
+        "Configure Convex read",
+      )
+      await providerOutcomeSource.getByRole("button", { name: "Copy diagnostics" }).click()
+      await expect(providerOutcomeSource).toContainText("Provider outcome reads diagnostics copied.")
+      const copiedOutcomeDiagnostics = await page.evaluate(() => navigator.clipboard.readText())
+      expect(copiedOutcomeDiagnostics).toContain("Provider outcome read diagnostics")
+      expect(copiedOutcomeDiagnostics).toContain("Status: local")
+      expect(copiedOutcomeDiagnostics).toContain("Outcome batches: persisted 0, local 1, fallback 0")
+      expect(copiedOutcomeDiagnostics).toContain("Configure Convex read")
       await assertNoHorizontalOverflow(page)
 
       await page.reload()
