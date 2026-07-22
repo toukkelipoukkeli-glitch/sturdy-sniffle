@@ -10,6 +10,10 @@ import {
 } from "../offers/offerFollowUpActivityReadinessReadModel"
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
 import {
+  offerEmailDraftPackageReadSyncIntegrationDetail,
+  type OfferEmailDraftPackageReadSyncState,
+} from "../offers/offerEmailDraftPackageReadSync"
+import {
   offerFollowUpActivityReadSyncIntegrationDetail,
   type OfferFollowUpActivityReadSyncState,
 } from "../offers/offerFollowUpActivityReadSync"
@@ -45,6 +49,7 @@ export type IntegrationStatusSourceKey =
   | "convex_bridge"
   | "convex_install_plan"
   | "convex_runtime"
+  | "email_draft_package_reads"
   | "follow_up_activity_reads"
   | "offer_replies"
   | "offer_release_execution_reads"
@@ -106,6 +111,7 @@ export interface WorkspaceIntegrationStatusInput {
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
   followUpActivityReadSync?: OfferFollowUpActivityReadSyncState
   followUpScheduledAt?: string
+  offerEmailDraftPackageReadSync?: OfferEmailDraftPackageReadSyncState
   offerReleaseExecutionReadSync?: OfferReleaseExecutionReadSyncState
   persistenceMode: WorkspacePersistenceMode
   providerReadinessReadSync?: OfferReleaseProviderOutcomeReadinessReadSyncState
@@ -136,6 +142,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpReadinessSyncHealth,
   followUpActivityReadSync,
   followUpScheduledAt,
+  offerEmailDraftPackageReadSync,
   offerReleaseExecutionReadSync,
   persistenceMode,
   providerReadinessReadSync,
@@ -159,6 +166,7 @@ export function summarizeWorkspaceIntegrationStatus({
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
     ...(providerReadinessReadSync ? [providerReadinessReadSource(providerReadinessReadSync)] : []),
+    ...(offerEmailDraftPackageReadSync ? [offerEmailDraftPackageReadSource(offerEmailDraftPackageReadSync)] : []),
     ...(followUpActivityReadSync ? [followUpActivityReadSource(followUpActivityReadSync)] : []),
     ...(offerReleaseExecutionReadSync ? [offerReleaseExecutionReadSource(offerReleaseExecutionReadSync)] : []),
     offerReplySource(replySync),
@@ -830,6 +838,81 @@ function followUpSource(followUpScheduledAt: string | undefined): IntegrationSta
     severity: "attention",
     status: "pending",
   }
+}
+
+function offerEmailDraftPackageReadSource(readSync: OfferEmailDraftPackageReadSyncState): IntegrationStatusSource {
+  const actions = offerEmailDraftPackageReadActions(readSync)
+
+  return {
+    actions: actions.length > 0 ? actions : undefined,
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedPackageCount
+          : readSync.localPackageCount,
+    detail: offerEmailDraftPackageReadSyncIntegrationDetail(readSync),
+    diagnosticExport: offerEmailDraftPackageReadDiagnosticExport(readSync, actions),
+    key: "email_draft_package_reads",
+    label: "Email draft package reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
+  }
+}
+
+function offerEmailDraftPackageReadActions(readSync: OfferEmailDraftPackageReadSyncState): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedPackageCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted email draft package records when reviewing Gmail draft readiness; keep local fallback packages visible for comparison.",
+              key: "review_convex_email_draft_packages",
+              label: "Review Convex drafts",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local email draft package records visible and retry the optional Convex read before preparing more provider drafts.",
+          key: "retry_email_draft_package_read",
+          label: "Retry draft read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail: "Configure an optional browser bridge email draft package query before expecting persisted Gmail draft history.",
+          key: "configure_email_draft_package_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Keep local fallback email draft package records visible while the optional Convex draft query is still loading.",
+          key: "wait_for_email_draft_package_read",
+          label: "Wait for read result",
+        },
+      ]
+  }
+}
+
+function offerEmailDraftPackageReadDiagnosticExport(
+  readSync: OfferEmailDraftPackageReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Email draft package read diagnostics",
+    `Status: ${readSync.status}`,
+    `Draft packages: persisted ${readSync.persistedPackageCount}, local ${readSync.localPackageCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${offerEmailDraftPackageReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
 }
 
 function followUpActivityReadSource(readSync: OfferFollowUpActivityReadSyncState): IntegrationStatusSource {

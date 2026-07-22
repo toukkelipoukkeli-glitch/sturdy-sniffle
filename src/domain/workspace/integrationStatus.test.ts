@@ -5,6 +5,9 @@ import type { GmailOfferReplySyncResult } from "../integrations/gmailOfferReply"
 import type { OfferFollowUpActivityReadinessHistorySummary } from "../offers/offerFollowUpActivityReadinessHistory"
 import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFollowUpActivityReadinessReadModel"
 import {
+  buildOfferEmailDraftPackageReadSyncState,
+} from "../offers/offerEmailDraftPackageReadSync"
+import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
 } from "../offers/offerFollowUpActivityReadinessSyncHealth"
@@ -86,6 +89,44 @@ describe("workspace integration status", () => {
       ],
       severity: "healthy",
       status: "convex",
+    })
+  })
+
+  it("surfaces email draft package read-source recovery actions", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      offerEmailDraftPackageReadSync: buildOfferEmailDraftPackageReadSyncState({
+        localPackageCount: 1,
+        status: "local",
+      }),
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    const source = status.sources.find((candidate) => candidate.key === "email_draft_package_reads")
+    expect(source).toMatchObject({
+      actions: [
+        {
+          detail: "Configure an optional browser bridge email draft package query before expecting persisted Gmail draft history.",
+          key: "configure_email_draft_package_read",
+          label: "Configure Convex read",
+        },
+      ],
+      count: 1,
+      detail: "1 local email draft package available; Convex email draft package reads are not configured.",
+      diagnosticExport: [
+        "Email draft package read diagnostics",
+        "Status: local",
+        "Draft packages: persisted 0, local 1, fallback 0",
+        "Detail: 1 local email draft package available; Convex email draft package reads are not configured.",
+        "Recovery actions:",
+        "- Configure Convex read: Configure an optional browser bridge email draft package query before expecting persisted Gmail draft history.",
+      ].join("\n"),
+      label: "Email draft package reads",
+      severity: "attention",
+      status: "local",
     })
   })
 
