@@ -9,6 +9,10 @@ import {
   type OfferFollowUpActivityReadinessReadModel,
 } from "../offers/offerFollowUpActivityReadinessReadModel"
 import type { OfferFollowUpActivityReadinessSyncHealthSummary } from "../offers/offerFollowUpActivityReadinessSyncHealth"
+import {
+  offerFollowUpActivityReadSyncIntegrationDetail,
+  type OfferFollowUpActivityReadSyncState,
+} from "../offers/offerFollowUpActivityReadSync"
 import type { ProviderRunAudit } from "../providers/providerRunAudit"
 import {
   offerReleaseProviderOutcomeReadinessReadSyncIntegrationDetail,
@@ -37,6 +41,7 @@ export type IntegrationStatusSourceKey =
   | "convex_bridge"
   | "convex_install_plan"
   | "convex_runtime"
+  | "follow_up_activity_reads"
   | "offer_replies"
   | "persistence"
   | "provider_readiness_reads"
@@ -94,6 +99,7 @@ export interface WorkspaceIntegrationStatusInput {
   followUpReadinessHistory?: OfferFollowUpActivityReadinessHistorySummary
   followUpReadinessReadModel?: OfferFollowUpActivityReadinessReadModel
   followUpReadinessSyncHealth?: OfferFollowUpActivityReadinessSyncHealthSummary
+  followUpActivityReadSync?: OfferFollowUpActivityReadSyncState
   followUpScheduledAt?: string
   persistenceMode: WorkspacePersistenceMode
   providerReadinessReadSync?: OfferReleaseProviderOutcomeReadinessReadSyncState
@@ -122,6 +128,7 @@ export function summarizeWorkspaceIntegrationStatus({
   followUpReadinessHistory,
   followUpReadinessReadModel,
   followUpReadinessSyncHealth,
+  followUpActivityReadSync,
   followUpScheduledAt,
   persistenceMode,
   providerReadinessReadSync,
@@ -145,6 +152,7 @@ export function summarizeWorkspaceIntegrationStatus({
     connectorSource(connectorSnapshot, rfqId, connectorErrorCount),
     providerRunSource(providerRuns, providerRunReadSync),
     ...(providerReadinessReadSync ? [providerReadinessReadSource(providerReadinessReadSync)] : []),
+    ...(followUpActivityReadSync ? [followUpActivityReadSource(followUpActivityReadSync)] : []),
     offerReplySource(replySync),
     followUpSource(followUpScheduledAt),
     ...(calendarProviderOutcomeReadSync ? [calendarProviderOutcomeReadSource(calendarProviderOutcomeReadSync)] : []),
@@ -814,6 +822,82 @@ function followUpSource(followUpScheduledAt: string | undefined): IntegrationSta
     severity: "attention",
     status: "pending",
   }
+}
+
+function followUpActivityReadSource(readSync: OfferFollowUpActivityReadSyncState): IntegrationStatusSource {
+  const actions = followUpActivityReadActions(readSync)
+
+  return {
+    actions: actions.length > 0 ? actions : undefined,
+    count:
+      readSync.status === "fallback"
+        ? readSync.fallbackCount
+        : readSync.status === "convex"
+          ? readSync.persistedActivityCount
+          : readSync.localActivityCount,
+    detail: offerFollowUpActivityReadSyncIntegrationDetail(readSync),
+    diagnosticExport: followUpActivityReadDiagnosticExport(readSync, actions),
+    key: "follow_up_activity_reads",
+    label: "Follow-up activity reads",
+    severity: readSync.status === "convex" ? "healthy" : "attention",
+    status: readSync.status,
+  }
+}
+
+function followUpActivityReadActions(readSync: OfferFollowUpActivityReadSyncState): IntegrationStatusSourceAction[] {
+  switch (readSync.status) {
+    case "convex":
+      return readSync.persistedActivityCount > 0
+        ? [
+            {
+              detail:
+                "Use persisted follow-up activity records when reviewing follow-up readiness; keep local fallback records visible for comparison.",
+              key: "review_convex_follow_up_activities",
+              label: "Review Convex activities",
+            },
+          ]
+        : []
+    case "fallback":
+      return [
+        {
+          detail:
+            "Keep local follow-up activity records visible and retry the optional Convex read before committing follow-up lifecycle actions.",
+          key: "retry_follow_up_activity_read",
+          label: "Retry activity read",
+        },
+      ]
+    case "local":
+      return [
+        {
+          detail:
+            "Configure the optional browser bridge follow-up activity query before expecting persisted follow-up activity history.",
+          key: "configure_follow_up_activity_read",
+          label: "Configure Convex read",
+        },
+      ]
+    case "pending":
+      return [
+        {
+          detail: "Keep local fallback follow-up activity records visible while the optional Convex activity query is still loading.",
+          key: "wait_for_follow_up_activity_read",
+          label: "Wait for read result",
+        },
+      ]
+  }
+}
+
+function followUpActivityReadDiagnosticExport(
+  readSync: OfferFollowUpActivityReadSyncState,
+  actions: IntegrationStatusSourceAction[],
+): string {
+  return [
+    "Follow-up activity read diagnostics",
+    `Status: ${readSync.status}`,
+    `Activities: persisted ${readSync.persistedActivityCount}, local ${readSync.localActivityCount}, fallback ${readSync.fallbackCount}`,
+    `Detail: ${offerFollowUpActivityReadSyncIntegrationDetail(readSync)}`,
+    "Recovery actions:",
+    ...(actions.length > 0 ? actions.map((action) => `- ${action.label}: ${action.detail}`) : ["- none"]),
+  ].join("\n")
 }
 
 function calendarProviderOutcomeReadSource(

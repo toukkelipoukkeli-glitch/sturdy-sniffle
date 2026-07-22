@@ -102,6 +102,10 @@ import {
   type OfferFollowUpActivityReadSummary,
 } from "./domain/offers/offerFollowUpActivityReadPersistence"
 import {
+  buildOfferFollowUpActivityReadSyncState,
+  type OfferFollowUpActivityReadSyncStatus,
+} from "./domain/offers/offerFollowUpActivityReadSync"
+import {
   buildOfferFollowUpActivityReadiness,
   type OfferFollowUpActivityReadiness,
   type OfferFollowUpActivityReadinessStatus,
@@ -569,7 +573,7 @@ interface WorkspaceLocalState {
 }
 
 type OfferReleaseExecutionReadSource = "convex" | "fallback" | "local" | "pending"
-type OfferFollowUpActivityReadSource = "convex" | "fallback" | "local" | "pending"
+type OfferFollowUpActivityReadSource = OfferFollowUpActivityReadSyncStatus
 type OfferProviderOutcomeReadinessReadSource = OfferReleaseProviderOutcomeReadinessReadSyncStatus
 
 const workspaceLocalStorageKey = "factorybid.workspace.v1"
@@ -2072,6 +2076,15 @@ function App() {
   const offerFollowUpActivityReadSource =
     followUpActivityReadSourceById[selectedId] ??
     (offerFollowUpActivityBridge && convexOfferFollowUpActivityOfferId ? "pending" : "local")
+  const offerFollowUpActivityReadSync = useMemo(
+    () =>
+      buildOfferFollowUpActivityReadSyncState({
+        localActivityCount: offerFollowUpActivityReadSource === "convex" ? 0 : offerFollowUpActivitySummary.totalActivities,
+        persistedActivityCount: offerFollowUpActivityReadSource === "convex" ? offerFollowUpActivitySummary.totalActivities : 0,
+        status: offerFollowUpActivityReadSource,
+      }),
+    [offerFollowUpActivityReadSource, offerFollowUpActivitySummary.totalActivities],
+  )
   const expectedFollowUpActivityTaskIds = useMemo(() => expectedWorkspaceFollowUpTaskIds(selectedActions), [selectedActions])
   const offerFollowUpActivityReadiness = useMemo(
     () =>
@@ -2565,6 +2578,7 @@ function App() {
         followUpReadinessHistory: offerFollowUpActivityReadinessHistory,
         followUpReadinessReadModel: offerFollowUpActivityReadinessReadModel,
         followUpReadinessSyncHealth: followUpActivityReadinessSyncHealth,
+        followUpActivityReadSync: offerFollowUpActivityReadSync,
         followUpScheduledAt: offerFollowUpScheduledAt,
         persistenceMode: workspacePersistenceRuntime.mode,
         providerReadinessReadSync: offerProviderReadinessReadSync,
@@ -2580,6 +2594,7 @@ function App() {
       convexBridgeInstallerDecision,
       convexRuntimeConfigHealth,
       followUpActivityReadinessSyncHealth,
+      offerFollowUpActivityReadSync,
       offerFollowUpActivityReadinessHistory,
       offerFollowUpActivityReadinessReadModel,
       offerFollowUpScheduledAt,

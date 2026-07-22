@@ -228,6 +228,16 @@ for (const viewport of operatorViewports) {
       )
       await expect(activityReads.locator(".metric", { hasText: "Task IDs" })).toContainText("1")
       await expect(activityReads.locator(".metric", { hasText: "Missing" })).toContainText("0")
+      const integrationHealth = page.getByLabel("Integration health")
+      await expect(integrationHealth).toContainText("Follow-up activity reads")
+      await expect(integrationHealth).toContainText(
+        "Checking Convex follow-up activity history; 1 local fallback activity remains visible.",
+      )
+      const recoveryActions = integrationHealth.getByLabel("Follow-up activity reads recovery actions")
+      await expect(recoveryActions).toContainText("Wait for read result")
+      await expect(recoveryActions).toContainText(
+        "Keep local fallback follow-up activity records visible while the optional Convex activity query is still loading.",
+      )
 
       await assertNoHorizontalOverflow(page)
     })

@@ -1585,6 +1585,13 @@ describe("FactoryBid workspace (component)", () => {
       expect(followUpActivity).toHaveTextContent("activity-follow-up-2")
     })
     expect(within(followUpActivity).getByLabelText("Recorded follow-up task ids")).toHaveTextContent("follow-up-rfq-204")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    await waitFor(() => {
+      expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+      expect(integrationHealth).toHaveTextContent(
+        "2 persisted follow-up activities read from Convex and merged with 0 local fallback activities.",
+      )
+    })
     const readinessHistory = screen.getByLabelText("Follow-up activity readiness history")
     await waitFor(() => {
       expect(readinessHistory).toHaveTextContent("2 readiness snapshots")
@@ -1720,6 +1727,14 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessHistory).toHaveTextContent("Sync health Healthy")
     })
     expect(within(readinessHistory).getByText("Pending")).toHaveClass("offer-follow-up-activity-status-pending")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+    expect(integrationHealth).toHaveTextContent(
+      "0 local follow-up activities available; Convex follow-up activity reads are not configured.",
+    )
+    expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
+      "Configure Convex read",
+    )
   })
 
   it("keeps local follow-up activity visible while persisted activity reads are pending", async () => {
@@ -1764,6 +1779,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent(
       "Checking Convex for follow-up activity history; 1 follow-up activity remains visible.",
     )
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Checking Convex follow-up activity history; 1 local fallback activity remains visible.",
+    )
+    expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
+      "Wait for read result",
+    )
   })
 
   it("labels empty persisted follow-up activity reads as local activity", async () => {
@@ -1798,6 +1821,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent("1 persisted activity")
     expect(followUpActivity).toHaveTextContent("Follow-up activity history is using 1 follow-up activity.")
     expect(followUpActivity).not.toHaveTextContent("Merged persisted follow-up activity history")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+    expect(integrationHealth).toHaveTextContent(
+      "1 local follow-up activity available; Convex follow-up activity reads are not configured.",
+    )
   })
 
   it("labels non-empty persisted follow-up activity reads as Convex activity", async () => {
@@ -1850,6 +1878,11 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent("Merged persisted follow-up activity history with 1 follow-up activity.")
     expect(followUpActivity).toHaveTextContent("activity-follow-up-convex-204")
     expect(followUpActivity).toHaveTextContent("follow-up-rfq-204")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+    expect(integrationHealth).toHaveTextContent(
+      "1 persisted follow-up activity read from Convex and merged with 0 local fallback activities.",
+    )
   })
 
   it("labels rejected persisted follow-up activity reads as fallback while preserving local activity", async () => {
@@ -1887,6 +1920,14 @@ describe("FactoryBid workspace (component)", () => {
     expect(followUpActivity).toHaveTextContent("Convex follow-up activity history fell back to 1 follow-up activity.")
     expect(followUpActivity).toHaveTextContent("follow-up-rfq-204")
     expect(followUpActivity).toHaveTextContent("Persisted follow-up activity coverage is complete.")
+    const integrationHealth = screen.getByLabelText("Integration health")
+    expect(integrationHealth).toHaveTextContent("Follow-up activity reads")
+    expect(integrationHealth).toHaveTextContent(
+      "Follow-up activity history fell back to 1 local follow-up activity after a Convex read failure.",
+    )
+    expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
+      "Retry activity read",
+    )
   })
 
   it("restores follow-up activity readiness history snapshots from local storage", async () => {
