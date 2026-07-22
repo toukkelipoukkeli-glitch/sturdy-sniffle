@@ -163,6 +163,7 @@ import {
   summarizeOfferReleaseProviderOutcomeHistory,
   type OfferReleaseProviderOutcomeHistorySummary,
 } from "./domain/offers/offerReleaseProviderOutcomeHistory"
+import { buildOfferReleaseProviderOutcomeReadSyncState } from "./domain/offers/offerReleaseProviderOutcomeReadSync"
 import { buildOfferReleaseProviderOutcomePersistenceRecord } from "./domain/offers/offerReleaseProviderOutcomePersistence"
 import {
   buildOfferReleaseProviderOutcomeReadiness,
@@ -2387,6 +2388,14 @@ function App() {
       }),
     [offerReleasePlan, offerReleaseProviderCommandOutcomes, workspaceNow, workspaceOperatorName],
   )
+  const offerProviderOutcomeReadSync = useMemo(
+    () =>
+      buildOfferReleaseProviderOutcomeReadSyncState({
+        localBatchCount: offerReleaseProviderOutcomeHistory.totalOutcomeBatches,
+        status: "local",
+      }),
+    [offerReleaseProviderOutcomeHistory.totalOutcomeBatches],
+  )
   const offerReleaseProviderOutcomeReadiness = useMemo(
     () =>
       buildOfferReleaseProviderOutcomeReadiness({
@@ -2610,6 +2619,7 @@ function App() {
         followUpActivityReadSync: offerFollowUpActivityReadSync,
         followUpScheduledAt: offerFollowUpScheduledAt,
         offerEmailDraftPackageReadSync,
+        offerProviderOutcomeReadSync,
         offerReleaseExecutionReadSync,
         persistenceMode: workspacePersistenceRuntime.mode,
         providerReadinessReadSync: offerProviderReadinessReadSync,
@@ -2630,6 +2640,7 @@ function App() {
       offerFollowUpActivityReadinessReadModel,
       offerFollowUpScheduledAt,
       offerEmailDraftPackageReadSync,
+      offerProviderOutcomeReadSync,
       offerReleaseExecutionReadSync,
       offerReplySync,
       offerProviderReadinessReadSync,

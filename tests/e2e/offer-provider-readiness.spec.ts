@@ -160,6 +160,13 @@ for (const viewport of operatorViewports) {
       await expect(providerOutcomeHistory).toContainText("Provider-ready")
       await expect(providerOutcomeHistory.getByLabel("Provider outcome command summaries")).toContainText("Email Draft")
       await expect(providerOutcomeHistory.getByLabel("Provider outcome command summaries")).toContainText("Calendar Follow Up")
+      await expect(integrationHealth).toContainText("Provider outcome reads")
+      await expect(integrationHealth).toContainText(
+        "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+      )
+      await expect(integrationHealth.getByLabel("Provider outcome reads recovery actions")).toContainText(
+        "Configure Convex read",
+      )
 
       const readinessHistory = page.getByLabel("Readiness persistence history")
       await expect(readinessHistory).toContainText("2 readiness records")

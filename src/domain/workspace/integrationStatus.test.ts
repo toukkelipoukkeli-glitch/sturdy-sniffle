@@ -7,6 +7,7 @@ import type { OfferFollowUpActivityReadinessReadModel } from "../offers/offerFol
 import {
   buildOfferEmailDraftPackageReadSyncState,
 } from "../offers/offerEmailDraftPackageReadSync"
+import { buildOfferReleaseProviderOutcomeReadSyncState } from "../offers/offerReleaseProviderOutcomeReadSync"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   summarizeOfferFollowUpActivityReadinessSyncHealth,
@@ -125,6 +126,44 @@ describe("workspace integration status", () => {
         "- Configure Convex read: Configure an optional browser bridge email draft package query before expecting persisted Gmail draft history.",
       ].join("\n"),
       label: "Email draft package reads",
+      severity: "attention",
+      status: "local",
+    })
+  })
+
+  it("surfaces provider outcome read-source recovery actions", () => {
+    const status = summarizeWorkspaceIntegrationStatus({
+      connectorSnapshot: connectorSnapshot("linked"),
+      offerProviderOutcomeReadSync: buildOfferReleaseProviderOutcomeReadSyncState({
+        localBatchCount: 1,
+        status: "local",
+      }),
+      persistenceMode: "local",
+      providerRuns: [providerAudit({ status: "succeeded" })],
+      rfqId: "rfq-204",
+      syncErrorCount: 0,
+    })
+
+    const source = status.sources.find((candidate) => candidate.key === "offer_provider_outcome_reads")
+    expect(source).toMatchObject({
+      actions: [
+        {
+          detail: "Configure an optional browser bridge provider outcome query before expecting persisted release side-effect history.",
+          key: "configure_provider_outcome_read",
+          label: "Configure Convex read",
+        },
+      ],
+      count: 1,
+      detail: "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+      diagnosticExport: [
+        "Provider outcome read diagnostics",
+        "Status: local",
+        "Outcome batches: persisted 0, local 1, fallback 0",
+        "Detail: 1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+        "Recovery actions:",
+        "- Configure Convex read: Configure an optional browser bridge provider outcome query before expecting persisted release side-effect history.",
+      ].join("\n"),
+      label: "Provider outcome reads",
       severity: "attention",
       status: "local",
     })
