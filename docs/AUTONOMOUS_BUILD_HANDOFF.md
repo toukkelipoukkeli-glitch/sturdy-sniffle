@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1e57754` (`Surface email draft read source (#477)`).
+- Main branch checkpoint: `643bbe3` (`Refresh email draft read handoff (#478)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/provider-outcome-read-source` is surfacing the existing provider outcome read-source state inside the Offer provider outcome history panel while keeping live provider/Convex writes deferred.
 - Latest merged sequence:
+  - `#478` refreshes the autonomous handoff after the email draft read-source UI slice.
   - `#477` surfaces the existing local-first email draft package read-source state in the Offer history panel, adds deterministic App coverage for local/Convex/fallback/pending source labels, and keeps live Gmail/Convex writes deferred.
   - `#476` refreshes the autonomous handoff after the provider outcome Integration health slice.
   - `#475` surfaces local-first provider outcome batch read-source state and recovery actions in Integration health without live provider/Convex writes.

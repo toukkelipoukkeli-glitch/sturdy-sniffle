@@ -2,7 +2,12 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import App, { OfferEmailDraftPackageHistoryPanel, ProcessQuotePreviewCard, pdfPreviewLoadTimeoutMs } from "./App"
+import App, {
+  OfferEmailDraftPackageHistoryPanel,
+  OfferReleaseProviderOutcomeHistoryPanel,
+  ProcessQuotePreviewCard,
+  pdfPreviewLoadTimeoutMs,
+} from "./App"
 import { CNC_CALCULATOR_VERSION } from "./domain/quoting/cnc"
 import { aluminumBracketFixture, rushTurnedSpacerFixture } from "./domain/quoting/cnc.fixtures"
 import { buildNonCncQuotePromotionActionSummary } from "./domain/quoting/nonCncQuotePromotionActions"
@@ -71,6 +76,14 @@ import {
   buildOfferEmailDraftPackageReadSyncState,
   type OfferEmailDraftPackageReadSyncStatus,
 } from "./domain/offers/offerEmailDraftPackageReadSync"
+import {
+  OFFER_RELEASE_PROVIDER_OUTCOME_HISTORY_VERSION,
+  type OfferReleaseProviderOutcomeHistorySummary,
+} from "./domain/offers/offerReleaseProviderOutcomeHistory"
+import {
+  buildOfferReleaseProviderOutcomeReadSyncState,
+  type OfferReleaseProviderOutcomeReadSyncStatus,
+} from "./domain/offers/offerReleaseProviderOutcomeReadSync"
 import {
   buildOfferFollowUpActivityReadinessSyncHealthEvent,
   offerFollowUpActivityReadinessSyncHealthReadRecoveryAction,
@@ -176,6 +189,19 @@ function emptyEmailDraftPackageHistory(): OfferEmailDraftPackageHistorySummary {
     recipientSummaries: [],
     statusCounts: {},
     totalPackages: 0,
+    warningCount: 0,
+  }
+}
+
+function emptyProviderOutcomeHistory(): OfferReleaseProviderOutcomeHistorySummary {
+  return {
+    appliedCommandCount: 0,
+    commandCount: 0,
+    commandSummaries: [],
+    failedCommandCount: 0,
+    historyVersion: OFFER_RELEASE_PROVIDER_OUTCOME_HISTORY_VERSION,
+    statusCounts: {},
+    totalOutcomeBatches: 0,
     warningCount: 0,
   }
 }
@@ -3892,6 +3918,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(providerOutcomeHistory).toHaveTextContent("0")
     expect(providerOutcomeHistory).toHaveTextContent("Email Draft")
     expect(providerOutcomeHistory).toHaveTextContent("Applied")
+    expect(within(providerOutcomeHistory).getByLabelText("Provider outcome read source: Local outcomes")).toHaveAttribute(
+      "data-status",
+      "local",
+    )
+    expect(providerOutcomeHistory).toHaveTextContent(
+      "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+    )
     expect(integrationHealth).toHaveTextContent("Provider outcome reads")
     expect(integrationHealth).toHaveTextContent(
       "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
@@ -3960,6 +3993,55 @@ describe("FactoryBid workspace (component)", () => {
       )
 
       const source = screen.getByLabelText(`Email draft package read source: ${label}`)
+      expect(source).toHaveAttribute("data-status", status)
+      expect(source).toHaveTextContent(label)
+      expect(source).toHaveTextContent(expectedCopy)
+    },
+  )
+
+  it.each([
+    {
+      expectedCopy: "3 persisted provider outcome batches read from Convex and merged with 1 local fallback batch.",
+      label: "Convex read",
+      localBatchCount: 1,
+      persistedBatchCount: 3,
+      status: "convex",
+    },
+    {
+      expectedCopy: "Provider outcome history fell back to 2 local provider outcome batches after a Convex read failure.",
+      label: "Local fallback",
+      localBatchCount: 2,
+      persistedBatchCount: 0,
+      status: "fallback",
+    },
+    {
+      expectedCopy: "Checking Convex provider outcome history; 2 local fallback batches remain visible.",
+      label: "Checking Convex",
+      localBatchCount: 2,
+      persistedBatchCount: 0,
+      status: "pending",
+    },
+  ] satisfies Array<{
+    expectedCopy: string
+    label: string
+    localBatchCount: number
+    persistedBatchCount: number
+    status: OfferReleaseProviderOutcomeReadSyncStatus
+  }>)(
+    "renders provider outcome read-source state for $status",
+    ({ expectedCopy, label, localBatchCount, persistedBatchCount, status }) => {
+      render(
+        <OfferReleaseProviderOutcomeHistoryPanel
+          history={emptyProviderOutcomeHistory()}
+          readSync={buildOfferReleaseProviderOutcomeReadSyncState({
+            localBatchCount,
+            persistedBatchCount,
+            status,
+          })}
+        />,
+      )
+
+      const source = screen.getByLabelText(`Provider outcome read source: ${label}`)
       expect(source).toHaveAttribute("data-status", status)
       expect(source).toHaveTextContent(label)
       expect(source).toHaveTextContent(expectedCopy)
