@@ -90,6 +90,45 @@ async function installPendingFollowUpActivityReadBridge(page: Page) {
   })
 }
 
+async function installPendingProviderOutcomeReadinessBridge(page: Page) {
+  await page.addInitScript(() => {
+    ;(window as typeof window & {
+      __FACTORYBID_WORKSPACE_CONVEX__?: {
+        mutationRefs: Record<string, string>
+        offerIdsByLocalId: Record<string, string>
+        offerProviderOutcomeReadinessMutationRef: string
+        offerProviderOutcomeReadinessQueryRef: string
+        rfqIdsByLocalId: Record<string, string>
+        runMutation: () => Promise<void>
+        runQuery: (queryRef: unknown, args: Record<string, unknown>) => Promise<never>
+      }
+    }).__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      offerProviderOutcomeReadinessQueryRef: "listOfferProviderOutcomeReadiness",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        if (queryRef !== "listOfferProviderOutcomeReadiness") {
+          throw new Error(`Unexpected provider readiness query ref: ${String(queryRef)}`)
+        }
+        if (args.offerId !== "convex-offer-204") {
+          throw new Error(`Unexpected provider readiness offer id: ${String(args.offerId)}`)
+        }
+        return new Promise<never>(() => {})
+      },
+    }
+  })
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`offer provider readiness on ${viewport.label}`, () => {
     test.use({ viewport: viewport.size })
@@ -124,7 +163,9 @@ for (const viewport of operatorViewports) {
 
       const executionAudit = page.getByLabel("Offer release execution audit")
       await expect(executionAudit).toContainText("Dry-run prepared")
-      await expect(page.getByLabel("Provider outcome readiness")).toContainText("Provider outcomes ready: 6 applied commands.")
+      await expect(page.getByLabel("Provider outcome readiness", { exact: true })).toContainText(
+        "Provider outcomes ready: 6 applied commands.",
+      )
       const executeRelease = executionAudit.getByRole("button", { name: "Execute release" })
       await expect(executeRelease).toBeEnabled()
       await executeRelease.dispatchEvent("click")
@@ -187,6 +228,26 @@ for (const viewport of operatorViewports) {
       )
       await expect(activityReads.locator(".metric", { hasText: "Task IDs" })).toContainText("1")
       await expect(activityReads.locator(".metric", { hasText: "Missing" })).toContainText("0")
+
+      await assertNoHorizontalOverflow(page)
+    })
+
+    test("keeps provider readiness history visible while persisted reads are pending", async ({ page }) => {
+      await installPendingProviderOutcomeReadinessBridge(page)
+      await prepareReviewedRelease(page)
+
+      const readinessHistory = page.getByLabel("Readiness persistence history")
+      await expect(readinessHistory).toContainText("2 readiness records")
+      await expect(readinessHistory.getByLabel("Provider outcome readiness read source: Checking Convex")).toHaveAttribute(
+        "data-status",
+        "pending",
+      )
+      await expect(readinessHistory).toContainText(
+        "Checking Convex for provider readiness history; 2 readiness records remain visible.",
+      )
+      await expect(readinessHistory.locator(".metric", { hasText: /^Ready 1$/ })).toBeVisible()
+      await expect(readinessHistory.locator(".metric", { hasText: /^Blocked 1$/ })).toBeVisible()
+      await expect(readinessHistory).toContainText("Current readiness recorded")
 
       await assertNoHorizontalOverflow(page)
     })

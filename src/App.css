@@ -5952,6 +5952,7 @@
 .offer-provider-outcome-history-summary,
 .offer-provider-outcome-history-latest,
 .offer-provider-outcome-history-commands,
+.offer-provider-readiness-history-source,
 .offer-provider-readiness-history-summary,
 .offer-provider-readiness-history-current,
 .offer-release-history-source,
@@ -6177,6 +6178,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.offer-provider-readiness-history-source,
 .offer-release-history-source,
 .offer-follow-up-activity-source {
   align-items: center;
@@ -6188,12 +6190,15 @@
   padding: 8px 10px;
 }
 
+.offer-provider-readiness-history-source[data-status="convex"],
 .offer-release-history-source[data-status="convex"],
 .offer-follow-up-activity-source[data-status="convex"] {
   background: oklch(0.96 0.035 155);
   color: oklch(0.3 0.08 155);
 }
 
+.offer-provider-readiness-history-source[data-status="fallback"],
+.offer-provider-readiness-history-source[data-status="pending"],
 .offer-release-history-source[data-status="fallback"],
 .offer-release-history-source[data-status="pending"],
 .offer-follow-up-activity-source[data-status="fallback"],
@@ -6202,23 +6207,27 @@
   color: oklch(0.36 0.08 75);
 }
 
+.offer-provider-readiness-history-source[data-status="local"],
 .offer-release-history-source[data-status="local"],
 .offer-follow-up-activity-source[data-status="local"] {
   background: oklch(0.97 0.02 235);
   color: oklch(0.34 0.04 250);
 }
 
+.offer-provider-readiness-history-source svg,
 .offer-release-history-source svg,
 .offer-follow-up-activity-source svg {
   height: 16px;
   width: 16px;
 }
 
+.offer-provider-readiness-history-source strong,
 .offer-release-history-source strong,
 .offer-follow-up-activity-source strong {
   font-size: 0.78rem;
 }
 
+.offer-provider-readiness-history-source span,
 .offer-release-history-source span,
 .offer-follow-up-activity-source span {
   color: inherit;

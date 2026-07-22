@@ -1095,6 +1095,89 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessPersistence).toHaveTextContent("Blocked 1")
       expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
     })
+    expect(
+      within(readinessPersistence).getByLabelText("Provider outcome readiness read source: Convex read"),
+    ).toHaveAttribute("data-status", "convex")
+    expect(readinessPersistence).toHaveTextContent(
+      "Merged persisted provider readiness history with 2 readiness records.",
+    )
+  })
+
+  it("keeps provider outcome readiness visible while persisted reads are pending", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      offerProviderOutcomeReadinessQueryRef: "listOfferProviderOutcomeReadiness",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async (queryRef, args) => {
+        expect(queryRef).toBe("listOfferProviderOutcomeReadiness")
+        expect(args).toEqual({
+          limit: 20,
+          offerId: "convex-offer-204",
+        })
+        return await new Promise<never>(() => {})
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const readinessPersistence = screen.getByLabelText("Readiness persistence history")
+    await waitFor(() => {
+      expect(readinessPersistence).toHaveTextContent("1 readiness record")
+    })
+    expect(
+      within(readinessPersistence).getByLabelText("Provider outcome readiness read source: Checking Convex"),
+    ).toHaveAttribute("data-status", "pending")
+    expect(readinessPersistence).toHaveTextContent(
+      "Checking Convex for provider readiness history; 1 readiness record remains visible.",
+    )
+    expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
+  })
+
+  it("keeps provider outcome readiness visible after persisted read fallback", async () => {
+    const user = userEvent.setup()
+    window.__FACTORYBID_WORKSPACE_CONVEX__ = {
+      mutationRefs: {
+        recordWorkspaceActivity: "recordWorkspaceActivity",
+        transitionRfqStatus: "transitionRfqStatus",
+      },
+      offerIdsByLocalId: {
+        "offer-204": "convex-offer-204",
+      },
+      offerProviderOutcomeReadinessMutationRef: "recordOfferProviderOutcomeReadiness",
+      offerProviderOutcomeReadinessQueryRef: "listOfferProviderOutcomeReadiness",
+      rfqIdsByLocalId: {
+        "rfq-204": "convex-rfq-204",
+      },
+      runMutation: async () => {},
+      runQuery: async () => {
+        throw new Error("convex unavailable")
+      },
+    }
+
+    render(<App />)
+    await user.click(screen.getByRole("button", { name: /^Offer$/ }))
+
+    const readinessPersistence = screen.getByLabelText("Readiness persistence history")
+    await waitFor(() => {
+      expect(
+        within(readinessPersistence).getByLabelText("Provider outcome readiness read source: Local fallback"),
+      ).toHaveAttribute("data-status", "fallback")
+    })
+    expect(readinessPersistence).toHaveTextContent("1 readiness record")
+    expect(readinessPersistence).toHaveTextContent("Convex provider readiness history fell back to 1 readiness record.")
+    expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
   })
 
   it("routes follow-up activity readiness through the Convex browser bridge", async () => {
@@ -2110,6 +2193,10 @@ describe("FactoryBid workspace (component)", () => {
       expect(readinessPersistence).toHaveTextContent("1 readiness record")
       expect(readinessPersistence).toHaveTextContent("Current readiness needs review")
     })
+    expect(
+      within(readinessPersistence).getByLabelText("Provider outcome readiness read source: Local readiness"),
+    ).toHaveAttribute("data-status", "local")
+    expect(readinessPersistence).toHaveTextContent("Provider readiness history is using 1 readiness record.")
     expect(readinessPersistence).toHaveTextContent("Current blocked")
     expect(readinessPersistence).toHaveTextContent("0/0 command outcomes recorded")
     expect(readinessPersistence).toHaveTextContent("offer-204:rfq-204")
