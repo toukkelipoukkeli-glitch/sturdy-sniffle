@@ -168,7 +168,12 @@ import {
   summarizeOfferReleaseProviderOutcomeHistory,
   type OfferReleaseProviderOutcomeHistorySummary,
 } from "./domain/offers/offerReleaseProviderOutcomeHistory"
-import { buildOfferReleaseProviderOutcomeReadSyncState } from "./domain/offers/offerReleaseProviderOutcomeReadSync"
+import {
+  buildOfferReleaseProviderOutcomeReadSyncState,
+  offerReleaseProviderOutcomeReadSyncIntegrationDetail,
+  type OfferReleaseProviderOutcomeReadSyncState,
+  type OfferReleaseProviderOutcomeReadSyncStatus,
+} from "./domain/offers/offerReleaseProviderOutcomeReadSync"
 import { buildOfferReleaseProviderOutcomePersistenceRecord } from "./domain/offers/offerReleaseProviderOutcomePersistence"
 import {
   buildOfferReleaseProviderOutcomeReadiness,
@@ -3300,6 +3305,7 @@ function App() {
               releaseHistoryReadSource={offerReleaseExecutionReadSource}
               releasePlan={offerReleasePlan}
               releaseProviderOutcomeHistory={offerReleaseProviderOutcomeHistory}
+              releaseProviderOutcomeReadSync={offerProviderOutcomeReadSync}
               releaseProviderOutcomeReadinessReadSource={offerProviderReadinessReadSource}
               releaseProviderOutcomeReadinessHistory={offerReleaseProviderOutcomeReadinessHistory}
               releaseProviderOutcomeReadiness={offerReleaseProviderOutcomeReadiness}
@@ -10504,6 +10510,7 @@ function OfferView({
   releaseHistoryReadSource,
   releasePlan,
   releaseProviderOutcomeHistory,
+  releaseProviderOutcomeReadSync,
   releaseProviderOutcomeReadinessReadSource,
   releaseProviderOutcomeReadinessHistory,
   releaseProviderOutcomeReadiness,
@@ -10542,6 +10549,7 @@ function OfferView({
   releaseHistoryReadSource: OfferReleaseExecutionReadSource
   releasePlan: OfferReleasePlan
   releaseProviderOutcomeHistory: OfferReleaseProviderOutcomeHistorySummary
+  releaseProviderOutcomeReadSync: OfferReleaseProviderOutcomeReadSyncState
   releaseProviderOutcomeReadinessReadSource: OfferProviderOutcomeReadinessReadSource
   releaseProviderOutcomeReadinessHistory: OfferReleaseProviderOutcomeReadinessHistorySummary
   releaseProviderOutcomeReadiness: OfferReleaseProviderOutcomeReadiness
@@ -10692,7 +10700,10 @@ function OfferView({
         syncHealth={releaseFollowUpActivityReadinessSyncHealth}
       />
       <OfferEmailDraftPackageHistoryPanel history={releaseEmailDraftHistory} readSync={releaseEmailDraftReadSync} />
-      <OfferReleaseProviderOutcomeHistoryPanel history={releaseProviderOutcomeHistory} />
+      <OfferReleaseProviderOutcomeHistoryPanel
+        history={releaseProviderOutcomeHistory}
+        readSync={releaseProviderOutcomeReadSync}
+      />
       <OfferReleaseProviderOutcomeReadinessHistoryPanel
         history={releaseProviderOutcomeReadinessHistory}
         readSource={releaseProviderOutcomeReadinessReadSource}
@@ -11542,10 +11553,17 @@ function offerEmailDraftPackageReadSourceLabel(source: OfferEmailDraftPackageRea
   }
 }
 
-function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferReleaseProviderOutcomeHistorySummary }) {
+export function OfferReleaseProviderOutcomeHistoryPanel({
+  history,
+  readSync,
+}: {
+  history: OfferReleaseProviderOutcomeHistorySummary
+  readSync: OfferReleaseProviderOutcomeReadSyncState
+}) {
   const latest = history.latestOutcomeBatch
   const latestStatus =
     history.totalOutcomeBatches === 0 ? "None" : history.failedCommandCount > 0 ? "Review failures" : "Provider-ready"
+  const sourceLabel = offerReleaseProviderOutcomeReadSourceLabel(readSync.status)
 
   return (
     <section className="offer-provider-outcome-history-panel" aria-label="Offer provider outcome history">
@@ -11568,6 +11586,15 @@ function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferRe
         >
           {latestStatus}
         </span>
+      </div>
+      <div
+        className="offer-provider-outcome-history-source"
+        aria-label={`Provider outcome read source: ${sourceLabel}`}
+        data-status={readSync.status}
+      >
+        <Clock3 aria-hidden="true" />
+        <strong>{sourceLabel}</strong>
+        <span>{offerReleaseProviderOutcomeReadSyncIntegrationDetail(readSync)}</span>
       </div>
       <div className="offer-provider-outcome-history-summary">
         <Metric label="Batches" value={String(history.totalOutcomeBatches)} />
@@ -11611,6 +11638,19 @@ function OfferReleaseProviderOutcomeHistoryPanel({ history }: { history: OfferRe
       ) : null}
     </section>
   )
+}
+
+function offerReleaseProviderOutcomeReadSourceLabel(source: OfferReleaseProviderOutcomeReadSyncStatus) {
+  switch (source) {
+    case "convex":
+      return "Convex read"
+    case "fallback":
+      return "Local fallback"
+    case "pending":
+      return "Checking Convex"
+    case "local":
+      return "Local outcomes"
+  }
 }
 
 function OfferReleaseProviderOutcomeReadinessHistoryPanel({

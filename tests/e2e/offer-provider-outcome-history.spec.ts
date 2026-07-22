@@ -38,6 +38,13 @@ for (const viewport of operatorViewports) {
       await expect(providerOutcomeHistory.locator(".metric", { hasText: /^Commands 6$/ })).toBeVisible()
       await expect(providerOutcomeHistory.locator(".metric", { hasText: /^Applied 6$/ })).toBeVisible()
       await expect(providerOutcomeHistory.locator(".metric", { hasText: /^Failed 0$/ })).toBeVisible()
+      await expect(providerOutcomeHistory.getByLabel("Provider outcome read source: Local outcomes")).toHaveAttribute(
+        "data-status",
+        "local",
+      )
+      await expect(providerOutcomeHistory).toContainText(
+        "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+      )
       await expect(providerOutcomeHistory).toContainText("Provider outcomes ready")
       await expect(providerOutcomeHistory).toContainText("6 commands · 2 warnings")
 
@@ -51,6 +58,13 @@ for (const viewport of operatorViewports) {
       const restoredProviderOutcomeHistory = page.getByLabel("Offer provider outcome history")
       await expect(restoredProviderOutcomeHistory).toContainText("1 outcome batch")
       await expect(restoredProviderOutcomeHistory).toContainText("Provider-ready")
+      await expect(restoredProviderOutcomeHistory.getByLabel("Provider outcome read source: Local outcomes")).toHaveAttribute(
+        "data-status",
+        "local",
+      )
+      await expect(restoredProviderOutcomeHistory).toContainText(
+        "1 local provider outcome batch available; Convex provider outcome reads are not configured.",
+      )
       await expect(restoredProviderOutcomeHistory).toContainText("Provider outcomes ready")
       await expect(restoredProviderOutcomeHistory).toContainText("6 commands · 2 warnings")
       await expect(restoredProviderOutcomeHistory.getByLabel("Provider outcome command summaries")).toContainText("Email Draft")
