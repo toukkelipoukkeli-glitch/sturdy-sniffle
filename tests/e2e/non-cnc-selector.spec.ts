@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "@playwright/test"
 
 const operatorViewports = [
   { label: "desktop", size: { width: 1440, height: 1000 } },
@@ -39,6 +39,48 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(hasHorizontalOverflow).toBe(false)
 }
 
+async function assertMutationApplyHistory(nonCncDemos: Locator, page: Page) {
+  const mutationPackage = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation package")
+  await expect(mutationPackage).toContainText("Application mutation package")
+  await expect(mutationPackage).toContainText("Mutation targets")
+
+  const mutationExecution = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation execution audit")
+  await expect(mutationExecution).toContainText(
+    "Dry-run mutation audit only; active RFQ quote, offer, and release state stay unchanged.",
+  )
+  await expect(mutationExecution).toContainText("Mutation audit")
+
+  const mutationCommitPlan = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation commit plan")
+  await expect(mutationCommitPlan).toContainText("Application outcome commit read model is not ready to apply.")
+  await expect(mutationCommitPlan).toContainText("Mutation commit withheld")
+  await expect(mutationCommitPlan).toContainText("Commit outcomes")
+
+  const mutationApplyPlan = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation apply plan")
+  await expect(mutationApplyPlan).toContainText("Mutation apply plan")
+  await expect(mutationApplyPlan).toContainText("Apply commands")
+  await expect(mutationApplyPlan).toContainText("Review-only")
+
+  const mutationApplyAudit = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation apply execution audit")
+  await expect(mutationApplyAudit).toContainText(
+    "Dry-run mutation apply audit only; active RFQ quote, offer, and release state stay unchanged.",
+  )
+  await expect(mutationApplyAudit).toContainText("Mutation apply audit")
+
+  const mutationApplyHistory = nonCncDemos.getByLabel("Non-CNC promoted quote application mutation apply history")
+  await expect(mutationApplyHistory).toContainText("Local mutation apply history")
+  await expect(mutationApplyHistory).toContainText("Active RFQ quote, offer, and release state stay unchanged.")
+  await expect(mutationApplyHistory).toContainText("Status counts:")
+
+  const mutationApplyExecutionHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote application mutation apply execution history",
+  )
+  await expect(mutationApplyExecutionHistory).toContainText("Local mutation apply audit history")
+  await expect(mutationApplyExecutionHistory).toContainText("Active RFQ quote, offer, and release state stay unchanged.")
+  await expect(mutationApplyExecutionHistory).toContainText("Status counts:")
+
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -71,6 +113,7 @@ for (const viewport of operatorViewports) {
       expect(copiedSummary).toContain("FAB-FRAME-508")
       expect(copiedSummary).toContain("Input edit adapter:")
       expect(copiedSummary).toContain("- UI controls: preview controls enabled for supported fields")
+      await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
   })
