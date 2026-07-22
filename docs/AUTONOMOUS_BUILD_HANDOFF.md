@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `fa273fe` (`Add offer read fallback diagnostic e2e (#483)`).
+- Main branch checkpoint: `8b79139` (`Refresh offer read diagnostics handoff (#484)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next focused `codex/*` branch from `origin/main`.
+- In-flight branch at this checkpoint: `codex/offer-read-local-diagnostics-e2e` is adding deterministic desktop/mobile Playwright coverage for local email draft package and provider outcome read diagnostic exports in Integration health.
 - Latest merged sequence:
+  - `#484` refreshes the autonomous handoff after the offer-read fallback diagnostic e2e slice.
   - `#483` extends the offer-read fallback smoke with copyable Integration health diagnostic exports for release execution, follow-up activity, and provider readiness read failures.
   - `#482` refreshes the autonomous handoff after the offer-read fallback e2e slice.
   - `#481` adds deterministic desktop/mobile Playwright coverage that optional Convex read failures for offer release execution, follow-up activity, and provider readiness keep local histories visible with fallback labels, Integration health retry actions, and no horizontal overflow.
