@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `ea8d0b0` (`Add non-CNC offer creation plan (#501)`).
+- Main branch checkpoint: `684e244` (`Add non-CNC offer creation execution audits (#503)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-execution` — adds deterministic dry-run/commit audit records for the non-CNC customer-offer creation plan without creating offers, export packages, release plans, or connector side effects.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#503` adds deterministic dry-run/commit audit records for non-CNC customer-offer creation plans without creating offers, export packages, release plans, or connector side effects.
+  - `#502` refreshes the autonomous handoff after the non-CNC offer creation plan slice.
   - `#501` adds a deterministic customer-offer creation plan boundary for ready non-CNC offer-wiring evidence without creating offers, export packages, release plans, or connector side effects.
   - `#500` refreshes the autonomous handoff after the non-CNC offer-wiring e2e slice.
   - `#499` adds deterministic desktop/mobile Playwright coverage for the operator-visible non-CNC offer-wiring readiness boundary while active RFQ quote, offer, release, and connector state stay unchanged.
