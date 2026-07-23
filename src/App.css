@@ -2723,6 +2723,14 @@
   color: oklch(0.42 0.11 78);
 }
 
+@media (max-width: 640px) {
+  .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-grid,
+  .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-list,
+  .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-warnings {
+    grid-template-columns: 1fr;
+  }
+}
+
 .process-demo-promotion-application-read-model-list li[data-status="blocked"] strong,
 .process-demo-promotion-application-mutation-read-model-list li[data-status="blocked"] strong {
   color: oklch(0.44 0.12 35);
