@@ -1,6 +1,6 @@
 # FactoryBid OS — Production Readiness Checklist
 
-Last updated: 2026-07-22 (Europe/Helsinki). Owner: autonomous build loop.
+Last updated: 2026-07-23 (Europe/Helsinki). Owner: autonomous build loop.
 
 This checklist tracks the gap between the current `main` and a production-grade local-first
 factory tarjouslaskenta system, as defined by the mission Definition of Done (DoD §1–§10).
