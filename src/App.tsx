@@ -303,6 +303,7 @@ import {
   type NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot,
   type RecordNonCncPromotedQuoteApplicationMutationApplyPlanInput,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlanPersistence"
+import { buildNonCncPromotedQuoteReleaseReadiness } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
 import {
@@ -7438,6 +7439,16 @@ export function ProcessQuotePreviewCard({
     promotionApplicationMutationApplyExecutionSnapshot.records.find(
       (record) => record.executionFingerprint === promotionApplicationMutationApplyExecutionRun.executionFingerprint,
     )
+  const promotionReleaseReadiness = useMemo(
+    () =>
+      buildNonCncPromotedQuoteReleaseReadiness({
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+        snapshot: promotionApplicationMutationApplyExecutionSnapshot,
+        targetRfqId: promotionPlan.targetRfqId,
+      }),
+    [promotionApplicationMutationApplyExecutionSnapshot, promotionPlan.requestedAt, promotionPlan.requestedBy, promotionPlan.targetRfqId],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -8838,6 +8849,61 @@ export function ProcessQuotePreviewCard({
           </small>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-release-readiness"
+        aria-label="Non-CNC promoted quote release readiness"
+        data-status={promotionReleaseReadiness.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Release readiness</span>
+            <strong>{humanizeKey(promotionReleaseReadiness.status)}</strong>
+          </div>
+          <small>{promotionReleaseReadiness.readinessVersion}</small>
+        </div>
+        <p>{promotionReleaseReadiness.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Persisted evidence</span>
+            <strong>{formatCount(promotionReleaseReadiness.persistedRecordCount, "run")}</strong>
+            <small>{promotionReleaseReadiness.latestApplyPlanId ?? "No matching apply plan"}</small>
+          </div>
+          <div>
+            <span>Apply commands</span>
+            <strong>
+              {promotionReleaseReadiness.appliedCommandCount}/{promotionReleaseReadiness.commandCount} applied
+            </strong>
+            <small>{promotionReleaseReadiness.latestStatus ? humanizeKey(promotionReleaseReadiness.latestStatus) : "No latest status"}</small>
+          </div>
+          <div>
+            <span>Release source</span>
+            <strong>{promotionReleaseReadiness.targetRfqId}</strong>
+            <small>{promotionReleaseReadiness.latestExecutionFingerprint ?? "No release-ready fingerprint"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionReleaseReadiness.releaseBoundary}</small>
+        </div>
+        {promotionReleaseReadiness.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionReleaseReadiness.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionReleaseReadiness.reviewWarnings.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-warnings" aria-label="Non-CNC promoted quote release readiness warnings">
+            {promotionReleaseReadiness.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       {promotionApplicationMutationApplyPlanRecord ? (
         <div
           className="process-demo-promotion-application-mutation-apply-history"

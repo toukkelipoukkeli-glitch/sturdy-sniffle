@@ -53,6 +53,7 @@ import {
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
   type NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecutionPersistence"
+import { NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -235,6 +236,75 @@ function emptyPromotedQuoteApplicationMutationApplyExecutionSnapshot(): NonCncPr
     statusCounts: {},
     targetRfqIds: [],
     warningCount: 0,
+  }
+}
+
+function successfulPromotedQuoteApplicationMutationApplyExecutionSnapshot(): NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot {
+  return {
+    applicationIds: ["non-cnc-promoted-quote-application:rfq-demo-204:package"],
+    applicationRecordIds: ["non-cnc-promoted-quote-application-record:non-cnc-promoted-quote-application:rfq-demo-204:package"],
+    applyPlanIds: ["non-cnc-promoted-quote-application-mutation-apply-plan:rfq-demo-204:package"],
+    latestRun: {
+      actor: "Release Operator",
+      applicationId: "non-cnc-promoted-quote-application:rfq-demo-204:package",
+      applicationRecordId: "non-cnc-promoted-quote-application-record:non-cnc-promoted-quote-application:rfq-demo-204:package",
+      appliedCommandCount: 3,
+      applyPlanId: "non-cnc-promoted-quote-application-mutation-apply-plan:rfq-demo-204:package",
+      blockedCommandCount: 0,
+      commandCount: 3,
+      executedAt: "2026-06-27T13:52:00.000Z",
+      executionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
+      executionVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION,
+      failedCommandCount: 0,
+      mode: "commit",
+      mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:rfq-demo-204:package",
+      packageId: "non-cnc-quote-promotion-command-package:rfq-demo-204",
+      pendingActionCount: 1,
+      pendingCommandCount: 0,
+      persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+      preparedCommandCount: 0,
+      selectedPlanId: "non-cnc-promotion:rfq-demo-204:sheet-metal",
+      sourceExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
+      status: "succeeded",
+      targetRfqId: "rfq-demo-204",
+      warningCount: 2,
+    },
+    mutationPackageIds: ["non-cnc-promoted-quote-application-mutation-package:rfq-demo-204:package"],
+    pendingActionCount: 1,
+    persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+    recordCount: 1,
+    records: [
+      {
+        actor: "Release Operator",
+        applicationId: "non-cnc-promoted-quote-application:rfq-demo-204:package",
+        applicationRecordId: "non-cnc-promoted-quote-application-record:non-cnc-promoted-quote-application:rfq-demo-204:package",
+        appliedCommandCount: 3,
+        applyPlanId: "non-cnc-promoted-quote-application-mutation-apply-plan:rfq-demo-204:package",
+        blockedCommandCount: 0,
+        commandCount: 3,
+        executedAt: "2026-06-27T13:52:00.000Z",
+        executionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
+        executionVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION,
+        failedCommandCount: 0,
+        mode: "commit",
+        mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:rfq-demo-204:package",
+        packageId: "non-cnc-quote-promotion-command-package:rfq-demo-204",
+        pendingActionCount: 1,
+        pendingCommandCount: 0,
+        persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+        preparedCommandCount: 0,
+        selectedPlanId: "non-cnc-promotion:rfq-demo-204:sheet-metal",
+        sourceExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
+        status: "succeeded",
+        targetRfqId: "rfq-demo-204",
+        warningCount: 2,
+      },
+    ],
+    selectedPlanIds: ["non-cnc-promotion:rfq-demo-204:sheet-metal"],
+    sourceExecutionFingerprints: ["non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source"],
+    statusCounts: { succeeded: 1 },
+    targetRfqIds: ["rfq-demo-204"],
+    warningCount: 2,
   }
 }
 
@@ -644,6 +714,23 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Prepared 0, blocked 3, pending 0")
     expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Targets: None")
     expect(promotedQuoteApplicationMutationApplyExecutionHistory).toHaveTextContent("Status counts: blocked 4")
+    const promotedQuoteReleaseReadiness = within(processDemos).getByLabelText("Non-CNC promoted quote release readiness")
+    expect(promotedQuoteReleaseReadiness).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("Release readiness")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION)
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(
+      "Keep customer release on the active workspace quote until the non-CNC quote promotion is persisted and applied.",
+    )
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("4 runs")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("No matching apply plan")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("0/0 applied")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("No latest status")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("registry-demo")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("No release-ready fingerprint")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("No persisted non-CNC application apply execution matches active RFQ: registry-demo.")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(
+      "Release readiness is deterministic review data only; this helper does not mutate active RFQ quote, offer, release, or connector state.",
+    )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",
@@ -2874,7 +2961,7 @@ describe("FactoryBid workspace (component)", () => {
         }}
         promotionPlan={promotionPlan}
         promotionApplicationExecutionSnapshot={emptyPromotedQuoteApplicationExecutionSnapshot()}
-        promotionApplicationMutationApplyExecutionSnapshot={emptyPromotedQuoteApplicationMutationApplyExecutionSnapshot()}
+        promotionApplicationMutationApplyExecutionSnapshot={successfulPromotedQuoteApplicationMutationApplyExecutionSnapshot()}
         promotionApplicationMutationApplyPlanSnapshot={emptyPromotedQuoteApplicationMutationApplyPlanSnapshot()}
         promotionApplicationMutationExecutionSnapshot={stalePromotedQuoteApplicationMutationExecutionSnapshot()}
         promotionApplicationMutationOutcomeCommitSnapshot={emptyPromotedQuoteApplicationMutationOutcomeCommitSnapshot()}
@@ -3068,6 +3155,29 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveAttribute("data-status", "blocked")
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Mutation apply audit")
     expect(promotedQuoteApplicationMutationApplyExecution).toHaveTextContent("Apply id withheld")
+    const promotedQuoteReleaseReadiness = within(selectedPreview).getByLabelText("Non-CNC promoted quote release readiness")
+    expect(promotedQuoteReleaseReadiness).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("Release readiness")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION)
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(
+      "Persisted non-CNC quote promotion is ready for a future customer-release adapter.",
+    )
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("1 run")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("3/3 applied")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("succeeded")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent("rfq-demo-204")
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(
+      "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
+    )
+    expect(
+      within(promotedQuoteReleaseReadiness).getByLabelText("Non-CNC promoted quote release readiness warnings"),
+    ).toHaveTextContent("Latest persisted apply execution has 2 warning(s).")
+    expect(promotedQuoteReleaseReadiness).not.toHaveTextContent(
+      "No persisted non-CNC application apply execution records are available.",
+    )
+    expect(promotedQuoteReleaseReadiness).toHaveTextContent(
+      "Release readiness is deterministic review data only; this helper does not mutate active RFQ quote, offer, release, or connector state.",
+    )
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply execution history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation execution history")).toBeNull()
