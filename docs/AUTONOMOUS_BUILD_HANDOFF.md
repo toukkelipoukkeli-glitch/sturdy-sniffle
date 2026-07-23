@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e916c33` (`Refresh manual RFQ export handoff (#491)`).
+- Main branch checkpoint: `054b308` (`Add non-CNC promoted quote release readiness (#492)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-promoted-quote-persistence` — adds a deterministic local release-readiness boundary for persisted non-CNC promoted quote application apply executions before future customer release.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#492` adds a deterministic local release-readiness boundary for persisted non-CNC promoted quote application apply executions before future customer release, including CodeRabbit-requested UTC timestamp ordering and whitespace-fingerprint blocker coverage.
   - `#491` refreshes the autonomous handoff after the manual RFQ export download slice.
   - `#490` stabilizes new manual RFQ offer numbers as customer-ready `OFFER-M###` values and extends desktop/mobile manual RFQ-to-offer export coverage through copy, `.txt`, and real PDF downloads.
   - `#489` refreshes the autonomous handoff after the non-CNC mutation apply-history e2e slice.
