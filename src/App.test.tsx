@@ -3202,6 +3202,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
       "Non-CNC promoted quote has persisted apply evidence for a future customer-offer wiring adapter.",
     )
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
+    )
     expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("SM-120-BRACKET")
     expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Sheet metal")
     expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("€549.05")

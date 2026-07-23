@@ -8917,11 +8917,11 @@ export function ProcessQuotePreviewCard({
         ) : null}
       </div>
       <div
-        className="process-demo-promotion-offer-wiring-readiness"
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-wiring-readiness"
         aria-label="Non-CNC promoted quote offer wiring readiness"
         data-status={promotionOfferWiringReadiness.status}
       >
-        <div className="process-demo-promotion-offer-wiring-readiness-heading">
+        <div className="process-demo-promotion-release-readiness-heading">
           <div>
             <span>Offer wiring readiness</span>
             <strong>{humanizeKey(promotionOfferWiringReadiness.status)}</strong>
@@ -8929,7 +8929,7 @@ export function ProcessQuotePreviewCard({
           <small>{promotionOfferWiringReadiness.readinessVersion}</small>
         </div>
         <p>{promotionOfferWiringReadiness.nextOperatorMessage}</p>
-        <div className="process-demo-promotion-offer-wiring-readiness-grid">
+        <div className="process-demo-promotion-release-readiness-grid">
           <div>
             <span>Candidate</span>
             {promotionOfferWiringReadiness.candidate ? (
@@ -8961,12 +8961,12 @@ export function ProcessQuotePreviewCard({
             <small>{promotionOfferWiringReadiness.candidate?.offerBuilderExternalId ?? "Offer builder id withheld"}</small>
           </div>
         </div>
-        <div className="process-demo-promotion-offer-wiring-readiness-boundary">
+        <div className="process-demo-promotion-release-readiness-boundary">
           <span>Boundary</span>
           <small>{promotionOfferWiringReadiness.offerWiringBoundary}</small>
         </div>
         {promotionOfferWiringReadiness.blockerLabels.length > 0 ? (
-          <ul className="process-demo-promotion-offer-wiring-readiness-list">
+          <ul className="process-demo-promotion-release-readiness-list">
             {promotionOfferWiringReadiness.blockerLabels.map((blocker) => (
               <li data-status="blocked" key={blocker}>
                 <strong>{blocker}</strong>
@@ -8976,7 +8976,7 @@ export function ProcessQuotePreviewCard({
         ) : null}
         {promotionOfferWiringReadiness.reviewWarnings.length > 0 ? (
           <ul
-            className="process-demo-promotion-offer-wiring-readiness-warnings"
+            className="process-demo-promotion-release-readiness-warnings"
             aria-label="Non-CNC promoted quote offer wiring readiness warnings"
           >
             {promotionOfferWiringReadiness.reviewWarnings.map((warning) => (
