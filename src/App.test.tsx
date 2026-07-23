@@ -267,7 +267,7 @@ function successfulPromotedQuoteApplicationMutationApplyExecutionSnapshot(): Non
       sourceExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
       status: "succeeded",
       targetRfqId: "rfq-demo-204",
-      warningCount: 0,
+      warningCount: 2,
     },
     mutationPackageIds: ["non-cnc-promoted-quote-application-mutation-package:rfq-demo-204:package"],
     pendingActionCount: 1,
@@ -297,14 +297,14 @@ function successfulPromotedQuoteApplicationMutationApplyExecutionSnapshot(): Non
         sourceExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
         status: "succeeded",
         targetRfqId: "rfq-demo-204",
-        warningCount: 0,
+        warningCount: 2,
       },
     ],
     selectedPlanIds: ["non-cnc-promotion:rfq-demo-204:sheet-metal"],
     sourceExecutionFingerprints: ["non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source"],
     statusCounts: { succeeded: 1 },
     targetRfqIds: ["rfq-demo-204"],
-    warningCount: 0,
+    warningCount: 2,
   }
 }
 
@@ -3169,6 +3169,9 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteReleaseReadiness).toHaveTextContent(
       "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
     )
+    expect(
+      within(promotedQuoteReleaseReadiness).getByLabelText("Non-CNC promoted quote release readiness warnings"),
+    ).toHaveTextContent("Latest persisted apply execution has 2 warning(s).")
     expect(promotedQuoteReleaseReadiness).not.toHaveTextContent(
       "No persisted non-CNC application apply execution records are available.",
     )

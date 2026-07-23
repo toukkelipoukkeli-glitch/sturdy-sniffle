@@ -2681,13 +2681,15 @@
 }
 
 .process-demo-promotion-release-readiness-grid,
-.process-demo-promotion-release-readiness-list {
+.process-demo-promotion-release-readiness-list,
+.process-demo-promotion-release-readiness-warnings {
   display: grid;
   gap: 7px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.process-demo-promotion-release-readiness-list {
+.process-demo-promotion-release-readiness-list,
+.process-demo-promotion-release-readiness-warnings {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -2695,7 +2697,8 @@
 
 .process-demo-promotion-release-readiness-grid > div,
 .process-demo-promotion-release-readiness-boundary,
-.process-demo-promotion-release-readiness-list li {
+.process-demo-promotion-release-readiness-list li,
+.process-demo-promotion-release-readiness-warnings li {
   background: oklch(0.985 0.004 245);
   border: 1px solid oklch(0.9 0.016 235);
   border-radius: 8px;
@@ -2714,6 +2717,10 @@
 
 .process-demo-promotion-release-readiness-list li[data-status="blocked"] strong {
   color: oklch(0.44 0.12 35);
+}
+
+.process-demo-promotion-release-readiness-warnings li[data-status="warning"] strong {
+  color: oklch(0.42 0.11 78);
 }
 
 .process-demo-promotion-application-read-model-list li[data-status="blocked"] strong,

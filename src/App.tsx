@@ -7443,11 +7443,11 @@ export function ProcessQuotePreviewCard({
     () =>
       buildNonCncPromotedQuoteReleaseReadiness({
         requestedAt: promotionPlan.requestedAt,
-        requestedBy: "Mutation Operator",
+        requestedBy: promotionPlan.requestedBy,
         snapshot: promotionApplicationMutationApplyExecutionSnapshot,
         targetRfqId: promotionPlan.targetRfqId,
       }),
-    [promotionApplicationMutationApplyExecutionSnapshot, promotionPlan.requestedAt, promotionPlan.targetRfqId],
+    [promotionApplicationMutationApplyExecutionSnapshot, promotionPlan.requestedAt, promotionPlan.requestedBy, promotionPlan.targetRfqId],
   )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
@@ -8890,6 +8890,15 @@ export function ProcessQuotePreviewCard({
             {promotionReleaseReadiness.blockerLabels.map((blocker) => (
               <li data-status="blocked" key={blocker}>
                 <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionReleaseReadiness.reviewWarnings.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-warnings" aria-label="Non-CNC promoted quote release readiness warnings">
+            {promotionReleaseReadiness.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
               </li>
             ))}
           </ul>
