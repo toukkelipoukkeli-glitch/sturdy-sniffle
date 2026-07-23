@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d28cb88` (`Refresh non-CNC release readiness handoff (#493)`).
+- Main branch checkpoint: `0d21a35` (`Surface non-CNC release readiness UI (#494)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-release-readiness-ui`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#494` surfaces the deterministic non-CNC release-readiness boundary in the operator workspace with blocked/ready App coverage and desktop/mobile Browser/Playwright fallback QA while active RFQ quote, offer, release, and connector state stay unchanged.
   - `#493` refreshes the autonomous handoff after the non-CNC promoted quote release-readiness boundary slice.
   - `#492` adds a deterministic local release-readiness boundary for persisted non-CNC promoted quote application apply executions before future customer release, including CodeRabbit-requested UTC timestamp ordering and whitespace-fingerprint blocker coverage.
   - `#491` refreshes the autonomous handoff after the manual RFQ export download slice.
