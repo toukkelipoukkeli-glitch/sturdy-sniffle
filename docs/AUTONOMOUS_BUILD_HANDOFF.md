@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `71e8fcb` (`Refresh non-CNC offer creation persistence handoff (#506)`).
+- Main branch checkpoint: `0ed2015` (`Add non-CNC offer creation execution history summary (#507)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-execution-history` — adds deterministic history/read-summary copy for locally persisted non-CNC customer-offer creation execution audits without live customer/export/release or connector writes.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#507` adds deterministic history/read-summary copy for locally persisted non-CNC customer-offer creation execution audits without live customer/export/release or connector writes.
   - `#506` refreshes the autonomous handoff after the non-CNC customer-offer creation execution persistence slice.
   - `#505` adds deterministic local persistence snapshots for non-CNC customer-offer creation execution audits without live customer/export/release or connector writes.
   - `#504` refreshes the autonomous handoff after the non-CNC offer creation execution audit slice.
