@@ -303,6 +303,7 @@ import {
   type NonCncPromotedQuoteApplicationMutationApplyPlanPersistenceSnapshot,
   type RecordNonCncPromotedQuoteApplicationMutationApplyPlanInput,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlanPersistence"
+import { buildNonCncPromotedQuoteOfferWiringReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferWiringReadiness"
 import { buildNonCncPromotedQuoteReleaseReadiness } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommit"
 import { buildNonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationOutcomeCommitReadModel"
@@ -7449,6 +7450,17 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionApplicationMutationApplyExecutionSnapshot, promotionPlan.requestedAt, promotionPlan.requestedBy, promotionPlan.targetRfqId],
   )
+  const promotionOfferWiringReadiness = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferWiringReadiness({
+        readModel: promotionReadModel,
+        releaseReadiness: promotionReleaseReadiness,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+        targetRfqId: promotionPlan.targetRfqId,
+      }),
+    [promotionPlan.requestedAt, promotionPlan.requestedBy, promotionPlan.targetRfqId, promotionReadModel, promotionReleaseReadiness],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -8897,6 +8909,77 @@ export function ProcessQuotePreviewCard({
         {promotionReleaseReadiness.reviewWarnings.length > 0 ? (
           <ul className="process-demo-promotion-release-readiness-warnings" aria-label="Non-CNC promoted quote release readiness warnings">
             {promotionReleaseReadiness.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <div
+        className="process-demo-promotion-offer-wiring-readiness"
+        aria-label="Non-CNC promoted quote offer wiring readiness"
+        data-status={promotionOfferWiringReadiness.status}
+      >
+        <div className="process-demo-promotion-offer-wiring-readiness-heading">
+          <div>
+            <span>Offer wiring readiness</span>
+            <strong>{humanizeKey(promotionOfferWiringReadiness.status)}</strong>
+          </div>
+          <small>{promotionOfferWiringReadiness.readinessVersion}</small>
+        </div>
+        <p>{promotionOfferWiringReadiness.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-offer-wiring-readiness-grid">
+          <div>
+            <span>Candidate</span>
+            {promotionOfferWiringReadiness.candidate ? (
+              <>
+                <strong>{promotionOfferWiringReadiness.candidate.partNumber}</strong>
+                <small>
+                  {promotionOfferWiringReadiness.candidate.processLabel} ·{" "}
+                  {formatCurrency(
+                    promotionOfferWiringReadiness.candidate.totalCents,
+                    promotionOfferWiringReadiness.candidate.currency,
+                  )}
+                </small>
+              </>
+            ) : (
+              <>
+                <strong>Withheld</strong>
+                <small>Offer candidate waits for promoted quote and release evidence.</small>
+              </>
+            )}
+          </div>
+          <div>
+            <span>Release evidence</span>
+            <strong>{humanizeKey(promotionOfferWiringReadiness.releaseStatus)}</strong>
+            <small>{promotionOfferWiringReadiness.releaseExecutionFingerprint ?? "No release-ready fingerprint"}</small>
+          </div>
+          <div>
+            <span>External ids</span>
+            <small>{promotionOfferWiringReadiness.candidate?.quoteExternalId ?? "Quote id withheld"}</small>
+            <small>{promotionOfferWiringReadiness.candidate?.offerBuilderExternalId ?? "Offer builder id withheld"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-offer-wiring-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferWiringReadiness.offerWiringBoundary}</small>
+        </div>
+        {promotionOfferWiringReadiness.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-offer-wiring-readiness-list">
+            {promotionOfferWiringReadiness.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferWiringReadiness.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-offer-wiring-readiness-warnings"
+            aria-label="Non-CNC promoted quote offer wiring readiness warnings"
+          >
+            {promotionOfferWiringReadiness.reviewWarnings.map((warning) => (
               <li data-status="warning" key={warning}>
                 <strong>{warning}</strong>
               </li>

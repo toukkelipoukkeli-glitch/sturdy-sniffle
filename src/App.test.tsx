@@ -54,6 +54,7 @@ import {
   type NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferWiringReadiness"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -730,6 +731,22 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteReleaseReadiness).toHaveTextContent("No persisted non-CNC application apply execution matches active RFQ: registry-demo.")
     expect(promotedQuoteReleaseReadiness).toHaveTextContent(
       "Release readiness is deterministic review data only; this helper does not mutate active RFQ quote, offer, release, or connector state.",
+    )
+    const promotedQuoteOfferWiringReadiness = within(processDemos).getByLabelText("Non-CNC promoted quote offer wiring readiness")
+    expect(promotedQuoteOfferWiringReadiness).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Offer wiring readiness")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION)
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "Keep non-CNC offer wiring blocked until promoted quote and release-readiness evidence are both ready.",
+    )
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Withheld")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Offer builder id withheld")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "Promoted quote read model is not ready.",
+    )
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Persisted non-CNC release readiness is not ready.")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "Offer wiring readiness is deterministic review data only; this helper does not create customer offers, mutate release state, or call connectors.",
     )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
@@ -3177,6 +3194,26 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteReleaseReadiness).toHaveTextContent(
       "Release readiness is deterministic review data only; this helper does not mutate active RFQ quote, offer, release, or connector state.",
+    )
+    const promotedQuoteOfferWiringReadiness = within(selectedPreview).getByLabelText("Non-CNC promoted quote offer wiring readiness")
+    expect(promotedQuoteOfferWiringReadiness).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Offer wiring readiness")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION)
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "Non-CNC promoted quote has persisted apply evidence for a future customer-offer wiring adapter.",
+    )
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("SM-120-BRACKET")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("Sheet metal")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("€549.05")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent("quote:rfq-demo-204:sm-120-bracket:sheet-metal-v1")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "offer-builder:rfq-demo-204:non-cnc-promotion-rfq-demo-204-sheet-metal-sm-120-bracket-sheet-metal-v1:non-cnc-quote-promotion-command-package-v1",
+    )
+    expect(
+      within(promotedQuoteOfferWiringReadiness).getByLabelText("Non-CNC promoted quote offer wiring readiness warnings"),
+    ).toHaveTextContent("Latest persisted apply execution has 2 warning(s).")
+    expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
+      "Offer wiring readiness is deterministic review data only; this helper does not create customer offers, mutate release state, or call connectors.",
     )
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply execution history")).toBeNull()
     expect(within(selectedPreview).queryByLabelText("Non-CNC promoted quote application mutation apply history")).toBeNull()
