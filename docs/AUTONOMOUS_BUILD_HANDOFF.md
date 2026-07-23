@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `84dd818` (`Surface non-CNC offer creation history (#509)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-history-e2e`.
 - Latest merged sequence:
   - `#509` surfaces the deterministic non-CNC customer-offer creation execution history in the guarded registry preview while active RFQ quote, offer, release, and connector state stay unchanged.
   - `#508` refreshes the autonomous handoff after the non-CNC customer-offer creation execution history summary slice.

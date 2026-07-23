@@ -106,6 +106,26 @@ async function assertOfferWiringReadiness(nonCncDemos: Locator, page: Page) {
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferCreationHistory(nonCncDemos: Locator, page: Page) {
+  const offerCreationHistory = nonCncDemos.getByLabel("Non-CNC promoted quote offer creation execution history")
+
+  await expect(offerCreationHistory).toBeVisible()
+  await expect(offerCreationHistory).toHaveAttribute("data-status", "blocked")
+  await expect(offerCreationHistory).toContainText("Offer creation history")
+  await expect(offerCreationHistory).toContainText("Offer creation history blocked")
+  await expect(offerCreationHistory).toContainText("Latest customer-offer creation execution is blocked")
+  await expect(offerCreationHistory).toContainText("live offer/export/release writes remain disabled.")
+  await expect(offerCreationHistory).toContainText("Local runs")
+  await expect(offerCreationHistory).toContainText("Command totals")
+  await expect(offerCreationHistory).toContainText("Succeeded 0, prepared 0, blocked")
+  await expect(offerCreationHistory).toContainText(
+    "Offer creation history is deterministic review data only; active RFQ quote, offer, release, and connector state stay unchanged.",
+  )
+  await expect(offerCreationHistory).toContainText("Resolve customer-offer creation blockers")
+  await expect(offerCreationHistory).toContainText("Release executions: None")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -139,6 +159,7 @@ for (const viewport of operatorViewports) {
       expect(copiedSummary).toContain("Input edit adapter:")
       expect(copiedSummary).toContain("- UI controls: preview controls enabled for supported fields")
       await assertOfferWiringReadiness(nonCncDemos, page)
+      await assertOfferCreationHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
