@@ -88,6 +88,24 @@ async function assertMutationApplyHistory(nonCncDemos: Locator, page: Page) {
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferWiringReadiness(nonCncDemos: Locator, page: Page) {
+  const offerWiringReadiness = nonCncDemos.getByLabel("Non-CNC promoted quote offer wiring readiness")
+
+  await expect(offerWiringReadiness).toBeVisible()
+  await expect(offerWiringReadiness).toHaveAttribute("data-status", "blocked")
+  await expect(offerWiringReadiness).toContainText("Offer wiring readiness")
+  await expect(offerWiringReadiness).toContainText("Keep non-CNC offer wiring blocked")
+  await expect(offerWiringReadiness).toContainText("Offer candidate waits for promoted quote and release evidence.")
+  await expect(offerWiringReadiness).toContainText("Quote id withheld")
+  await expect(offerWiringReadiness).toContainText("Offer builder id withheld")
+  await expect(offerWiringReadiness).toContainText("Promoted quote read model is not ready.")
+  await expect(offerWiringReadiness).toContainText("Persisted non-CNC release readiness is not ready.")
+  await expect(offerWiringReadiness).toContainText(
+    "Offer wiring readiness is deterministic review data only; this helper does not create customer offers, mutate release state, or call connectors.",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -120,6 +138,7 @@ for (const viewport of operatorViewports) {
       expect(copiedSummary).toContain("FAB-FRAME-508")
       expect(copiedSummary).toContain("Input edit adapter:")
       expect(copiedSummary).toContain("- UI controls: preview controls enabled for supported fields")
+      await assertOfferWiringReadiness(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
