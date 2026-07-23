@@ -7,6 +7,7 @@ import {
 import {
   createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence,
   NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
+  type NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot,
   type NonCncPromotedQuoteApplicationMutationApplyExecutionRecord,
 } from "./nonCncPromotedQuoteApplicationMutationApplyExecutionPersistence"
 import {
@@ -52,6 +53,78 @@ describe("non-CNC promoted quote release readiness", () => {
       blockerLabels: [`No persisted non-CNC application apply execution matches active RFQ: ${request.targetRfqId}.`],
       latestExecutionFingerprint: undefined,
       persistedRecordCount: 1,
+      status: "blocked",
+    })
+  })
+
+  it("blocks customer release when the latest matching execution is not a commit", () => {
+    const snapshot = buildSnapshot([buildRecord({ mode: "dry_run" })])
+
+    const readiness = buildNonCncPromotedQuoteReleaseReadiness({ ...request, snapshot })
+
+    expect(readiness).toMatchObject({
+      blockerLabels: ["Latest persisted non-CNC application apply execution is not a commit."],
+      latestStatus: "succeeded",
+      status: "blocked",
+    })
+  })
+
+  it("blocks customer release when the latest matching execution has no commands", () => {
+    const snapshot = buildSnapshot([buildRecord({ appliedCommandCount: 0, commandCount: 0 })])
+
+    const readiness = buildNonCncPromotedQuoteReleaseReadiness({ ...request, snapshot })
+
+    expect(readiness).toMatchObject({
+      appliedCommandCount: 0,
+      blockerLabels: ["Latest persisted non-CNC application apply execution has no commands."],
+      commandCount: 0,
+      status: "blocked",
+    })
+  })
+
+  it("blocks customer release when the latest matching execution has whitespace-only fingerprints", () => {
+    const snapshot = buildSnapshot([
+      buildRecord({
+        executionFingerprint: "   ",
+        sourceExecutionFingerprint: "   ",
+      }),
+    ])
+
+    const readiness = buildNonCncPromotedQuoteReleaseReadiness({ ...request, snapshot })
+
+    expect(readiness).toMatchObject({
+      blockerLabels: [
+        "Latest persisted non-CNC application apply execution is missing a source execution fingerprint.",
+        "Latest persisted non-CNC application apply execution is missing an execution fingerprint.",
+      ],
+      status: "blocked",
+    })
+  })
+
+  it("normalizes timestamp offsets when choosing the latest matching RFQ record", () => {
+    const staleSuccess = buildRecord({
+      executedAt: "2026-07-23T10:00:00.000+02:00",
+      executionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-offset-stale",
+    })
+    const latestFailure = buildRecord({
+      appliedCommandCount: 1,
+      executedAt: "2026-07-23T09:30:00.000Z",
+      executionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-offset-latest",
+      failedCommandCount: 2,
+      status: "partial",
+    })
+    const snapshot = buildSnapshot([staleSuccess, latestFailure])
+
+    const readiness = buildNonCncPromotedQuoteReleaseReadiness({ ...request, snapshot })
+
+    expect(readiness).toMatchObject({
+      appliedCommandCount: 1,
+      blockerLabels: [
+        "Latest persisted non-CNC application apply execution status is partial.",
+        "Latest persisted non-CNC application apply execution has unapplied commands.",
+      ],
+      latestExecutionFingerprint: latestFailure.executionFingerprint,
+      latestStatus: "partial",
       status: "blocked",
     })
   })
@@ -118,19 +191,46 @@ describe("non-CNC promoted quote release readiness", () => {
   })
 })
 
+function buildSnapshot(
+  records: NonCncPromotedQuoteApplicationMutationApplyExecutionRecord[],
+): NonCncPromotedQuoteApplicationMutationApplyExecutionPersistenceSnapshot {
+  const seedSnapshot = createLocalNonCncPromotedQuoteApplicationMutationApplyExecutionPersistence({
+    initialSnapshot: {
+      records: [buildRecord()],
+    },
+  }).snapshot()
+
+  return {
+    ...seedSnapshot,
+    latestRun: records[0],
+    recordCount: records.length,
+    records,
+  }
+}
+
 function buildRecord({
   appliedCommandCount = 3,
+  commandCount = 3,
   executedAt = request.requestedAt,
   executionFingerprint = "non-cnc-promoted-quote-application-mutation-apply-execution-succeeded",
   failedCommandCount = 0,
+  mode = "commit",
+  pendingCommandCount = 0,
+  preparedCommandCount = 0,
+  sourceExecutionFingerprint = "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
   status = "succeeded",
   targetRfqId = request.targetRfqId,
   warningCount = 0,
 }: {
   appliedCommandCount?: number
+  commandCount?: number
   executedAt?: string
   executionFingerprint?: string
   failedCommandCount?: number
+  mode?: NonCncPromotedQuoteApplicationMutationApplyExecutionRecord["mode"]
+  pendingCommandCount?: number
+  preparedCommandCount?: number
+  sourceExecutionFingerprint?: string | undefined
   status?: NonCncPromotedQuoteApplicationMutationApplyExecutionStatus
   targetRfqId?: string
   warningCount?: number
@@ -142,20 +242,20 @@ function buildRecord({
     appliedCommandCount,
     applyPlanId: "non-cnc-promoted-quote-application-mutation-apply-plan:rfq-demo-204:package",
     blockedCommandCount: 0,
-    commandCount: 3,
+    commandCount,
     executedAt,
     executionFingerprint,
     executionVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_VERSION,
     failedCommandCount,
-    mode: "commit",
+    mode,
     mutationPackageId: "non-cnc-promoted-quote-application-mutation-package:rfq-demo-204:package",
     packageId: "non-cnc-quote-promotion-command-package:rfq-demo-204",
     pendingActionCount: status === "succeeded" ? 1 : 2,
-    pendingCommandCount: 0,
+    pendingCommandCount,
     persistenceVersion: NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_EXECUTION_PERSISTENCE_VERSION,
-    preparedCommandCount: 0,
+    preparedCommandCount,
     selectedPlanId: "non-cnc-promotion:rfq-demo-204:sheet-metal",
-    sourceExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-outcome-commit-execution-source",
+    sourceExecutionFingerprint,
     status,
     targetRfqId,
     warningCount,

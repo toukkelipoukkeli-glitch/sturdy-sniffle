@@ -81,7 +81,10 @@ function sortNewestExecutionFirst(
   right: NonCncPromotedQuoteApplicationMutationApplyExecutionRecord,
 ): number {
   return (
-    compareLex(right.executedAt, left.executedAt) ||
+    compareLex(
+      normalizeIsoTimestamp(right.executedAt, "record.executedAt"),
+      normalizeIsoTimestamp(left.executedAt, "record.executedAt"),
+    ) ||
     compareLex(left.executionFingerprint, right.executionFingerprint) ||
     compareLex(left.applyPlanId, right.applyPlanId)
   )
@@ -113,10 +116,10 @@ function readinessBlockers({
     ...(matchingRecord.appliedCommandCount === matchingRecord.commandCount
       ? []
       : ["Latest persisted non-CNC application apply execution has unapplied commands."]),
-    ...(matchingRecord.sourceExecutionFingerprint
+    ...(matchingRecord.sourceExecutionFingerprint?.trim()
       ? []
       : ["Latest persisted non-CNC application apply execution is missing a source execution fingerprint."]),
-    ...(matchingRecord.executionFingerprint
+    ...(matchingRecord.executionFingerprint?.trim()
       ? []
       : ["Latest persisted non-CNC application apply execution is missing an execution fingerprint."]),
   ])
