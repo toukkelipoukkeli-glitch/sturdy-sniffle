@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b52ec06` (`Add non-CNC offer wiring readiness (#496)`).
+- Main branch checkpoint: `5c805d9` (`Surface non-CNC offer wiring readiness (#497)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-wiring-ui` — surfaces the deterministic non-CNC promoted quote offer-wiring readiness boundary in the workspace before future customer offer adapters.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#497` surfaces the deterministic non-CNC promoted quote offer-wiring readiness boundary in the process demo workspace with blocked/ready App coverage plus desktop/mobile Browser/Playwright fallback QA while real customer-offer creation remains deferred.
   - `#496` adds a deterministic non-CNC promoted quote offer-wiring readiness boundary before future customer offer adapters while active RFQ quote, offer, release, and connector state stay unchanged.
   - `#495` refreshes the autonomous handoff after the non-CNC release-readiness UI slice.
   - `#494` surfaces the deterministic non-CNC release-readiness boundary in the operator workspace with blocked/ready App coverage and desktop/mobile Browser/Playwright fallback QA while active RFQ quote, offer, release, and connector state stay unchanged.
