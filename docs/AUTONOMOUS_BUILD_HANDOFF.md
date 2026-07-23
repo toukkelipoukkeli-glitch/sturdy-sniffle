@@ -1,16 +1,18 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-22 Europe/Helsinki.
+Last refreshed: 2026-07-23 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f896dbc` (`Add non-CNC apply history e2e (#488)`).
+- Main branch checkpoint: `ce4118f` (`Add manual RFQ export downloads (#490)`).
 - Open PRs at this checkpoint: none on `main`.
 - In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#490` stabilizes new manual RFQ offer numbers as customer-ready `OFFER-M###` values and extends desktop/mobile manual RFQ-to-offer export coverage through copy, `.txt`, and real PDF downloads.
+  - `#489` refreshes the autonomous handoff after the non-CNC mutation apply-history e2e slice.
   - `#488` adds deterministic desktop/mobile Playwright coverage for the existing guarded non-CNC mutation apply/history path, including exact local history counts and fixture keys while active RFQ quote, offer, and release state stay unchanged.
   - `#487` refreshes the autonomous handoff after the CAD preview fallback e2e slice.
   - `#486` adds deterministic desktop/mobile Playwright coverage for drawing/CAD-metadata fallback preview states without changing quote math or live parser/provider wiring.
