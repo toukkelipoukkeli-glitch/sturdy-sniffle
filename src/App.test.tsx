@@ -55,6 +55,7 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferWiringReadiness"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -748,6 +749,32 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferWiringReadiness).toHaveTextContent(
       "Offer wiring readiness is deterministic review data only; this helper does not create customer offers, mutate release state, or call connectors.",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote offer creation execution history"),
+      ).toHaveTextContent("Offer creation history blocked")
+    })
+    const promotedQuoteOfferCreationExecutionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote offer creation execution history",
+    )
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("Offer creation history")
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent(
+      "Latest customer-offer creation execution is blocked after 2 runs; live offer/export/release writes remain disabled.",
+    )
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("2 runs")
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("6 commands")
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("Succeeded 0, prepared 0, blocked 6")
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent(
+      "Resolve customer-offer creation blockers before recording another execution.",
+    )
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent(
+      "Offer creation history is deterministic review data only; active RFQ quote, offer, release, and connector state stay unchanged.",
+    )
+    expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("Release executions: None")
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",
