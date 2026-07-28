@@ -116,11 +116,33 @@ describe("non-CNC promoted quote offer creation outcome commit persistence", () 
     await expect(
       adapter.recordCommit({
         commitPlan,
-        executionRun: { ...executionRun, selectedPlanId: "non-cnc-promotion:other" },
+        executionRun: { ...executionRun, status: "partial" },
         recordedAt: "2026-07-23T14:40:00.000Z",
         recordedBy: "FactoryBid Operator",
       }),
-    ).rejects.toThrow("customer-offer creation outcome commit execution run does not match commit plan: selectedPlanId")
+    ).rejects.toThrow("customer-offer creation outcome commit execution run must have succeeded status")
+
+    await expectMismatchedExecution(adapter, commitPlan, { creationPlanId: "other-creation-plan" }, "creationPlanId")
+    await expectMismatchedExecution(
+      adapter,
+      commitPlan,
+      { planVersion: "unsupported-plan-version" as never },
+      "planVersion",
+    )
+    await expectMismatchedExecution(adapter, commitPlan, { packageId: "other-package" }, "packageId")
+    await expectMismatchedExecution(
+      adapter,
+      commitPlan,
+      { selectedPlanId: "non-cnc-promotion:other" },
+      "selectedPlanId",
+    )
+    await expectMismatchedExecution(adapter, commitPlan, { targetRfqId: "rfq-other" }, "targetRfqId")
+    await expectMismatchedExecution(
+      adapter,
+      commitPlan,
+      { releaseExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-other" },
+      "releaseExecutionFingerprint",
+    )
 
     await expect(
       adapter.recordCommit({
@@ -309,6 +331,30 @@ function buildCommitRun(plan: NonCncPromotedQuoteOfferCreationPlan) {
     outcomeDraft,
     plan,
   })
+}
+
+async function expectMismatchedExecution(
+  adapter: ReturnType<typeof createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence>,
+  commitPlan: ReturnType<typeof buildCommitRun>["commitPlan"],
+  executionPatch: Partial<ReturnType<typeof buildCommitRun>["executionRun"]>,
+  fieldName: string,
+) {
+  const { executionRun } = buildCommitRun(readyPlan())
+  if (!executionRun) {
+    throw new Error("Expected ready customer-offer creation commit execution run")
+  }
+
+  await expect(
+    adapter.recordCommit({
+      commitPlan,
+      executionRun: {
+        ...executionRun,
+        ...executionPatch,
+      },
+      recordedAt: "2026-07-23T14:40:00.000Z",
+      recordedBy: "FactoryBid Operator",
+    }),
+  ).rejects.toThrow(`customer-offer creation outcome commit execution run does not match commit plan: ${fieldName}`)
 }
 
 function blockedPlan(): NonCncPromotedQuoteOfferCreationPlan {

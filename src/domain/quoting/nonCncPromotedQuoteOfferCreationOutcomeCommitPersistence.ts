@@ -138,9 +138,13 @@ function assertExecutionMatchesCommitPlan(
   if (executionRun.mode !== "commit") {
     throw new Error("customer-offer creation outcome commit execution run must use commit mode")
   }
+  if (executionRun.status !== "succeeded") {
+    throw new Error("customer-offer creation outcome commit execution run must have succeeded status")
+  }
 
   const mismatches = [
     executionRun.creationPlanId === commitPlan.creationPlanId ? undefined : "creationPlanId",
+    executionRun.planVersion === commitPlan.planVersion ? undefined : "planVersion",
     executionRun.packageId === commitPlan.packageId ? undefined : "packageId",
     executionRun.selectedPlanId === commitPlan.selectedPlanId ? undefined : "selectedPlanId",
     executionRun.targetRfqId === commitPlan.targetRfqId ? undefined : "targetRfqId",
