@@ -9128,7 +9128,7 @@ export function ProcessQuotePreviewCard({
         </div>
       </div>
       <div
-        className="process-demo-promotion-release-readiness process-demo-promotion-offer-creation-outcome-draft"
+        className="process-demo-promotion-release-readiness"
         aria-label="Non-CNC promoted quote offer creation outcome draft"
         data-status={promotionOfferCreationExecutionOutcomeDraft.status}
       >
