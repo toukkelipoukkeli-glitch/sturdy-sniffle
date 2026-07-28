@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d2a88c1` (`Refresh offer creation outcome commit handoff (#518)`).
+- Main branch checkpoint: `354c50f` (`Add offer creation outcome commit persistence (#519)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-outcome-commit-persistence` (adds local deterministic persistence snapshots for reviewed non-CNC customer-offer creation outcome commit plans/runs while active RFQ quote, offer, release, export, and connector state remain unchanged).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#519` adds local deterministic persistence snapshots for reviewed non-CNC customer-offer creation outcome commit plans/runs while active RFQ quote, offer, release, export, and connector state remain unchanged.
   - `#518` refreshes the autonomous handoff after the non-CNC customer-offer creation outcome commit boundary slice.
   - `#517` adds a deterministic non-CNC customer-offer creation outcome commit boundary that converts ready reviewed outcome drafts into commit audit runs while active RFQ quote, offer, release, export, and connector state stay unchanged.
   - `#516` refreshes the autonomous handoff after the non-CNC customer-offer creation outcome UI slice.
