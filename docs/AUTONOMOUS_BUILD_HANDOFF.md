@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `6d45b02` (`Refresh offer creation outcome UI handoff (#516)`).
+- Main branch checkpoint: `c3622a0` (`Add offer creation outcome commit boundary (#517)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-outcome-commit`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#517` adds a deterministic non-CNC customer-offer creation outcome commit boundary that converts ready reviewed outcome drafts into commit audit runs while active RFQ quote, offer, release, export, and connector state stay unchanged.
   - `#516` refreshes the autonomous handoff after the non-CNC customer-offer creation outcome UI slice.
   - `#515` surfaces the deterministic non-CNC customer-offer creation outcome draft in the guarded registry preview with blocked/ready status, command blockers, withheld external IDs, and boundary copy while live offer/export/release writes remain deferred.
   - `#514` refreshes the autonomous handoff after the non-CNC customer-offer creation outcome draft slice.
