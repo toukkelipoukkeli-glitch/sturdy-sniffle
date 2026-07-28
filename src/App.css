@@ -2709,7 +2709,9 @@
 }
 
 .process-demo-promotion-release-readiness-grid small,
-.process-demo-promotion-release-readiness-boundary small {
+.process-demo-promotion-release-readiness-boundary small,
+.process-demo-promotion-release-readiness-list small,
+.process-demo-promotion-release-readiness-warnings small {
   color: oklch(0.42 0.026 250);
   font-size: 0.7rem;
   overflow-wrap: anywhere;
