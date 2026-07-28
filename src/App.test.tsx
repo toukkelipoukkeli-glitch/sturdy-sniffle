@@ -57,6 +57,7 @@ import { NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION } from "./domain/quoti
 import { NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferWiringReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -796,6 +797,24 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Outcome external id withheld")
     expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent(
       "Offer creation execution outcome drafts are deterministic review data only; active RFQ quote, offer, release, export, and connector state stay unchanged until an operator commits them.",
+    )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote offer creation outcome commit history"),
+      ).toHaveTextContent("Local customer-offer creation outcome commit history: 1 record, 0 outcomes, 0 warnings.")
+    })
+    const promotedQuoteOfferCreationOutcomeCommitHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote offer creation outcome commit history",
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("Offer creation outcome commit history")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("review only")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("Status counts: blocked 1")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent(
+      "Active RFQ quote, offer, release, export, and connector state stay unchanged.",
     )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
@@ -3185,6 +3204,22 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Commit run available")
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("active RFQ quote")
     expect(promotedQuoteApplicationMutationCommitPlan).toHaveTextContent("Prepared active RFQ quote mutation")
+    const promotedQuoteOfferCreationOutcomeCommitHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote offer creation outcome commit history",
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveAttribute("data-status", "ready")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("Offer creation outcome commit history")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent(
+      "Local customer-offer creation outcome commit history: 0 records, 0 outcomes, 0 warnings.",
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("No local record")
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent(
+      "Commit 3 reviewed non-CNC customer-offer creation outcomes.",
+    )
+    expect(promotedQuoteOfferCreationOutcomeCommitHistory).toHaveTextContent("Status counts: None")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )
