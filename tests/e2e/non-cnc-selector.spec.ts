@@ -126,6 +126,24 @@ async function assertOfferCreationHistory(nonCncDemos: Locator, page: Page) {
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferCreationOutcomeCommitHistory(nonCncDemos: Locator, page: Page) {
+  const offerCreationOutcomeCommitHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote offer creation outcome commit history",
+  )
+
+  await expect(offerCreationOutcomeCommitHistory).toBeVisible()
+  await expect(offerCreationOutcomeCommitHistory).toHaveAttribute("data-status", "blocked")
+  await expect(offerCreationOutcomeCommitHistory).toContainText("Offer creation outcome commit history")
+  await expect(offerCreationOutcomeCommitHistory).toContainText("Local customer-offer creation outcome commit history")
+  await expect(offerCreationOutcomeCommitHistory).toContainText("0 outcomes")
+  await expect(offerCreationOutcomeCommitHistory).toContainText("review only")
+  await expect(offerCreationOutcomeCommitHistory).toContainText("Status counts: blocked")
+  await expect(offerCreationOutcomeCommitHistory).toContainText(
+    "Active RFQ quote, offer, release, export, and connector state stay unchanged.",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -160,6 +178,7 @@ for (const viewport of operatorViewports) {
       expect(copiedSummary).toContain("- UI controls: preview controls enabled for supported fields")
       await assertOfferWiringReadiness(nonCncDemos, page)
       await assertOfferCreationHistory(nonCncDemos, page)
+      await assertOfferCreationOutcomeCommitHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
