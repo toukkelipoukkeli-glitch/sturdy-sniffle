@@ -76,10 +76,11 @@ function selectCommitRecord(
   snapshot: NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot,
   creationPlanId: string | undefined,
 ): NonCncPromotedQuoteOfferCreationOutcomeCommitRecord | undefined {
-  if (creationPlanId) {
-    return snapshot.records.filter((record) => record.creationPlanId === creationPlanId).sort(sortNewestFirst)[0]
-  }
-  return snapshot.latestRecord
+  const records = creationPlanId
+    ? snapshot.records.filter((record) => record.creationPlanId === creationPlanId)
+    : snapshot.records
+
+  return [...records].sort(sortNewestFirst)[0]
 }
 
 export function sortOfferCreationOutcomeCommitRecordsNewestFirst(

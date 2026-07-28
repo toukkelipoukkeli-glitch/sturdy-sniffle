@@ -126,6 +126,39 @@ describe("non-CNC promoted quote offer creation outcome commit read model", () =
     })
     expect(readModel.nextOperatorMessage).toContain("future customer-offer adapter")
   })
+
+  it("selects the newest persisted record when the snapshot omits latestRecord", () => {
+    const olderReadyRecord = offerCreationOutcomeCommitRecord({
+      commandOutcomeCount: 2,
+      commitRecordId: "non-cnc-offer-creation-outcome-commit:older",
+      creationPlanId: "non-cnc-promoted-quote-offer-creation-plan:older",
+      recordedAt: "2026-07-23T14:20:00.000Z",
+      selectedPlanId: "non-cnc-promotion:rfq-demo-204:plastic:old",
+    })
+    const newestReadyRecord = offerCreationOutcomeCommitRecord({
+      commandOutcomeCount: 4,
+      commitRecordId: "non-cnc-offer-creation-outcome-commit:newest",
+      creationPlanId: "non-cnc-promoted-quote-offer-creation-plan:newest",
+      packageId: "non-cnc-promoted-quote-offer-creation-package:rfq-demo-204:newest",
+      recordedAt: "2026-07-23T14:50:00.000Z",
+      selectedPlanId: "non-cnc-promotion:rfq-demo-204:sheet-metal:newest",
+    })
+    const snapshot = snapshotWithRecords([olderReadyRecord, newestReadyRecord])
+    delete snapshot.latestRecord
+
+    const readModel = buildNonCncPromotedQuoteOfferCreationOutcomeCommitReadModel({
+      snapshot,
+    })
+
+    expect(readModel).toMatchObject({
+      committedOutcomeCount: 4,
+      creationPlanId: newestReadyRecord.creationPlanId,
+      executionFingerprint: newestReadyRecord.executionFingerprint,
+      packageId: newestReadyRecord.packageId,
+      selectedPlanId: newestReadyRecord.selectedPlanId,
+      status: "ready_to_create",
+    })
+  })
 })
 
 function emptySnapshot(): NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot {
