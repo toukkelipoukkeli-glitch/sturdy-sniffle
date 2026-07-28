@@ -56,6 +56,7 @@ import {
 import { NON_CNC_PROMOTED_QUOTE_RELEASE_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteReleaseReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_WIRING_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferWiringReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionPersistence"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -775,6 +776,27 @@ describe("FactoryBid workspace (component)", () => {
       "Offer creation history is deterministic review data only; active RFQ quote, offer, release, and connector state stay unchanged.",
     )
     expect(promotedQuoteOfferCreationExecutionHistory).toHaveTextContent("Release executions: None")
+    const promotedQuoteOfferCreationOutcomeDraft = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote offer creation outcome draft",
+    )
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Offer creation outcome draft")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_OUTCOME_DRAFT_VERSION,
+    )
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Resolve non-CNC customer-offer creation blockers")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("0 ready outcomes")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("3 blocked outcomes")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("dry run")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("registry-demo")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("No release execution evidence")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Draft customer offer")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Prepare export package")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Open release review")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent("Outcome external id withheld")
+    expect(promotedQuoteOfferCreationOutcomeDraft).toHaveTextContent(
+      "Offer creation execution outcome drafts are deterministic review data only; active RFQ quote, offer, release, export, and connector state stay unchanged until an operator commits them.",
+    )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",

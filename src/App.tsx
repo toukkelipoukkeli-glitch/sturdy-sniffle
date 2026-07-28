@@ -308,6 +308,7 @@ import {
   type NonCncPromotedQuoteOfferCreationExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecution"
 import { buildNonCncPromotedQuoteOfferCreationExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionHistory"
+import { buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import {
   createLocalNonCncPromotedQuoteOfferCreationExecutionPersistence,
   type NonCncPromotedQuoteOfferCreationExecutionPersistenceSnapshot,
@@ -7521,6 +7522,10 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionOfferCreationPlan, promotionPlan.requestedAt],
   )
+  const promotionOfferCreationExecutionOutcomeDraft = useMemo(
+    () => buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft(promotionOfferCreationExecutionRun),
+    [promotionOfferCreationExecutionRun],
+  )
   const promotionOfferCreationExecutionRecord = resolvedPromotionOfferCreationExecutionSnapshot.records.find(
     (record) => record.executionFingerprint === promotionOfferCreationExecutionRun.executionFingerprint,
   )
@@ -9120,6 +9125,62 @@ export function ProcessQuotePreviewCard({
           <small>Creation plans: {promotionOfferCreationExecutionHistory.creationPlanIds.join(", ") || "None"}</small>
           <small>Packages: {promotionOfferCreationExecutionHistory.packageIds.join(", ") || "None"}</small>
           <small>Release executions: {promotionOfferCreationExecutionHistory.releaseExecutionFingerprints.join(", ") || "None"}</small>
+        </div>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-creation-outcome-draft"
+        aria-label="Non-CNC promoted quote offer creation outcome draft"
+        data-status={promotionOfferCreationExecutionOutcomeDraft.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer creation outcome draft</span>
+            <strong>{humanizeKey(promotionOfferCreationExecutionOutcomeDraft.status)}</strong>
+          </div>
+          <small>{promotionOfferCreationExecutionOutcomeDraft.draftVersion}</small>
+        </div>
+        <p>{promotionOfferCreationExecutionOutcomeDraft.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Suggested outcomes</span>
+            <strong>{formatCount(promotionOfferCreationExecutionOutcomeDraft.readyOutcomeCount, "ready outcome")}</strong>
+            <small>{formatCount(promotionOfferCreationExecutionOutcomeDraft.blockedOutcomeCount, "blocked outcome")}</small>
+          </div>
+          <div>
+            <span>Source run</span>
+            <strong>{humanizeKey(promotionOfferCreationExecutionOutcomeDraft.mode)}</strong>
+            <small>{promotionOfferCreationExecutionOutcomeDraft.executionFingerprint}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOfferCreationExecutionOutcomeDraft.targetRfqId ?? "No target RFQ"}</strong>
+            <small>{promotionOfferCreationExecutionOutcomeDraft.releaseExecutionFingerprint ?? "No release execution evidence"}</small>
+          </div>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferCreationExecutionOutcomeDraft.commandOutcomes.map((outcome) => (
+            <li data-status={outcome.status} key={outcome.key}>
+              <strong>{outcome.label}</strong>
+              <small>{outcome.suggestedOutcome?.message ?? outcome.blockerLabels.join(" ")}</small>
+              <small>{outcome.externalId ?? "Outcome external id withheld"}</small>
+            </li>
+          ))}
+        </ul>
+        {promotionOfferCreationExecutionOutcomeDraft.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote offer creation outcome draft warnings"
+          >
+            {promotionOfferCreationExecutionOutcomeDraft.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferCreationExecutionOutcomeDraft.offerCreationBoundary}</small>
         </div>
       </div>
       {promotionApplicationMutationApplyPlanRecord ? (
