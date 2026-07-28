@@ -162,17 +162,15 @@ function outcomeMessage(command: NonCncPromotedQuoteOfferCreationCommandExecutio
 }
 
 function stableOutcomeId(...parts: string[]): string {
-  return parts.map((part) => sanitizeKeyPart(part)).join(":")
+  return parts.map((part) => canonicalKeyPart(part)).join(":")
 }
 
-function sanitizeKeyPart(value: string): string {
-  const token = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-  if (!token) {
-    throw new Error("Non-CNC offer creation execution outcome ids require stable non-blank id parts.")
+function canonicalKeyPart(value: string): string {
+  const token = value.trim()
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(token)) {
+    throw new Error(
+      "Non-CNC offer creation execution outcome ids require canonical lowercase alphanumeric id parts separated by single hyphens.",
+    )
   }
   return token
 }

@@ -119,17 +119,21 @@ describe("non-CNC promoted quote offer creation execution outcome drafts", () =>
     expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
   })
 
-  it("rejects unsluggable outcome id parts instead of drafting colliding external ids", () => {
-    const dryRun = {
-      ...readyDryRun(),
-      commands: readyDryRun().commands.map((command) => ({ ...command, targetRfqId: "!!!" })),
-      targetRfqId: "!!!",
-    }
+  it.each(["rfq A", "rfq_A", "RFQ-A", "!!!"])(
+    "rejects non-canonical outcome id part %s instead of drafting colliding external ids",
+    (targetRfqId) => {
+      const dryRun = readyDryRun()
+      const malformedRun = {
+        ...dryRun,
+        commands: dryRun.commands.map((command) => ({ ...command, targetRfqId })),
+        targetRfqId,
+      }
 
-    expect(() => buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft(dryRun)).toThrow(
-      "Non-CNC offer creation execution outcome ids require stable non-blank id parts.",
-    )
-  })
+      expect(() => buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft(malformedRun)).toThrow(
+        "Non-CNC offer creation execution outcome ids require canonical lowercase alphanumeric id parts separated by single hyphens.",
+      )
+    },
+  )
 })
 
 function readyDryRun(): NonCncPromotedQuoteOfferCreationExecutionRun {
