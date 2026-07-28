@@ -1,16 +1,18 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-23 Europe/Helsinki.
+Last refreshed: 2026-07-28 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a6b5fe9` (`Add non-CNC offer creation history e2e (#511)`).
+- Main branch checkpoint: `63e4344` (`Add non-CNC offer creation outcome drafts (#513)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-outcome-draft`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#513` adds deterministic review-only outcome drafts for prepared non-CNC customer-offer creation dry-runs, rejects non-canonical/colliding outcome external-id parts, and keeps blocked/committed executions outcome-free before live offer/export/release writes.
+  - `#512` refreshes the autonomous handoff after the non-CNC customer-offer creation history e2e slice.
   - `#511` adds deterministic desktop/mobile Playwright coverage for the guarded non-CNC customer-offer creation history surface, including blocked status, boundary copy, and no-overflow assertions.
   - `#510` refreshes the autonomous handoff after the non-CNC customer-offer creation history UI slice.
   - `#509` surfaces the deterministic non-CNC customer-offer creation execution history in the guarded registry preview while active RFQ quote, offer, release, and connector state stay unchanged.
