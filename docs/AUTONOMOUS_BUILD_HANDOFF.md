@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `6ae4a5a` (`Add offer creation outcome commit read model (#523)`).
+- Main branch checkpoint: `17642ba` (`Surface offer creation outcome read model (#524)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-creation-read-model-ui` is surfacing the deterministic customer-offer creation outcome commit read model in the guarded non-CNC registry preview without live offer/export/release or connector writes.
+- In-flight branch at this checkpoint: none; start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#524` surfaces the deterministic customer-offer creation outcome commit read model in the guarded non-CNC registry preview without live offer/export/release or connector writes.
   - `#523` adds deterministic customer-offer creation outcome commit read models for locally persisted reviewed commit runs while active RFQ quote, offer, release, export, and connector state remain unchanged.
   - `#522` refreshes the autonomous handoff after the non-CNC customer-offer creation outcome commit history slice.
   - `#521` surfaces locally persisted customer-offer creation outcome commit history in the guarded non-CNC registry preview without mutating active RFQ quote, offer, release, export, or connector state.
