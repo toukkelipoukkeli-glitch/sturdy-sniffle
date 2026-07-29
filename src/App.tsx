@@ -310,6 +310,7 @@ import {
 import { buildNonCncPromotedQuoteOfferCreationExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionHistory"
 import { buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import { buildNonCncPromotedQuoteOfferCreationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommit"
+import { buildNonCncPromotedQuoteOfferCreationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot,
@@ -7578,6 +7579,14 @@ export function ProcessQuotePreviewCard({
   const promotionOfferCreationOutcomeCommitRecord = resolvedPromotionOfferCreationOutcomeCommitSnapshot.records
     .filter((record) => record.creationPlanId === promotionOfferCreationOutcomeCommit.commitPlan.creationPlanId)
     .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0]
+  const promotionOfferCreationOutcomeCommitReadModel = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferCreationOutcomeCommitReadModel({
+        creationPlanId: promotionOfferCreationOutcomeCommit.commitPlan.creationPlanId,
+        snapshot: resolvedPromotionOfferCreationOutcomeCommitSnapshot,
+      }),
+    [promotionOfferCreationOutcomeCommit.commitPlan.creationPlanId, resolvedPromotionOfferCreationOutcomeCommitSnapshot],
+  )
   const promotionOfferCreationExecutionRecord = resolvedPromotionOfferCreationExecutionSnapshot.records.find(
     (record) => record.executionFingerprint === promotionOfferCreationExecutionRun.executionFingerprint,
   )
@@ -9328,6 +9337,75 @@ export function ProcessQuotePreviewCard({
         <small className="process-demo-promotion-release-readiness-status">
           Status counts: {promotionOfferCreationOutcomeCommitStatusSummary || "None"}
         </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness"
+        aria-label="Non-CNC promoted quote offer creation outcome commit read model"
+        data-status={promotionOfferCreationOutcomeCommitReadModel.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer creation outcome read model</span>
+            <strong>{humanizeKey(promotionOfferCreationOutcomeCommitReadModel.status)}</strong>
+          </div>
+          <small>{promotionOfferCreationOutcomeCommitReadModel.readModelVersion}</small>
+        </div>
+        <p>{promotionOfferCreationOutcomeCommitReadModel.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Committed outcomes</span>
+            <strong>{formatCount(promotionOfferCreationOutcomeCommitReadModel.committedOutcomeCount, "outcome")}</strong>
+            <small>
+              {formatCount(promotionOfferCreationOutcomeCommitReadModel.creationTargets.length, "creation target")}
+            </small>
+          </div>
+          <div>
+            <span>Creation evidence</span>
+            <strong>{humanizeKey(promotionOfferCreationOutcomeCommitReadModel.disposition ?? "withheld")}</strong>
+            <small>{promotionOfferCreationOutcomeCommitReadModel.executionFingerprint ?? "Execution fingerprint withheld"}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOfferCreationOutcomeCommitReadModel.targetRfqId ?? "Withheld until ready"}</strong>
+            <small>
+              {promotionOfferCreationOutcomeCommitReadModel.releaseExecutionFingerprint ?? "Release execution withheld"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferCreationOutcomeCommitReadModel.offerCreationBoundary}</small>
+        </div>
+        {promotionOfferCreationOutcomeCommitReadModel.creationTargets.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferCreationOutcomeCommitReadModel.creationTargets.map((target) => (
+              <li data-status="ready" key={target}>
+                <strong>{humanizeKey(target)}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferCreationOutcomeCommitReadModel.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferCreationOutcomeCommitReadModel.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferCreationOutcomeCommitReadModel.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote offer creation outcome commit read model warnings"
+          >
+            {promotionOfferCreationOutcomeCommitReadModel.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
       {promotionApplicationMutationApplyPlanRecord ? (
         <div
