@@ -59,6 +59,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION } f
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -837,6 +838,27 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferCreationOutcomeCommitReadModel).toHaveTextContent(
       "Customer-offer creation outcome commit record is review-only.",
+    )
+    const promotedQuoteOfferExportPackagePlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote packaging plan",
+    )
+    expect(promotedQuoteOfferExportPackagePlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Offer export package plan")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION)
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("0 artifacts")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("4 planned descriptors")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Execution fingerprint withheld")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Release execution withheld")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Customer offer draft descriptor")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Plain-text export descriptor")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("PDF export descriptor")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Release review packet descriptor")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Artifact id withheld")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(
+      "Resolve customer-offer creation read-model blockers before preparing export package artifacts.",
+    )
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(
+      "Non-CNC offer export package plans are deterministic adapter descriptors only; building this plan does not create customer offers, files, release reviews, or connector side effects.",
     )
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
@@ -3257,6 +3279,17 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferCreationOutcomeCommitReadModel).toHaveTextContent(
       "No customer-offer creation outcome commit record is available.",
     )
+    const promotedQuoteOfferExportPackagePlan = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote packaging plan",
+    )
+    expect(promotedQuoteOfferExportPackagePlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Offer export package plan")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION)
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("0 artifacts")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("4 planned descriptors")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Execution fingerprint withheld")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("No customer-offer creation outcome commit record is available.")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )
