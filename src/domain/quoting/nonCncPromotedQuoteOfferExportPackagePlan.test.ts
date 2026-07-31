@@ -75,10 +75,10 @@ describe("non-CNC promoted quote offer export package plan", () => {
       status: "ready",
       targetRfqId: "rfq-demo-204",
     })
-    expect(firstPlan.planId).toMatch(/^non-cnc-promoted-quote-offer-export-package-plan-[a-f0-9]{8}$/)
+    expect(firstPlan.planId).toMatch(/^non-cnc-promoted-quote-offer-export-package-plan-[a-f0-9]{32}$/)
     expect(firstPlan.artifacts).toEqual([
       {
-        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:customer_offer_draft:[a-f0-9]{8}$/),
+        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:customer_offer_draft:[a-f0-9]{32}$/),
         blockerLabels: [],
         fileName: undefined,
         key: "customer_offer_draft",
@@ -87,7 +87,7 @@ describe("non-CNC promoted quote offer export package plan", () => {
         status: "ready",
       },
       {
-        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:plain_text_export:[a-f0-9]{8}$/),
+        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:plain_text_export:[a-f0-9]{32}$/),
         blockerLabels: [],
         fileName: "rfq-demo-204-non-cnc-promoted-quote-offer-creation-package-rfq-demo-204-ready.txt",
         key: "plain_text_export",
@@ -96,7 +96,7 @@ describe("non-CNC promoted quote offer export package plan", () => {
         status: "ready",
       },
       {
-        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:pdf_export:[a-f0-9]{8}$/),
+        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:pdf_export:[a-f0-9]{32}$/),
         blockerLabels: [],
         fileName: "rfq-demo-204-non-cnc-promoted-quote-offer-creation-package-rfq-demo-204-ready.pdf",
         key: "pdf_export",
@@ -105,7 +105,7 @@ describe("non-CNC promoted quote offer export package plan", () => {
         status: "ready",
       },
       {
-        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:release_review_packet:[a-f0-9]{8}$/),
+        artifactId: expect.stringMatching(/^non-cnc-offer-export-artifact:release_review_packet:[a-f0-9]{32}$/),
         blockerLabels: [],
         fileName:
           "rfq-demo-204-non-cnc-promoted-quote-offer-creation-package-rfq-demo-204-ready-release-review.json",
@@ -115,6 +115,28 @@ describe("non-CNC promoted quote offer export package plan", () => {
         status: "ready",
       },
     ])
+  })
+
+  it("keeps release execution fingerprints in the plan and artifact identities", () => {
+    const firstPlan = buildNonCncPromotedQuoteOfferExportPackagePlan({
+      readModel: readyReadModel({
+        releaseExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-ready-a",
+      }),
+      requestedAt: "2026-07-29T09:30:00.000Z",
+      requestedBy: "FactoryBid Operator",
+    })
+    const secondPlan = buildNonCncPromotedQuoteOfferExportPackagePlan({
+      readModel: readyReadModel({
+        releaseExecutionFingerprint: "non-cnc-promoted-quote-application-mutation-apply-execution-ready-b",
+      }),
+      requestedAt: "2026-07-29T09:30:00.000Z",
+      requestedBy: "FactoryBid Operator",
+    })
+
+    expect(secondPlan.planId).not.toBe(firstPlan.planId)
+    expect(secondPlan.artifacts.map((artifact) => artifact.artifactId)).not.toEqual(
+      firstPlan.artifacts.map((artifact) => artifact.artifactId),
+    )
   })
 
   it("blocks malformed ready read models that omit an expected creation target", () => {
