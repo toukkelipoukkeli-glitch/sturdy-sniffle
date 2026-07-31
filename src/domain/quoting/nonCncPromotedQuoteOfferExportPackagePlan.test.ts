@@ -134,9 +134,17 @@ describe("non-CNC promoted quote offer export package plan", () => {
     })
 
     expect(secondPlan.planId).not.toBe(firstPlan.planId)
-    expect(secondPlan.artifacts.map((artifact) => artifact.artifactId)).not.toEqual(
-      firstPlan.artifacts.map((artifact) => artifact.artifactId),
+    expect(firstPlan.releaseExecutionFingerprint).toBe(
+      "non-cnc-promoted-quote-application-mutation-apply-execution-ready-a",
     )
+    expect(secondPlan.releaseExecutionFingerprint).toBe(
+      "non-cnc-promoted-quote-application-mutation-apply-execution-ready-b",
+    )
+    expect(secondPlan.artifacts).toHaveLength(firstPlan.artifacts.length)
+    secondPlan.artifacts.forEach((artifact, index) => {
+      expect(artifact.key).toBe(firstPlan.artifacts[index].key)
+      expect(artifact.artifactId).not.toBe(firstPlan.artifacts[index].artifactId)
+    })
   })
 
   it("blocks malformed ready read models that omit an expected creation target", () => {
