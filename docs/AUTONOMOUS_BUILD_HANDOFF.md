@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e28ecc8` (`Refresh offer creation read model handoff (#525)`).
+- Main branch checkpoint: `cc75ace` (`Add non-CNC offer export package plan (#526)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-offer-export-package-plan` is adding a deterministic non-CNC customer-offer export package plan boundary without creating live customer offers, files, release reviews, or connector side effects.
+- In-flight branch at this checkpoint: none; start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#526` adds a deterministic non-CNC customer-offer export package plan boundary with release-fingerprint-scoped, collision-resistant artifact descriptors while live customer offers, files, release reviews, and connector side effects remain deferred.
   - `#525` refreshes the autonomous handoff after the non-CNC customer-offer creation read-model UI slice.
   - `#524` surfaces the deterministic customer-offer creation outcome commit read model in the guarded non-CNC registry preview without live offer/export/release or connector writes.
   - `#523` adds deterministic customer-offer creation outcome commit read models for locally persisted reviewed commit runs while active RFQ quote, offer, release, export, and connector state remain unchanged.
