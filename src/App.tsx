@@ -311,6 +311,7 @@ import { buildNonCncPromotedQuoteOfferCreationExecutionHistorySummary } from "./
 import { buildNonCncPromotedQuoteOfferCreationExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import { buildNonCncPromotedQuoteOfferCreationOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommit"
 import { buildNonCncPromotedQuoteOfferCreationOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
+import { buildNonCncPromotedQuoteOfferExportPackagePlan } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import {
   createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot,
@@ -7587,6 +7588,15 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionOfferCreationOutcomeCommit.commitPlan.creationPlanId, resolvedPromotionOfferCreationOutcomeCommitSnapshot],
   )
+  const promotionOfferExportPackagePlan = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportPackagePlan({
+        readModel: promotionOfferCreationOutcomeCommitReadModel,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: "FactoryBid Operator",
+      }),
+    [promotionOfferCreationOutcomeCommitReadModel, promotionPlan.requestedAt],
+  )
   const promotionOfferCreationExecutionRecord = resolvedPromotionOfferCreationExecutionSnapshot.records.find(
     (record) => record.executionFingerprint === promotionOfferCreationExecutionRun.executionFingerprint,
   )
@@ -9400,6 +9410,70 @@ export function ProcessQuotePreviewCard({
             aria-label="Non-CNC promoted quote offer creation outcome commit read model warnings"
           >
             {promotionOfferCreationOutcomeCommitReadModel.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness"
+        aria-label="Non-CNC promoted quote packaging plan"
+        data-status={promotionOfferExportPackagePlan.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export package plan</span>
+            <strong>{humanizeKey(promotionOfferExportPackagePlan.status)}</strong>
+          </div>
+          <small>{promotionOfferExportPackagePlan.planVersion}</small>
+        </div>
+        <p>{promotionOfferExportPackagePlan.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Artifact descriptors</span>
+            <strong>{formatCount(promotionOfferExportPackagePlan.artifactCount, "artifact")}</strong>
+            <small>{formatCount(promotionOfferExportPackagePlan.artifacts.length, "planned descriptor")}</small>
+          </div>
+          <div>
+            <span>Plan identity</span>
+            <strong>{promotionOfferExportPackagePlan.planId}</strong>
+            <small>{promotionOfferExportPackagePlan.executionFingerprint ?? "Execution fingerprint withheld"}</small>
+          </div>
+          <div>
+            <span>Release evidence</span>
+            <strong>{promotionOfferExportPackagePlan.targetRfqId ?? "Withheld until ready"}</strong>
+            <small>{promotionOfferExportPackagePlan.releaseExecutionFingerprint ?? "Release execution withheld"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportPackagePlan.offerExportBoundary}</small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportPackagePlan.artifacts.map((artifact) => (
+            <li data-status={artifact.status} key={artifact.key}>
+              <strong>{artifact.label}</strong>
+              <small>{artifact.fileName ?? artifact.artifactId ?? "Artifact id withheld"}</small>
+            </li>
+          ))}
+        </ul>
+        {promotionOfferExportPackagePlan.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackagePlan.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackagePlan.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote packaging plan warnings"
+          >
+            {promotionOfferExportPackagePlan.reviewWarnings.map((warning) => (
               <li data-status="warning" key={warning}>
                 <strong>{warning}</strong>
               </li>
