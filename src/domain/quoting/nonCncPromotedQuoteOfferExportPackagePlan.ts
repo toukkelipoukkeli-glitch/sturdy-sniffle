@@ -236,6 +236,10 @@ function stableJson(value: unknown): string {
 }
 
 function fingerprint(value: string): string {
+  return fingerprintNonCncPromotedQuoteOfferExportPackagePayload(value)
+}
+
+export function fingerprintNonCncPromotedQuoteOfferExportPackagePayload(value: string): string {
   return sha256(value).slice(0, 32)
 }
 

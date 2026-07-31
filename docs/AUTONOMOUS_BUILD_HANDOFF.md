@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `4090273` (`Surface non-CNC offer export package plan (#528)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next slice from fresh `origin/main`.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-package-execution-audit` is adding deterministic dry-run/commit audit records for non-CNC customer-offer export package descriptors while live customer-offer, file, release-review, and connector side effects remain deferred.
 - Latest merged sequence:
   - `#528` surfaces deterministic non-CNC customer-offer export package plan descriptors in the guarded registry preview with artifact counts, plan identity, release evidence, boundary copy, blockers, and warnings while live customer-offer, file, release-review, and connector side effects remain deferred.
   - `#527` refreshes the autonomous handoff after the non-CNC customer-offer export package plan slice.
