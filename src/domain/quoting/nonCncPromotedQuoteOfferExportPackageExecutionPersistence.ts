@@ -62,8 +62,12 @@ export interface NonCncPromotedQuoteOfferExportPackageExecutionPersistenceAdapte
   snapshot(): NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot
 }
 
+export interface LocalNonCncPromotedQuoteOfferExportPackageExecutionPersistenceInitialSnapshot {
+  records?: NonCncPromotedQuoteOfferExportPackageExecutionRecord[]
+}
+
 export interface LocalNonCncPromotedQuoteOfferExportPackageExecutionPersistenceOptions {
-  initialSnapshot?: Partial<NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot>
+  initialSnapshot?: LocalNonCncPromotedQuoteOfferExportPackageExecutionPersistenceInitialSnapshot
 }
 
 export function createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence({
@@ -122,7 +126,7 @@ function buildExecutionRecord(
 }
 
 function normalizeSnapshot(
-  snapshot: Partial<NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot> | undefined,
+  snapshot: LocalNonCncPromotedQuoteOfferExportPackageExecutionPersistenceInitialSnapshot | undefined,
 ): NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot {
   const recordsByFingerprint = new Map<string, NonCncPromotedQuoteOfferExportPackageExecutionRecord>()
   for (const record of snapshot?.records ?? []) {

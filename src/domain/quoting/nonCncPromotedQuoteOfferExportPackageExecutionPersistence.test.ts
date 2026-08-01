@@ -212,12 +212,16 @@ describe("non-CNC promoted quote offer export package execution persistence", ()
     const snapshot = await adapter.recordRun(run)
     snapshot.records[0]!.actor = "Mutated Operator"
     snapshot.planIds.push("mutated-plan")
+    snapshot.statusCounts.prepared = 99
+    snapshot.latestRun!.actor = "Mutated Latest Operator"
 
     const clonedSnapshot = adapter.snapshot()
 
     expect(clonedSnapshot.recordCount).toBe(1)
     expect(clonedSnapshot.records[0]?.actor).toBe("FactoryBid Operator")
+    expect(clonedSnapshot.latestRun?.actor).toBe("FactoryBid Operator")
     expect(clonedSnapshot.planIds).toEqual([run.planId])
+    expect(clonedSnapshot.statusCounts).toEqual({ prepared: 1 })
   })
 
   it("rejects invalid seeded export package execution records", async () => {
