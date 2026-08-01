@@ -2,6 +2,7 @@ import { normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import {
   fingerprintNonCncPromotedQuoteOfferExportPackagePayload,
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_ARTIFACT_KEYS,
   type NonCncPromotedQuoteOfferExportPackageArtifact,
   type NonCncPromotedQuoteOfferExportPackageArtifactKey,
   type NonCncPromotedQuoteOfferExportPackagePlan,
@@ -300,15 +301,10 @@ function normalizeArtifactOutcomes(
 
 function normalizeArtifactKey(value: string, key: string): NonCncPromotedQuoteOfferExportPackageArtifactKey {
   const normalized = nonBlank(value, key)
-  if (
-    normalized !== "customer_offer_draft" &&
-    normalized !== "plain_text_export" &&
-    normalized !== "pdf_export" &&
-    normalized !== "release_review_packet"
-  ) {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_ARTIFACT_KEYS.includes(normalized as NonCncPromotedQuoteOfferExportPackageArtifactKey)) {
     throw new Error(`${key} must be a valid offer export package artifact key`)
   }
-  return normalized
+  return normalized as NonCncPromotedQuoteOfferExportPackageArtifactKey
 }
 
 function normalizeMode(

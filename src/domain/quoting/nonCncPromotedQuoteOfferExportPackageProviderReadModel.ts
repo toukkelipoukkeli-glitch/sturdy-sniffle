@@ -3,6 +3,10 @@ import type {
   NonCncPromotedQuoteOfferExportPackageArtifactOutcomeInput,
 } from "./nonCncPromotedQuoteOfferExportPackageExecution"
 import {
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_ARTIFACT_KEYS,
+  type NonCncPromotedQuoteOfferExportPackageArtifactKey,
+} from "./nonCncPromotedQuoteOfferExportPackagePlan"
+import {
   NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_VERSION,
   type NonCncPromotedQuoteOfferExportPackageProviderResult,
 } from "./nonCncPromotedQuoteOfferExportPackageProvider"
@@ -67,16 +71,20 @@ export function buildNonCncPromotedQuoteOfferExportPackageProviderReadModel(
   }
 
   const artifactOutcomes = normalizeArtifactOutcomes(result.artifactOutcomes ?? [])
-  const blockerLabels = artifactOutcomes.length === 0
-    ? ["Applied non-CNC offer export package provider result did not include artifact outcomes."]
-    : []
+  const failedOutcomeCount = artifactOutcomes.filter((outcome) => outcome.status === "failed").length
+  const blockerLabels =
+    artifactOutcomes.length === 0
+      ? ["Applied non-CNC offer export package provider result did not include artifact outcomes."]
+      : failedOutcomeCount > 0
+        ? [`Applied non-CNC offer export package provider result includes ${failedOutcomeCount} failed artifact outcome${failedOutcomeCount === 1 ? "" : "s"}.`]
+        : []
   const status = blockerLabels.length === 0 ? "ready_to_commit" : "blocked"
 
   return {
     artifactOutcomeCount: artifactOutcomes.length,
     artifactOutcomeKeys: artifactOutcomes.map((outcome) => outcome.key),
     artifactOutcomes: status === "ready_to_commit" ? artifactOutcomes : undefined,
-    blockedOutcomeCount: blockerLabels.length,
+    blockedOutcomeCount: artifactOutcomes.length === 0 ? 1 : failedOutcomeCount,
     blockerLabels,
     mode,
     nextOperatorMessage:
@@ -90,7 +98,7 @@ export function buildNonCncPromotedQuoteOfferExportPackageProviderReadModel(
     providerStatus,
     providerVersion,
     readModelVersion: NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION,
-    readyOutcomeCount: status === "ready_to_commit" ? artifactOutcomes.length : 0,
+    readyOutcomeCount: status === "ready_to_commit" ? artifactOutcomes.length - failedOutcomeCount : 0,
     reviewWarnings,
     status,
   }
@@ -117,17 +125,12 @@ function normalizeArtifactOutcomes(
   })
 }
 
-function normalizeArtifactKey(value: string, key: string): NonCncPromotedQuoteOfferExportPackageArtifactOutcomeInput["key"] {
+function normalizeArtifactKey(value: string, key: string): NonCncPromotedQuoteOfferExportPackageArtifactKey {
   const normalized = nonBlank(value, key)
-  if (
-    normalized !== "customer_offer_draft" &&
-    normalized !== "plain_text_export" &&
-    normalized !== "pdf_export" &&
-    normalized !== "release_review_packet"
-  ) {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_ARTIFACT_KEYS.includes(normalized as NonCncPromotedQuoteOfferExportPackageArtifactKey)) {
     throw new Error(`${key} must be a valid offer export package artifact key`)
   }
-  return normalized
+  return normalized as NonCncPromotedQuoteOfferExportPackageArtifactKey
 }
 
 function normalizeOutcomeStatus(

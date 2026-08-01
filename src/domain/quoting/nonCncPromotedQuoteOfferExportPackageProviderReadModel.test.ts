@@ -115,6 +115,38 @@ describe("non-CNC promoted quote offer export package provider read model", () =
     })
   })
 
+  it("blocks mixed provider outcomes and withholds failed commit inputs", async () => {
+    const provider = createLocalNonCncPromotedQuoteOfferExportPackageProvider()
+    const providerResult = await provider.exportPackage(readyPlan())
+    const artifactOutcomes = providerResult.artifactOutcomes?.map((outcome) =>
+      outcome.key === "pdf_export"
+        ? {
+            ...outcome,
+            message: "PDF export provider failed locally.",
+            status: "failed" as const,
+          }
+        : outcome,
+    )
+
+    const readModel = buildNonCncPromotedQuoteOfferExportPackageProviderReadModel({
+      ...providerResult,
+      artifactOutcomes,
+    })
+
+    expect(readModel).toMatchObject({
+      artifactOutcomeCount: 4,
+      artifactOutcomeKeys: ["customer_offer_draft", "plain_text_export", "pdf_export", "release_review_packet"],
+      artifactOutcomes: undefined,
+      blockedOutcomeCount: 1,
+      blockerLabels: ["Applied non-CNC offer export package provider result includes 1 failed artifact outcome."],
+      readyOutcomeCount: 0,
+      status: "blocked",
+    })
+    expect(readModel.nextOperatorMessage).toBe(
+      "Applied non-CNC offer export package provider result includes 1 failed artifact outcome.",
+    )
+  })
+
   it("rejects malformed provider result identity and artifact outcomes", async () => {
     const provider = createLocalNonCncPromotedQuoteOfferExportPackageProvider()
     const providerResult = await provider.exportPackage(readyPlan())
