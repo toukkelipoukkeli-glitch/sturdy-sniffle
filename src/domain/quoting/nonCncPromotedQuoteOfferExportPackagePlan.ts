@@ -15,6 +15,13 @@ export type NonCncPromotedQuoteOfferExportPackageArtifactKey =
   | "pdf_export"
   | "release_review_packet"
 
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_ARTIFACT_KEYS = [
+  "customer_offer_draft",
+  "plain_text_export",
+  "pdf_export",
+  "release_review_packet",
+] as const satisfies NonCncPromotedQuoteOfferExportPackageArtifactKey[]
+
 export interface NonCncPromotedQuoteOfferExportPackageArtifact {
   key: NonCncPromotedQuoteOfferExportPackageArtifactKey
   label: string

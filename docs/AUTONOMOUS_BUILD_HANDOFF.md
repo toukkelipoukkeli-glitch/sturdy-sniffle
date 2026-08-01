@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `183a74a` (`Add non-CNC export package local provider (#539)`).
+- Main branch checkpoint: `a50c4b2` (`Refresh non-CNC export provider handoff (#540)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: none; start the next slice from fresh `origin/main`.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-read-model` is adding a deterministic provider-result read model for local/mock non-CNC customer-offer export package outcomes before any execution commit or live adapter wiring.
 - Latest merged sequence:
+  - `#540` refreshes the autonomous handoff after the non-CNC customer-offer export package local provider slice.
   - `#539` adds a deterministic local/mock non-CNC customer-offer export package provider boundary that turns ready export package descriptors into artifact outcomes for the existing execution-audit builder while blocked/malformed plans withhold outcomes and live customer-offer, file, release-review, and connector writes remain deferred.
   - `#538` refreshes the autonomous handoff after the non-CNC export execution history UI slice.
   - `#537` surfaces local non-CNC customer-offer export package execution history in the guarded registry preview with deterministic dry-run recording, artifact totals, action items, withheld source/release evidence, selectable export text, and desktop/mobile browser smoke coverage while live customer-offer, file, release-review, and connector writes remain deferred.
