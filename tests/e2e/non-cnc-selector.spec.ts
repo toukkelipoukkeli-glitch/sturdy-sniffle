@@ -144,6 +144,27 @@ async function assertOfferCreationOutcomeCommitHistory(nonCncDemos: Locator, pag
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportPackageExecutionHistory(nonCncDemos: Locator, page: Page) {
+  const exportPackageExecutionHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export execution history",
+    { exact: true },
+  )
+
+  await expect(exportPackageExecutionHistory).toBeVisible()
+  await expect(exportPackageExecutionHistory).toHaveAttribute("data-status", "blocked")
+  await expect(exportPackageExecutionHistory).toContainText("Offer export package execution history")
+  await expect(exportPackageExecutionHistory).toContainText("Offer export package history blocked")
+  await expect(exportPackageExecutionHistory).toContainText("Latest non-CNC offer export package execution is blocked")
+  await expect(exportPackageExecutionHistory).toContainText("live customer-offer, file, release-review, and connector writes remain disabled.")
+  await expect(exportPackageExecutionHistory).toContainText("Artifact outcomes")
+  await expect(exportPackageExecutionHistory).toContainText("Succeeded 0, prepared 0, blocked")
+  await expect(exportPackageExecutionHistory).toContainText("Resolve non-CNC offer export package blockers")
+  await expect(exportPackageExecutionHistory).toContainText("Release executions: None")
+  await expect(exportPackageExecutionHistory).toContainText("Source executions: None")
+  await expect(exportPackageExecutionHistory).toContainText("Non-CNC offer export package execution history")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -179,6 +200,7 @@ for (const viewport of operatorViewports) {
       await assertOfferWiringReadiness(nonCncDemos, page)
       await assertOfferCreationHistory(nonCncDemos, page)
       await assertOfferCreationOutcomeCommitHistory(nonCncDemos, page)
+      await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })

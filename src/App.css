@@ -2631,6 +2631,20 @@
   border-left-color: oklch(0.52 0.12 158);
 }
 
+.process-demo-promotion-offer-export-execution-history[data-status="prepared"],
+.process-demo-promotion-offer-export-execution-history[data-status="succeeded"] {
+  background: oklch(0.976 0.018 158);
+  border-color: oklch(0.82 0.07 158);
+  border-left-color: oklch(0.52 0.12 158);
+}
+
+.process-demo-promotion-offer-export-execution-history[data-status="needs_review"],
+.process-demo-promotion-offer-export-execution-history[data-status="pending"] {
+  background: oklch(0.985 0.026 75);
+  border-color: oklch(0.84 0.07 75);
+  border-left-color: oklch(0.55 0.12 75);
+}
+
 .process-demo-promotion-release-readiness-heading {
   align-items: center;
   display: flex;
@@ -2721,13 +2735,48 @@
   color: oklch(0.44 0.12 35);
 }
 
+.process-demo-promotion-release-readiness-list li[data-status="prepared"] strong,
+.process-demo-promotion-release-readiness-list li[data-status="succeeded"] strong {
+  color: oklch(0.31 0.08 155);
+}
+
+.process-demo-promotion-release-readiness-list li[data-status="needs_review"] strong,
+.process-demo-promotion-release-readiness-list li[data-status="pending"] strong {
+  color: oklch(0.42 0.11 78);
+}
+
 .process-demo-promotion-release-readiness-warnings li[data-status="warning"] strong {
   color: oklch(0.42 0.11 78);
 }
 
+.process-demo-promotion-release-readiness-export {
+  background: oklch(0.985 0.004 245);
+  border: 1px solid oklch(0.9 0.016 235);
+  border-radius: 8px;
+  color: oklch(0.32 0.026 250);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0;
+  max-height: 240px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 7px;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 640px) {
+  .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-grid,
+  .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-grid,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-list,
+  .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-warnings {
     grid-template-columns: 1fr;
   }

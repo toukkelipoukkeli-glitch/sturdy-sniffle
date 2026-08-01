@@ -59,6 +59,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_PERSISTENCE_VERSION } f
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
@@ -860,6 +861,37 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(
       "Non-CNC offer export package plans are deterministic adapter descriptors only; building this plan does not create customer offers, files, release reviews, or connector side effects.",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
+      ).toHaveTextContent("Offer export package history blocked")
+    })
+    const promotedQuoteOfferExportPackageExecutionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export execution history",
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("Offer export package execution history")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent(
+      "Latest non-CNC offer export package execution is blocked after 3 runs; live customer-offer, file, release-review, and connector writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("3 runs")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("12 artifacts")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("Succeeded 0, prepared 0, blocked 12")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent(
+      "Resolve non-CNC offer export package blockers before recording another execution.",
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent(
+      "Offer export package execution history is deterministic review data only; active RFQ quote, customer offer, file, release-review, and connector state stay unchanged.",
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("Release executions: None")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("Source executions: None")
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent(
+      "Non-CNC offer export package execution history",
+    )
+    expect(promotedQuoteOfferExportPackageExecutionHistory).toHaveTextContent("Status counts: blocked 3")
     await waitFor(() => {
       expect(within(processDemos).getByLabelText("Non-CNC promoted quote application mutation apply history")).toHaveTextContent(
         "Local mutation apply history:",
