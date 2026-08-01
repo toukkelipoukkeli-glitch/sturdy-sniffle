@@ -2765,7 +2765,6 @@
   overflow-wrap: anywhere;
   padding: 7px;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 @media (max-width: 640px) {
