@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-07-31 Europe/Helsinki.
+Last refreshed: 2026-08-01 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `fcbcf6a` (`Refresh non-CNC export execution checkpoint (#532)`).
+- Main branch checkpoint: `009d577` (`Add non-CNC export execution persistence (#533)`).
 - Open PRs at this checkpoint: none on `main`.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-execution-persistence` (local deterministic non-CNC customer-offer export package execution persistence snapshots).
+- In-flight branch at this checkpoint: none; start the next slice from fresh `origin/main`.
 - Latest merged sequence:
+  - `#533` adds deterministic local persistence snapshots for non-CNC customer-offer export package execution audits, including artifact-status aggregates, deduped execution fingerprints, ready-source ID withholding for blocked runs, clone-safe snapshots, and seeded-record validation while live customer-offer, file, release-review, and connector writes remain deferred.
   - `#532` refreshes the autonomous handoff after the non-CNC export execution handoff checkpoint.
   - `#531` refreshes the autonomous handoff after the non-CNC customer-offer export package execution audit slice.
   - `#530` adds deterministic dry-run/commit audit records for non-CNC customer-offer export package descriptors while live customer-offer, file, release-review, and connector side effects remain deferred.
