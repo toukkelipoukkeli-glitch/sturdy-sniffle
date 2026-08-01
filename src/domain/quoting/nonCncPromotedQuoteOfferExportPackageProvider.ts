@@ -46,38 +46,53 @@ export function createLocalNonCncPromotedQuoteOfferExportPackageProvider({
 
   return {
     async exportPackage(plan) {
-      const planFingerprint = fingerprintNonCncPromotedQuoteOfferExportPackageProviderPlan(plan)
-      const blockerLabels = validateReadyPlan(plan)
-      if (blockerLabels.length > 0) {
-        return {
-          blockerLabels,
-          mode: normalizedMode,
-          planFingerprint,
-          planId: plan.planId,
-          providerVersion: NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_VERSION,
-          status: "blocked",
-          warnings: [],
-        }
-      }
-
-      return {
-        artifactOutcomes: plan.artifacts.map((artifact) =>
-          buildArtifactOutcome({
-            artifact,
-            externalIdPrefix: normalizedExternalIdPrefix,
-            plan,
-            planFingerprint,
-          }),
-        ),
-        blockerLabels: [],
+      return buildLocalNonCncPromotedQuoteOfferExportPackageProviderResult(plan, {
+        externalIdPrefix: normalizedExternalIdPrefix,
         mode: normalizedMode,
-        planFingerprint,
-        planId: plan.planId,
-        providerVersion: NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_VERSION,
-        status: "applied",
-        warnings: [LOCAL_PROVIDER_WARNING],
-      }
+      })
     },
+  }
+}
+
+export function buildLocalNonCncPromotedQuoteOfferExportPackageProviderResult(
+  plan: NonCncPromotedQuoteOfferExportPackagePlan,
+  {
+    externalIdPrefix = "local-non-cnc-offer-export",
+    mode = "local",
+  }: LocalNonCncPromotedQuoteOfferExportPackageProviderOptions = {},
+): NonCncPromotedQuoteOfferExportPackageProviderResult {
+  const normalizedExternalIdPrefix = nonBlank(externalIdPrefix, "externalIdPrefix")
+  const normalizedMode = normalizeMode(mode)
+  const planFingerprint = fingerprintNonCncPromotedQuoteOfferExportPackageProviderPlan(plan)
+  const blockerLabels = validateReadyPlan(plan)
+  if (blockerLabels.length > 0) {
+    return {
+      blockerLabels,
+      mode: normalizedMode,
+      planFingerprint,
+      planId: plan.planId,
+      providerVersion: NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_VERSION,
+      status: "blocked",
+      warnings: [],
+    }
+  }
+
+  return {
+    artifactOutcomes: plan.artifacts.map((artifact) =>
+      buildArtifactOutcome({
+        artifact,
+        externalIdPrefix: normalizedExternalIdPrefix,
+        plan,
+        planFingerprint,
+      }),
+    ),
+    blockerLabels: [],
+    mode: normalizedMode,
+    planFingerprint,
+    planId: plan.planId,
+    providerVersion: NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_VERSION,
+    status: "applied",
+    warnings: [LOCAL_PROVIDER_WARNING],
   }
 }
 
