@@ -68,13 +68,7 @@ export function buildNonCncPromotedQuoteOfferExportPackageProviderCommitPlan({
       : []),
     ...outcomeBlockers,
   ])
-  const status =
-    readModel.status === "ready_to_commit" &&
-    outcomeEntries.length > 0 &&
-    outcomeBlockers.length === 0 &&
-    blockerLabels.length === 0
-      ? "ready"
-      : "blocked"
+  const status = blockerLabels.length === 0 ? "ready" : "blocked"
   const artifactOutcomes = status === "ready" ? outcomeEntries.map(cloneArtifactOutcome) : []
 
   return {
