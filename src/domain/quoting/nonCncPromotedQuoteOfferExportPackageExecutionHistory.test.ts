@@ -99,6 +99,32 @@ describe("non-CNC promoted quote offer export package execution history", () => 
     expect(summary.exportText).toContain(`Source executions: ${plan.executionFingerprint}`)
   })
 
+  it("summarizes prepared dry-run export package execution evidence", async () => {
+    const plan = readyPlan()
+    const adapter = createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence()
+    const run = buildNonCncPromotedQuoteOfferExportPackageExecutionRun({
+      ...request,
+      mode: "dry_run",
+      plan,
+    })
+
+    const summary = buildNonCncPromotedQuoteOfferExportPackageExecutionHistorySummary(await adapter.recordRun(run))
+
+    expect(summary).toMatchObject({
+      actionItems: [
+        "Review prepared non-CNC offer export package artifacts before committing provider side effects.",
+        "Review 1 warning before customer-visible release.",
+      ],
+      artifactCount: 4,
+      operatorSummary:
+        "Latest non-CNC offer export package dry-run prepared 4 artifacts for review before any provider side effects.",
+      preparedArtifactCount: 4,
+      severity: "ready",
+      status: "prepared",
+      title: "Offer export package dry-run prepared",
+    })
+  })
+
   it("summarizes partial and pending artifact histories with newest run first", async () => {
     const plan = readyPlan()
     const adapter = createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence()

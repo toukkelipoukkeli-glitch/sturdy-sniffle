@@ -119,19 +119,25 @@ function historyStatus(
   if (!latestRun) {
     return "empty"
   }
-  if (latestRun.status === "blocked") {
-    return "blocked"
+  switch (latestRun.status) {
+    case "blocked":
+      return "blocked"
+    case "failed":
+    case "partial":
+      return "needs_review"
+    case "pending":
+      return "pending"
+    case "prepared":
+      return "prepared"
+    case "succeeded":
+      return "succeeded"
+    default:
+      return assertNeverExecutionStatus(latestRun.status)
   }
-  if (latestRun.status === "failed" || latestRun.status === "partial") {
-    return "needs_review"
-  }
-  if (latestRun.status === "pending") {
-    return "pending"
-  }
-  if (latestRun.status === "prepared") {
-    return "prepared"
-  }
-  return "succeeded"
+}
+
+function assertNeverExecutionStatus(status: never): never {
+  throw new Error(`Unhandled non-CNC offer export package execution status: ${String(status)}`)
 }
 
 function historySeverity(
