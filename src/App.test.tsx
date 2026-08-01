@@ -61,6 +61,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSIO
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -860,6 +861,22 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent(
       "Non-CNC offer export package plans are deterministic adapter descriptors only; building this plan does not create customer offers, files, release reviews, or connector side effects.",
+    )
+    const promotedQuoteOfferExportPackageProviderReadModel = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export provider read model",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("Offer export provider read model")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("0 ready outcomes")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("0 blocked outcomes / 0 total outcomes")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      "Non-CNC offer export package provider result is blocked; artifact outcomes are withheld.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      "Non-CNC offer export package provider read models are deterministic review data only; active RFQ quote, offer, release, export, and connector state stay unchanged until a later adapter applies them.",
     )
     await waitFor(() => {
       expect(
@@ -3322,6 +3339,22 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Execution fingerprint withheld")
     expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("Withheld until ready")
     expect(promotedQuoteOfferExportPackagePlan).toHaveTextContent("No customer-offer creation outcome commit record is available.")
+    const promotedQuoteOfferExportPackageProviderReadModel = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export provider read model",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("Offer export provider read model")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("0 ready outcomes")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent("0 blocked outcomes / 0 total outcomes")
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      "Non-CNC offer export package plan is blocked; local provider export is blocked.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
+      "Non-CNC offer export package provider result is blocked; artifact outcomes are withheld.",
+    )
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )

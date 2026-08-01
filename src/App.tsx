@@ -321,6 +321,8 @@ import {
   type NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { buildNonCncPromotedQuoteOfferExportPackagePlan } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
+import { buildLocalNonCncPromotedQuoteOfferExportPackageProviderResult } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProvider"
+import { buildNonCncPromotedQuoteOfferExportPackageProviderReadModel } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import {
   createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot,
@@ -7639,6 +7641,14 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionOfferCreationOutcomeCommitReadModel, promotionPlan.requestedAt],
   )
+  const promotionOfferExportPackageProviderResult = useMemo(
+    () => buildLocalNonCncPromotedQuoteOfferExportPackageProviderResult(promotionOfferExportPackagePlan),
+    [promotionOfferExportPackagePlan],
+  )
+  const promotionOfferExportPackageProviderReadModel = useMemo(
+    () => buildNonCncPromotedQuoteOfferExportPackageProviderReadModel(promotionOfferExportPackageProviderResult),
+    [promotionOfferExportPackageProviderResult],
+  )
   const promotionOfferExportPackageExecutionRun = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportPackageExecutionRun({
@@ -9539,6 +9549,80 @@ export function ProcessQuotePreviewCard({
             aria-label="Non-CNC promoted quote packaging plan warnings"
           >
             {promotionOfferExportPackagePlan.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness"
+        aria-label="Non-CNC promoted quote customer export provider read model"
+        data-status={promotionOfferExportPackageProviderReadModel.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export provider read model</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderReadModel.status)}</strong>
+          </div>
+          <small>{promotionOfferExportPackageProviderReadModel.readModelVersion}</small>
+        </div>
+        <p>{promotionOfferExportPackageProviderReadModel.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Provider result</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderReadModel.providerStatus)}</strong>
+            <small>{humanizeKey(promotionOfferExportPackageProviderReadModel.mode)}</small>
+          </div>
+          <div>
+            <span>Artifact outcomes</span>
+            <strong>{formatCount(promotionOfferExportPackageProviderReadModel.readyOutcomeCount, "ready outcome")}</strong>
+            <small>
+              {formatCount(promotionOfferExportPackageProviderReadModel.blockedOutcomeCount, "blocked outcome")} /{" "}
+              {formatCount(promotionOfferExportPackageProviderReadModel.artifactOutcomeCount, "total outcome")}
+            </small>
+          </div>
+          <div>
+            <span>Plan evidence</span>
+            <strong>{promotionOfferExportPackageProviderReadModel.planId}</strong>
+            <small>{promotionOfferExportPackageProviderReadModel.planFingerprint}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportPackageProviderReadModel.offerExportBoundary}</small>
+        </div>
+        {promotionOfferExportPackageProviderReadModel.artifactOutcomeKeys.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackageProviderReadModel.artifactOutcomeKeys.map((key) => {
+              const outcome = promotionOfferExportPackageProviderReadModel.artifactOutcomes?.find(
+                (candidate) => candidate.key === key,
+              )
+              return (
+                <li data-status={outcome?.status ?? "blocked"} key={key}>
+                  <strong>{humanizeKey(key)}</strong>
+                  <small>{outcome?.artifactExternalId ?? "Provider artifact outcome withheld"}</small>
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackageProviderReadModel.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackageProviderReadModel.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackageProviderReadModel.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote customer export provider read model warnings"
+          >
+            {promotionOfferExportPackageProviderReadModel.reviewWarnings.map((warning) => (
               <li data-status="warning" key={warning}>
                 <strong>{warning}</strong>
               </li>
