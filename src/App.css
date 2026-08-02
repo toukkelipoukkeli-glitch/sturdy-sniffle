@@ -2744,6 +2744,13 @@
   overflow-wrap: anywhere;
 }
 
+.process-demo-promotion-release-readiness-status {
+  color: oklch(0.4 0.026 250);
+  font-size: 0.7rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .process-demo-promotion-release-readiness-list li[data-status="blocked"] strong {
   color: oklch(0.44 0.12 35);
 }

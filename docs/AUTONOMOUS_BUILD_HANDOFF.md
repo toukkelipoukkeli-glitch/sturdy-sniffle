@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b10b202` (`Add non-CNC export provider read history (#546)`).
+- Main branch checkpoint: `5ac1c3f` (`Surface non-CNC export provider read history (#547)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-read-history-ui` surfaces local non-CNC export provider read-model history in the guarded registry preview without live customer-offer, file, release-review, export, or connector writes.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-ui` surfaces the deterministic provider read-model commit boundary in the guarded registry preview without live customer-offer, file, release-review, export, or connector writes.
 - Latest merged sequence:
+  - `#547` surfaces local non-CNC customer-offer export package provider read-model history in the guarded registry preview with snapshot totals, latest evidence, action items, and export text while live adapters remain deferred.
   - `#546` adds deterministic history summaries for non-CNC customer-offer export package provider read-model persistence snapshots, including ready/blocked/mixed statuses, action items, snapshot IDs, and copyable export text before live adapter wiring.
   - `#544` adds a deterministic provider-read-model commit boundary for non-CNC customer-offer export package outcomes before live adapter wiring.
   - `#545` adds deterministic local persistence snapshots for the non-CNC customer-offer export package provider read model without live customer-offer, file, release-review, or connector writes.
