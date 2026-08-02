@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-01 Europe/Helsinki.
+Last refreshed: 2026-08-02 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5ac1c3f` (`Surface non-CNC export provider read history (#547)`).
+- Main branch checkpoint: `ed8c18c` (`Surface export provider commit plan (#548)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-ui` surfaces the deterministic provider read-model commit boundary in the guarded registry preview without live customer-offer, file, release-review, export, or connector writes.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#548` surfaces the deterministic provider read-model commit boundary in the guarded registry preview with blocked/ready commit status, provider evidence, withheld release targets, blockers/warnings, and execution-audit fingerprint copy while live adapters remain deferred.
   - `#547` surfaces local non-CNC customer-offer export package provider read-model history in the guarded registry preview with snapshot totals, latest evidence, action items, and export text while live adapters remain deferred.
   - `#546` adds deterministic history summaries for non-CNC customer-offer export package provider read-model persistence snapshots, including ready/blocked/mixed statuses, action items, snapshot IDs, and copyable export text before live adapter wiring.
   - `#544` adds a deterministic provider-read-model commit boundary for non-CNC customer-offer export package outcomes before live adapter wiring.
