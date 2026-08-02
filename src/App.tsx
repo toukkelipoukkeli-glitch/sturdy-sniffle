@@ -322,7 +322,16 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { buildNonCncPromotedQuoteOfferExportPackagePlan } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import { buildLocalNonCncPromotedQuoteOfferExportPackageProviderResult } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProvider"
-import { buildNonCncPromotedQuoteOfferExportPackageProviderReadModel } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
+import {
+  buildNonCncPromotedQuoteOfferExportPackageProviderReadModel,
+  type NonCncPromotedQuoteOfferExportPackageProviderReadModel,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
+import { buildNonCncPromotedQuoteOfferExportPackageProviderReadModelHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence,
+  type NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceSnapshot,
+  type NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceInput,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import {
   createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot,
@@ -633,6 +642,8 @@ const emptyNonCncPromotedQuoteOfferCreationOutcomeCommitSnapshot =
   createLocalNonCncPromotedQuoteOfferCreationOutcomeCommitPersistence().snapshot()
 const emptyNonCncPromotedQuoteOfferExportPackageExecutionSnapshot =
   createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence().snapshot()
+const emptyNonCncPromotedQuoteOfferExportPackageProviderReadModelSnapshot =
+  createLocalNonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence().snapshot()
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
     now: "2026-06-20T09:00:00+03:00",
@@ -6863,6 +6874,13 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot>(() =>
       promotionOfferExportPackageExecutionPersistence.snapshot(),
     )
+  const [promotionOfferExportPackageProviderReadModelPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence(),
+  )
+  const [promotionOfferExportPackageProviderReadModelSnapshot, setPromotionOfferExportPackageProviderReadModelSnapshot] =
+    useState<NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceSnapshot>(() =>
+      promotionOfferExportPackageProviderReadModelPersistence.snapshot(),
+    )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -7055,6 +7073,23 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionOfferExportPackageExecutionPersistence],
   )
+  const recordPromotionOfferExportPackageProviderReadModel = useCallback(
+    (
+      readModel: NonCncPromotedQuoteOfferExportPackageProviderReadModel,
+      input: NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceInput,
+    ) => {
+      let isCurrent = true
+      void promotionOfferExportPackageProviderReadModelPersistence.recordReadModel(readModel, input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportPackageProviderReadModelSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionOfferExportPackageProviderReadModelPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -7096,6 +7131,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         promotionApplicationOutcomeCommitSnapshot={promotionApplicationOutcomeCommitSnapshot}
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         promotionOfferExportPackageExecutionSnapshot={promotionOfferExportPackageExecutionSnapshot}
+        promotionOfferExportPackageProviderReadModelSnapshot={promotionOfferExportPackageProviderReadModelSnapshot}
         promotionOfferCreationOutcomeCommitSnapshot={promotionOfferCreationOutcomeCommitSnapshot}
         promotionOfferCreationExecutionSnapshot={promotionOfferCreationExecutionSnapshot}
         preview={preview}
@@ -7113,6 +7149,7 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         recordPromotionOfferCreationOutcomeCommit={recordPromotionOfferCreationOutcomeCommit}
         recordPromotionOfferCreationExecutionRun={recordPromotionOfferCreationExecutionRun}
         recordPromotionOfferExportPackageExecutionRun={recordPromotionOfferExportPackageExecutionRun}
+        recordPromotionOfferExportPackageProviderReadModel={recordPromotionOfferExportPackageProviderReadModel}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
         promotionSnapshot={promotionSnapshot}
@@ -7322,6 +7359,7 @@ export function ProcessQuotePreviewCard({
   promotionOfferCreationExecutionSnapshot,
   promotionOfferCreationOutcomeCommitSnapshot,
   promotionOfferExportPackageExecutionSnapshot,
+  promotionOfferExportPackageProviderReadModelSnapshot,
   promotionApplicationSnapshot,
   promotionExecutionSnapshot,
   promotionOutcomeCommitSnapshot,
@@ -7336,6 +7374,7 @@ export function ProcessQuotePreviewCard({
   recordPromotionOfferCreationExecutionRun,
   recordPromotionOfferCreationOutcomeCommit,
   recordPromotionOfferExportPackageExecutionRun,
+  recordPromotionOfferExportPackageProviderReadModel,
   recordPromotionOutcomeCommit,
   recordPromotionExecutionRun,
   promotionSnapshot,
@@ -7355,6 +7394,7 @@ export function ProcessQuotePreviewCard({
   promotionOfferCreationExecutionSnapshot?: NonCncPromotedQuoteOfferCreationExecutionPersistenceSnapshot
   promotionOfferCreationOutcomeCommitSnapshot?: NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot
   promotionOfferExportPackageExecutionSnapshot?: NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot
+  promotionOfferExportPackageProviderReadModelSnapshot?: NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceSnapshot
   promotionApplicationSnapshot: NonCncPromotedQuoteApplicationPersistenceSnapshot
   promotionExecutionSnapshot: NonCncQuotePromotionExecutionPersistenceSnapshot
   promotionOutcomeCommitSnapshot: NonCncQuotePromotionOutcomeCommitPersistenceSnapshot
@@ -7375,6 +7415,10 @@ export function ProcessQuotePreviewCard({
   recordPromotionOfferExportPackageExecutionRun?: (
     run: NonCncPromotedQuoteOfferExportPackageExecutionRun,
   ) => () => void
+  recordPromotionOfferExportPackageProviderReadModel?: (
+    readModel: NonCncPromotedQuoteOfferExportPackageProviderReadModel,
+    input: NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceInput,
+  ) => () => void
   recordPromotionOutcomeCommit: (input: RecordNonCncQuotePromotionOutcomeCommitInput) => () => void
   recordPromotionExecutionRun: (run: NonCncQuotePromotionExecutionRun) => () => void
   promotionSnapshot: NonCncQuotePromotionPersistenceSnapshot
@@ -7392,6 +7436,8 @@ export function ProcessQuotePreviewCard({
     promotionOfferCreationOutcomeCommitSnapshot ?? emptyNonCncPromotedQuoteOfferCreationOutcomeCommitSnapshot
   const resolvedPromotionOfferExportPackageExecutionSnapshot =
     promotionOfferExportPackageExecutionSnapshot ?? emptyNonCncPromotedQuoteOfferExportPackageExecutionSnapshot
+  const resolvedPromotionOfferExportPackageProviderReadModelSnapshot =
+    promotionOfferExportPackageProviderReadModelSnapshot ?? emptyNonCncPromotedQuoteOfferExportPackageProviderReadModelSnapshot
   const promotionRecord = promotionSnapshot.records.find((record) => record.planId === promotionPlan.planId)
   const promotionActionSummary = useMemo(
     () =>
@@ -7670,6 +7716,13 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteOfferExportPackageExecutionHistorySummary(resolvedPromotionOfferExportPackageExecutionSnapshot),
     [resolvedPromotionOfferExportPackageExecutionSnapshot],
   )
+  const promotionOfferExportPackageProviderReadModelHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportPackageProviderReadModelHistorySummary(
+        resolvedPromotionOfferExportPackageProviderReadModelSnapshot,
+      ),
+    [resolvedPromotionOfferExportPackageProviderReadModelSnapshot],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -7782,6 +7835,15 @@ export function ProcessQuotePreviewCard({
     }
     return recordPromotionOfferExportPackageExecutionRun(promotionOfferExportPackageExecutionRun)
   }, [promotionOfferExportPackageExecutionRun, recordPromotionOfferExportPackageExecutionRun])
+  useEffect(() => {
+    if (!recordPromotionOfferExportPackageProviderReadModel) {
+      return undefined
+    }
+    return recordPromotionOfferExportPackageProviderReadModel(promotionOfferExportPackageProviderReadModel, {
+      actor: "FactoryBid Operator",
+      recordedAt: promotionPlan.requestedAt,
+    })
+  }, [promotionOfferExportPackageProviderReadModel, promotionPlan.requestedAt, recordPromotionOfferExportPackageProviderReadModel])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -9629,6 +9691,75 @@ export function ProcessQuotePreviewCard({
             ))}
           </ul>
         ) : null}
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-provider-read-history"
+        aria-label="Non-CNC promoted quote customer export provider read-model history"
+        data-status={promotionOfferExportPackageProviderReadModelHistory.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export provider read history</span>
+            <strong>{promotionOfferExportPackageProviderReadModelHistory.title}</strong>
+          </div>
+          <small>{resolvedPromotionOfferExportPackageProviderReadModelSnapshot.persistenceVersion}</small>
+        </div>
+        <p>{promotionOfferExportPackageProviderReadModelHistory.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Local snapshots</span>
+            <strong>{formatCount(promotionOfferExportPackageProviderReadModelHistory.totalRecords, "snapshot")}</strong>
+            <small>
+              {formatCount(promotionOfferExportPackageProviderReadModelHistory.blockerCount, "blocker")},{" "}
+              {formatCount(promotionOfferExportPackageProviderReadModelHistory.warningCount, "warning")}
+            </small>
+          </div>
+          <div>
+            <span>Artifact outcomes</span>
+            <strong>{formatCount(promotionOfferExportPackageProviderReadModelHistory.artifactOutcomeCount, "outcome")}</strong>
+            <small>
+              Ready {promotionOfferExportPackageProviderReadModelHistory.readyOutcomeCount}, blocked{" "}
+              {promotionOfferExportPackageProviderReadModelHistory.blockedOutcomeCount}
+            </small>
+          </div>
+          <div>
+            <span>Latest evidence</span>
+            <strong>
+              {humanizeKey(promotionOfferExportPackageProviderReadModelHistory.latestReadModel?.status ?? "none")}
+            </strong>
+            <small>
+              {promotionOfferExportPackageProviderReadModelHistory.latestReadModel?.readModelFingerprint ??
+                "No provider read-model snapshot yet"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>
+            Provider read-model history is deterministic review data only; active RFQ quote, customer offer, file,
+            release-review, export, and connector state stay unchanged.
+          </small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportPackageProviderReadModelHistory.actionItems.map((actionItem) => (
+            <li data-status={promotionOfferExportPackageProviderReadModelHistory.severity} key={actionItem}>
+              <strong>{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Snapshot ids</span>
+          <small>
+            Read models: {promotionOfferExportPackageProviderReadModelHistory.readModelFingerprints.join(", ") || "None"}
+          </small>
+          <small>Export plans: {promotionOfferExportPackageProviderReadModelHistory.planIds.join(", ") || "None"}</small>
+          <small>
+            Artifact keys: {promotionOfferExportPackageProviderReadModelHistory.artifactOutcomeKeys.join(", ") || "None"}
+          </small>
+        </div>
+        <pre className="process-demo-promotion-release-readiness-export">
+          {promotionOfferExportPackageProviderReadModelHistory.exportText}
+        </pre>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-execution-history"

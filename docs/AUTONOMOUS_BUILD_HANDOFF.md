@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `70cf3a5` (`Add non-CNC export provider read persistence (#545)`).
-- Open PRs at this checkpoint: `#544` (`codex/non-cnc-export-provider-commit-boundary`) is in review on top of `70cf3a5`.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-boundary` adds a deterministic provider-read-model commit boundary for non-CNC customer-offer export package outcomes before live adapter wiring.
+- Main branch checkpoint: `b10b202` (`Add non-CNC export provider read history (#546)`).
+- Open PRs at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-read-history-ui` surfaces local non-CNC export provider read-model history in the guarded registry preview without live customer-offer, file, release-review, export, or connector writes.
 - Latest merged sequence:
+  - `#546` adds deterministic history summaries for non-CNC customer-offer export package provider read-model persistence snapshots, including ready/blocked/mixed statuses, action items, snapshot IDs, and copyable export text before live adapter wiring.
+  - `#544` adds a deterministic provider-read-model commit boundary for non-CNC customer-offer export package outcomes before live adapter wiring.
   - `#545` adds deterministic local persistence snapshots for the non-CNC customer-offer export package provider read model without live customer-offer, file, release-review, or connector writes.
   - `#543` refreshes the autonomous handoff after the non-CNC export provider read-model UI slice.
   - `#542` surfaces the deterministic local/mock non-CNC customer-offer export package provider read model in the guarded registry preview with blocked/ready outcome totals, withheld artifact evidence for blocked results, and explicit no-live-write boundary copy.

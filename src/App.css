@@ -2632,6 +2632,18 @@
   border-left-color: oklch(0.52 0.12 158);
 }
 
+.process-demo-promotion-release-readiness[data-status="mixed"] {
+  background: oklch(0.985 0.026 75);
+  border-color: oklch(0.84 0.07 75);
+  border-left-color: oklch(0.55 0.12 75);
+}
+
+.process-demo-promotion-release-readiness[data-status="empty"] {
+  background: oklch(0.985 0.004 245);
+  border-color: oklch(0.88 0.016 245);
+  border-left-color: oklch(0.52 0.035 250);
+}
+
 .process-demo-promotion-offer-export-execution-history[data-status="prepared"],
 .process-demo-promotion-offer-export-execution-history[data-status="succeeded"] {
   background: oklch(0.976 0.018 158);
@@ -2742,8 +2754,17 @@
 }
 
 .process-demo-promotion-release-readiness-list li[data-status="needs_review"] strong,
-.process-demo-promotion-release-readiness-list li[data-status="pending"] strong {
+.process-demo-promotion-release-readiness-list li[data-status="pending"] strong,
+.process-demo-promotion-release-readiness-list li[data-status="review"] strong {
   color: oklch(0.42 0.11 78);
+}
+
+.process-demo-promotion-release-readiness-list li[data-status="attention"] strong {
+  color: oklch(0.44 0.12 35);
+}
+
+.process-demo-promotion-release-readiness-list li[data-status="ready"] strong {
+  color: oklch(0.31 0.08 155);
 }
 
 .process-demo-promotion-release-readiness-warnings li[data-status="warning"] strong {
