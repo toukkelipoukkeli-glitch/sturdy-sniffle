@@ -316,6 +316,7 @@ import {
   type NonCncPromotedQuoteOfferExportPackageExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecution"
 import { buildNonCncPromotedQuoteOfferExportPackageExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionHistory"
+import { buildNonCncPromotedQuoteOfferExportPackageProviderCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommit"
 import {
   createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence,
   type NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot,
@@ -7695,6 +7696,17 @@ export function ProcessQuotePreviewCard({
     () => buildNonCncPromotedQuoteOfferExportPackageProviderReadModel(promotionOfferExportPackageProviderResult),
     [promotionOfferExportPackageProviderResult],
   )
+  const promotionOfferExportPackageProviderCommit = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportPackageProviderCommitRun({
+        actor: "FactoryBid Operator",
+        executedAt: promotionPlan.requestedAt,
+        plan: promotionOfferExportPackagePlan,
+        readModel: promotionOfferExportPackageProviderReadModel,
+      }),
+    [promotionOfferExportPackagePlan, promotionOfferExportPackageProviderReadModel, promotionPlan.requestedAt],
+  )
+  const promotionOfferExportPackageProviderCommitPlan = promotionOfferExportPackageProviderCommit.commitPlan
   const promotionOfferExportPackageExecutionRun = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportPackageExecutionRun({
@@ -9760,6 +9772,82 @@ export function ProcessQuotePreviewCard({
         <pre className="process-demo-promotion-release-readiness-export">
           {promotionOfferExportPackageProviderReadModelHistory.exportText}
         </pre>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-provider-commit"
+        aria-label="Non-CNC promoted quote customer export provider commit plan"
+        data-status={promotionOfferExportPackageProviderCommitPlan.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export provider commit</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderCommitPlan.status)}</strong>
+          </div>
+          <small>{promotionOfferExportPackageProviderCommitPlan.commitVersion}</small>
+        </div>
+        <p>{promotionOfferExportPackageProviderCommitPlan.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Commit outcomes</span>
+            <strong>
+              {formatCount(promotionOfferExportPackageProviderCommitPlan.artifactOutcomeCount, "artifact outcome")}
+            </strong>
+            <small>{humanizeKey(promotionOfferExportPackageProviderCommitPlan.mode)}</small>
+          </div>
+          <div>
+            <span>Provider evidence</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderCommitPlan.readModelStatus)}</strong>
+            <small>{humanizeKey(promotionOfferExportPackageProviderCommitPlan.providerStatus)}</small>
+          </div>
+          <div>
+            <span>Release target</span>
+            <strong>{promotionOfferExportPackageProviderCommitPlan.targetRfqId ?? "Withheld until ready"}</strong>
+            <small>
+              {promotionOfferExportPackageProviderCommitPlan.releaseExecutionFingerprint ?? "Release execution withheld"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportPackageProviderCommitPlan.offerExportBoundary}</small>
+        </div>
+        {promotionOfferExportPackageProviderCommitPlan.artifactOutcomes.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackageProviderCommitPlan.artifactOutcomes.map((outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <strong>{humanizeKey(outcome.key)}</strong>
+                <small>{outcome.artifactExternalId ?? "Provider artifact outcome withheld"}</small>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackageProviderCommitPlan.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackageProviderCommitPlan.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackageProviderCommitPlan.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote customer export provider commit warnings"
+          >
+            {promotionOfferExportPackageProviderCommitPlan.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <small className="process-demo-promotion-release-readiness-status">
+          Execution audit:{" "}
+          {promotionOfferExportPackageProviderCommit.executionRun
+            ? promotionOfferExportPackageProviderCommit.executionRun.executionFingerprint
+            : "No execution audit emitted"}
+        </small>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-execution-history"

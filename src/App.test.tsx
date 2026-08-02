@@ -61,6 +61,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_PERSISTENCE_VERSIO
 import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferCreationOutcomeCommitReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommit"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -904,6 +905,24 @@ describe("FactoryBid workspace (component)", () => {
       "Provider read-model history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
     )
     expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("Non-CNC offer export provider read-model history")
+    const promotedQuoteOfferExportPackageProviderCommitPlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export provider commit plan",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("Offer export provider commit")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("0 artifact outcomes")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("Withheld until ready")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("Release execution withheld")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("No execution audit emitted")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent(
+      "Non-CNC offer export package provider commit has no artifact outcomes.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent(
+      "Provider outcome commit plans are deterministic audit inputs only; active RFQ quote, offer, release, export, and connector state stay unchanged until a later adapter applies them.",
+    )
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3392,6 +3411,13 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
       "Record a local/mock provider read model before enabling live export adapters.",
     )
+    const promotedQuoteOfferExportPackageProviderCommitPlan = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export provider commit plan",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("Offer export provider commit")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("0 artifact outcomes")
+    expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("No execution audit emitted")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )
