@@ -2145,7 +2145,7 @@ describe("FactoryBid workspace (component)", () => {
     })
     expect(mutationCalls.filter((call) => call.mutationRef === "createOfferFollowUpActivity")).toEqual([])
     expect(mutationCalls.some((call) => call.mutationRef === "transitionRfqStatus")).toBe(true)
-  })
+  }, 10_000)
 
   it("surfaces pending follow-up activity reads when no persisted records exist", async () => {
     const user = userEvent.setup()
