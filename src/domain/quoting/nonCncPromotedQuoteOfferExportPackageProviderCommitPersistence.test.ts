@@ -140,6 +140,19 @@ describe("non-CNC promoted quote offer export package provider commit persistenc
         },
       }),
     ).toThrow("provider commit records must come from a ready read model")
+
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportPackageProviderCommitPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...record,
+              providerStatus: "blocked",
+            },
+          ],
+        },
+      }),
+    ).toThrow("provider commit records must have applied provider status")
   })
 })
 
