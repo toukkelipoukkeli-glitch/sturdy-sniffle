@@ -62,6 +62,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_APPLY_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationApplyPlan"
 import {
@@ -878,6 +879,31 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
       "Non-CNC offer export package provider read models are deterministic review data only; active RFQ quote, offer, release, export, and connector state stay unchanged until a later adapter applies them.",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote customer export provider read-model history"),
+      ).toHaveTextContent("Provider read-model history blocked")
+    })
+    const promotedQuoteOfferExportPackageProviderReadModelHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export provider read-model history",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("Offer export provider read history")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory.textContent).toMatch(
+      /Latest non-CNC offer export provider read model is blocked after \d+ snapshots?; artifact outcomes remain withheld from commit inputs\./,
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("Local snapshots")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
+      "Resolve provider read-model blockers before committing artifact outcomes.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
+      "Provider read-model history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("Non-CNC offer export provider read-model history")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3354,6 +3380,17 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportPackageProviderReadModel).toHaveTextContent(
       "Non-CNC offer export package provider result is blocked; artifact outcomes are withheld.",
+    )
+    const promotedQuoteOfferExportPackageProviderReadModelHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export provider read-model history",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveAttribute("data-status", "empty")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent("No provider read-model history")
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
+      "No non-CNC offer export package provider read-model snapshots have been recorded yet.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderReadModelHistory).toHaveTextContent(
+      "Record a local/mock provider read model before enabling live export adapters.",
     )
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
