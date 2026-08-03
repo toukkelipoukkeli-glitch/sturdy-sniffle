@@ -176,6 +176,9 @@ function normalizeSnapshot(
 ): NonCncPromotedQuoteOfferExportLiveAdapterDecisionHistorySnapshot {
   const recordsByFingerprint = new Map<string, NonCncPromotedQuoteOfferExportLiveAdapterDecisionRecord>()
   for (const record of snapshot?.records ?? []) {
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+      throw new Error("records[] entries must be non-null objects")
+    }
     const normalized = normalizeRecord(record)
     const existing = recordsByFingerprint.get(normalized.decisionFingerprint)
     if (!existing || sortNewestFirst(normalized, existing) < 0) {
@@ -568,7 +571,7 @@ function stableJson(value: unknown): string {
   if (value && typeof value === "object") {
     return `{${Object.entries(value)
       .filter(([, entryValue]) => entryValue !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => compareLex(left, right))
       .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableJson(entryValue)}`)
       .join(",")}}`
   }

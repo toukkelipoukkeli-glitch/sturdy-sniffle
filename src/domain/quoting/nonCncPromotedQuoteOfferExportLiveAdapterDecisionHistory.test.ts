@@ -139,6 +139,7 @@ describe("non-CNC promoted quote offer export live-adapter decision history", ()
       recordedAt: "2026-08-03T13:20:00.000Z",
       reviewWarnings: [...older.reviewWarnings, "Supervisor requested staged rollout."],
     }
+    // Seeded history records preserve their stored fingerprint while review metadata can be corrected later.
 
     const snapshot = createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
       initialSnapshot: {
@@ -253,57 +254,164 @@ describe("non-CNC promoted quote offer export live-adapter decision history", ()
       decideNonCncPromotedQuoteOfferExportLiveAdapter({ readiness: readyReadiness }),
       { actor, recordedAt: "2026-08-03T13:05:00.000Z" },
     )
+    const blockedRecord = buildLiveAdapterDecisionRecord(
+      decideNonCncPromotedQuoteOfferExportLiveAdapter({ readiness: blockedReadiness }),
+      { actor, recordedAt: "2026-08-03T13:00:00.000Z" },
+    )
 
-    expect(() =>
-      createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
-        initialSnapshot: {
-          records: [
-            {
-              ...readyRecord,
-              blockerLabels: ["Impossible ready blocker."],
-            },
-          ],
+    const malformedSeedCases: Array<{
+      expectedError: string
+      record: unknown
+    }> = [
+      {
+        expectedError: "records[] entries must be non-null objects",
+        record: null,
+      },
+      {
+        expectedError: "records[] entries must be non-null objects",
+        record: "not-a-record",
+      },
+      {
+        expectedError: "ready live-adapter decision records cannot include blockers",
+        record: {
+          ...readyRecord,
+          blockerLabels: ["Impossible ready blocker."],
         },
-      }),
-    ).toThrow("ready live-adapter decision records cannot include blockers")
+      },
+      {
+        expectedError: "ready live-adapter decision records must include latest execution evidence",
+        record: {
+          ...readyRecord,
+          latestExecutionFingerprint: undefined,
+        },
+      },
+      {
+        expectedError: "blocked or fallback live-adapter decision records must keep review-only mode",
+        record: {
+          ...blockedRecord,
+          mode: "live_adapter",
+        },
+      },
+      {
+        expectedError: "blocked or fallback live-adapter decision records must keep review-only mode",
+        record: {
+          ...fallbackRecord,
+          adapterAction: "enable_live_adapter",
+        },
+      },
+      {
+        expectedError: "blocked live-adapter decision records cannot use live adapters",
+        record: {
+          ...blockedRecord,
+          canUseLiveAdapter: true,
+        },
+      },
+      {
+        expectedError: "blocked or fallback live-adapter decision records must include blocker labels",
+        record: {
+          ...blockedRecord,
+          blockerLabels: [],
+        },
+      },
+      {
+        expectedError: "blocked or fallback live-adapter decision records must include blocker labels",
+        record: {
+          ...fallbackRecord,
+          blockerLabels: [],
+        },
+      },
+      {
+        expectedError: "fallback live-adapter decision records must have ready evidence and disabled opt-in",
+        record: {
+          ...fallbackRecord,
+          enabled: true,
+        },
+      },
+      {
+        expectedError: "historyVersion is not a supported non-CNC offer export live-adapter decision history version",
+        record: {
+          ...readyRecord,
+          historyVersion: "unsupported",
+        },
+      },
+      {
+        expectedError: "status is not a supported non-CNC offer export live-adapter decision status",
+        record: {
+          ...readyRecord,
+          status: "unsupported",
+        },
+      },
+      {
+        expectedError: "mode is not a supported non-CNC offer export live-adapter decision mode",
+        record: {
+          ...readyRecord,
+          mode: "unsupported",
+        },
+      },
+      {
+        expectedError: "adapterAction is not a supported non-CNC offer export live-adapter decision action",
+        record: {
+          ...readyRecord,
+          adapterAction: "unsupported",
+        },
+      },
+      {
+        expectedError: "enabled must be a boolean",
+        record: {
+          ...readyRecord,
+          enabled: "yes",
+        },
+      },
+      {
+        expectedError: "canUseLiveAdapter must be a boolean",
+        record: {
+          ...readyRecord,
+          canUseLiveAdapter: "yes",
+        },
+      },
+      {
+        expectedError: "recordedAt must be a valid ISO timestamp",
+        record: {
+          ...fallbackRecord,
+          recordedAt: "not-a-date",
+        },
+      },
+      {
+        expectedError: "blockerLabels must be an array",
+        record: {
+          ...fallbackRecord,
+          blockerLabels: "not-an-array",
+        },
+      },
+      {
+        expectedError: "reviewWarnings[0] must be a string",
+        record: {
+          ...fallbackRecord,
+          reviewWarnings: [1],
+        },
+      },
+    ]
 
-    expect(() =>
-      createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
-        initialSnapshot: {
-          records: [
-            {
-              ...readyRecord,
-              latestExecutionFingerprint: undefined,
-            },
-          ],
-        },
-      }),
-    ).toThrow("ready live-adapter decision records must include latest execution evidence")
+    for (const { expectedError, record } of malformedSeedCases) {
+      expect(() =>
+        createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
+          initialSnapshot: {
+            records: [record as never],
+          },
+        }),
+      ).toThrow(expectedError)
+    }
+  })
 
-    expect(() =>
-      createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
-        initialSnapshot: {
-          records: [
-            {
-              ...fallbackRecord,
-              enabled: true,
-            },
-          ],
-        },
-      }),
-    ).toThrow("fallback live-adapter decision records must have ready evidence and disabled opt-in")
+  it("rejects invalid live-adapter decision history summary limits", () => {
+    const snapshot = createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory().snapshot()
 
-    expect(() =>
-      createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory({
-        initialSnapshot: {
-          records: [
-            {
-              ...fallbackRecord,
-              blockerLabels: "not-an-array",
-            } as never,
-          ],
-        },
-      }),
-    ).toThrow("blockerLabels must be an array")
+    for (const recentDecisionLimit of [0, -1, 1.5]) {
+      expect(() =>
+        buildNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistorySummary(snapshot, {
+          recentDecisionLimit,
+        }),
+      ).toThrow("recentDecisionLimit must be a positive safe integer")
+    }
   })
 })
