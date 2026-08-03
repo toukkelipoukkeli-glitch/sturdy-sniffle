@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-02 Europe/Helsinki.
+Last refreshed: 2026-08-03 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `ae015da` (`Refresh export provider commit handoff (#549)`).
+- Main branch checkpoint: `c8f513e` (`Add export provider commit persistence (#550)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-persistence` adds deterministic local persistence snapshots for non-CNC customer-offer export package provider commit runs without live customer-offer, file, release-review, export, or connector writes.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-history-overseer` adds deterministic provider commit history summaries for locally persisted non-CNC customer-offer export package provider commit runs without live customer-offer, file, release-review, export, or connector writes.
 - Latest merged sequence:
+  - `#550` adds deterministic local provider-commit persistence snapshots for ready non-CNC customer-offer export package provider commit runs while blocked/malformed commit state is rejected before live adapters.
   - `#549` refreshes the autonomous handoff after the non-CNC export provider commit UI slice.
   - `#548` surfaces the deterministic provider read-model commit boundary in the guarded registry preview with blocked/ready commit status, provider evidence, withheld release targets, blockers/warnings, and execution-audit fingerprint copy while live adapters remain deferred.
   - `#547` surfaces local non-CNC customer-offer export package provider read-model history in the guarded registry preview with snapshot totals, latest evidence, action items, and export text while live adapters remain deferred.
