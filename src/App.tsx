@@ -326,6 +326,7 @@ import {
   type NonCncPromotedQuoteOfferExportPackageProviderCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
 import { buildNonCncPromotedQuoteOfferExportPackageProviderCommitReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
+import { decideNonCncPromotedQuoteOfferExportLiveAdapter } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterDecision"
 import {
   createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence,
   type NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot,
@@ -7799,6 +7800,13 @@ export function ProcessQuotePreviewCard({
       resolvedPromotionOfferExportPackageProviderCommitSnapshot,
     ],
   )
+  const promotionOfferExportLiveAdapterDecision = useMemo(
+    () =>
+      decideNonCncPromotedQuoteOfferExportLiveAdapter({
+        readiness: promotionOfferExportPackageProviderCommitReadiness,
+      }),
+    [promotionOfferExportPackageProviderCommitReadiness],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -10048,6 +10056,79 @@ export function ProcessQuotePreviewCard({
         <small className="process-demo-promotion-release-readiness-status">
           Target RFQ: {promotionOfferExportPackageProviderCommitReadiness.targetRfqId}; requested by{" "}
           {promotionOfferExportPackageProviderCommitReadiness.requestedBy}
+        </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-decision"
+        aria-label="Non-CNC promoted quote customer export live adapter decision"
+        data-status={promotionOfferExportLiveAdapterDecision.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterDecision.status)}</strong>
+          </div>
+          <small>{humanizeKey(promotionOfferExportLiveAdapterDecision.mode)}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterDecision.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Adapter mode</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterDecision.mode)}</strong>
+            <small>{humanizeKey(promotionOfferExportLiveAdapterDecision.adapterAction)}</small>
+          </div>
+          <div>
+            <span>Provider-write opt-in</span>
+            <strong>{promotionOfferExportLiveAdapterDecision.enabled ? "Enabled" : "Disabled"}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterDecision.canUseLiveAdapter
+                ? "Ready evidence available"
+                : "Readiness blocked"}
+            </small>
+          </div>
+          <div>
+            <span>Latest evidence</span>
+            <strong>{promotionOfferExportLiveAdapterDecision.latestExecutionFingerprint ?? "Review-only fallback"}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterDecision.latestReleaseExecutionFingerprint ?? "Live adapter target withheld"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportLiveAdapterDecision.adapterBoundary}</small>
+        </div>
+        {promotionOfferExportLiveAdapterDecision.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportLiveAdapterDecision.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterDecision.nextActionLabels.map((action) => (
+            <li data-status={promotionOfferExportLiveAdapterDecision.status === "ready" ? "success" : "blocked"} key={action}>
+              <strong>{action}</strong>
+            </li>
+          ))}
+        </ul>
+        {promotionOfferExportLiveAdapterDecision.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote customer export live adapter warnings"
+          >
+            {promotionOfferExportLiveAdapterDecision.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <small className="process-demo-promotion-release-readiness-status">
+          Target RFQ: {promotionOfferExportLiveAdapterDecision.targetRfqId}; live writes remain{" "}
+          {promotionOfferExportLiveAdapterDecision.adapterAction === "enable_live_adapter" ? "guarded" : "disabled"}.
         </small>
       </div>
       <div

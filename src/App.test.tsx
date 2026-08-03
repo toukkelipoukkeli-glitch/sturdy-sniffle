@@ -972,6 +972,25 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderCommitReadiness).toHaveTextContent(
       "Provider commit readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, or connector writes.",
     )
+    const promotedQuoteOfferExportLiveAdapterDecision = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter decision",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Offer export live adapter")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("review only")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Provider-write opt-in")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Disabled")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Review-only fallback")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Live adapter target withheld")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
+      "Live non-CNC customer-offer export adapter is blocked by No persisted non-CNC offer export provider commit records are available.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
+      "Keep local/mock export provider output as the authoritative operator review surface.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
+      "Live non-CNC customer-offer export adapters remain disabled unless final readiness evidence is ready and the explicit provider-write opt-in is enabled.",
+    )
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3491,6 +3510,17 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderCommitReadiness).toHaveTextContent("Withheld until ready")
     expect(promotedQuoteOfferExportPackageProviderCommitReadiness).toHaveTextContent(
       "No persisted non-CNC offer export provider commit records are available.",
+    )
+    const promotedQuoteOfferExportLiveAdapterDecision = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter decision",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Offer export live adapter")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Readiness blocked")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("keep review only")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent("Review-only fallback")
+    expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
+      "Persist ready provider commit evidence before enabling live customer-offer export writes.",
     )
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
