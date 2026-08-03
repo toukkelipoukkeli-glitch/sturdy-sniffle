@@ -211,6 +211,36 @@ async function assertOfferExportPackageProviderFinalReadiness(nonCncDemos: Locat
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterDecision(nonCncDemos: Locator, page: Page) {
+  const liveAdapterDecision = nonCncDemos.getByLabel("Non-CNC promoted quote customer export live adapter decision", {
+    exact: true,
+  })
+
+  await expect(liveAdapterDecision).toBeVisible()
+  await expect(liveAdapterDecision).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterDecision).toContainText("Offer export live adapter")
+  await expect(liveAdapterDecision).toContainText("review only")
+  await expect(liveAdapterDecision).toContainText("Provider-write opt-in")
+  await expect(liveAdapterDecision).toContainText("Disabled")
+  await expect(liveAdapterDecision).toContainText("Readiness blocked")
+  await expect(liveAdapterDecision).toContainText("Review-only fallback")
+  await expect(liveAdapterDecision).toContainText("Live adapter target withheld")
+  await expect(liveAdapterDecision).toContainText(
+    "Live non-CNC customer-offer export adapter is blocked by No persisted non-CNC offer export provider commit records are available.",
+  )
+  await expect(liveAdapterDecision).toContainText(
+    "Keep local/mock export provider output as the authoritative operator review surface.",
+  )
+  await expect(liveAdapterDecision).toContainText(
+    "Persist ready provider commit evidence before enabling live customer-offer export writes.",
+  )
+  await expect(liveAdapterDecision).toContainText(
+    "Live non-CNC customer-offer export adapters remain disabled unless final readiness evidence is ready and the explicit provider-write opt-in is enabled.",
+  )
+  await expect(liveAdapterDecision).toContainText("live writes remain disabled")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -249,6 +279,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageProviderCommitHistory(nonCncDemos, page)
       await assertOfferExportPackageProviderFinalReadiness(nonCncDemos, page)
+      await assertOfferExportLiveAdapterDecision(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
