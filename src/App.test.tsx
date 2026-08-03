@@ -64,6 +64,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./doma
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommit"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -991,6 +992,43 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
       "Live non-CNC customer-offer export adapters remain disabled unless final readiness evidence is ready and the explicit provider-write opt-in is enabled.",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter decision history"),
+      ).toHaveTextContent("Live-adapter decision blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterDecisionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter decision history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Offer export live adapter decision history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Latest non-CNC offer export live-adapter decision is blocked by 1 blocker; live writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("1 decision")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("1 blocker")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("2 next actions")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Keep local/mock export provider fallback authoritative while live writes are blocked.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Resolve 1 decision blocker before enabling live provider writes.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Live-adapter decision history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Target RFQs: registry-demo")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Release executions: None")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Non-CNC offer export live adapter decision history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Status: blocked")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Records: 1")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3522,6 +3560,25 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterDecision).toHaveTextContent(
       "Persist ready provider commit evidence before enabling live customer-offer export writes.",
     )
+    const promotedQuoteOfferExportLiveAdapterDecisionHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter decision history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveAttribute("data-status", "empty")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "Offer export live adapter decision history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("No live-adapter decision history")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent(
+      "No non-CNC offer export live-adapter decisions have been recorded yet.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("0 decisions")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("0 blockers")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Status: empty")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Target RFQs: None")
+    expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Record a reviewed live-adapter decision")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )

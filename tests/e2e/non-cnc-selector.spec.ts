@@ -241,6 +241,28 @@ async function assertOfferExportLiveAdapterDecision(nonCncDemos: Locator, page: 
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterDecisionHistory(nonCncDemos: Locator, page: Page) {
+  const liveAdapterDecisionHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter decision history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterDecisionHistory).toBeVisible()
+  await expect(liveAdapterDecisionHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterDecisionHistory).toContainText("Offer export live adapter decision history")
+  await expect(liveAdapterDecisionHistory).toContainText("Live-adapter decision blocked")
+  await expect(liveAdapterDecisionHistory).toContainText("1 decision")
+  await expect(liveAdapterDecisionHistory).toContainText("1 blocker")
+  await expect(liveAdapterDecisionHistory).toContainText("2 next actions")
+  await expect(liveAdapterDecisionHistory).toContainText("Target RFQs: registry-demo")
+  await expect(liveAdapterDecisionHistory).toContainText("Release executions: None")
+  await expect(liveAdapterDecisionHistory).toContainText(
+    "Live-adapter decision history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
+  )
+  await expect(liveAdapterDecisionHistory).toContainText("Non-CNC offer export live adapter decision history")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -280,6 +302,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportPackageProviderCommitHistory(nonCncDemos, page)
       await assertOfferExportPackageProviderFinalReadiness(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecision(nonCncDemos, page)
+      await assertOfferExportLiveAdapterDecisionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
