@@ -40,7 +40,8 @@ export function buildNonCncPromotedQuoteOfferExportPackageProviderCommitHistoryS
 ): NonCncPromotedQuoteOfferExportPackageProviderCommitHistorySummary {
   const recentRunLimit = normalizeRecentRunLimit(options.recentRunLimit)
   const recentRuns = snapshot.records.slice(0, recentRunLimit).map(cloneRecord)
-  const latestRun = snapshot.latestRun ? cloneRecord(snapshot.latestRun) : undefined
+  const latestRecord = snapshot.latestRun ?? snapshot.records[0]
+  const latestRun = latestRecord ? cloneRecord(latestRecord) : undefined
   const status = latestRun ? "committed" : "empty"
   const summary: Omit<NonCncPromotedQuoteOfferExportPackageProviderCommitHistorySummary, "exportText"> = {
     actionItems: actionItems(status, snapshot.warningCount),

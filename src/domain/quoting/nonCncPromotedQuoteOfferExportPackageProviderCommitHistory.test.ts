@@ -115,6 +115,28 @@ describe("non-CNC promoted quote offer export package provider commit history", 
     )
   })
 
+  it("derives latest committed run from newest records when snapshots omit latestRun", async () => {
+    const persistence = createLocalNonCncPromotedQuoteOfferExportPackageProviderCommitPersistence()
+    const run = await readyCommitRun("2026-08-02T09:15:00.000Z")
+    const snapshot = await persistence.recordCommitRun(run)
+
+    const summary = buildNonCncPromotedQuoteOfferExportPackageProviderCommitHistorySummary({
+      ...snapshot,
+      latestRun: undefined,
+    })
+
+    expect(summary).toMatchObject({
+      latestRun: expect.objectContaining({
+        executionFingerprint: run.executionRun?.executionFingerprint,
+      }),
+      severity: "success",
+      status: "committed",
+      totalRuns: 1,
+    })
+    expect(summary.latestRun).not.toBe(snapshot.records[0])
+    expect(summary.exportText).toContain(`Latest commit: 2026-08-02T09:15:00.000Z | succeeded | applied | ready_to_commit | ${run.executionRun?.executionFingerprint}`)
+  })
+
   it("returns cloned commit history records and collections", async () => {
     const persistence = createLocalNonCncPromotedQuoteOfferExportPackageProviderCommitPersistence()
     await persistence.recordCommitRun(await readyCommitRun("2026-08-02T09:15:00.000Z"))
