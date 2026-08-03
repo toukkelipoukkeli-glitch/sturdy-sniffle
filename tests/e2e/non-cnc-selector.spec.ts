@@ -165,6 +165,27 @@ async function assertOfferExportPackageExecutionHistory(nonCncDemos: Locator, pa
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportPackageProviderCommitHistory(nonCncDemos: Locator, page: Page) {
+  const providerCommitHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export provider commit history",
+    { exact: true },
+  )
+
+  await expect(providerCommitHistory).toBeVisible()
+  await expect(providerCommitHistory).toHaveAttribute("data-status", "empty")
+  await expect(providerCommitHistory).toContainText("Offer export provider commit history")
+  await expect(providerCommitHistory).toContainText("No provider commit history")
+  await expect(providerCommitHistory).toContainText("0 runs")
+  await expect(providerCommitHistory).toContainText("0 artifact outcomes")
+  await expect(providerCommitHistory).toContainText("Persist a ready provider commit run before wiring live customer-offer export adapters.")
+  await expect(providerCommitHistory).toContainText(
+    "Provider commit history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
+  )
+  await expect(providerCommitHistory).toContainText("Status: empty")
+  await expect(providerCommitHistory).toContainText("Recent commits:")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -201,6 +222,7 @@ for (const viewport of operatorViewports) {
       await assertOfferCreationHistory(nonCncDemos, page)
       await assertOfferCreationOutcomeCommitHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
+      await assertOfferExportPackageProviderCommitHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
