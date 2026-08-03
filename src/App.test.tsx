@@ -62,6 +62,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_CREATION_OUTCOME_COMMIT_READ_MODEL_VERSION
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackagePlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommit"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -923,6 +924,33 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent(
       "Provider outcome commit plans are deterministic audit inputs only; active RFQ quote, offer, release, export, and connector state stay unchanged until a later adapter applies them.",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote customer export provider commit history"),
+      ).toHaveTextContent("No provider commit history")
+    })
+    const promotedQuoteOfferExportPackageProviderCommitHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export provider commit history",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveAttribute("data-status", "empty")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Offer export provider commit history")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      "No non-CNC offer export provider commit runs have been recorded yet.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("0 runs")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("0 artifact outcomes")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      "Persist a ready provider commit run before wiring live customer-offer export adapters.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      "Provider commit history is deterministic review data only; active RFQ quote, customer offer, file, release-review, export, and connector state stay unchanged.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Executions: None")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Status: empty")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Recent commits: - none")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3418,6 +3446,19 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("Offer export provider commit")
     expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("0 artifact outcomes")
     expect(promotedQuoteOfferExportPackageProviderCommitPlan).toHaveTextContent("No execution audit emitted")
+    const promotedQuoteOfferExportPackageProviderCommitHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export provider commit history",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveAttribute("data-status", "empty")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("No provider commit history")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      "No non-CNC offer export provider commit runs have been recorded yet.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent(
+      "Persist a ready provider commit run before wiring live customer-offer export adapters.",
+    )
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Executions: None")
+    expect(promotedQuoteOfferExportPackageProviderCommitHistory).toHaveTextContent("Status: empty")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )
