@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `b7ba5e1` (`Surface non-CNC export live adapter decision (#560)`).
+- Main branch checkpoint: `98538f0` (`Refresh export live adapter UI handoff (#561)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/non-cnc-export-live-adapter-decision-history` (add deterministic local decision-history snapshots/summaries for the guarded non-CNC export live-adapter opt-in boundary; live writes remain disabled).
 - Latest merged sequence:
+  - `#561` refreshes the autonomous handoff after the non-CNC export live-adapter decision UI slice.
   - `#560` surfaces the guarded non-CNC customer-offer export live-adapter decision in the registry preview with review-only fallback, blockers, next actions, and desktop/mobile smoke coverage while live customer-offer, file, release-review, export, and connector writes remain disabled by default.
   - `#559` refreshes the autonomous handoff after the non-CNC export live-adapter decision boundary slice.
   - `#558` adds a guarded non-CNC customer-offer export live-adapter opt-in decision that consumes final readiness evidence while keeping review-only local/mock fallback active by default and live customer-offer, file, release-review, export, and connector writes disabled.
