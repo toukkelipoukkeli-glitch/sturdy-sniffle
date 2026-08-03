@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `642117d` (`Add export provider commit history (#551)`).
+- Main branch checkpoint: `ef1ecb0` (`Surface export provider commit history (#552)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-export-provider-commit-history-ui` surfaces deterministic provider commit history summaries in the guarded non-CNC registry preview without live customer-offer, file, release-review, export, or connector writes.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#552` surfaces deterministic provider commit history summaries in the guarded non-CNC registry preview with local persistence wiring, empty-state/operator copy, export text, and desktop/mobile Playwright coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#551` adds deterministic provider commit history summaries for locally persisted non-CNC customer-offer export package provider commit runs without live customer-offer, file, release-review, export, or connector writes.
   - `#550` adds deterministic local provider-commit persistence snapshots for ready non-CNC customer-offer export package provider commit runs while blocked/malformed commit state is rejected before live adapters.
   - `#549` refreshes the autonomous handoff after the non-CNC export provider commit UI slice.
