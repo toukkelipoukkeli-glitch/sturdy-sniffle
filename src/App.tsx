@@ -325,6 +325,7 @@ import {
   createLocalNonCncPromotedQuoteOfferExportPackageProviderCommitPersistence,
   type NonCncPromotedQuoteOfferExportPackageProviderCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
+import { buildNonCncPromotedQuoteOfferExportPackageProviderCommitReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
 import {
   createLocalNonCncPromotedQuoteOfferExportPackageExecutionPersistence,
   type NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot,
@@ -7783,6 +7784,21 @@ export function ProcessQuotePreviewCard({
       ),
     [resolvedPromotionOfferExportPackageProviderCommitSnapshot],
   )
+  const promotionOfferExportPackageProviderCommitReadiness = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportPackageProviderCommitReadiness({
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+        snapshot: resolvedPromotionOfferExportPackageProviderCommitSnapshot,
+        targetRfqId: promotionPlan.targetRfqId,
+      }),
+    [
+      promotionPlan.requestedAt,
+      promotionPlan.requestedBy,
+      promotionPlan.targetRfqId,
+      resolvedPromotionOfferExportPackageProviderCommitSnapshot,
+    ],
+  )
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -9966,6 +9982,73 @@ export function ProcessQuotePreviewCard({
         <pre className="process-demo-promotion-release-readiness-export">
           {promotionOfferExportPackageProviderCommitHistory.exportText}
         </pre>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-provider-commit-readiness"
+        aria-label="Non-CNC promoted quote customer export provider final readiness"
+        data-status={promotionOfferExportPackageProviderCommitReadiness.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export provider final readiness</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderCommitReadiness.status)}</strong>
+          </div>
+          <small>{promotionOfferExportPackageProviderCommitReadiness.readinessVersion}</small>
+        </div>
+        <p>{promotionOfferExportPackageProviderCommitReadiness.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Persisted evidence</span>
+            <strong>{formatCount(promotionOfferExportPackageProviderCommitReadiness.persistedRecordCount, "record")}</strong>
+            <small>
+              {formatCount(promotionOfferExportPackageProviderCommitReadiness.artifactOutcomeCount, "artifact outcome")}
+            </small>
+          </div>
+          <div>
+            <span>Latest commit</span>
+            <strong>{humanizeKey(promotionOfferExportPackageProviderCommitReadiness.latestStatus ?? "none")}</strong>
+            <small>
+              {promotionOfferExportPackageProviderCommitReadiness.latestExecutionFingerprint ??
+                "Provider commit execution withheld"}
+            </small>
+          </div>
+          <div>
+            <span>Live adapter target</span>
+            <strong>
+              {promotionOfferExportPackageProviderCommitReadiness.latestReleaseExecutionFingerprint ?? "Withheld until ready"}
+            </strong>
+            <small>{promotionOfferExportPackageProviderCommitReadiness.latestSourceExecutionFingerprint ?? "Source withheld"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportPackageProviderCommitReadiness.providerCommitBoundary}</small>
+        </div>
+        {promotionOfferExportPackageProviderCommitReadiness.blockerLabels.length > 0 ? (
+          <ul className="process-demo-promotion-release-readiness-list">
+            {promotionOfferExportPackageProviderCommitReadiness.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {promotionOfferExportPackageProviderCommitReadiness.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote customer export provider final readiness warnings"
+          >
+            {promotionOfferExportPackageProviderCommitReadiness.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <small className="process-demo-promotion-release-readiness-status">
+          Target RFQ: {promotionOfferExportPackageProviderCommitReadiness.targetRfqId}; requested by{" "}
+          {promotionOfferExportPackageProviderCommitReadiness.requestedBy}
+        </small>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-execution-history"
