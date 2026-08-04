@@ -106,8 +106,49 @@ describe("non-CNC promoted quote offer export live-adapter execution audits", ()
     ])
   })
 
-  it("summarizes partial and pending commit outcomes by command", async () => {
+  it("summarizes pending failed and partial commit outcomes by command", async () => {
     const plan = await readyPlan()
+
+    const pendingRun = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionRun({
+      actor,
+      executedAt,
+      mode: "commit",
+      plan,
+    })
+
+    expect(pendingRun.status).toBe("pending")
+    expect(pendingRun.commands.every((command) => command.status === "pending")).toBe(true)
+    expect(pendingRun.nextActions).toEqual(["Record live-adapter outcomes for 5 commands."])
+
+    const failedRun = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionRun({
+      actor,
+      commandOutcomes: plan.commands.map((command) => ({
+        key: command.key,
+        message: `${command.label} adapter failed`,
+        status: "failed",
+      })),
+      executedAt,
+      mode: "commit",
+      plan,
+    })
+
+    expect(failedRun.status).toBe("failed")
+    expect(failedRun.commands.every((command) => command.status === "failed")).toBe(true)
+    expect(failedRun.nextActions).toEqual([
+      "Resolve failed live-adapter command: Customer-offer export write.",
+      "Resolve failed live-adapter command: Customer offer file exports.",
+      "Resolve failed live-adapter command: Release-review packet write.",
+      "Resolve failed live-adapter command: Connector reference sync.",
+      "Resolve failed live-adapter command: Fallback rollback diagnostics.",
+    ])
+    expect(failedRun.warnings).toEqual([
+      "Latest provider commit record has 1 warning(s).",
+      "Customer-offer export write failed: Customer-offer export write adapter failed",
+      "Customer offer file exports failed: Customer offer file exports adapter failed",
+      "Release-review packet write failed: Release-review packet write adapter failed",
+      "Connector reference sync failed: Connector reference sync adapter failed",
+      "Fallback rollback diagnostics failed: Fallback rollback diagnostics adapter failed",
+    ])
 
     const run = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionRun({
       actor,
