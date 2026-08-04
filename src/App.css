@@ -2806,6 +2806,7 @@
   .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-grid,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-list,
+  .process-demo-promotion-offer-export-live-adapter-decision-history .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-warnings {
     grid-template-columns: 1fr;
   }
