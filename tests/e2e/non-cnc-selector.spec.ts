@@ -263,6 +263,40 @@ async function assertOfferExportLiveAdapterDecisionHistory(nonCncDemos: Locator,
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterExecutionPlan(nonCncDemos: Locator, page: Page) {
+  const liveAdapterExecutionPlan = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter execution plan",
+    { exact: true },
+  )
+
+  await expect(liveAdapterExecutionPlan).toBeVisible()
+  await expect(liveAdapterExecutionPlan).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterExecutionPlan).toContainText("Offer export live adapter execution plan")
+  await expect(liveAdapterExecutionPlan).toContainText("Live-adapter execution plan is blocked")
+  await expect(liveAdapterExecutionPlan).toContainText("5 commands")
+  await expect(liveAdapterExecutionPlan).toContainText("0 planned commands")
+  await expect(liveAdapterExecutionPlan).toContainText("0 withheld commands")
+  await expect(liveAdapterExecutionPlan).toContainText("5 blocked commands")
+  await expect(liveAdapterExecutionPlan).toContainText("Provider commit evidence withheld")
+  await expect(liveAdapterExecutionPlan).toContainText("Live adapter target withheld")
+  await expect(liveAdapterExecutionPlan).toContainText(
+    "Live-adapter execution plans are deterministic provider inputs only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+  )
+  await expect(liveAdapterExecutionPlan).toContainText("Customer-offer export write")
+  await expect(liveAdapterExecutionPlan).toContainText("blocked · customer offer")
+  await expect(liveAdapterExecutionPlan).toContainText("No live adapter idempotency key")
+  await expect(liveAdapterExecutionPlan).toContainText(
+    "No persisted non-CNC offer export provider commit records are available.",
+  )
+  await expect(liveAdapterExecutionPlan).toContainText(
+    "Do not run live customer-offer export adapters from this plan.",
+  )
+  await expect(liveAdapterExecutionPlan).toContainText("decision history 1 record")
+  await expect(liveAdapterExecutionPlan).toContainText("Non-CNC offer export live adapter execution plan")
+  await expect(liveAdapterExecutionPlan).toContainText("- customer_offer_write | blocked | customer_offer | withheld")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -303,6 +337,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportPackageProviderFinalReadiness(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecision(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecisionHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterExecutionPlan(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
