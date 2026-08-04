@@ -121,7 +121,7 @@ const commandDefinitions = [
     label: "Fallback rollback diagnostics",
     target: "diagnostics",
   },
-] as const satisfies Array<{
+] as const satisfies ReadonlyArray<{
   detail: string
   key: NonCncPromotedQuoteOfferExportLiveAdapterExecutionCommandKind
   label: string
@@ -249,12 +249,22 @@ function readyEvidenceBlockers(decision: NonCncPromotedQuoteOfferExportLiveAdapt
       : "Ready live-adapter execution requires enable-live-adapter action.",
     decision.enabled ? "" : "Ready live-adapter execution requires provider-write opt-in to be enabled.",
     decision.canUseLiveAdapter ? "" : "Ready live-adapter execution requires usable live-adapter readiness evidence.",
-    decision.latestExecutionFingerprint ? "" : "Ready live-adapter execution requires provider commit evidence.",
-    decision.latestPlanId ? "" : "Ready live-adapter execution requires provider export plan evidence.",
-    decision.latestPackageId ? "" : "Ready live-adapter execution requires package evidence.",
-    decision.latestReleaseExecutionFingerprint ? "" : "Ready live-adapter execution requires release execution evidence.",
-    decision.latestSourceExecutionFingerprint ? "" : "Ready live-adapter execution requires source execution evidence.",
+    hasNonBlankEvidence(decision.latestExecutionFingerprint)
+      ? ""
+      : "Ready live-adapter execution requires provider commit evidence.",
+    hasNonBlankEvidence(decision.latestPlanId) ? "" : "Ready live-adapter execution requires provider export plan evidence.",
+    hasNonBlankEvidence(decision.latestPackageId) ? "" : "Ready live-adapter execution requires package evidence.",
+    hasNonBlankEvidence(decision.latestReleaseExecutionFingerprint)
+      ? ""
+      : "Ready live-adapter execution requires release execution evidence.",
+    hasNonBlankEvidence(decision.latestSourceExecutionFingerprint)
+      ? ""
+      : "Ready live-adapter execution requires source execution evidence.",
   ])
+}
+
+function hasNonBlankEvidence(value: string | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0
 }
 
 function planStatus(
@@ -327,7 +337,7 @@ function readyEvidenceFingerprints(decision: NonCncPromotedQuoteOfferExportLiveA
       decision.latestExecutionFingerprint,
       decision.latestReleaseExecutionFingerprint,
       decision.latestSourceExecutionFingerprint,
-    ].filter((value): value is string => Boolean(value)),
+    ].filter(hasNonBlankEvidence),
   )
 }
 

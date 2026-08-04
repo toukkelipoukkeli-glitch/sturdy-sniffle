@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { decideNonCncPromotedQuoteOfferExportLiveAdapter } from "./nonCncPromotedQuoteOfferExportLiveAdapterDecision"
+import {
+  decideNonCncPromotedQuoteOfferExportLiveAdapter,
+  type NonCncPromotedQuoteOfferExportLiveAdapterDecision,
+} from "./nonCncPromotedQuoteOfferExportLiveAdapterDecision"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory,
 } from "./nonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory"
@@ -190,6 +193,10 @@ describe("non-CNC promoted quote offer export live-adapter execution plan", () =
       readiness: readyReadiness,
     })
     const history = createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory()
+    await history.recordDecision(readyDecision, {
+      actor,
+      recordedAt: "2026-08-04T06:39:00.000Z",
+    })
     const fallbackSnapshot = await history.recordDecision(fallbackDecision, {
       actor,
       recordedAt: "2026-08-04T06:40:00.000Z",
@@ -219,6 +226,66 @@ describe("non-CNC promoted quote offer export live-adapter execution plan", () =
       latestHistoryDecisionFingerprint: fallbackSnapshot.latestDecision?.decisionFingerprint,
       status: "blocked",
     })
+  })
+
+  it("blocks ready decisions whose execution evidence is whitespace-only even when history matches", async () => {
+    const readyDecision = decideNonCncPromotedQuoteOfferExportLiveAdapter({
+      enabled: true,
+      readiness: readyReadiness,
+    })
+    const whitespaceDecision = {
+      ...readyDecision,
+      latestExecutionFingerprint: " ",
+      latestPackageId: " ",
+      latestPlanId: " ",
+      latestReleaseExecutionFingerprint: " ",
+      latestSourceExecutionFingerprint: " ",
+    } satisfies NonCncPromotedQuoteOfferExportLiveAdapterDecision
+    const initialPlan = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan({
+      decision: whitespaceDecision,
+      requestedAt,
+      requestedBy: actor,
+    })
+    const history = createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory()
+    const readySnapshot = await history.recordDecision(readyDecision, {
+      actor,
+      recordedAt: "2026-08-04T06:40:00.000Z",
+    })
+    const matchingWhitespaceSnapshot = {
+      ...readySnapshot,
+      decisionFingerprints: [initialPlan.decisionFingerprint],
+      latestDecision: {
+        ...readySnapshot.latestDecision!,
+        decisionFingerprint: initialPlan.decisionFingerprint,
+      },
+      records: [
+        {
+          ...readySnapshot.records[0]!,
+          decisionFingerprint: initialPlan.decisionFingerprint,
+        },
+      ],
+    }
+
+    const plan = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan({
+      decision: whitespaceDecision,
+      decisionHistory: matchingWhitespaceSnapshot,
+      requestedAt,
+      requestedBy: actor,
+    })
+
+    expect(plan).toMatchObject({
+      blockedCommandCount: 5,
+      plannedCommandCount: 0,
+      status: "blocked",
+    })
+    expect(plan.blockerLabels).toEqual([
+      "Ready live-adapter execution requires provider commit evidence.",
+      "Ready live-adapter execution requires provider export plan evidence.",
+      "Ready live-adapter execution requires package evidence.",
+      "Ready live-adapter execution requires release execution evidence.",
+      "Ready live-adapter execution requires source execution evidence.",
+    ])
+    expect(plan.commands.every((command) => command.status === "blocked")).toBe(true)
   })
 
   it("normalizes request metadata and returns clone-safe command collections", async () => {
