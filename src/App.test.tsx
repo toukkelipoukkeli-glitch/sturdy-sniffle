@@ -65,6 +65,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION } f
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -1029,6 +1030,55 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Status: blocked")
     expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Records: 1")
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution plan"),
+      ).toHaveTextContent("decision history 1 record")
+    })
+    const promotedQuoteOfferExportLiveAdapterExecutionPlan = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter execution plan",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Offer export live adapter execution plan",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Live-adapter execution plan is blocked for registry-demo by 1 blocker; live customer-offer export writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("5 commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("0 planned commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("0 withheld commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("5 blocked commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("review only")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("keep review only")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Provider commit evidence withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Live adapter target withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Live-adapter execution plans are deterministic provider inputs only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Customer-offer export write")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("blocked · customer offer")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("No live adapter idempotency key")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "No persisted non-CNC offer export provider commit records are available.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Resolve 1 live-adapter execution blocker.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Do not run live customer-offer export adapters from this plan.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Decision history: non-cnc-promoted")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Non-CNC offer export live adapter execution plan",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Status: blocked")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "- customer_offer_write | blocked | customer_offer | withheld",
+    )
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export execution history"),
@@ -3579,6 +3629,34 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Status: empty")
     expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Target RFQs: None")
     expect(promotedQuoteOfferExportLiveAdapterDecisionHistory).toHaveTextContent("Record a reviewed live-adapter decision")
+    const promotedQuoteOfferExportLiveAdapterExecutionPlan = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter execution plan",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Offer export live adapter execution plan",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Live-adapter execution plan is blocked for rfq-demo-204 by 1 blocker; live customer-offer export writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("5 commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("5 blocked commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Provider commit evidence withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Live adapter target withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Customer-offer export write")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("No live adapter idempotency key")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "No persisted non-CNC offer export provider commit records are available.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
+      "Do not run live customer-offer export adapters from this plan.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Decision history: No recorded decision")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("decision history 0 records")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Status: blocked")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )

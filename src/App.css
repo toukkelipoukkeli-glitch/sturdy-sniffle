@@ -2638,6 +2638,12 @@
   border-left-color: oklch(0.55 0.12 75);
 }
 
+.process-demo-promotion-release-readiness[data-status="fallback"] {
+  background: oklch(0.985 0.026 75);
+  border-color: oklch(0.84 0.07 75);
+  border-left-color: oklch(0.55 0.12 75);
+}
+
 .process-demo-promotion-release-readiness[data-status="empty"] {
   background: oklch(0.985 0.004 245);
   border-color: oklch(0.88 0.016 245);
@@ -2807,6 +2813,8 @@
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-export-execution-history .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-export-live-adapter-decision-history .process-demo-promotion-release-readiness-list,
+  .process-demo-promotion-offer-export-live-adapter-execution-plan .process-demo-promotion-release-readiness-grid,
+  .process-demo-promotion-offer-export-live-adapter-execution-plan .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-warnings {
     grid-template-columns: 1fr;
   }
