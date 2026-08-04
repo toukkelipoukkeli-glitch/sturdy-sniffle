@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c55a7cb` (`Refresh live adapter decision history UI handoff (#565)`).
+- Main branch checkpoint: `40a29a5` (`Add live adapter execution plan boundary (#566)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-live-adapter-execution-plan-overseer` (deterministic non-CNC export live-adapter execution planning; no live writes).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#566` adds deterministic non-CNC export live-adapter execution plans that consume guarded decision/history evidence and emit review-only provider command plans for ready, fallback, and blocked paths without live customer-offer, file, release-review, export, or connector writes.
   - `#565` refreshes the autonomous handoff after the live-adapter decision-history UI slice and carries the relevant mobile list hardening for that guarded card.
   - `#564` surfaces the local non-CNC export live-adapter decision-history summary in the guarded registry preview with deterministic local recording, blocked/empty App coverage, desktop/mobile Playwright coverage, and live customer-offer, file, release-review, export, and connector writes still disabled.
   - `#563` refreshes the autonomous handoff after the non-CNC export live-adapter decision-history domain slice.
