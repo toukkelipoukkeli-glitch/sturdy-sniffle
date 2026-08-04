@@ -129,7 +129,7 @@ and produced 72 findings; 50 high/medium gaps were adversarially confirmed (0 ov
 | **C** | Manual RFQ creation (stateful queue + accessible New-RFQ dialog → deterministic quote) | §1, §2 | ✅ |
 | **C2** | Edit existing RFQ fields (customer/material/process/due/tolerance/notes) + provenance badges; drive readiness to blocked | §1, §2 | ✅ |
 | **D** | Costing edit depth (material/rate/margin) + loading/empty states + App component tests | §2, §10 | 🟡 |
-| **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote` | §3 | ☐ |
+| **E** | Multi-process quoting via registry: process selector, non-CNC demo items, route through `calculateQuote`; non-CNC export live-adapter execution planning is deterministic/review-only, with remaining live-provider UI/apply work still guarded | §3 | 🟡 |
 | **F** | CAD review: operator overrides + per-type thumbnails/previews | §4 | 🟡 |
 | **G** | Connector/calendar drill-downs + provider run history filters (supersedes PR #111) | §6, §7 | 🟡 |
 | **I** | Real operator identity + single injected clock | cross-cutting | ◐ |
