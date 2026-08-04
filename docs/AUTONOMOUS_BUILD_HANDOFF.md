@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e15fd14` (`Surface live adapter execution plan (#568)`).
+- Main branch checkpoint: `8f1be7c` (`Refresh live adapter execution UI handoff (#569)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/non-cnc-live-adapter-execution-audit` (domain-only live-adapter execution audit records; no live writes).
 - Latest merged sequence:
+  - `#569` refreshes the autonomous handoff after the live-adapter execution-plan UI slice and records `#568` as the latest product boundary on main.
   - `#568` surfaces the deterministic non-CNC export live-adapter execution plan in the guarded registry preview with blocked/fallback/ready command counts, history evidence, boundary copy, and desktop/mobile coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#567` refreshes the autonomous handoff after the live-adapter execution-plan domain slice and records `#566` as the latest product boundary on main.
   - `#566` adds deterministic non-CNC export live-adapter execution plans that consume guarded decision/history evidence and emit review-only provider command plans for ready, fallback, and blocked paths without live customer-offer, file, release-review, export, or connector writes.
