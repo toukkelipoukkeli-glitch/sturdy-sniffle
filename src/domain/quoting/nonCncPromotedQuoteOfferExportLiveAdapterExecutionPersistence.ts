@@ -1,6 +1,12 @@
 import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import {
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_ACTIONS,
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_STATUSES,
+} from "./nonCncPromotedQuoteOfferExportLiveAdapterDecision"
+import {
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_MODES,
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_STATUSES,
   NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_VERSION,
   type NonCncPromotedQuoteOfferExportLiveAdapterCommandExecutionStatus,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun,
@@ -294,11 +300,6 @@ function validateEvidenceGating(record: NonCncPromotedQuoteOfferExportLiveAdapte
     if (evidenceFields.some((value) => value !== undefined)) {
       throw new Error("blocked and withheld live-adapter execution records cannot include live evidence identifiers")
     }
-    return
-  }
-
-  if (evidenceFields.some((value) => value === undefined)) {
-    throw new Error("ready live-adapter execution records must include target and evidence identifiers")
   }
 }
 
@@ -455,7 +456,7 @@ function normalizePlanVersion(
 function normalizeMode(
   mode: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["mode"],
 ): NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["mode"] {
-  if (mode !== "commit" && mode !== "dry_run") {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_MODES.includes(mode)) {
     throw new Error("mode must be commit or dry_run")
   }
   return mode
@@ -464,15 +465,7 @@ function normalizeMode(
 function normalizeStatus(
   status: NonCncPromotedQuoteOfferExportLiveAdapterExecutionStatus,
 ): NonCncPromotedQuoteOfferExportLiveAdapterExecutionStatus {
-  if (
-    status !== "blocked" &&
-    status !== "failed" &&
-    status !== "partial" &&
-    status !== "pending" &&
-    status !== "prepared" &&
-    status !== "succeeded" &&
-    status !== "withheld"
-  ) {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_STATUSES.includes(status)) {
     throw new Error("status is not a supported non-CNC live-adapter execution status")
   }
   return status
@@ -481,7 +474,7 @@ function normalizeStatus(
 function normalizeDecisionStatus(
   status: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["decisionStatus"],
 ): NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["decisionStatus"] {
-  if (status !== "blocked" && status !== "fallback" && status !== "ready") {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_STATUSES.includes(status)) {
     throw new Error("decisionStatus is not a supported non-CNC live-adapter decision status")
   }
   return status
@@ -490,7 +483,7 @@ function normalizeDecisionStatus(
 function normalizeAdapterAction(
   action: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["adapterAction"],
 ): NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun["adapterAction"] {
-  if (action !== "enable_live_adapter" && action !== "keep_review_only") {
+  if (!NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_ACTIONS.includes(action)) {
     throw new Error("adapterAction is not a supported non-CNC live-adapter action")
   }
   return action

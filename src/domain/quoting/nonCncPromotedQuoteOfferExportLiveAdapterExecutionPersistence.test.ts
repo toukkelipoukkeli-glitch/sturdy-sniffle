@@ -201,6 +201,35 @@ describe("non-CNC promoted quote offer export live-adapter execution persistence
     expect(clonedSnapshot.commandStatusCounts).toEqual({ prepared: 5 })
   })
 
+  it("records non-blocked live-adapter executions with incomplete evidence", async () => {
+    const run = await buildReadyDryRun()
+    const adapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence()
+    const seededRecord = (await adapter.recordRun(run)).records[0]
+    if (!seededRecord) {
+      throw new Error("Expected seeded live-adapter execution record")
+    }
+
+    const restoredAdapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+      initialSnapshot: {
+        records: [
+          {
+            ...seededRecord,
+            latestPackageId: undefined,
+            targetRfqId: undefined,
+          },
+        ],
+      },
+    })
+
+    const snapshot = restoredAdapter.snapshot()
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.records[0]?.latestPackageId).toBeUndefined()
+    expect(snapshot.records[0]?.targetRfqId).toBeUndefined()
+    expect(snapshot.latestPackageIds).toEqual([])
+    expect(snapshot.targetRfqIds).toEqual([])
+  })
+
   it("rejects invalid seeded live-adapter execution records", async () => {
     const adapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence()
     const run = await buildReadyDryRun()
@@ -240,10 +269,77 @@ describe("non-CNC promoted quote offer export live-adapter execution persistence
     expect(() =>
       createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
         initialSnapshot: {
-          records: [{ ...seededRecord, targetRfqId: undefined }],
+          records: [{ ...seededRecord, commandCount: 0, plannedCommandCount: 0, preparedCommandCount: 0 }],
         },
       }),
-    ).toThrow("ready live-adapter execution records must include target and evidence identifiers")
+    ).toThrow("commandCount must be greater than zero for live-adapter execution records")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              persistenceVersion: "unsupported-persistence-version" as typeof seededRecord.persistenceVersion,
+            },
+          ],
+        },
+      }),
+    ).toThrow("persistenceVersion is not a supported non-CNC live-adapter execution persistence version")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              executionVersion: "unsupported-execution-version" as typeof seededRecord.executionVersion,
+            },
+          ],
+        },
+      }),
+    ).toThrow("executionVersion is not a supported non-CNC live-adapter execution version")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              planVersion: "unsupported-plan-version" as typeof seededRecord.planVersion,
+            },
+          ],
+        },
+      }),
+    ).toThrow("planVersion is not a supported non-CNC live-adapter execution plan version")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, warningCount: -1 }],
+        },
+      }),
+    ).toThrow("warningCount must be a non-negative safe integer")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [{ ...seededRecord, pendingActionCount: 1.5 }],
+        },
+      }),
+    ).toThrow("pendingActionCount must be a non-negative safe integer")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              mode: "commit",
+              pendingCommandCount: 5,
+              preparedCommandCount: 0,
+              status: "partial",
+            },
+          ],
+        },
+      }),
+    ).toThrow(
+      "partial live-adapter execution records must be commit records with a mixed succeeded failed or pending command state",
+    )
     expect(() =>
       createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence({
         initialSnapshot: {
