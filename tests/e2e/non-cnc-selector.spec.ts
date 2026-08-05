@@ -297,6 +297,32 @@ async function assertOfferExportLiveAdapterExecutionPlan(nonCncDemos: Locator, p
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
+  const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter execution history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterExecutionHistory).toBeVisible()
+  await expect(liveAdapterExecutionHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterExecutionHistory).toContainText("Offer export live adapter execution history")
+  await expect(liveAdapterExecutionHistory).toContainText("Live-adapter execution history blocked")
+  await expect(liveAdapterExecutionHistory).toContainText("Latest non-CNC live-adapter execution is blocked")
+  await expect(liveAdapterExecutionHistory).toContainText(
+    "live customer-offer, file, release-review, export, and connector writes remain disabled.",
+  )
+  await expect(liveAdapterExecutionHistory).toContainText("Command outcomes")
+  await expect(liveAdapterExecutionHistory).toContainText("Prepared 0, pending 0, blocked 10, withheld 0")
+  await expect(liveAdapterExecutionHistory).toContainText(
+    "Resolve live-adapter execution blockers before recording another execution.",
+  )
+  await expect(liveAdapterExecutionHistory).toContainText("Release executions: None")
+  await expect(liveAdapterExecutionHistory).toContainText("Source executions: None")
+  await expect(liveAdapterExecutionHistory).toContainText("Non-CNC offer export live adapter execution history")
+  await expect(liveAdapterExecutionHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 for (const viewport of operatorViewports) {
   test.describe(`guarded non-CNC process previews on ${viewport.label}`, () => {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
@@ -332,12 +358,13 @@ for (const viewport of operatorViewports) {
       await assertOfferWiringReadiness(nonCncDemos, page)
       await assertOfferCreationHistory(nonCncDemos, page)
       await assertOfferCreationOutcomeCommitHistory(nonCncDemos, page)
-      await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageProviderCommitHistory(nonCncDemos, page)
       await assertOfferExportPackageProviderFinalReadiness(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecision(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecisionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionPlan(nonCncDemos, page)
+      await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
+      await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
       await assertNoHorizontalOverflow(page)
     })
