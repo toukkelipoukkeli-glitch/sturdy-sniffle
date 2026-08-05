@@ -12,22 +12,34 @@ import type {
 export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_VERSION =
   "non-cnc-promoted-quote-offer-export-live-adapter-execution.v1"
 
-export type NonCncPromotedQuoteOfferExportLiveAdapterExecutionMode = "commit" | "dry_run"
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_MODES = [
+  "commit",
+  "dry_run",
+] as const
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_STATUSES = [
+  "blocked",
+  "failed",
+  "partial",
+  "pending",
+  "prepared",
+  "succeeded",
+  "withheld",
+] as const
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_COMMAND_EXECUTION_STATUSES = [
+  "blocked",
+  "failed",
+  "pending",
+  "prepared",
+  "succeeded",
+  "withheld",
+] as const
+
+export type NonCncPromotedQuoteOfferExportLiveAdapterExecutionMode =
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_MODES)[number]
 export type NonCncPromotedQuoteOfferExportLiveAdapterExecutionStatus =
-  | "blocked"
-  | "failed"
-  | "partial"
-  | "pending"
-  | "prepared"
-  | "succeeded"
-  | "withheld"
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_STATUSES)[number]
 export type NonCncPromotedQuoteOfferExportLiveAdapterCommandExecutionStatus =
-  | "blocked"
-  | "failed"
-  | "pending"
-  | "prepared"
-  | "succeeded"
-  | "withheld"
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_COMMAND_EXECUTION_STATUSES)[number]
 
 export interface NonCncPromotedQuoteOfferExportLiveAdapterCommandOutcomeInput {
   key: string

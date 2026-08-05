@@ -1,7 +1,25 @@
 import type { NonCncPromotedQuoteOfferExportPackageProviderCommitReadiness } from "./nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
 
-export type NonCncPromotedQuoteOfferExportLiveAdapterDecisionStatus = "blocked" | "fallback" | "ready"
-export type NonCncPromotedQuoteOfferExportLiveAdapterDecisionMode = "review_only" | "live_adapter"
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_STATUSES = [
+  "blocked",
+  "fallback",
+  "ready",
+] as const
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_MODES = [
+  "review_only",
+  "live_adapter",
+] as const
+export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_ACTIONS = [
+  "keep_review_only",
+  "enable_live_adapter",
+] as const
+
+export type NonCncPromotedQuoteOfferExportLiveAdapterDecisionStatus =
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_STATUSES)[number]
+export type NonCncPromotedQuoteOfferExportLiveAdapterDecisionMode =
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_MODES)[number]
+export type NonCncPromotedQuoteOfferExportLiveAdapterAction =
+  (typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_ACTIONS)[number]
 
 export interface NonCncPromotedQuoteOfferExportLiveAdapterDecisionInput {
   enabled?: boolean
@@ -14,7 +32,7 @@ export interface NonCncPromotedQuoteOfferExportLiveAdapterDecision {
   mode: NonCncPromotedQuoteOfferExportLiveAdapterDecisionMode
   enabled: boolean
   canUseLiveAdapter: boolean
-  adapterAction: "keep_review_only" | "enable_live_adapter"
+  adapterAction: NonCncPromotedQuoteOfferExportLiveAdapterAction
   blockerLabels: string[]
   reviewWarnings: string[]
   nextActionLabels: string[]
