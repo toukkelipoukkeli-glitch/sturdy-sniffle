@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `44e1a8a` (`Refresh live adapter execution audit handoff (#572)`).
+- Main branch checkpoint: `553ad83` (`Surface live adapter execution history (#573)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-execution-audit-history-ui` (surface live-adapter execution audit persistence history in the guarded non-CNC registry preview; no live writes).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#573` surfaces the deterministic live-adapter execution history summary in the guarded non-CNC registry preview with one-run sequencing against persisted decision history, blocked command totals, evidence fingerprints, and no live customer-offer, file, release-review, export, or connector writes.
   - `#572` refreshes the autonomous handoff after the live-adapter execution audit persistence slice and clears the merged `#571` in-flight branch.
   - `#571` adds deterministic local persistence snapshots for non-CNC export live-adapter execution audit records, including command-status aggregates, deduped execution fingerprints, seeded-record validation, clone-safe snapshots, and blocked/withheld evidence gating while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#570` adds deterministic non-CNC export live-adapter execution audit records for prepared, committed, partial, withheld, and blocked command outcomes, plus review-bot feedback coverage, while live customer-offer, file, release-review, export, and connector writes remain disabled.
