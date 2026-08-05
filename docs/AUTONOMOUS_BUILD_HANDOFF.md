@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-04 Europe/Helsinki.
+Last refreshed: 2026-08-05 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8f1be7c` (`Refresh live adapter execution UI handoff (#569)`).
+- Main branch checkpoint: `f0faa10` (`Add live adapter execution audits (#570)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/non-cnc-live-adapter-execution-audit` (domain-only live-adapter execution audit records; no live writes).
+- In-flight branch at this checkpoint: `codex/live-adapter-execution-audit-persistence-overseer` (domain-only live-adapter execution audit persistence snapshots; no live writes).
 - Latest merged sequence:
+  - `#570` adds deterministic non-CNC export live-adapter execution audit records for prepared, committed, partial, withheld, and blocked command outcomes, plus review-bot feedback coverage, while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#569` refreshes the autonomous handoff after the live-adapter execution-plan UI slice and records `#568` as the latest product boundary on main.
   - `#568` surfaces the deterministic non-CNC export live-adapter execution plan in the guarded registry preview with blocked/fallback/ready command counts, history evidence, boundary copy, and desktop/mobile coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#567` refreshes the autonomous handoff after the live-adapter execution-plan domain slice and records `#566` as the latest product boundary on main.
