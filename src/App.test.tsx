@@ -1096,11 +1096,11 @@ describe("FactoryBid workspace (component)", () => {
       NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PERSISTENCE_VERSION,
     )
     expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent(
-      "Latest non-CNC live-adapter execution is blocked after 2 runs; live customer-offer, file, release-review, export, and connector writes remain disabled.",
+      "Latest non-CNC live-adapter execution is blocked after 1 run; live customer-offer, file, release-review, export, and connector writes remain disabled.",
     )
-    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("2 runs")
-    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("10 commands")
-    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("Prepared 0, pending 0, blocked 10, withheld 0")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("1 run")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("5 commands")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent("Prepared 0, pending 0, blocked 5, withheld 0")
     expect(promotedQuoteOfferExportLiveAdapterExecutionHistory).toHaveTextContent(
       "Resolve live-adapter execution blockers before recording another execution.",
     )

@@ -7923,15 +7923,28 @@ export function ProcessQuotePreviewCard({
       resolvedPromotionOfferExportLiveAdapterDecisionHistorySnapshot,
     ],
   )
+  const promotionOfferExportLiveAdapterDecisionPersisted =
+    resolvedPromotionOfferExportLiveAdapterDecisionHistorySnapshot.decisionFingerprints.includes(
+      promotionOfferExportLiveAdapterExecutionPlan.decisionFingerprint,
+    )
   const promotionOfferExportLiveAdapterExecutionRun = useMemo(
-    () =>
-      buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionRun({
+    () => {
+      if (!promotionOfferExportLiveAdapterDecisionPersisted) {
+        return undefined
+      }
+
+      return buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionRun({
         actor: "FactoryBid Operator",
         executedAt: promotionPlan.requestedAt,
         mode: "dry_run",
         plan: promotionOfferExportLiveAdapterExecutionPlan,
-      }),
-    [promotionOfferExportLiveAdapterExecutionPlan, promotionPlan.requestedAt],
+      })
+    },
+    [
+      promotionOfferExportLiveAdapterDecisionPersisted,
+      promotionOfferExportLiveAdapterExecutionPlan,
+      promotionPlan.requestedAt,
+    ],
   )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
@@ -7940,6 +7953,7 @@ export function ProcessQuotePreviewCard({
       ),
     [resolvedPromotionOfferExportLiveAdapterExecutionSnapshot],
   )
+  const canRecordPromotionOfferExportLiveAdapterExecutionRun = promotionOfferExportLiveAdapterDecisionPersisted
   const promotionExecutionStatusSummary = buildStatusCountSummary(promotionExecutionSnapshot.statusCounts)
   const promotionOutcomeCommitStatusSummary = buildStatusCountSummary(promotionOutcomeCommitSnapshot.statusCounts)
   const promotionApplicationStatusSummary = buildStatusCountSummary(promotionApplicationSnapshot.statusCounts)
@@ -8080,11 +8094,19 @@ export function ProcessQuotePreviewCard({
     })
   }, [promotionOfferExportLiveAdapterDecision, promotionPlan.requestedAt, recordPromotionOfferExportLiveAdapterDecision])
   useEffect(() => {
-    if (!recordPromotionOfferExportLiveAdapterExecutionRun) {
+    if (
+      !recordPromotionOfferExportLiveAdapterExecutionRun ||
+      !promotionOfferExportLiveAdapterExecutionRun ||
+      !canRecordPromotionOfferExportLiveAdapterExecutionRun
+    ) {
       return undefined
     }
     return recordPromotionOfferExportLiveAdapterExecutionRun(promotionOfferExportLiveAdapterExecutionRun)
-  }, [promotionOfferExportLiveAdapterExecutionRun, recordPromotionOfferExportLiveAdapterExecutionRun])
+  }, [
+    canRecordPromotionOfferExportLiveAdapterExecutionRun,
+    promotionOfferExportLiveAdapterExecutionRun,
+    recordPromotionOfferExportLiveAdapterExecutionRun,
+  ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string

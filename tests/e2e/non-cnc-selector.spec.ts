@@ -312,7 +312,7 @@ async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator
     "live customer-offer, file, release-review, export, and connector writes remain disabled.",
   )
   await expect(liveAdapterExecutionHistory).toContainText("Command outcomes")
-  await expect(liveAdapterExecutionHistory).toContainText("Prepared 0, pending 0, blocked 10, withheld 0")
+  await expect(liveAdapterExecutionHistory).toContainText("Prepared 0, pending 0, blocked 5, withheld 0")
   await expect(liveAdapterExecutionHistory).toContainText(
     "Resolve live-adapter execution blockers before recording another execution.",
   )
