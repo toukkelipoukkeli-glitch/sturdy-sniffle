@@ -65,6 +65,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_VERSION } f
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
@@ -1080,6 +1081,38 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent(
       "- customer_offer_write | blocked | customer_offer | withheld",
     )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter execution outcome draft",
+        ),
+      ).toHaveTextContent("Offer export live adapter execution outcome draft")
+    })
+    const promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter execution outcome draft",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent(
+      "No persisted non-CNC offer export provider commit records are available.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent(
+      "Live-adapter execution is not ready for outcome suggestions.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("0 ready outcomes")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("5 blocked outcomes")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("dry run")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Provider commit evidence withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Release execution evidence withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Customer-offer export write")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("blocked · customer offer")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Outcome external id withheld")
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent(
+      "Live-adapter execution outcome drafts are deterministic review data only; active customer-offer, file, release-review, export, connector, RFQ quote, offer, and release state stay unchanged until an operator commits them.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Target RFQ: Live adapter target withheld")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),

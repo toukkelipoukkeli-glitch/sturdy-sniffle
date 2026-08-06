@@ -297,6 +297,35 @@ async function assertOfferExportLiveAdapterExecutionPlan(nonCncDemos: Locator, p
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterExecutionOutcomeDraft(nonCncDemos: Locator, page: Page) {
+  const liveAdapterExecutionOutcomeDraft = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter execution outcome draft",
+    { exact: true },
+  )
+
+  await expect(liveAdapterExecutionOutcomeDraft).toBeVisible()
+  await expect(liveAdapterExecutionOutcomeDraft).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Offer export live adapter execution outcome draft")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText(
+    "No persisted non-CNC offer export provider commit records are available.",
+  )
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText(
+    "Live-adapter execution is not ready for outcome suggestions.",
+  )
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("0 ready outcomes")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("5 blocked outcomes")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Provider commit evidence withheld")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Release execution evidence withheld")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Customer-offer export write")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("blocked · customer offer")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Outcome external id withheld")
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText(
+    "Live-adapter execution outcome drafts are deterministic review data only",
+  )
+  await expect(liveAdapterExecutionOutcomeDraft).toContainText("Target RFQ: Live adapter target withheld")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -363,6 +392,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterDecision(nonCncDemos, page)
       await assertOfferExportLiveAdapterDecisionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionPlan(nonCncDemos, page)
+      await assertOfferExportLiveAdapterExecutionOutcomeDraft(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
