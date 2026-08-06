@@ -341,6 +341,7 @@ import {
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecution"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionHistory"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistenceSnapshot,
@@ -7946,6 +7947,15 @@ export function ProcessQuotePreviewCard({
       promotionPlan.requestedAt,
     ],
   )
+  const promotionOfferExportLiveAdapterExecutionOutcomeDraft = useMemo(
+    () =>
+      promotionOfferExportLiveAdapterExecutionRun
+        ? buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(
+            promotionOfferExportLiveAdapterExecutionRun,
+          )
+        : undefined,
+    [promotionOfferExportLiveAdapterExecutionRun],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -10481,6 +10491,91 @@ export function ProcessQuotePreviewCard({
           {promotionOfferExportLiveAdapterExecutionPlan.exportText}
         </pre>
       </div>
+      {promotionOfferExportLiveAdapterExecutionOutcomeDraft ? (
+        <div
+          className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-outcome-draft"
+          aria-label="Non-CNC promoted quote customer export live adapter execution outcome draft"
+          data-status={promotionOfferExportLiveAdapterExecutionOutcomeDraft.status}
+        >
+          <div className="process-demo-promotion-release-readiness-heading">
+            <div>
+              <span>Offer export live adapter execution outcome draft</span>
+              <strong>{humanizeKey(promotionOfferExportLiveAdapterExecutionOutcomeDraft.status)}</strong>
+            </div>
+            <small>{promotionOfferExportLiveAdapterExecutionOutcomeDraft.draftVersion}</small>
+          </div>
+          <p>{promotionOfferExportLiveAdapterExecutionOutcomeDraft.nextOperatorMessage}</p>
+          <div className="process-demo-promotion-release-readiness-grid">
+            <div>
+              <span>Suggested outcomes</span>
+              <strong>
+                {formatCount(promotionOfferExportLiveAdapterExecutionOutcomeDraft.readyOutcomeCount, "ready outcome")}
+              </strong>
+              <small>
+                {formatCount(
+                  promotionOfferExportLiveAdapterExecutionOutcomeDraft.blockedOutcomeCount,
+                  "blocked outcome",
+                )}
+              </small>
+            </div>
+            <div>
+              <span>Source run</span>
+              <strong>{humanizeKey(promotionOfferExportLiveAdapterExecutionOutcomeDraft.mode)}</strong>
+              <small>{promotionOfferExportLiveAdapterExecutionOutcomeDraft.executionFingerprint}</small>
+            </div>
+            <div>
+              <span>Latest evidence</span>
+              <strong>
+                {promotionOfferExportLiveAdapterExecutionOutcomeDraft.latestExecutionFingerprint ??
+                  "Provider commit evidence withheld"}
+              </strong>
+              <small>
+                {promotionOfferExportLiveAdapterExecutionOutcomeDraft.latestReleaseExecutionFingerprint ??
+                  "Release execution evidence withheld"}
+              </small>
+            </div>
+          </div>
+          <ul
+            className="process-demo-promotion-release-readiness-list"
+            aria-label="Non-CNC promoted quote customer export live adapter execution outcome draft commands"
+          >
+            {promotionOfferExportLiveAdapterExecutionOutcomeDraft.commandOutcomes.map((outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <strong>{outcome.label}</strong>
+                <small>
+                  {humanizeKey(outcome.status)} · {humanizeKey(outcome.target)}
+                </small>
+                <small>{outcome.suggestedOutcome?.message ?? outcome.blockerLabels.join(" ")}</small>
+                <small>{outcome.externalId ?? "Outcome external id withheld"}</small>
+              </li>
+            ))}
+          </ul>
+          {promotionOfferExportLiveAdapterExecutionOutcomeDraft.reviewWarnings.length > 0 ? (
+            <ul
+              className="process-demo-promotion-release-readiness-warnings"
+              aria-label="Non-CNC promoted quote customer export live adapter execution outcome draft warnings"
+            >
+              {promotionOfferExportLiveAdapterExecutionOutcomeDraft.reviewWarnings.map((warning) => (
+                <li data-status="warning" key={warning}>
+                  <strong>{warning}</strong>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="process-demo-promotion-release-readiness-boundary">
+            <span>Boundary</span>
+            <small>{promotionOfferExportLiveAdapterExecutionOutcomeDraft.adapterOutcomeBoundary}</small>
+          </div>
+          <div className="process-demo-promotion-release-readiness-boundary">
+            <span>Draft ids</span>
+            <small>Plan: {promotionOfferExportLiveAdapterExecutionOutcomeDraft.planId}</small>
+            <small>Decision: {promotionOfferExportLiveAdapterExecutionOutcomeDraft.decisionFingerprint}</small>
+            <small>
+              Target RFQ: {promotionOfferExportLiveAdapterExecutionOutcomeDraft.targetRfqId ?? "Live adapter target withheld"}
+            </small>
+          </div>
+        </div>
+      ) : null}
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
         aria-label="Non-CNC promoted quote customer export live adapter execution history"
