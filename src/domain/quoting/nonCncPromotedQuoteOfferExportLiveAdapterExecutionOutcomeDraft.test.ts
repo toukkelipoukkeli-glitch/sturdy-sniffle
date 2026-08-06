@@ -61,6 +61,7 @@ describe("non-CNC promoted quote offer export live-adapter execution outcome dra
       targetRfqId: "rfq-demo-204",
     })
     expect(outcomeDraft.nextOperatorMessage).toBe("Review and commit 5 live-adapter command outcomes.")
+    expect(outcomeDraft.reviewWarnings).toEqual(dryRun.warnings)
     expect(outcomeDraft.adapterOutcomeBoundary).toContain("active customer-offer")
     expect(outcomeDraft.commandOutcomes.map((command) => [command.key, command.status, command.target])).toEqual([
       ["customer_offer_write", "ready", "customer_offer"],
@@ -163,6 +164,36 @@ describe("non-CNC promoted quote offer export live-adapter execution outcome dra
     expect(outcomeDraft.readyOutcomeCount).toBe(0)
     expect(outcomeDraft.nextOperatorMessage).toContain("Live-adapter outcome drafts must be based on a dry-run execution.")
     expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
+  })
+
+  it("blocks every command outcome when a prepared dry-run has partial command evidence", async () => {
+    const dryRun = await readyDryRun()
+    const partialEvidenceRun: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun = {
+      ...dryRun,
+      commands: dryRun.commands.map((command) =>
+        command.key === "customer_offer_write"
+          ? {
+              ...command,
+              evidenceFingerprints: [],
+            }
+          : command,
+      ),
+    }
+
+    const outcomeDraft = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(partialEvidenceRun)
+
+    expect(outcomeDraft.status).toBe("blocked")
+    expect(outcomeDraft.readyOutcomeCount).toBe(0)
+    expect(outcomeDraft.blockedOutcomeCount).toBe(5)
+    expect(outcomeDraft.nextOperatorMessage).toContain(
+      "Customer-offer export write is missing live-adapter evidence fingerprints.",
+    )
+    expect(outcomeDraft.commandOutcomes.every((command) => command.status === "blocked")).toBe(true)
+    expect(outcomeDraft.commandOutcomes.every((command) => command.evidenceFingerprints.length === 0)).toBe(true)
+    expect(outcomeDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
+    expect(
+      outcomeDraft.commandOutcomes.find((command) => command.key === "file_export_write")?.blockerLabels,
+    ).toEqual(["Live-adapter execution is not ready for outcome suggestions."])
   })
 
   it.each(["rfq A", "rfq_A", "RFQ-A", "!!!"])(

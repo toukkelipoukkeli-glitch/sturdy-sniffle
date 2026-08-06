@@ -48,10 +48,17 @@ export interface NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft 
 export function buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(
   run: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun,
 ): NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft {
-  const commandOutcomes = run.commands.map((command) => buildCommandOutcomeDraft(run, command))
+  const candidateCommandOutcomes = run.commands.map((command) => buildCommandOutcomeDraft(run, command))
+  const isReady =
+    run.mode === "dry_run" &&
+    run.status === "prepared" &&
+    candidateCommandOutcomes.every((outcome) => outcome.status === "ready")
+  const commandOutcomes = isReady
+    ? candidateCommandOutcomes
+    : candidateCommandOutcomes.map((outcome) => blockCommandOutcomeDraft(outcome))
   const readyOutcomeCount = commandOutcomes.filter((outcome) => outcome.status === "ready").length
   const blockedOutcomeCount = commandOutcomes.length - readyOutcomeCount
-  const status = run.mode === "dry_run" && run.status === "prepared" && blockedOutcomeCount === 0 ? "ready" : "blocked"
+  const status = isReady ? "ready" : "blocked"
   const blockerLabels = uniqueLabels(
     status === "ready" ? [] : commandOutcomes.flatMap((outcome) => outcome.blockerLabels).concat(run.nextActions),
   )
@@ -80,6 +87,24 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDr
     reviewWarnings: [...run.warnings],
     status,
     targetRfqId: status === "ready" ? run.targetRfqId : undefined,
+  }
+}
+
+function blockCommandOutcomeDraft(
+  outcome: NonCncPromotedQuoteOfferExportLiveAdapterCommandOutcomeDraft,
+): NonCncPromotedQuoteOfferExportLiveAdapterCommandOutcomeDraft {
+  return {
+    blockerLabels: uniqueLabels([
+      ...outcome.blockerLabels,
+      "Live-adapter execution is not ready for outcome suggestions.",
+    ]),
+    evidenceFingerprints: [],
+    idempotencyKey: outcome.idempotencyKey,
+    key: outcome.key,
+    kind: outcome.kind,
+    label: outcome.label,
+    status: "blocked",
+    target: outcome.target,
   }
 }
 
