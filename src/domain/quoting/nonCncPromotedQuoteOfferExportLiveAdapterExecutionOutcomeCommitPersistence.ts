@@ -194,8 +194,11 @@ function normalizeSnapshot(
   for (const record of snapshot?.records ?? []) {
     const normalized = normalizeRecord(record)
     const existing = recordsById.get(normalized.commitRecordId)
-    if (!existing || sortNewestFirst(normalized, existing) < 0) {
+    const recordOrder = existing ? sortNewestFirst(normalized, existing) : -1
+    if (!existing || recordOrder < 0) {
       recordsById.set(normalized.commitRecordId, normalized)
+    } else if (recordOrder === 0 && stableRecordKey(normalized) !== stableRecordKey(existing)) {
+      throw new Error("conflicting live-adapter outcome commit records cannot share commitRecordId and recordedAt")
     }
   }
   const records = [...recordsById.values()].sort(sortNewestFirst)
@@ -340,6 +343,34 @@ function cloneRecord(
     targetRfqId: record.targetRfqId,
     warningCount: record.warningCount,
   }
+}
+
+function stableRecordKey(record: NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRecord): string {
+  return JSON.stringify({
+    blockerCount: record.blockerCount,
+    blockerLabels: record.blockerLabels,
+    commandOutcomeCount: record.commandOutcomeCount,
+    committedExecutionFingerprint: record.committedExecutionFingerprint,
+    commitRecordId: record.commitRecordId,
+    commitVersion: record.commitVersion,
+    decisionFingerprint: record.decisionFingerprint,
+    disposition: record.disposition,
+    latestExecutionFingerprint: record.latestExecutionFingerprint,
+    latestPackageId: record.latestPackageId,
+    latestPlanId: record.latestPlanId,
+    latestReleaseExecutionFingerprint: record.latestReleaseExecutionFingerprint,
+    latestSourceExecutionFingerprint: record.latestSourceExecutionFingerprint,
+    persistenceVersion: record.persistenceVersion,
+    planFingerprint: record.planFingerprint,
+    planId: record.planId,
+    recordedAt: record.recordedAt,
+    recordedBy: record.recordedBy,
+    reviewWarnings: record.reviewWarnings,
+    sourceExecutionFingerprint: record.sourceExecutionFingerprint,
+    status: record.status,
+    targetRfqId: record.targetRfqId,
+    warningCount: record.warningCount,
+  })
 }
 
 function sortNewestFirst(

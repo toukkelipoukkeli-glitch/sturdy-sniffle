@@ -228,6 +228,11 @@ describe("non-CNC live-adapter outcome commit persistence", () => {
         ],
       },
     })
+    const identicalSeededAdapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence({
+      initialSnapshot: {
+        records: [seededRecord, { ...seededRecord }],
+      },
+    })
     const snapshot = seededAdapter.snapshot()
     snapshot.records[0]?.reviewWarnings.push("mutated outside adapter")
     snapshot.commitReadyPlanIds.push("mutated-plan")
@@ -243,6 +248,11 @@ describe("non-CNC live-adapter outcome commit persistence", () => {
       warningCount: 0,
     })
     expect(reversedSeededAdapter.snapshot()).toEqual(seededAdapter.snapshot())
+    expect(identicalSeededAdapter.snapshot()).toMatchObject({
+      outcomeCount: 5,
+      recordCount: 1,
+      warningCount: 1,
+    })
     await seededAdapter.recordCommit({
       commitPlan,
       executionRun,
@@ -284,6 +294,19 @@ describe("non-CNC live-adapter outcome commit persistence", () => {
       createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence({
         initialSnapshot: {
           records: [
+            seededRecord,
+            {
+              ...seededRecord,
+              recordedBy: "Conflicting Operator",
+            },
+          ],
+        },
+      }),
+    ).toThrow("conflicting live-adapter outcome commit records cannot share commitRecordId and recordedAt")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [
             {
               ...seededRecord,
               committedExecutionFingerprint: "non-cnc-live-adapter-commit:blocked",
@@ -300,6 +323,25 @@ describe("non-CNC live-adapter outcome commit persistence", () => {
         },
       }),
     ).toThrow("blocked live-adapter outcome commit records cannot include a committedExecutionFingerprint")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...seededRecord,
+              committedExecutionFingerprint: undefined,
+              disposition: "review_only",
+              latestPackageId: undefined,
+              latestPlanId: undefined,
+              latestReleaseExecutionFingerprint: undefined,
+              latestSourceExecutionFingerprint: undefined,
+              status: "blocked",
+              targetRfqId: undefined,
+            },
+          ],
+        },
+      }),
+    ).toThrow("blocked live-adapter outcome commit records cannot include live evidence identifiers")
     expect(() =>
       createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence({
         initialSnapshot: {
