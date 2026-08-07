@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `773b504` (`Surface live adapter execution outcome drafts (#577)`).
+- Main branch checkpoint: `179d193` (`Refresh live adapter outcome draft UI handoff (#578)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/live-adapter-outcome-commit-boundary` (domain-only live-adapter execution outcome commit boundary; no live writes).
 - Latest merged sequence:
+  - `#578` refreshes the autonomous handoff after the live-adapter execution outcome-draft UI slice, records the hosted Actions trigger gap, and clears the merged `#577` in-flight branch.
   - `#577` surfaces deterministic non-CNC live-adapter execution outcome drafts in the guarded registry preview with blocked/ready outcome counts, command-level blocker copy, withheld external IDs, evidence IDs, and desktop/mobile selector smoke coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#576` refreshes the autonomous handoff after the live-adapter execution outcome-draft domain slice, records the hosted Actions trigger gap for `#575`, and clears the merged outcome-draft branch.
   - `#575` adds deterministic non-CNC live-adapter execution outcome drafts that only expose reviewable succeeded provider outcomes for fully prepared dry-runs, block partial/committed/withheld paths from leaking suggestions, preserve execution warnings, reject non-canonical external-id parts, and keep live customer-offer, file, release-review, export, and connector writes disabled.
