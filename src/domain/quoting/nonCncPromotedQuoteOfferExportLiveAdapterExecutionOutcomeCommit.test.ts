@@ -165,6 +165,67 @@ describe("non-CNC promoted quote offer export live-adapter execution outcome com
     })
   })
 
+  it("blocks forged ready drafts that were not produced from dry-run execution", async () => {
+    const plan = await readyPlan()
+    const outcomeDraft = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(await readyDryRun(plan))
+    const forgedCommitDraft: NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft = {
+      ...outcomeDraft,
+      mode: "commit",
+    }
+
+    const result = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRun({
+      actor,
+      executedAt,
+      outcomeDraft: forgedCommitDraft,
+      plan,
+    })
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: ["Live-adapter execution outcome commit requires a dry-run outcome draft."],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+  })
+
+  it("blocks non-succeeded suggested outcomes before commit execution", async () => {
+    const plan = await readyPlan()
+    const outcomeDraft = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(await readyDryRun(plan))
+    const failedOutcomeDraft: NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft = {
+      ...outcomeDraft,
+      commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
+        index === 0 && command.suggestedOutcome
+          ? {
+              ...command,
+              suggestedOutcome: {
+                ...command.suggestedOutcome,
+                message: "Provider write failed in fixture review.",
+                status: "failed",
+              },
+            }
+          : command,
+      ),
+    }
+
+    const result = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRun({
+      actor,
+      executedAt,
+      outcomeDraft: failedOutcomeDraft,
+      plan,
+    })
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: [
+        "Suggested live-adapter execution outcome for Customer-offer export write must have succeeded status.",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+  })
+
   it("clones command outcomes so draft mutations cannot alter commit plans", async () => {
     const plan = await readyPlan()
     const outcomeDraft = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft(await readyDryRun(plan))

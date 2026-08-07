@@ -65,18 +65,29 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCo
       ? [`Suggested live-adapter execution outcome for ${command.label} does not match the execution plan command.`]
       : [],
   )
+  const nonSucceededSuggestedOutcomeLabels = outcomeDraft.commandOutcomes.flatMap((command) =>
+    command.suggestedOutcome && command.suggestedOutcome.status !== "succeeded"
+      ? [`Suggested live-adapter execution outcome for ${command.label} must have succeeded status.`]
+      : [],
+  )
   const commandOutcomes = outcomeDraft.commandOutcomes.flatMap((command) =>
     command.suggestedOutcome ? [cloneOutcome(command.suggestedOutcome)] : [],
   )
   const missingOutcomeLabels = outcomeDraft.commandOutcomes
     .filter((command) => !command.suggestedOutcome)
     .map((command) => `Missing suggested live-adapter execution outcome for ${command.label}.`)
+  const modeBlockers =
+    outcomeDraft.mode === "dry_run"
+      ? []
+      : ["Live-adapter execution outcome commit requires a dry-run outcome draft."]
   const blockerLabels = uniqueLabels([
     ...commandSetBlockers,
     ...mismatchedSuggestedOutcomeLabels,
+    ...nonSucceededSuggestedOutcomeLabels,
     ...outcomeDraft.commandOutcomes.flatMap((command) => command.blockerLabels),
     ...invalidCommandLabels,
     ...missingOutcomeLabels,
+    ...modeBlockers,
     ...(outcomeDraft.status === "ready" ? [] : ["Live-adapter execution outcome draft must be ready before commit."]),
   ])
   const status =
@@ -84,8 +95,10 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCo
     commandOutcomes.length > 0 &&
     commandSetBlockers.length === 0 &&
     mismatchedSuggestedOutcomeLabels.length === 0 &&
+    nonSucceededSuggestedOutcomeLabels.length === 0 &&
     invalidCommandLabels.length === 0 &&
-    missingOutcomeLabels.length === 0
+    missingOutcomeLabels.length === 0 &&
+    modeBlockers.length === 0
       ? "ready"
       : "blocked"
 
