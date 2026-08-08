@@ -66,6 +66,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_PERSISTENCE
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_COMMIT_READINESS_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderCommitReadiness"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_DECISION_HISTORY_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
@@ -1113,6 +1114,41 @@ describe("FactoryBid workspace (component)", () => {
       "Live-adapter execution outcome drafts are deterministic review data only; active customer-offer, file, release-review, export, connector, RFQ quote, offer, and release state stay unchanged until an operator commits them.",
     )
     expect(promotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft).toHaveTextContent("Target RFQ: Live adapter target withheld")
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter outcome commit history",
+        ),
+      ).toHaveTextContent("Live-adapter outcome commit history blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Offer export live adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Latest non-CNC live-adapter outcome commit is blocked after 1 record; live customer-offer, file, release-review, export, and connector writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("1 record")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Committed 0, blocked 1")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Resolve outcome commit blockers before retrying live-adapter export wiring.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Outcome commit history is deterministic review data only; live customer-offer, file, release-review, export, and connector writes stay disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Ready plans: None")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Committed executions: None")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Non-CNC live adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Status counts: blocked 1")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
@@ -3724,6 +3760,31 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Decision history: No recorded decision")
     expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("decision history 0 records")
     expect(promotedQuoteOfferExportLiveAdapterExecutionPlan).toHaveTextContent("Status: blocked")
+    const promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory = within(selectedPreview).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveAttribute("data-status", "empty")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Offer export live adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "No live-adapter outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "No non-CNC live-adapter outcome commit records have been persisted yet.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("0 records")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("0 outcomes")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Committed 0, blocked 0")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent(
+      "Persist a reviewed live-adapter outcome commit before enabling customer-offer export adapters.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Ready plans: None")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Committed executions: None")
+    expect(promotedQuoteOfferExportLiveAdapterOutcomeCommitHistory).toHaveTextContent("Status counts: None")
     const promotedQuoteApplicationMutationReadModel = within(selectedPreview).getByLabelText(
       "Non-CNC promoted quote application mutation read model",
     )
