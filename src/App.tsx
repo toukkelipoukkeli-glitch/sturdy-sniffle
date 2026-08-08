@@ -342,6 +342,13 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecution"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommit"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot,
+  type RecordNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitInput,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistenceSnapshot,
@@ -684,6 +691,8 @@ const emptyNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistorySnapshot =
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterDecisionHistory().snapshot()
 const emptyNonCncPromotedQuoteOfferExportLiveAdapterExecutionSnapshot =
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence().snapshot()
+const emptyNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitSnapshot =
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence().snapshot()
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
     now: "2026-06-20T09:00:00+03:00",
@@ -6942,6 +6951,15 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistenceSnapshot>(() =>
       promotionOfferExportLiveAdapterExecutionPersistence.snapshot(),
     )
+  const [promotionOfferExportLiveAdapterExecutionOutcomeCommitPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence(),
+  )
+  const [
+    promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot,
+    setPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot>(() =>
+    promotionOfferExportLiveAdapterExecutionOutcomeCommitPersistence.snapshot(),
+  )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -7196,6 +7214,20 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionOfferExportLiveAdapterExecutionPersistence],
   )
+  const recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit = useCallback(
+    (input: RecordNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitInput) => {
+      let isCurrent = true
+      void promotionOfferExportLiveAdapterExecutionOutcomeCommitPersistence.recordCommit(input).then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot(snapshot)
+        }
+      })
+      return () => {
+        isCurrent = false
+      }
+    },
+    [promotionOfferExportLiveAdapterExecutionOutcomeCommitPersistence],
+  )
 
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
@@ -7238,6 +7270,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         promotionOutcomeCommitSnapshot={promotionOutcomeCommitSnapshot}
         promotionOfferExportPackageExecutionSnapshot={promotionOfferExportPackageExecutionSnapshot}
         promotionOfferExportLiveAdapterDecisionHistorySnapshot={promotionOfferExportLiveAdapterDecisionHistorySnapshot}
+        promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot={
+          promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot
+        }
         promotionOfferExportLiveAdapterExecutionSnapshot={promotionOfferExportLiveAdapterExecutionSnapshot}
         promotionOfferExportPackageProviderCommitSnapshot={promotionOfferExportPackageProviderCommitSnapshot}
         promotionOfferExportPackageProviderReadModelSnapshot={promotionOfferExportPackageProviderReadModelSnapshot}
@@ -7261,6 +7296,9 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         recordPromotionOfferExportPackageProviderCommitRun={recordPromotionOfferExportPackageProviderCommitRun}
         recordPromotionOfferExportPackageProviderReadModel={recordPromotionOfferExportPackageProviderReadModel}
         recordPromotionOfferExportLiveAdapterDecision={recordPromotionOfferExportLiveAdapterDecision}
+        recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit={
+          recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit
+        }
         recordPromotionOfferExportLiveAdapterExecutionRun={recordPromotionOfferExportLiveAdapterExecutionRun}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
@@ -7472,6 +7510,7 @@ export function ProcessQuotePreviewCard({
   promotionOfferCreationOutcomeCommitSnapshot,
   promotionOfferExportPackageExecutionSnapshot,
   promotionOfferExportLiveAdapterDecisionHistorySnapshot,
+  promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot,
   promotionOfferExportLiveAdapterExecutionSnapshot,
   promotionOfferExportPackageProviderCommitSnapshot,
   promotionOfferExportPackageProviderReadModelSnapshot,
@@ -7490,6 +7529,7 @@ export function ProcessQuotePreviewCard({
   recordPromotionOfferCreationOutcomeCommit,
   recordPromotionOfferExportPackageExecutionRun,
   recordPromotionOfferExportLiveAdapterDecision,
+  recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit,
   recordPromotionOfferExportLiveAdapterExecutionRun,
   recordPromotionOfferExportPackageProviderCommitRun,
   recordPromotionOfferExportPackageProviderReadModel,
@@ -7513,6 +7553,7 @@ export function ProcessQuotePreviewCard({
   promotionOfferCreationOutcomeCommitSnapshot?: NonCncPromotedQuoteOfferCreationOutcomeCommitPersistenceSnapshot
   promotionOfferExportPackageExecutionSnapshot?: NonCncPromotedQuoteOfferExportPackageExecutionPersistenceSnapshot
   promotionOfferExportLiveAdapterDecisionHistorySnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterDecisionHistorySnapshot
+  promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot
   promotionOfferExportLiveAdapterExecutionSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistenceSnapshot
   promotionOfferExportPackageProviderCommitSnapshot?: NonCncPromotedQuoteOfferExportPackageProviderCommitPersistenceSnapshot
   promotionOfferExportPackageProviderReadModelSnapshot?: NonCncPromotedQuoteOfferExportPackageProviderReadModelPersistenceSnapshot
@@ -7539,6 +7580,9 @@ export function ProcessQuotePreviewCard({
   recordPromotionOfferExportLiveAdapterDecision?: (
     decision: NonCncPromotedQuoteOfferExportLiveAdapterDecision,
     input: RecordNonCncPromotedQuoteOfferExportLiveAdapterDecisionInput,
+  ) => () => void
+  recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit?: (
+    input: RecordNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitInput,
   ) => () => void
   recordPromotionOfferExportLiveAdapterExecutionRun?: (
     run: NonCncPromotedQuoteOfferExportLiveAdapterExecutionRun,
@@ -7573,6 +7617,9 @@ export function ProcessQuotePreviewCard({
   const resolvedPromotionOfferExportLiveAdapterExecutionSnapshot =
     promotionOfferExportLiveAdapterExecutionSnapshot ??
     emptyNonCncPromotedQuoteOfferExportLiveAdapterExecutionSnapshot
+  const resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot =
+    promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot ??
+    emptyNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitSnapshot
   const resolvedPromotionOfferExportPackageProviderCommitSnapshot =
     promotionOfferExportPackageProviderCommitSnapshot ?? emptyNonCncPromotedQuoteOfferExportPackageProviderCommitSnapshot
   const resolvedPromotionOfferExportPackageProviderReadModelSnapshot =
@@ -7956,6 +8003,25 @@ export function ProcessQuotePreviewCard({
         : undefined,
     [promotionOfferExportLiveAdapterExecutionRun],
   )
+  const promotionOfferExportLiveAdapterExecutionOutcomeCommit = useMemo(
+    () =>
+      promotionOfferExportLiveAdapterExecutionOutcomeDraft
+        ? buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRun({
+            actor: "FactoryBid Operator",
+            executedAt: promotionPlan.requestedAt,
+            outcomeDraft: promotionOfferExportLiveAdapterExecutionOutcomeDraft,
+            plan: promotionOfferExportLiveAdapterExecutionPlan,
+          })
+        : undefined,
+    [promotionOfferExportLiveAdapterExecutionOutcomeDraft, promotionOfferExportLiveAdapterExecutionPlan, promotionPlan.requestedAt],
+  )
+  const promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary(
+        resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot,
+      ),
+    [resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -7987,6 +8053,9 @@ export function ProcessQuotePreviewCard({
   )
   const promotionOfferExportLiveAdapterExecutionStatusSummary = buildStatusCountSummary(
     resolvedPromotionOfferExportLiveAdapterExecutionSnapshot.statusCounts,
+  )
+  const promotionOfferExportLiveAdapterExecutionOutcomeCommitStatusSummary = buildStatusCountSummary(
+    resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot.statusCounts,
   )
   useEffect(() => {
     if (!promotionRecord) {
@@ -8116,6 +8185,21 @@ export function ProcessQuotePreviewCard({
     canRecordPromotionOfferExportLiveAdapterExecutionRun,
     promotionOfferExportLiveAdapterExecutionRun,
     recordPromotionOfferExportLiveAdapterExecutionRun,
+  ])
+  useEffect(() => {
+    if (!promotionOfferExportLiveAdapterExecutionOutcomeCommit || !recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit) {
+      return undefined
+    }
+    return recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit({
+      commitPlan: promotionOfferExportLiveAdapterExecutionOutcomeCommit.commitPlan,
+      executionRun: promotionOfferExportLiveAdapterExecutionOutcomeCommit.executionRun,
+      recordedAt: promotionPlan.requestedAt,
+      recordedBy: "FactoryBid Operator",
+    })
+  }, [
+    promotionOfferExportLiveAdapterExecutionOutcomeCommit,
+    promotionPlan.requestedAt,
+    recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit,
   ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
@@ -10576,6 +10660,87 @@ export function ProcessQuotePreviewCard({
           </div>
         </div>
       ) : null}
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-outcome-commit-history"
+        aria-label="Non-CNC promoted quote customer export live adapter outcome commit history"
+        data-status={promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter outcome commit history</span>
+            <strong>{promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.title}</strong>
+          </div>
+          <small>
+            {resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Local outcome commits</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.totalRecords, "record")}</strong>
+            <small>{formatCount(promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.warningCount, "warning")}</small>
+          </div>
+          <div>
+            <span>Reviewed outcomes</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.outcomeCount, "outcome")}</strong>
+            <small>
+              Committed {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.committedCount}, blocked{" "}
+              {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.blockedCount}
+            </small>
+          </div>
+          <div>
+            <span>Latest evidence</span>
+            <strong>
+              {humanizeKey(promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.latestRecord?.status ?? "none")}
+            </strong>
+            <small>
+              {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.latestRecord?.commitRecordId ??
+                "No outcome commit record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>
+            Outcome commit history is deterministic review data only; live customer-offer, file, release-review, export,
+            and connector writes stay disabled.
+          </small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.actionItems.map((actionItem) => (
+            <li data-status={promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.severity} key={actionItem}>
+              <strong>{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Commit IDs</span>
+          <small>
+            Ready plans:{" "}
+            {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.commitReadyPlanIds.join(", ") || "None"}
+          </small>
+          <small>
+            Blocked plans:{" "}
+            {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.blockedPlanIds.join(", ") || "None"}
+          </small>
+          <small>
+            Source executions:{" "}
+            {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.sourceExecutionFingerprints.join(", ") || "None"}
+          </small>
+          <small>
+            Committed executions:{" "}
+            {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.committedExecutionFingerprints.join(", ") ||
+              "None"}
+          </small>
+        </div>
+        <pre className="process-demo-promotion-release-readiness-export">
+          {promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory.exportText}
+        </pre>
+        <small className="process-demo-promotion-release-readiness-status">
+          Status counts: {promotionOfferExportLiveAdapterExecutionOutcomeCommitStatusSummary || "None"}
+        </small>
+      </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
         aria-label="Non-CNC promoted quote customer export live adapter execution history"

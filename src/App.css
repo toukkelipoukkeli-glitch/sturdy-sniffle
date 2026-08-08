@@ -1012,6 +1012,7 @@
   border-radius: 8px;
   display: grid;
   gap: 9px;
+  min-width: 0;
   padding: 10px;
 }
 
@@ -2815,6 +2816,8 @@
   .process-demo-promotion-offer-export-live-adapter-decision-history .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-export-live-adapter-execution-plan .process-demo-promotion-release-readiness-grid,
   .process-demo-promotion-offer-export-live-adapter-execution-plan .process-demo-promotion-release-readiness-list,
+  .process-demo-promotion-offer-export-live-adapter-outcome-commit-history .process-demo-promotion-release-readiness-grid,
+  .process-demo-promotion-offer-export-live-adapter-outcome-commit-history .process-demo-promotion-release-readiness-list,
   .process-demo-promotion-offer-wiring-readiness .process-demo-promotion-release-readiness-warnings {
     grid-template-columns: 1fr;
   }
@@ -3178,6 +3181,12 @@
   .process-demo-promotion-package-grid,
   .process-demo-promotion-package-list {
     grid-template-columns: 1fr;
+  }
+
+  .process-demo-promotion-package-heading,
+  .process-demo-promotion-outcome-draft-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .process-demo-promotion-outcome-draft-grid,
