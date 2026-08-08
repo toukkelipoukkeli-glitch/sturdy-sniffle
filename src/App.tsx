@@ -345,6 +345,10 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeDraft } f
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommit"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistory"
 import {
+  buildNonCncPromotedQuoteOfferExportLiveAdapterApplyPlan,
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_PLAN_VERSION,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyPlan"
+import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot,
   type RecordNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitInput,
@@ -8022,6 +8026,15 @@ export function ProcessQuotePreviewCard({
       ),
     [resolvedPromotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyPlan = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyPlan({
+        outcomeCommitHistory: promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+      }),
+    [promotionOfferExportLiveAdapterExecutionOutcomeCommitHistory, promotionPlan.requestedAt, promotionPlan.requestedBy],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -10740,6 +10753,67 @@ export function ProcessQuotePreviewCard({
         <small className="process-demo-promotion-release-readiness-status">
           Status counts: {promotionOfferExportLiveAdapterExecutionOutcomeCommitStatusSummary || "None"}
         </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-apply-plan"
+        aria-label="Non-CNC promoted quote customer export live adapter apply plan"
+        data-status={promotionOfferExportLiveAdapterApplyPlan.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter apply plan</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyPlan.status)}</strong>
+          </div>
+          <small>{NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_PLAN_VERSION}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyPlan.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Apply commands</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterApplyPlan.commandCount, "command")}</strong>
+            <small>
+              Planned {promotionOfferExportLiveAdapterApplyPlan.plannedCommandCount}, blocked{" "}
+              {promotionOfferExportLiveAdapterApplyPlan.blockedCommandCount}
+            </small>
+          </div>
+          <div>
+            <span>Outcome evidence</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterApplyPlan.committedOutcomeCount, "committed outcome")}</strong>
+            <small>{promotionOfferExportLiveAdapterApplyPlan.latestCommitRecordId ?? "Commit record withheld"}</small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOfferExportLiveAdapterApplyPlan.targetRfqId ?? "Live adapter target withheld"}</strong>
+            <small>{promotionOfferExportLiveAdapterApplyPlan.latestCommittedExecutionFingerprint ?? "Committed execution withheld"}</small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportLiveAdapterApplyPlan.adapterApplyBoundary}</small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyPlan.commands.map((command) => (
+            <li data-status={command.status} key={command.key}>
+              <div>
+                <strong>{command.label}</strong>
+                <span>{humanizeKey(command.status)} · {humanizeKey(command.target)}</span>
+              </div>
+              <small>{command.idempotencyKey ?? "No live adapter apply idempotency key"}</small>
+              <small>{command.evidenceFingerprints.join(", ") || formatLabelPreview(command.blockerLabels, "Apply evidence withheld")}</small>
+            </li>
+          ))}
+        </ul>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Export summary</span>
+          <small>{promotionOfferExportLiveAdapterApplyPlan.exportText}</small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyPlan.nextActionLabels.map((action) => (
+            <li data-status={promotionOfferExportLiveAdapterApplyPlan.status} key={action}>
+              <strong>{action}</strong>
+            </li>
+          ))}
+        </ul>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"

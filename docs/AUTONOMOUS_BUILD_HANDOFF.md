@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `09106b6` (`Add live adapter apply plan boundary (#585)`).
+- Main branch checkpoint: `4a54f26` (`Refresh live adapter apply plan handoff (#586)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/live-adapter-apply-plan-ui` (surface the deterministic live-adapter apply-plan boundary in the guarded registry preview; no live writes).
 - Latest merged sequence:
+  - `#586` refreshes the autonomous handoff after the live-adapter apply-plan boundary slice and clears the merged `#585` in-flight branch.
   - `#585` adds a deterministic non-CNC live-adapter apply-plan boundary that consumes committed outcome history and emits review-only customer-offer, file-export, release-review, connector-reference, and rollback-evidence apply commands while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#584` refreshes the autonomous handoff after the live-adapter outcome commit history UI slice and clears the merged `#583` in-flight branch.
   - `#583` surfaces the deterministic live-adapter outcome commit history/read-summary helper in the guarded non-CNC registry preview with local persistence evidence, blocked/committed counts, copyable export text, desktop/mobile-safe wrapping, and no live customer-offer, file, release-review, export, or connector writes.
