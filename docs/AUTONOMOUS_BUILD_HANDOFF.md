@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `fce5346` (`Refresh live adapter apply plan UI handoff (#588)`).
+- Main branch checkpoint: `365f313` (`Add live adapter apply plan persistence (#589)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-plan-persistence` (add deterministic local live-adapter apply-plan persistence snapshots; no live writes).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#589` adds deterministic local persistence snapshots for non-CNC live-adapter apply plans, including ready/blocked counts, command-count derivation, seeded-record validation, duplicate conflict handling, and clone-safe snapshots while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#588` refreshes the autonomous handoff after the live-adapter apply-plan UI slice and clears the merged `#587` in-flight branch.
   - `#587` surfaces the deterministic live-adapter apply-plan boundary in the guarded non-CNC registry preview with command counts, committed-outcome evidence, blocker previews, export copy, desktop/mobile selector smoke coverage, and no live customer-offer, file, release-review, export, or connector writes.
   - `#586` refreshes the autonomous handoff after the live-adapter apply-plan boundary slice and clears the merged `#585` in-flight branch.
