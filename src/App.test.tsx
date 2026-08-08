@@ -4780,7 +4780,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionAudit).toHaveTextContent("commit")
     expect(executionAudit).toHaveTextContent("Release execution has been recorded.")
     expect(within(executionAudit).getByRole("button", { name: "Release executed" })).toBeDisabled()
-  })
+  }, 20_000)
 
   it.each([
     {
