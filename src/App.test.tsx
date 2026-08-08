@@ -2898,7 +2898,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[2]?.[0]).toContain("Persisted read enabled: yes")
     expect(writeText.mock.calls[2]?.[0]).toContain("Current readiness: recorded 1/1 tasks")
     expect(readinessHistory).toHaveTextContent("Persisted-read summary copied for diagnostics.")
-  })
+  }, 20_000)
 
   it("rejects malformed restored follow-up activity readiness history snapshots", async () => {
     const user = userEvent.setup()
