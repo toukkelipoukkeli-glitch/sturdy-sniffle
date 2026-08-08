@@ -326,6 +326,38 @@ async function assertOfferExportLiveAdapterExecutionOutcomeDraft(nonCncDemos: Lo
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterApplyPlan(nonCncDemos: Locator, page: Page) {
+  const liveAdapterApplyPlan = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter apply plan",
+    { exact: true },
+  )
+
+  await expect(liveAdapterApplyPlan).toBeVisible()
+  await expect(liveAdapterApplyPlan).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterApplyPlan).toContainText("Offer export live adapter apply plan")
+  await expect(liveAdapterApplyPlan).toContainText("Live-adapter apply plan is blocked")
+  await expect(liveAdapterApplyPlan).toContainText("5 commands")
+  await expect(liveAdapterApplyPlan).toContainText("Planned 0, blocked 5")
+  await expect(liveAdapterApplyPlan).toContainText("0 committed outcomes")
+  await expect(liveAdapterApplyPlan).toContainText("Live adapter target withheld")
+  await expect(liveAdapterApplyPlan).toContainText("Committed execution withheld")
+  await expect(liveAdapterApplyPlan).toContainText(
+    "Live-adapter apply plans are deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+  )
+  await expect(liveAdapterApplyPlan).toContainText("Apply customer-offer draft")
+  await expect(liveAdapterApplyPlan).toContainText("blocked · customer offer")
+  await expect(liveAdapterApplyPlan).toContainText("No live adapter apply idempotency key")
+  await expect(liveAdapterApplyPlan).toContainText(
+    "Latest live-adapter outcome commit history must be committed.",
+  )
+  await expect(liveAdapterApplyPlan).toContainText("Non-CNC offer export live adapter apply plan")
+  await expect(liveAdapterApplyPlan).toContainText("Planned commands: 0")
+  await expect(liveAdapterApplyPlan).toContainText(
+    "Do not apply live customer-offer export state from blocked outcome history.",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -393,6 +425,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterDecisionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionPlan(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionOutcomeDraft(nonCncDemos, page)
+      await assertOfferExportLiveAdapterApplyPlan(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
