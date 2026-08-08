@@ -184,18 +184,17 @@ describe("non-CNC live-adapter outcome commit history", () => {
       recordedBy: "Replacement Operator",
     })
 
-    const summary = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary(
-      persistence.snapshot(),
-      { recentRecordLimit: 1 },
-    )
+    const snapshot = persistence.snapshot()
+    const summary = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary(snapshot, {
+      recentRecordLimit: 1,
+    })
     summary.recentRecords[0]!.recordedBy = "Mutated Operator"
     summary.latestRecord!.recordedBy = "Mutated Latest Operator"
     summary.committedExecutionFingerprints.push("mutated-fingerprint")
 
-    const restored = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary(
-      persistence.snapshot(),
-      { recentRecordLimit: 1 },
-    )
+    const restored = buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitHistorySummary(snapshot, {
+      recentRecordLimit: 1,
+    })
 
     expect(restored).toMatchObject({
       committedCount: 1,
@@ -207,6 +206,9 @@ describe("non-CNC live-adapter outcome commit history", () => {
     expect(restored.recentRecords[0]?.recordedBy).toBe("Replacement Operator")
     expect(restored.latestRecord?.recordedBy).toBe("Replacement Operator")
     expect(restored.committedExecutionFingerprints).not.toContain("mutated-fingerprint")
+    expect(snapshot.records[0]?.recordedBy).toBe("Replacement Operator")
+    expect(snapshot.latestRecord?.recordedBy).toBe("Replacement Operator")
+    expect(snapshot.committedExecutionFingerprints).not.toContain("mutated-fingerprint")
   })
 
   it("rejects invalid recent record limits", () => {

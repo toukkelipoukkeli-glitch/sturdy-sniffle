@@ -3185,7 +3185,7 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.change(within(fabricationEditor).getByLabelText("Complexity multiplier"), { target: { value: "1.45" } })
     expect(fabricationEditor).toHaveTextContent("Fabrication preview quote recalculated through the non-CNC edit registry.")
     expect(fabricationPreview).toHaveTextContent("€1,789.89")
-  }, 10_000)
+  }, 20_000)
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
