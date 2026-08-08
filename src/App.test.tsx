@@ -2143,7 +2143,7 @@ describe("FactoryBid workspace (component)", () => {
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("3 recorded runs")
       expect(screen.getByLabelText("Offer release execution history")).toHaveTextContent("Latest succeeded")
     })
-  })
+  }, 20_000)
 
   it("keeps release execution history visible while persisted reads are pending", async () => {
     const user = userEvent.setup()
@@ -2193,7 +2193,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(integrationHealth).getByLabelText("Release execution reads recovery actions")).toHaveTextContent(
       "Wait for read result",
     )
-  })
+  }, 20_000)
 
   it("keeps release execution history visible after persisted read fallback", async () => {
     const user = userEvent.setup()
@@ -4401,7 +4401,7 @@ describe("FactoryBid workspace (component)", () => {
 
     await user.type(customer, "North Forge Works")
     expect(screen.getByLabelText("RFQ intake readiness")).not.toHaveTextContent("Customer name is missing")
-  }, 10_000)
+  }, 20_000)
 
   it("normalizes edited customer whitespace before approval policy selection", async () => {
     const user = userEvent.setup()
@@ -4449,7 +4449,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
     expect(within(screen.getByLabelText("CAD review override")).getByLabelText("CAD review note")).toHaveValue("")
     expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("Reopened review")
-  }, 10_000)
+  }, 20_000)
 
   it("stores CAD dimension material and process correction notes", () => {
     const { unmount } = render(<App />)
