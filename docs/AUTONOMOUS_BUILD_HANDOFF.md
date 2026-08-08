@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c9e7e4c` (`Surface live adapter outcome commit history (#583)`).
+- Main branch checkpoint: `fe9f514` (`Refresh live adapter outcome history handoff (#584)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/live-adapter-apply-plan` (domain-only live-adapter apply plan boundary consuming committed outcome history; no live writes).
 - Latest merged sequence:
+  - `#584` refreshes the autonomous handoff after the live-adapter outcome commit history UI slice and clears the merged `#583` in-flight branch.
   - `#583` surfaces the deterministic live-adapter outcome commit history/read-summary helper in the guarded non-CNC registry preview with local persistence evidence, blocked/committed counts, copyable export text, desktop/mobile-safe wrapping, and no live customer-offer, file, release-review, export, or connector writes.
   - `#582` adds a deterministic domain-only history/read-summary helper for locally persisted non-CNC live-adapter outcome commits, including blocked/committed counts, committed execution evidence, clone-safe recent records, action items, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#581` adds deterministic local persistence snapshots for reviewed non-CNC live-adapter outcome commit plans/runs, including ready/blocked commit counts, committed execution evidence, seeded-record validation, and deterministic duplicate conflict handling while live customer-offer, file, release-review, export, and connector writes remain disabled.
