@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `608a4b8` (`Add live adapter apply execution history (#596)`).
+- Main branch checkpoint: `34ce844` (`Surface live adapter apply execution history (#597)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-history-ui` (surface deterministic local live-adapter apply execution history/read summaries in the guarded registry preview; no live writes).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#597` surfaces deterministic local live-adapter apply execution history/read summaries in the guarded registry preview with dry-run apply outcomes, command aggregates, action items, evidence IDs, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#596` adds deterministic local live-adapter apply execution history/read-summary helpers with command outcome aggregates, latest evidence IDs, action items, clone-safe recent runs, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#595` adds deterministic local persistence snapshots for non-CNC live-adapter apply execution audit records, including seeded-record validation, command aggregates, duplicate conflict handling, clone-safe snapshots, and blocked evidence gating while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#594` adds deterministic domain-only non-CNC live-adapter apply execution audit records for dry-run, commit, blocked, pending, failed, partial, and succeeded command outcomes while live customer-offer, file, release-review, export, and connector writes remain disabled.
