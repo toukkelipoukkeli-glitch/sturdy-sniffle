@@ -385,6 +385,34 @@ async function assertOfferExportLiveAdapterApplyPlanHistory(nonCncDemos: Locator
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterApplyExecutionHistory(nonCncDemos: Locator, page: Page) {
+  const liveAdapterApplyExecutionHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter apply execution history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterApplyExecutionHistory).toBeVisible()
+  await expect(liveAdapterApplyExecutionHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Offer export live adapter apply execution history")
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Live-adapter apply execution history blocked")
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Latest non-CNC live-adapter apply execution is blocked")
+  await expect(liveAdapterApplyExecutionHistory).toContainText(
+    "live customer-offer, file, release-review, export, and connector writes remain disabled.",
+  )
+  await expect(liveAdapterApplyExecutionHistory).toContainText("10 commands")
+  await expect(liveAdapterApplyExecutionHistory).toContainText("blocked 10")
+  await expect(liveAdapterApplyExecutionHistory).toContainText(
+    "Resolve live-adapter apply execution blockers before recording another execution.",
+  )
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Target RFQs: None")
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Committed executions: None")
+  await expect(liveAdapterApplyExecutionHistory).toContainText(
+    "Non-CNC offer export live adapter apply execution history",
+  )
+  await expect(liveAdapterApplyExecutionHistory).toContainText("Status counts: blocked 2")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -454,6 +482,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterExecutionOutcomeDraft(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyPlan(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyPlanHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterApplyExecutionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

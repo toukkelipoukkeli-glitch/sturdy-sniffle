@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `07bad51` (`Add live adapter apply execution persistence (#595)`).
+- Main branch checkpoint: `608a4b8` (`Add live adapter apply execution history (#596)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-history` (add deterministic local history/read-summary helpers for persisted live-adapter apply execution records; no live writes).
+- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-history-ui` (surface deterministic local live-adapter apply execution history/read summaries in the guarded registry preview; no live writes).
 - Latest merged sequence:
+  - `#596` adds deterministic local live-adapter apply execution history/read-summary helpers with command outcome aggregates, latest evidence IDs, action items, clone-safe recent runs, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#595` adds deterministic local persistence snapshots for non-CNC live-adapter apply execution audit records, including seeded-record validation, command aggregates, duplicate conflict handling, clone-safe snapshots, and blocked evidence gating while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#594` adds deterministic domain-only non-CNC live-adapter apply execution audit records for dry-run, commit, blocked, pending, failed, partial, and succeeded command outcomes while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#593` surfaces local live-adapter apply-plan history/read summaries in the guarded non-CNC registry preview with persisted evidence, command totals, action items, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
