@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f91ec10` (`Refresh final gate follow-through persistence handoff (#614)`).
+- Main branch checkpoint: `733527e` (`Add final gate follow-through history summary (#615)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-follow-through-history` is adding deterministic domain-only history/read summaries for persisted non-CNC live-adapter final-gate follow-through records.
+- In-flight branch at this checkpoint: none; next slice should continue from fresh `origin/main`.
 - Latest merged sequence:
+  - `#615` adds deterministic domain-only history/read summaries for persisted non-CNC live-adapter final-gate follow-through records, including ready/blocked counts, evidence aggregates, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#614` refreshes the autonomous handoff after the final-gate follow-through persistence slice and clears the merged `#613` in-flight branch.
   - `#613` adds deterministic local persistence snapshots for non-CNC live-adapter final-gate follow-through plans with seeded-record validation, duplicate conflict handling, clone-safe snapshots, status counts, and blocked evidence gating while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#612` refreshes the autonomous handoff after the final-gate follow-through UI slice and clears the merged `#611` in-flight branch.
