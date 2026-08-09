@@ -431,7 +431,10 @@ async function assertOfferExportLiveAdapterApplyExecutionReadiness(nonCncDemos: 
   await expect(liveAdapterApplyExecutionReadiness).toContainText("Latest apply execution status is blocked.")
   await expect(liveAdapterApplyExecutionReadiness).toContainText("Latest apply execution mode is dry_run.")
   await expect(liveAdapterApplyExecutionReadiness).toContainText("Apply plan: Withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Commit plan: Withheld")
   await expect(liveAdapterApplyExecutionReadiness).toContainText("Committed execution: Withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Source execution: Withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Commit record withheld until ready")
   await expect(liveAdapterApplyExecutionReadiness).toContainText(
     "Apply execution readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
   )

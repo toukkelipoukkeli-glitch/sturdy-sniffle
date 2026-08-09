@@ -11113,7 +11113,7 @@ export function ProcessQuotePreviewCard({
         </small>
       </div>
       <div
-        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-readiness"
+        className="process-demo-promotion-release-readiness"
         aria-label="Non-CNC promoted quote customer export live adapter apply execution readiness"
         data-status={promotionOfferExportLiveAdapterApplyExecutionReadiness.status}
       >

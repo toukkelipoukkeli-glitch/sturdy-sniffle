@@ -1291,7 +1291,16 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent("Apply plan: Withheld")
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Commit plan: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
       "Committed execution: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Source execution: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Commit record withheld until ready",
     )
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
       "Apply execution readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
