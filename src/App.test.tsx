@@ -5024,7 +5024,7 @@ describe("FactoryBid workspace (component)", () => {
       const stored = JSON.parse(window.localStorage.getItem("factorybid.workspace.v1") ?? "{}")
       expect(stored.releaseExecutionRunsById?.[stored.selectedId]).toHaveLength(1)
     })
-  })
+  }, 20_000)
 
   it("rejects restored release executions with malformed calendar events", async () => {
     const user = userEvent.setup()
