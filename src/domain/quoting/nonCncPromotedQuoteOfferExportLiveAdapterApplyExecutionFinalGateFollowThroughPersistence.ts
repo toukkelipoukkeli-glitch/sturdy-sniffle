@@ -159,18 +159,19 @@ function normalizeSnapshot(
 ): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot {
   const recordsByFollowThroughId =
     new Map<string, NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughRecord>()
+  const recordKeysByFollowThroughIdAndRecordedAt = new Map<string, string>()
   for (const record of snapshot?.records ?? []) {
     const normalized = normalizeRecord(record)
-    const existing = recordsByFollowThroughId.get(normalized.followThroughId)
-    if (
-      existing &&
-      normalized.recordedAt === existing.recordedAt &&
-      stableRecordKey(normalized) !== stableRecordKey(existing)
-    ) {
+    const timestampKey = JSON.stringify([normalized.followThroughId, normalized.recordedAt])
+    const recordKey = stableRecordKey(normalized)
+    const existingRecordKey = recordKeysByFollowThroughIdAndRecordedAt.get(timestampKey)
+    if (existingRecordKey && existingRecordKey !== recordKey) {
       throw new Error(
         "conflicting live-adapter final-gate follow-through records cannot share followThroughId and recordedAt",
       )
     }
+    recordKeysByFollowThroughIdAndRecordedAt.set(timestampKey, recordKey)
+    const existing = recordsByFollowThroughId.get(normalized.followThroughId)
     if (!existing || sortNewestFirst(normalized, existing) < 0) {
       recordsByFollowThroughId.set(normalized.followThroughId, normalized)
     }

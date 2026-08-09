@@ -158,6 +158,30 @@ describe("non-CNC live-adapter apply execution final-gate follow-through persist
     ).toThrow("conflicting live-adapter final-gate follow-through records cannot share followThroughId and recordedAt")
   })
 
+  it("rejects conflicting older duplicates even after a newer record wins the identity", async () => {
+    const olderRecord = await seedReadyFollowThroughRecord()
+    const newerRecord = {
+      ...olderRecord,
+      recordedAt: "2026-08-09T20:10:00.000Z",
+      recordedBy: "Replacement Operator",
+    } satisfies NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughRecord
+
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence({
+        initialSnapshot: {
+          records: [
+            olderRecord,
+            newerRecord,
+            {
+              ...olderRecord,
+              recordedBy: "Conflicting Older Operator",
+            },
+          ],
+        },
+      }),
+    ).toThrow("conflicting live-adapter final-gate follow-through records cannot share followThroughId and recordedAt")
+  })
+
   it("returns cloned follow-through snapshots", async () => {
     const followThrough = readyFollowThrough()
     const adapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence()
