@@ -441,6 +441,40 @@ async function assertOfferExportLiveAdapterApplyExecutionReadiness(nonCncDemos: 
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterApplyExecutionReadinessHistory(nonCncDemos: Locator, page: Page) {
+  const liveAdapterApplyExecutionReadinessHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter apply execution readiness history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterApplyExecutionReadinessHistory).toBeVisible()
+  await expect(liveAdapterApplyExecutionReadinessHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Offer export live adapter apply execution readiness history",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Live-adapter apply readiness history blocked",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Latest non-CNC live-adapter apply execution readiness is blocked",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Apply-execution readiness history is deterministic review data only",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText("Ready 0, blocked 1")
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText("0 applied commands")
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Resolve apply-execution readiness blockers before using final-gate evidence.",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText("Ready records: None")
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText("Blocked records: non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-readiness-")
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText(
+    "Non-CNC live adapter apply execution readiness history",
+  )
+  await expect(liveAdapterApplyExecutionReadinessHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -512,6 +546,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterApplyPlanHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyExecutionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyExecutionReadiness(nonCncDemos, page)
+      await assertOfferExportLiveAdapterApplyExecutionReadinessHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

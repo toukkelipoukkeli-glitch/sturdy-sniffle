@@ -1305,6 +1305,35 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
       "Apply execution readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
     )
+    const promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter apply execution readiness history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Offer export live adapter apply execution readiness history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Live-adapter apply readiness history blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Latest non-CNC live-adapter apply execution readiness is blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Apply-execution readiness history is deterministic review data only",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent("Ready 0, blocked 1")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent("0 applied commands")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Resolve apply-execution readiness blockers before using final-gate evidence.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent("Ready records: None")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Blocked records: non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-readiness-",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent(
+      "Non-CNC live adapter apply execution readiness history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent("Status counts: blocked")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
