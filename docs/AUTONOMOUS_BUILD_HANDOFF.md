@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `2827845` (`Surface live adapter apply plan history (#593)`).
+- Main branch checkpoint: `55f3eb9` (`Add live adapter apply execution audit (#594)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-audit` (add deterministic domain-only live-adapter apply execution audit records; no live writes).
+- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-persistence` (add deterministic local persistence snapshots for live-adapter apply execution audit records; no live writes).
 - Latest merged sequence:
+  - `#594` adds deterministic domain-only non-CNC live-adapter apply execution audit records for dry-run, commit, blocked, pending, failed, partial, and succeeded command outcomes while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#593` surfaces local live-adapter apply-plan history/read summaries in the guarded non-CNC registry preview with persisted evidence, command totals, action items, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#592` adds deterministic local live-adapter apply-plan history/read-summary helpers with blocked/apply-ready counts, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#591` stabilizes the interaction-heavy release-review App test that timed out in post-merge main CI after `#590`.
