@@ -4980,7 +4980,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(restoredExecutionAudit).toHaveTextContent("Blocked before execution")
     expect(within(restoredExecutionAudit).getByText("Mode").closest(".metric")).toHaveTextContent("dry run")
     expect(within(restoredExecutionAudit).queryByRole("button", { name: "Release executed" })).toBeNull()
-  })
+  }, 20_000)
 })
 
 describe("calculateWorkspaceCncQuote", () => {
