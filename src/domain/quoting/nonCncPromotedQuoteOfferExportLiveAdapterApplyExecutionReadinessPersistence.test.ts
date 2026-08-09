@@ -89,7 +89,6 @@ describe("non-CNC live-adapter apply execution readiness persistence", () => {
     const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence()
 
     const snapshot = await persistence.recordReadiness({ readiness, recordedAt, recordedBy: actor })
-    const restored = persistence.snapshot()
 
     expect(snapshot).toMatchObject({
       blockedRecordIds: [],
@@ -123,15 +122,24 @@ describe("non-CNC live-adapter apply execution readiness persistence", () => {
       snapshot.latestRecord.latestExecutionFingerprint = "mutated-fingerprint"
     }
 
+    const restored = persistence.snapshot()
     expect(restored.records[0].reviewWarnings).not.toContain("mutated")
     expect(restored.readyRecordIds).not.toContain("mutated-id")
     expect(restored.latestRecord?.latestExecutionFingerprint).toBe(readiness.latestExecutionFingerprint)
   })
 
-  it("dedupes seeded records by readiness id and keeps the newest record", async () => {
+  it("dedupes seeded records by canonical readiness id and keeps the newest record", async () => {
     const readiness = blockedReadiness()
     const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence()
     const snapshot = await persistence.recordReadiness({ readiness, recordedAt, recordedBy: actor })
+    const equivalentTimestampSnapshot = await persistence.recordReadiness({
+      readiness: {
+        ...readiness,
+        requestedAt: "2026-08-09T13:10:00+00:00",
+      },
+      recordedAt: "2026-08-09T13:20:00.000Z",
+      recordedBy: "Timestamp Operator",
+    })
     const olderRecord = {
       ...snapshot.records[0],
       recordedAt: "2026-08-09T13:00:00.000Z",
@@ -145,6 +153,9 @@ describe("non-CNC live-adapter apply execution readiness persistence", () => {
       },
     }).snapshot()
 
+    expect(equivalentTimestampSnapshot.recordCount).toBe(1)
+    expect(equivalentTimestampSnapshot.records[0].requestedAt).toBe(requestedAt)
+    expect(equivalentTimestampSnapshot.records[0].recordedBy).toBe("Timestamp Operator")
     expect(restored.recordCount).toBe(1)
     expect(restored.records[0].recordedAt).toBe(recordedAt)
     expect(restored.records[0].recordedBy).toBe(actor)
@@ -169,6 +180,10 @@ describe("non-CNC live-adapter apply execution readiness persistence", () => {
       ...snapshot.records[0],
       recordedBy: "Different Operator",
     }
+    const invalidLatestStatus = {
+      ...snapshot.records[0],
+      latestStatus: "applied",
+    } as unknown as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord
 
     expect(() =>
       createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence({
@@ -185,6 +200,11 @@ describe("non-CNC live-adapter apply execution readiness persistence", () => {
         initialSnapshot: { records: [snapshot.records[0], conflictingDuplicate] },
       }),
     ).toThrow("conflicting live-adapter apply execution readiness records cannot share readinessRecordId and recordedAt")
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence({
+        initialSnapshot: { records: [invalidLatestStatus] },
+      }),
+    ).toThrow("latestStatus is not a supported non-CNC live-adapter apply execution status")
   })
 })
 

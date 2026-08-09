@@ -2,6 +2,10 @@ import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import { fingerprintNonCncPromotedQuoteOfferExportPackagePayload } from "./nonCncPromotedQuoteOfferExportPackagePlan"
 import {
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_STATUSES,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus,
+} from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecution"
+import {
   NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_READINESS_VERSION,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessStatus,
@@ -29,7 +33,7 @@ export interface NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadines
   latestCommitRecordId?: string
   latestCommittedExecutionFingerprint?: string
   latestSourceExecutionFingerprint?: string
-  latestStatus?: string
+  latestStatus?: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus
   blockerCount: number
   warningCount: number
   blockerLabels: string[]
@@ -198,7 +202,7 @@ function normalizeRecord(
     latestCommittedExecutionFingerprint: optionalTrim(record.latestCommittedExecutionFingerprint),
     latestExecutionFingerprint: optionalTrim(record.latestExecutionFingerprint),
     latestSourceExecutionFingerprint: optionalTrim(record.latestSourceExecutionFingerprint),
-    latestStatus: optionalTrim(record.latestStatus),
+    latestStatus: normalizeLatestStatus(record.latestStatus),
     persistenceVersion: normalizePersistenceVersion(record.persistenceVersion),
     persistedRunCount: nonNegativeInteger(record.persistedRunCount, "persistedRunCount"),
     readinessRecordId: nonBlank(record.readinessRecordId, "readinessRecordId"),
@@ -341,7 +345,7 @@ function countStatuses(
 function fingerprintReadiness(readiness: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness): string {
   return `non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-readiness-${fingerprintNonCncPromotedQuoteOfferExportPackagePayload(
     stableJson({
-      requestedAt: readiness.requestedAt,
+      requestedAt: normalizeIsoTimestamp(readiness.requestedAt, "requestedAt"),
       targetRfqId: readiness.targetRfqId,
     }),
   )}`
@@ -421,4 +425,21 @@ function normalizeStatus(
     throw new Error("status is not a supported non-CNC live-adapter apply execution readiness status")
   }
   return status
+}
+
+function normalizeLatestStatus(
+  status: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus | undefined,
+): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus | undefined {
+  const normalized = optionalTrim(status)
+  if (normalized === undefined) {
+    return undefined
+  }
+  if (
+    !NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_STATUSES.includes(
+      normalized as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus,
+    )
+  ) {
+    throw new Error("latestStatus is not a supported non-CNC live-adapter apply execution status")
+  }
+  return normalized as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionStatus
 }
