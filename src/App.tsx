@@ -364,6 +364,11 @@ import {
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistence"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory"
+import {
+  buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord,
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot,
@@ -8158,6 +8163,28 @@ export function ProcessQuotePreviewCard({
       promotionPlan.targetRfqId,
     ],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot = useMemo(
+    () => {
+      const record = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord({
+        readiness: promotionOfferExportLiveAdapterApplyExecutionReadiness,
+        recordedAt: promotionPlan.requestedAt,
+        recordedBy: promotionPlan.requestedBy,
+      })
+      return createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence({
+        initialSnapshot: {
+          records: [record],
+        },
+      }).snapshot()
+    },
+    [promotionOfferExportLiveAdapterApplyExecutionReadiness, promotionPlan.requestedAt, promotionPlan.requestedBy],
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionReadinessHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary(
+        promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8198,6 +8225,9 @@ export function ProcessQuotePreviewCard({
   )
   const promotionOfferExportLiveAdapterApplyExecutionStatusSummary = buildStatusCountSummary(
     resolvedPromotionOfferExportLiveAdapterApplyExecutionSnapshot.statusCounts,
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionReadinessStatusSummary = buildStatusCountSummary(
+    promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot.statusCounts,
   )
   useEffect(() => {
     if (!promotionRecord) {
@@ -11199,6 +11229,86 @@ export function ProcessQuotePreviewCard({
             {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestSourceExecutionFingerprint ?? "Withheld"}
           </small>
         </div>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
+        aria-label="Non-CNC promoted quote customer export live adapter apply execution readiness history"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter apply execution readiness history</span>
+            <strong>{promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.title}</strong>
+          </div>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot.persistenceVersion}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Readiness records</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.totalRecords, "record")}</strong>
+            <small>
+              Ready {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.readyCount}, blocked{" "}
+              {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.blockedCount}
+            </small>
+          </div>
+          <div>
+            <span>Final-gate evidence</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.appliedCommandCount,
+                "applied command",
+              )}
+            </strong>
+            <small>
+              {formatCount(promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.blockerCount, "blocker")},{" "}
+              {formatCount(promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.warningCount, "warning")}
+            </small>
+          </div>
+          <div>
+            <span>Latest readiness</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.latestRecord?.status ?? "none")}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.latestRecord?.readinessRecordId ??
+                "No readiness history record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>
+            Apply-execution readiness history is deterministic review data only; live customer-offer, file,
+            release-review, export, and connector writes stay disabled.
+          </small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.actionItems.map((actionItem) => (
+            <li data-status={promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.severity} key={actionItem}>
+              <strong>{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Snapshot IDs</span>
+          <small>Ready records: {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.readyRecordIds.join(", ") || "None"}</small>
+          <small>Blocked records: {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.blockedRecordIds.join(", ") || "None"}</small>
+          <small>Apply plans: {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.latestApplyPlanIds.join(", ") || "None"}</small>
+          <small>
+            Committed executions:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.latestCommittedExecutionFingerprints.join(", ") ||
+              "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter apply execution readiness history export text"
+          className="process-demo-promotion-release-readiness-export"
+          tabIndex={0}
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionReadinessHistory.exportText}
+        </pre>
+        <small className="process-demo-promotion-release-readiness-status">
+          Status counts: {promotionOfferExportLiveAdapterApplyExecutionReadinessStatusSummary || "None"}
+        </small>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"

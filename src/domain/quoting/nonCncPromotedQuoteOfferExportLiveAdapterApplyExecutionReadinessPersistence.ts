@@ -86,7 +86,7 @@ export function createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecuti
 
   return {
     async recordReadiness(input) {
-      const record = buildReadinessRecord(input)
+      const record = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord(input)
       snapshotState = normalizeSnapshot({
         records: [
           ...snapshotState.records,
@@ -103,7 +103,7 @@ export function createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecuti
   }
 }
 
-function buildReadinessRecord({
+export function buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord({
   readiness,
   recordedAt,
   recordedBy,
