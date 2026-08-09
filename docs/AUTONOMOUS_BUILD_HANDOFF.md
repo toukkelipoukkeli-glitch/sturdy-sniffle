@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `fc0a22a` (`Add live adapter apply execution readiness (#599)`).
+- Main branch checkpoint: `65e8c23` (`Refresh apply execution readiness handoff (#600)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/live-adapter-apply-execution-readiness-ui` — surfaces deterministic non-CNC live-adapter apply-execution readiness/final-gate status in the guarded registry preview while live customer-offer, file, release-review, export, and connector writes remain disabled.
 - Latest merged sequence:
+  - `#600` refreshes the autonomous handoff after the apply-execution readiness domain slice and clears the merged `#599` in-flight branch.
   - `#599` adds deterministic domain-only non-CNC live-adapter apply-execution readiness/final-gate modeling over persisted apply execution history, exposing live evidence only when matching committed apply execution history is ready while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#598` refreshes the autonomous handoff after the live-adapter apply execution history UI slice and clears the merged `#597` in-flight branch.
   - `#597` surfaces deterministic local live-adapter apply execution history/read summaries in the guarded registry preview with dry-run apply outcomes, command aggregates, action items, evidence IDs, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.

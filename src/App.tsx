@@ -363,6 +363,7 @@ import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistence"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot,
@@ -8142,6 +8143,21 @@ export function ProcessQuotePreviewCard({
       ),
     [resolvedPromotionOfferExportLiveAdapterApplyExecutionSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionReadiness = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness({
+        history: promotionOfferExportLiveAdapterApplyExecutionHistory,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+        targetRfqId: promotionPlan.targetRfqId,
+      }),
+    [
+      promotionOfferExportLiveAdapterApplyExecutionHistory,
+      promotionPlan.requestedAt,
+      promotionPlan.requestedBy,
+      promotionPlan.targetRfqId,
+    ],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -11095,6 +11111,94 @@ export function ProcessQuotePreviewCard({
         <small className="process-demo-promotion-release-readiness-status">
           Status counts: {promotionOfferExportLiveAdapterApplyExecutionStatusSummary || "None"}
         </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-readiness"
+        aria-label="Non-CNC promoted quote customer export live adapter apply execution readiness"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionReadiness.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter apply execution readiness</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyExecutionReadiness.status)}</strong>
+          </div>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionReadiness.readinessVersion}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyExecutionReadiness.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Readiness evidence</span>
+            <strong>{formatCount(promotionOfferExportLiveAdapterApplyExecutionReadiness.persistedRunCount, "run")}</strong>
+            <small>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionReadiness.appliedCommandCount,
+                "applied command",
+              )}
+            </small>
+          </div>
+          <div>
+            <span>Latest execution</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyExecutionReadiness.latestStatus ?? "none")}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestExecutionFingerprint ??
+                "Apply execution evidence withheld"}
+            </small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOfferExportLiveAdapterApplyExecutionReadiness.targetRfqId}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestCommitRecordId ??
+                "Commit record withheld until ready"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionReadiness.applyExecutionReadinessBoundary}</small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyExecutionReadiness.blockerLabels.length > 0 ? (
+            promotionOfferExportLiveAdapterApplyExecutionReadiness.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))
+          ) : (
+            <li data-status="ready">
+              <strong>Apply execution history is ready for future live-adapter final-gate modeling.</strong>
+            </li>
+          )}
+        </ul>
+        {promotionOfferExportLiveAdapterApplyExecutionReadiness.reviewWarnings.length > 0 ? (
+          <ul
+            aria-label="Non-CNC promoted quote customer export live adapter apply execution readiness warnings"
+            className="process-demo-promotion-release-readiness-list"
+          >
+            {promotionOfferExportLiveAdapterApplyExecutionReadiness.reviewWarnings.map((warning) => (
+              <li data-status="warning" key={warning}>
+                <strong>{warning}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Evidence IDs</span>
+          <small>
+            Apply plan: {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestApplyPlanId ?? "Withheld"}
+          </small>
+          <small>
+            Commit plan: {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestCommitPlanId ?? "Withheld"}
+          </small>
+          <small>
+            Committed execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestCommittedExecutionFingerprint ?? "Withheld"}
+          </small>
+          <small>
+            Source execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionReadiness.latestSourceExecutionFingerprint ?? "Withheld"}
+          </small>
+        </div>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"

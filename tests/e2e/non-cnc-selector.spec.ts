@@ -413,6 +413,31 @@ async function assertOfferExportLiveAdapterApplyExecutionHistory(nonCncDemos: Lo
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterApplyExecutionReadiness(nonCncDemos: Locator, page: Page) {
+  const liveAdapterApplyExecutionReadiness = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter apply execution readiness",
+    { exact: true },
+  )
+
+  await expect(liveAdapterApplyExecutionReadiness).toBeVisible()
+  await expect(liveAdapterApplyExecutionReadiness).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Offer export live adapter apply execution readiness")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText(
+    "Keep live customer-offer, file, release-review, export, and connector writes disabled until apply execution history has ready local evidence.",
+  )
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("2 runs")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("0 applied commands")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Apply execution evidence withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Latest apply execution status is blocked.")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Latest apply execution mode is dry_run.")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Apply plan: Withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText("Committed execution: Withheld")
+  await expect(liveAdapterApplyExecutionReadiness).toContainText(
+    "Apply execution readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -483,6 +508,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterApplyPlan(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyPlanHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterApplyExecutionHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterApplyExecutionReadiness(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
