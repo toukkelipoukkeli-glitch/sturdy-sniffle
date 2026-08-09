@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5c4d42d` (`Refresh apply readiness history handoff (#606)`).
+- Main branch checkpoint: `6c0fc80` (`Surface apply readiness history in registry preview (#607)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-readiness-history-ui` — surfaces the deterministic apply-execution readiness history/read-summary helper in the guarded registry preview while live customer-offer, file, release-review, export, and connector writes remain disabled.
+- In-flight branch at this checkpoint: none. Next smallest unblocked slice: turn reviewed apply-execution readiness into a deterministic final-gate follow-through boundary before any live customer-offer, file, release-review, export, or connector writes are enabled.
 - Latest merged sequence:
+  - `#607` surfaces the deterministic apply-execution readiness history/read-summary helper in the guarded registry preview with ready/blocked counts, action items, evidence aggregates, export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#606` refreshes the autonomous handoff after the apply-execution readiness history helper and clears the merged `#605` in-flight branch.
   - `#605` adds deterministic domain-only history/read-summary helpers over local non-CNC live-adapter apply-execution readiness/final-gate persistence snapshots, including ready/blocked counts, evidence aggregates, clone-safe recent records, action items, and copyable export text while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#604` refreshes the autonomous handoff after the apply-execution readiness persistence slice and clears the merged `#603` in-flight branch.
