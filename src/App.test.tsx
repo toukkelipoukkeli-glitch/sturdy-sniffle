@@ -1224,6 +1224,41 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterApplyPlanHistory).toHaveTextContent("Status counts: blocked 2")
     await waitFor(() => {
       expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter apply execution history",
+        ),
+      ).toHaveTextContent("Live-adapter apply execution history blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterApplyExecutionHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter apply execution history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "Offer export live adapter apply execution history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "Latest non-CNC live-adapter apply execution is blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "live customer-offer, file, release-review, export, and connector writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("blocked")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("10 commands")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("blocked 10")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "Apply execution history is deterministic review data only; live customer-offer, file, release-review, export, and connector writes stay disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "Resolve live-adapter apply execution blockers before recording another execution.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("Target RFQs: None")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("Committed executions: None")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent(
+      "Non-CNC offer export live adapter apply execution history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("Status counts: blocked 2")
+    await waitFor(() => {
+      expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
       ).toHaveTextContent("Live-adapter execution history blocked")
     })
