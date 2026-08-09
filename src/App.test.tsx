@@ -1259,6 +1259,54 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionHistory).toHaveTextContent("Status counts: blocked 2")
     await waitFor(() => {
       expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter apply execution readiness",
+        ),
+      ).toHaveTextContent("Offer export live adapter apply execution readiness")
+    })
+    const promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter apply execution readiness",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Keep live customer-offer, file, release-review, export, and connector writes disabled until apply execution history has ready local evidence.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent("2 runs")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent("0 applied commands")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent("blocked")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Apply execution evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Latest apply execution history status is blocked.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Latest apply execution status is blocked.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Latest apply execution mode is dry_run.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Latest apply execution record must have all commands applied.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent("Apply plan: Withheld")
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Commit plan: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Committed execution: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Source execution: Withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Commit record withheld until ready",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadiness).toHaveTextContent(
+      "Apply execution readiness is deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+    )
+    await waitFor(() => {
+      expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
       ).toHaveTextContent("Live-adapter execution history blocked")
     })
