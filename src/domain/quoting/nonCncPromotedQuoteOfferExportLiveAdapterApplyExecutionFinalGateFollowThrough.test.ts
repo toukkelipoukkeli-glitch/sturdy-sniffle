@@ -152,6 +152,40 @@ describe("non-CNC live-adapter apply execution final-gate follow-through", () =>
     expect(plan.commands.every((command) => command.status === "blocked")).toBe(true)
   })
 
+  it("blocks malformed ready summaries with missing readiness identity or target index membership", () => {
+    const ready = readyRecord({ recordedAt: "2026-08-09T19:00:00.000Z" })
+    const readyHistory = historyFromRecords([ready])
+    const blankReadinessIdHistory = {
+      ...readyHistory,
+      latestRecord: { ...readyHistory.latestRecord!, readinessRecordId: "" },
+      readyRecordIds: [""],
+    } satisfies NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary
+    const unindexedTargetHistory = {
+      ...historyFromRecords([ready]),
+      targetRfqIds: [],
+    } satisfies NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary
+
+    const blankReadinessIdPlan = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan({
+      readinessHistory: blankReadinessIdHistory,
+      requestedAt: "2026-08-09T20:00:00.000Z",
+      requestedBy: "FactoryBid Operator",
+    })
+    const unindexedTargetPlan = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan({
+      readinessHistory: unindexedTargetHistory,
+      requestedAt: "2026-08-09T20:00:00.000Z",
+      requestedBy: "FactoryBid Operator",
+    })
+
+    expect(blankReadinessIdPlan.status).toBe("blocked")
+    expect(blankReadinessIdPlan.blockerLabels).toContain("Latest readiness record is missing readiness record evidence.")
+    expect(blankReadinessIdPlan.commands.every((command) => command.evidenceFingerprints.length === 0)).toBe(true)
+    expect(unindexedTargetPlan.status).toBe("blocked")
+    expect(unindexedTargetPlan.blockerLabels).toContain(
+      "Readiness history summary does not include the latest target RFQ evidence.",
+    )
+    expect(unindexedTargetPlan.commands.every((command) => command.evidenceFingerprints.length === 0)).toBe(true)
+  })
+
   it("uses stable fingerprints for equivalent inputs", () => {
     const ready = readyRecord({ recordedAt: "2026-08-09T19:00:00.000Z" })
     const history = historyFromRecords([ready])

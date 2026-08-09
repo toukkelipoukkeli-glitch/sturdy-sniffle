@@ -206,10 +206,16 @@ function followThroughBlockers(
     readinessHistory.status === "ready" ? "" : `Latest apply-execution readiness history status is ${readinessHistory.status}.`,
     latestRecord.status === "ready" ? "" : "Latest apply-execution readiness record must be ready.",
     latestRecord.appliedCommandCount > 0 ? "" : "Latest readiness record must include applied command evidence.",
+    hasNonBlankEvidence(latestRecord.readinessRecordId)
+      ? ""
+      : "Latest readiness record is missing readiness record evidence.",
     readinessHistory.readyRecordIds.includes(latestRecord.readinessRecordId)
       ? ""
       : "Readiness history summary does not include the latest ready readiness record.",
     hasNonBlankEvidence(latestRecord.targetRfqId) ? "" : "Latest readiness record is missing target RFQ evidence.",
+    readinessHistory.targetRfqIds.includes(latestRecord.targetRfqId)
+      ? ""
+      : "Readiness history summary does not include the latest target RFQ evidence.",
     hasNonBlankEvidence(latestRecord.latestExecutionFingerprint)
       ? ""
       : "Latest readiness record is missing apply execution evidence.",
