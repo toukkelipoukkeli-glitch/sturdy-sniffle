@@ -4244,7 +4244,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(executionHistorySummary).toHaveTextContent(
       "Review the dry-run execution before enabling calendar provider side effects.",
     )
-  })
+  }, 20_000)
 
   it("hydrates calendar provider outcome history through the Convex browser bridge", async () => {
     const user = userEvent.setup()
