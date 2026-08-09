@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `49a71eb` (`Refresh apply execution readiness UI handoff (#602)`).
+- Main branch checkpoint: `40a6a50` (`Add apply execution readiness persistence (#603)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/live-adapter-apply-readiness-persistence` — adds deterministic local persistence snapshots for non-CNC live-adapter apply-execution readiness/final-gate records while live customer-offer, file, release-review, export, and connector writes remain disabled.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#603` adds deterministic local persistence snapshots for non-CNC live-adapter apply-execution readiness/final-gate records with seeded-record validation, duplicate conflict handling, clone-safe snapshots, status counts, canonical timestamp fingerprints, constrained latest-status validation, and blocked evidence gating while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#602` refreshes the autonomous handoff after the apply-execution readiness UI slice and clears the merged `#601` in-flight branch.
   - `#601` surfaces deterministic non-CNC live-adapter apply-execution readiness/final-gate status in the guarded registry preview, including blocked evidence withholding assertions for apply/commit/source/commit-record IDs while live customer-offer, file, release-review, export, and connector writes remain disabled.
   - `#600` refreshes the autonomous handoff after the apply-execution readiness domain slice and clears the merged `#599` in-flight branch.
