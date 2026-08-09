@@ -1334,6 +1334,46 @@ describe("FactoryBid workspace (component)", () => {
       "Non-CNC live adapter apply execution readiness history",
     )
     expect(promotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory).toHaveTextContent("Status counts: blocked")
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter final gate follow-through",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Offer export live adapter final gate follow-through",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Final-gate follow-through is blocked by",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("5 commands")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Planned 0, blocked 5")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Ready 0, blocked 1")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Target")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Withheld")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Readiness evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Apply-execution final-gate follow-through plans are deterministic review data only; this helper does not create customer offers, files, release reviews, exports, connector records, or external side effects.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Latest apply-execution readiness history status is blocked.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Do not follow through to live customer-offer export state from blocked readiness history.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Apply plan: Withheld")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Commit record: Withheld")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Latest execution: Withheld")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent("Follow-through:")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Review customer-offer final gate: blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Review export artifact final gate: blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
+      "Non-CNC live adapter apply execution final-gate follow-through",
+    )
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),

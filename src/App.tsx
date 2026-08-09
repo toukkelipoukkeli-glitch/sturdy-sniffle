@@ -365,6 +365,7 @@ import {
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistence"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough"
 import {
   buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord,
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessPersistence,
@@ -8185,6 +8186,15 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan({
+        readinessHistory: promotionOfferExportLiveAdapterApplyExecutionReadinessHistory,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+      }),
+    [promotionOfferExportLiveAdapterApplyExecutionReadinessHistory, promotionPlan.requestedAt, promotionPlan.requestedBy],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -11309,6 +11319,111 @@ export function ProcessQuotePreviewCard({
         <small className="process-demo-promotion-release-readiness-status">
           Status counts: {promotionOfferExportLiveAdapterApplyExecutionReadinessStatusSummary || "None"}
         </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter final gate follow-through</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.status)}</strong>
+          </div>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.followThroughVersion}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Follow-through commands</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.commandCount,
+                "command",
+              )}
+            </strong>
+            <small>
+              Planned {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.plannedCommandCount}, blocked{" "}
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.blockedCommandCount}
+            </small>
+          </div>
+          <div>
+            <span>Readiness source</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.historyRecordCount,
+                "record",
+              )}
+            </strong>
+            <small>
+              Ready {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.readyRecordCount}, blocked{" "}
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.blockedRecordCount}
+            </small>
+          </div>
+          <div>
+            <span>Target</span>
+            <strong>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.targetRfqId ?? "Withheld"}</strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.readinessRecordId ??
+                "Readiness evidence withheld"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.finalGateBoundary}</small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.nextActionLabels.map((actionItem) => (
+            <li data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.status} key={actionItem}>
+              <strong>{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.blockerLabels.length > 0 ? (
+          <ul
+            aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through blockers"
+            className="process-demo-promotion-release-readiness-list"
+          >
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.blockerLabels.map((blocker) => (
+              <li data-status="blocked" key={blocker}>
+                <strong>{blocker}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Evidence IDs</span>
+          <small>
+            Apply plan: {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.latestApplyPlanId ?? "Withheld"}
+          </small>
+          <small>
+            Commit record:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.latestCommitRecordId ?? "Withheld"}
+          </small>
+          <small>
+            Latest execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.latestExecutionFingerprint ?? "Withheld"}
+          </small>
+          <small>
+            Follow-through: {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.followThroughFingerprint}
+          </small>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Command review</span>
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.commands.map((command) => (
+            <small key={command.key}>
+              {command.label}: {humanizeKey(command.status)}
+            </small>
+          ))}
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through export text"
+          className="process-demo-promotion-release-readiness-export"
+          tabIndex={0}
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.exportText}
+        </pre>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
