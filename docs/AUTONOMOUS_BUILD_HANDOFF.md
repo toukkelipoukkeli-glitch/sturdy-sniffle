@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-09 Europe/Helsinki.
+Last refreshed: 2026-08-10 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9b76b28` (`[codex] Add final gate follow-through execution audit (#618)`).
+- Main branch checkpoint: `a3d0c81` (`[codex] Refresh final gate follow-through execution handoff (#619)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-follow-through-execution-persistence-runner` (domain-only deterministic local persistence for final-gate follow-through execution audit records).
 - Latest merged sequence:
+  - `#619` refreshes the autonomous handoff after the final-gate follow-through execution audit slice and clears the merged `#618` in-flight branch.
   - `#618` adds deterministic domain-only non-CNC live-adapter final-gate follow-through execution audit records for prepared, pending, succeeded, partial, failed, and blocked command outcomes while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#617` surfaces persisted non-CNC live-adapter final-gate follow-through history/read summaries in the guarded registry preview while live customer-offer, file, release-review, export, connector, and final-gate follow-through live execution writes remain disabled.
   - `#616` refreshes the autonomous handoff after the final-gate follow-through history summary slice and clears the merged `#615` in-flight branch.
