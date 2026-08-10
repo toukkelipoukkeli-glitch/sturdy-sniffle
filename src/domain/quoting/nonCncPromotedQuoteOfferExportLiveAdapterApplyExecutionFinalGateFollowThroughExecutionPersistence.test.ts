@@ -144,6 +144,17 @@ describe("non-CNC live-adapter final-gate follow-through execution persistence",
     expect(adapter.snapshot().recordCount).toBe(1)
   })
 
+  it("deduplicates repeated recordRun writes by execution fingerprint", async () => {
+    const run = preparedRun()
+    const adapter = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence()
+
+    await adapter.recordRun(run)
+    const snapshot = await adapter.recordRun(run)
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.records[0]?.executionFingerprint).toBe(run.executionFingerprint)
+  })
+
   it("rejects conflicting seeded records with the same execution fingerprint", async () => {
     const seededRecord = await seedPreparedRecord()
 
@@ -215,19 +226,24 @@ describe("non-CNC live-adapter final-gate follow-through execution persistence",
 })
 
 async function seedPreparedRecord(): Promise<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRecord> {
-  const run = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun({
-    actor,
-    executedAt,
-    followThrough: readyFollowThroughPlan(),
-    mode: "dry_run",
-  })
   const record = (
-    await createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence().recordRun(run)
+    await createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence().recordRun(
+      preparedRun(),
+    )
   ).records[0]
   if (!record) {
     throw new Error("Expected prepared execution record")
   }
   return record
+}
+
+function preparedRun() {
+  return buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun({
+    actor,
+    executedAt,
+    followThrough: readyFollowThroughPlan(),
+    mode: "dry_run",
+  })
 }
 
 async function seedBlockedRecord(): Promise<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRecord> {
