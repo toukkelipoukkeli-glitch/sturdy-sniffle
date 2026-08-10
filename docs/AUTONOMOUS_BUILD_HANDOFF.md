@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a3d0c81` (`[codex] Refresh final gate follow-through execution handoff (#619)`).
+- Main branch checkpoint: `dfd1e6f` (`[codex] Add final gate follow-through execution persistence (#620)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-follow-through-execution-persistence-runner` (domain-only deterministic local persistence for final-gate follow-through execution audit records).
+- In-flight branch at this checkpoint: `codex/final-gate-follow-through-execution-history` (domain-only deterministic history/read summaries for persisted final-gate follow-through execution audit records).
 - Latest merged sequence:
+  - `#620` adds deterministic local persistence snapshots for non-CNC live-adapter final-gate follow-through execution audit records with command aggregates, duplicate conflict handling, clone-safe snapshots, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#619` refreshes the autonomous handoff after the final-gate follow-through execution audit slice and clears the merged `#618` in-flight branch.
   - `#618` adds deterministic domain-only non-CNC live-adapter final-gate follow-through execution audit records for prepared, pending, succeeded, partial, failed, and blocked command outcomes while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#617` surfaces persisted non-CNC live-adapter final-gate follow-through history/read summaries in the guarded registry preview while live customer-offer, file, release-review, export, connector, and final-gate follow-through live execution writes remain disabled.
