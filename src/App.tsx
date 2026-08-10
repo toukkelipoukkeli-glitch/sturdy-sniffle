@@ -370,7 +370,6 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFo
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot,
-  type RecordNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughInput,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence"
 import {
   buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessRecord,
@@ -729,8 +728,6 @@ const emptyNonCncPromotedQuoteOfferExportLiveAdapterApplyPlanSnapshot =
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyPlanPersistence().snapshot()
 const emptyNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionSnapshot =
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistence().snapshot()
-const emptyNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot =
-  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence().snapshot()
 const defaultWorkspaceRuntimeContext: WorkspaceRuntimeContext = {
   clock: {
     now: "2026-06-20T09:00:00+03:00",
@@ -7012,15 +7009,6 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistenceSnapshot>(() =>
       promotionOfferExportLiveAdapterApplyExecutionPersistence.snapshot(),
     )
-  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence] = useState(() =>
-    createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence(),
-  )
-  const [
-    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
-    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
-  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot>(() =>
-    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence.snapshot(),
-  )
   const promotionPlan = useMemo(
     () =>
       buildNonCncQuotePromotionPlan({
@@ -7317,23 +7305,6 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
     },
     [promotionOfferExportLiveAdapterApplyExecutionPersistence],
   )
-  const recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough = useCallback(
-    (input: RecordNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughInput) => {
-      let isCurrent = true
-      void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence
-        .recordFollowThrough(input)
-        .then((snapshot) => {
-          if (isCurrent) {
-            setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot(snapshot)
-          }
-        })
-      return () => {
-        isCurrent = false
-      }
-    },
-    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence],
-  )
-
   const updateSheetMetalEdit = (field: keyof SheetMetalInputEditPatch, value: number) => {
     setSheetMetalEdits((current) => ({ ...current, [field]: value }))
   }
@@ -7380,9 +7351,6 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         }
         promotionOfferExportLiveAdapterApplyPlanSnapshot={promotionOfferExportLiveAdapterApplyPlanSnapshot}
         promotionOfferExportLiveAdapterApplyExecutionSnapshot={promotionOfferExportLiveAdapterApplyExecutionSnapshot}
-        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot={
-          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot
-        }
         promotionOfferExportLiveAdapterExecutionSnapshot={promotionOfferExportLiveAdapterExecutionSnapshot}
         promotionOfferExportPackageProviderCommitSnapshot={promotionOfferExportPackageProviderCommitSnapshot}
         promotionOfferExportPackageProviderReadModelSnapshot={promotionOfferExportPackageProviderReadModelSnapshot}
@@ -7411,9 +7379,6 @@ function ProcessDemoQuotesPanel({ demos }: { demos: ProcessDemoQuote[] }) {
         }
         recordPromotionOfferExportLiveAdapterApplyPlan={recordPromotionOfferExportLiveAdapterApplyPlan}
         recordPromotionOfferExportLiveAdapterApplyExecutionRun={recordPromotionOfferExportLiveAdapterApplyExecutionRun}
-        recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough={
-          recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough
-        }
         recordPromotionOfferExportLiveAdapterExecutionRun={recordPromotionOfferExportLiveAdapterExecutionRun}
         recordPromotionOutcomeCommit={recordPromotionOutcomeCommit}
         recordPromotionExecutionRun={recordPromotionExecutionRun}
@@ -7627,7 +7592,6 @@ export function ProcessQuotePreviewCard({
   promotionOfferExportLiveAdapterDecisionHistorySnapshot,
   promotionOfferExportLiveAdapterApplyPlanSnapshot,
   promotionOfferExportLiveAdapterApplyExecutionSnapshot,
-  promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
   promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot,
   promotionOfferExportLiveAdapterExecutionSnapshot,
   promotionOfferExportPackageProviderCommitSnapshot,
@@ -7649,7 +7613,6 @@ export function ProcessQuotePreviewCard({
   recordPromotionOfferExportLiveAdapterDecision,
   recordPromotionOfferExportLiveAdapterApplyPlan,
   recordPromotionOfferExportLiveAdapterApplyExecutionRun,
-  recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
   recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit,
   recordPromotionOfferExportLiveAdapterExecutionRun,
   recordPromotionOfferExportPackageProviderCommitRun,
@@ -7676,7 +7639,6 @@ export function ProcessQuotePreviewCard({
   promotionOfferExportLiveAdapterDecisionHistorySnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterDecisionHistorySnapshot
   promotionOfferExportLiveAdapterApplyPlanSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterApplyPlanPersistenceSnapshot
   promotionOfferExportLiveAdapterApplyExecutionSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionPersistenceSnapshot
-  promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot
   promotionOfferExportLiveAdapterExecutionOutcomeCommitSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitPersistenceSnapshot
   promotionOfferExportLiveAdapterExecutionSnapshot?: NonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistenceSnapshot
   promotionOfferExportPackageProviderCommitSnapshot?: NonCncPromotedQuoteOfferExportPackageProviderCommitPersistenceSnapshot
@@ -7710,9 +7672,6 @@ export function ProcessQuotePreviewCard({
   ) => () => void
   recordPromotionOfferExportLiveAdapterApplyExecutionRun?: (
     run: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionRun,
-  ) => () => void
-  recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough?: (
-    input: RecordNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughInput,
   ) => () => void
   recordPromotionOfferExportLiveAdapterExecutionOutcomeCommit?: (
     input: RecordNonCncPromotedQuoteOfferExportLiveAdapterExecutionOutcomeCommitInput,
@@ -7759,9 +7718,6 @@ export function ProcessQuotePreviewCard({
   const resolvedPromotionOfferExportLiveAdapterApplyExecutionSnapshot =
     promotionOfferExportLiveAdapterApplyExecutionSnapshot ??
     emptyNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionSnapshot
-  const resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot =
-    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot ??
-    emptyNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot
   const resolvedPromotionOfferExportPackageProviderCommitSnapshot =
     promotionOfferExportPackageProviderCommitSnapshot ?? emptyNonCncPromotedQuoteOfferExportPackageProviderCommitSnapshot
   const resolvedPromotionOfferExportPackageProviderReadModelSnapshot =
@@ -8243,12 +8199,21 @@ export function ProcessQuotePreviewCard({
       }),
     [promotionOfferExportLiveAdapterApplyExecutionReadinessHistory, promotionPlan.requestedAt, promotionPlan.requestedBy],
   )
+  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence(),
+  )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot>(() =>
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence.snapshot(),
+  )
   const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistorySummary(
-        resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot,
       ),
-    [resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot],
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot],
   )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
@@ -8295,7 +8260,7 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionReadinessSnapshot.statusCounts,
   )
   const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughStatusSummary = buildStatusCountSummary(
-    resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.statusCounts,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.statusCounts,
   )
   useEffect(() => {
     if (!promotionRecord) {
@@ -8458,27 +8423,34 @@ export function ProcessQuotePreviewCard({
     return recordPromotionOfferExportLiveAdapterApplyExecutionRun(promotionOfferExportLiveAdapterApplyExecutionRun)
   }, [promotionOfferExportLiveAdapterApplyExecutionRun, recordPromotionOfferExportLiveAdapterApplyExecutionRun])
   useEffect(() => {
-    if (!recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough) {
-      return undefined
-    }
     if (
-      resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.records.some(
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.records.some(
         (record) =>
           record.followThroughId === promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.followThroughId,
       )
     ) {
       return undefined
     }
-    return recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough({
-      followThrough: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
-      recordedAt: promotionPlan.requestedAt,
-      recordedBy: "FactoryBid Operator",
-    })
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence
+      .recordFollowThrough({
+        followThrough: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
+        recordedAt: promotionPlan.requestedAt,
+        recordedBy: "FactoryBid Operator",
+      })
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot(snapshot)
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
   }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.records,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
     promotionPlan.requestedAt,
-    recordPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
-    resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.records,
   ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
@@ -11517,7 +11489,7 @@ export function ProcessQuotePreviewCard({
             <strong>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory.title}</strong>
           </div>
           <small>
-            {resolvedPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.persistenceVersion}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.persistenceVersion}
           </small>
         </div>
         <p>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory.operatorSummary}</p>
