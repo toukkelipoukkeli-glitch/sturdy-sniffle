@@ -1374,6 +1374,48 @@ describe("FactoryBid workspace (component)", () => {
     expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThrough).toHaveTextContent(
       "Non-CNC live adapter apply execution final-gate follow-through",
     )
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory = within(processDemos).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter final gate follow-through history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveAttribute("data-status", "blocked")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Offer export live adapter final gate follow-through history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Live-adapter final-gate follow-through history blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Latest non-CNC live-adapter final-gate follow-through record is blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Final-gate follow-through history is deterministic review data only",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent("Ready 0, blocked 1")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent("0 applied commands")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent("Planned 0, blocked 5")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Resolve final-gate follow-through blockers before enabling release follow-through adapters.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Ready follow-throughs: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Blocked follow-throughs: non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-final-gate-follow-through-",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Readiness records: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent("Apply plans: None")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Committed executions: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Source executions: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent(
+      "Non-CNC live adapter final-gate follow-through history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughHistory).toHaveTextContent("Status counts: blocked")
     await waitFor(() => {
       expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
