@@ -369,6 +369,7 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFo
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecution"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot,
@@ -8250,6 +8251,13 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft(
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -11789,6 +11797,148 @@ export function ProcessQuotePreviewCard({
           {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionStatusSummary || "None"}
         </small>
       </div>
+      <section
+        className="rounded-lg border border-slate-200 bg-white p-4 text-slate-950 shadow-sm"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.status}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-xs font-semibold uppercase text-slate-500">
+              Offer export live adapter final gate follow-through execution outcome draft
+            </span>
+            <strong className="mt-1 block break-words text-base font-semibold">
+              {humanizeKey(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.status)}
+            </strong>
+          </div>
+          <small className="max-w-full break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.draftVersion}
+          </small>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.nextOperatorMessage}
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Suggested outcomes</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.readyOutcomeCount,
+                "ready outcome",
+              )}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.blockedOutcomeCount,
+                "blocked outcome",
+              )}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Source run</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {humanizeKey(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.mode)}
+            </strong>
+            <small className="mt-1 block break-all text-xs text-slate-600">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.executionFingerprint}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Latest evidence</span>
+            <strong className="mt-1 block break-words text-sm font-semibold">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestExecutionFingerprint ??
+                "Follow-through execution evidence withheld"}
+            </strong>
+            <small className="mt-1 block break-words text-xs text-slate-600">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestCommitRecordId ??
+                "Commit record evidence withheld"}
+            </small>
+          </div>
+        </div>
+        <ul
+          className="mt-4 grid gap-2"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft commands"
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.commandOutcomes.map(
+            (outcome) => (
+              <li
+                className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"
+                data-status={outcome.status}
+                key={outcome.key}
+              >
+                <strong className="block break-words font-semibold">{outcome.label}</strong>
+                <small className="mt-1 block text-xs text-slate-600">
+                  {humanizeKey(outcome.status)} · {humanizeKey(outcome.target)}
+                </small>
+                <small className="mt-1 block break-words text-xs text-slate-600">
+                  {outcome.suggestedOutcome?.message ?? outcome.blockerLabels.join(" ")}
+                </small>
+                <small className="mt-1 block break-words text-xs text-slate-600">
+                  {outcome.externalId ?? "Final-gate outcome external id withheld"}
+                </small>
+              </li>
+            ),
+          )}
+        </ul>
+        {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.reviewWarnings.length > 0 ? (
+          <ul
+            className="mt-4 grid gap-2"
+            aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft warnings"
+          >
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.reviewWarnings.map(
+              (warning) => (
+                <li
+                  className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                  data-status="warning"
+                  key={warning}
+                >
+                  <strong className="break-words font-semibold">{warning}</strong>
+                </li>
+              ),
+            )}
+          </ul>
+        ) : null}
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <span className="block text-xs font-semibold uppercase text-slate-500">Boundary</span>
+          <small className="mt-1 block break-words text-xs leading-5 text-slate-600">
+            {
+              promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.adapterFinalGateFollowThroughOutcomeBoundary
+            }
+          </small>
+        </div>
+        <div className="mt-3 grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase text-slate-500">Draft ids</span>
+          <small className="break-words">
+            Follow-through:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.followThroughId}
+          </small>
+          <small className="break-words">
+            Target RFQ:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.targetRfqId ??
+              "Final-gate target withheld"}
+          </small>
+          <small className="break-words">
+            Readiness:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.readinessRecordId ??
+              "Readiness evidence withheld"}
+          </small>
+          <small className="break-words">
+            Apply plan:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestApplyPlanId ??
+              "Apply plan evidence withheld"}
+          </small>
+          <small className="break-words">
+            Committed execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft
+              .latestCommittedExecutionFingerprint ?? "Committed execution evidence withheld"}
+          </small>
+          <small className="break-words">
+            Source execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft
+              .latestSourceExecutionFingerprint ?? "Source execution evidence withheld"}
+          </small>
+        </div>
+      </section>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
         aria-label="Non-CNC promoted quote customer export live adapter execution history"

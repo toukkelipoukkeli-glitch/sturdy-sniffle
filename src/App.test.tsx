@@ -71,6 +71,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_PLAN_VERSION } f
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_PLAN_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyPlanPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -1463,6 +1464,66 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionHistory).toHaveTextContent(
       "Status counts: blocked",
+    )
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft = within(
+      processDemos,
+    ).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft",
+    )
+    await waitFor(() => {
+      expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+        "Offer export live adapter final gate follow-through execution outcome draft",
+      )
+    })
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveAttribute(
+      "data-status",
+      "blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_DRAFT_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Final-gate follow-through execution is not ready for outcome suggestions.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "0 ready outcomes",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "5 blocked outcomes",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent("dry run")
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Follow-through execution evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Commit record evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Review customer-offer final gate",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "blocked · customer offer",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Final-gate outcome external id withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Final-gate follow-through execution outcome drafts are deterministic review data only",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Target RFQ: Final-gate target withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Readiness: Readiness evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Apply plan: Apply plan evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Committed execution: Committed execution evidence withheld",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
+      "Source execution: Source execution evidence withheld",
     )
     await waitFor(() => {
       expect(
