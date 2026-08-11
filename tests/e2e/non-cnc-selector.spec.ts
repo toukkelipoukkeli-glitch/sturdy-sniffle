@@ -587,6 +587,49 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionHistor
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft(nonCncDemos: Locator, page: Page) {
+  const liveAdapterFinalGateFollowThroughExecutionOutcomeDraft = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft",
+    { exact: true },
+  )
+
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toBeVisible()
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Offer export live adapter final gate follow-through execution outcome draft",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Final-gate follow-through execution is not ready for outcome suggestions.",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText("0 ready outcomes")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText("5 blocked outcomes")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Follow-through execution evidence withheld",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Commit record evidence withheld",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Review customer-offer final gate",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Final-gate outcome external id withheld",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Final-gate follow-through execution outcome drafts are deterministic review data only",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Target RFQ: Final-gate target withheld",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Readiness: Readiness evidence withheld",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toContainText(
+    "Source execution: Source execution evidence withheld",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -662,6 +705,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterFinalGateFollowThrough(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

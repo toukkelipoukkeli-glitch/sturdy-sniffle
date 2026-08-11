@@ -369,6 +369,7 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFo
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecution"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot,
@@ -8250,6 +8251,13 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft(
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -11788,6 +11796,126 @@ export function ProcessQuotePreviewCard({
           Status counts:{" "}
           {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionStatusSummary || "None"}
         </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-outcome-draft"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter final gate follow-through execution outcome draft</span>
+            <strong>
+              {humanizeKey(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.status)}
+            </strong>
+          </div>
+          <small>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.draftVersion}</small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.nextOperatorMessage}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Suggested outcomes</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.readyOutcomeCount,
+                "ready outcome",
+              )}
+            </strong>
+            <small>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.blockedOutcomeCount,
+                "blocked outcome",
+              )}
+            </small>
+          </div>
+          <div>
+            <span>Source run</span>
+            <strong>{humanizeKey(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.mode)}</strong>
+            <small>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.executionFingerprint}</small>
+          </div>
+          <div>
+            <span>Latest evidence</span>
+            <strong>
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestExecutionFingerprint ??
+                "Follow-through execution evidence withheld"}
+            </strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestCommitRecordId ??
+                "Commit record evidence withheld"}
+            </small>
+          </div>
+        </div>
+        <ul
+          className="process-demo-promotion-release-readiness-list"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft commands"
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.commandOutcomes.map(
+            (outcome) => (
+              <li data-status={outcome.status} key={outcome.key}>
+                <strong>{outcome.label}</strong>
+                <small>
+                  {humanizeKey(outcome.status)} · {humanizeKey(outcome.target)}
+                </small>
+                <small>{outcome.suggestedOutcome?.message ?? outcome.blockerLabels.join(" ")}</small>
+                <small>{outcome.externalId ?? "Final-gate outcome external id withheld"}</small>
+              </li>
+            ),
+          )}
+        </ul>
+        {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.reviewWarnings.length > 0 ? (
+          <ul
+            className="process-demo-promotion-release-readiness-warnings"
+            aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome draft warnings"
+          >
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.reviewWarnings.map(
+              (warning) => (
+                <li data-status="warning" key={warning}>
+                  <strong>{warning}</strong>
+                </li>
+              ),
+            )}
+          </ul>
+        ) : null}
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>
+            {
+              promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.adapterFinalGateFollowThroughOutcomeBoundary
+            }
+          </small>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Draft ids</span>
+          <small>
+            Follow-through:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.followThroughId}
+          </small>
+          <small>
+            Target RFQ:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.targetRfqId ??
+              "Final-gate target withheld"}
+          </small>
+          <small>
+            Readiness:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.readinessRecordId ??
+              "Readiness evidence withheld"}
+          </small>
+          <small>
+            Apply plan:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft.latestApplyPlanId ??
+              "Apply plan evidence withheld"}
+          </small>
+          <small>
+            Committed execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft
+              .latestCommittedExecutionFingerprint ?? "Committed execution evidence withheld"}
+          </small>
+          <small>
+            Source execution:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft
+              .latestSourceExecutionFingerprint ?? "Source execution evidence withheld"}
+          </small>
+        </div>
       </div>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"

@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `db746b4` (`[codex] Add final gate follow-through outcome drafts (#624)`).
+- Main branch checkpoint: `fa0a8ab` (`Refresh final gate outcome draft handoff (#625)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-follow-through-outcome-draft-ui` (surfaces final-gate follow-through execution outcome drafts in the guarded registry preview; live writes remain disabled).
 - Latest merged sequence:
+  - `#625` refreshes the autonomous handoff after the final-gate follow-through execution outcome-draft domain slice and clears the merged `#624` in-flight branch.
   - `#624` adds deterministic domain-only non-CNC live-adapter final-gate follow-through execution outcome drafts that turn prepared dry-runs into reviewable applied outcomes while blocked, committed, malformed, or partial-evidence runs withhold external evidence and leave live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled.
   - `#623` refreshes the autonomous handoff after the final-gate follow-through execution history UI slice and clears the merged `#622` in-flight branch.
   - `#622` surfaces persisted non-CNC live-adapter final-gate follow-through execution history/read summaries in the guarded registry preview with blocked command aggregates, withheld evidence IDs, action items, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
