@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-10 Europe/Helsinki.
+Last refreshed: 2026-08-11 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `34442c5` (`[codex] Surface final gate follow-through execution history (#622)`).
+- Main branch checkpoint: `d247039` (`[codex] Refresh final gate follow-through execution history handoff (#623)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-follow-through-execution-outcome-draft`.
 - Latest merged sequence:
+  - `#623` refreshes the autonomous handoff after the final-gate follow-through execution history UI slice and clears the merged `#622` in-flight branch.
   - `#622` surfaces persisted non-CNC live-adapter final-gate follow-through execution history/read summaries in the guarded registry preview with blocked command aggregates, withheld evidence IDs, action items, copyable export text, and desktop/mobile selector coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#621` adds deterministic domain-only history/read summaries for persisted non-CNC live-adapter final-gate follow-through execution audit records, including command outcome aggregates, action items, clone-safe recent runs, evidence ID summaries, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#620` adds deterministic local persistence snapshots for non-CNC live-adapter final-gate follow-through execution audit records with command aggregates, duplicate conflict handling, clone-safe snapshots, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
