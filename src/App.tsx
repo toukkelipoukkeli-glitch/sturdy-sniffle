@@ -367,6 +367,12 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadiness }
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionReadinessHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughHistory"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecution"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPersistenceSnapshot,
@@ -8215,6 +8221,35 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun({
+        actor: "FactoryBid Operator",
+        executedAt: promotionPlan.requestedAt,
+        followThrough: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
+        mode: "dry_run",
+      }),
+    [
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
+      promotionPlan.requestedAt,
+    ],
+  )
+  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence] = useState(() =>
+    createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence(),
+  )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot>(() =>
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence.snapshot(),
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary(
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8261,6 +8296,9 @@ export function ProcessQuotePreviewCard({
   )
   const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughStatusSummary = buildStatusCountSummary(
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.statusCounts,
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionStatusSummary = buildStatusCountSummary(
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.statusCounts,
   )
   useEffect(() => {
     if (!promotionRecord) {
@@ -8451,6 +8489,32 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughSnapshot.records,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
     promotionPlan.requestedAt,
+  ])
+  useEffect(() => {
+    if (
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.records.some(
+        (record) =>
+          record.executionFingerprint ===
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun.executionFingerprint,
+      )
+    ) {
+      return undefined
+    }
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence
+      .recordRun(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun)
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot(snapshot)
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
+  }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.records,
   ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
@@ -11593,6 +11657,136 @@ export function ProcessQuotePreviewCard({
         </pre>
         <small className="process-demo-promotion-release-readiness-status">
           Status counts: {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughStatusSummary || "None"}
+        </small>
+      </div>
+      <div
+        className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution history"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.status}
+      >
+        <div className="process-demo-promotion-release-readiness-heading">
+          <div>
+            <span>Offer export live adapter final gate follow-through execution history</span>
+            <strong>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.title}</strong>
+          </div>
+          <small>
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p>{promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.operatorSummary}</p>
+        <div className="process-demo-promotion-release-readiness-grid">
+          <div>
+            <span>Execution runs</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.totalRuns,
+                "run",
+              )}
+            </strong>
+            <small>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.pendingActionCount,
+                "pending action",
+              )}
+              ,{" "}
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.warningCount,
+                "warning",
+              )}
+            </small>
+          </div>
+          <div>
+            <span>Command outcomes</span>
+            <strong>
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.commandCount,
+                "command",
+              )}
+            </strong>
+            <small>
+              Prepared {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.preparedCommandCount},
+              pending {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.pendingCommandCount},
+              applied {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.appliedCommandCount},
+              failed {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.failedCommandCount},
+              blocked {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.blockedCommandCount}
+            </small>
+          </div>
+          <div>
+            <span>Latest execution</span>
+            <strong>
+              {humanizeKey(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestRun?.status ??
+                  "none",
+              )}
+            </strong>
+            <small>
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestRun
+                ?.executionFingerprint ?? "No final-gate follow-through execution record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Boundary</span>
+          <small>
+            Final-gate follow-through execution history is deterministic review data only; live customer-offer, file,
+            release-review, export, connector, and final-gate follow-through writes stay disabled.
+          </small>
+        </div>
+        <ul className="process-demo-promotion-release-readiness-list">
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.actionItems.map(
+            (actionItem) => (
+              <li
+                data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.severity}
+                key={actionItem}
+              >
+                <strong>{actionItem}</strong>
+              </li>
+            ),
+          )}
+        </ul>
+        <div className="process-demo-promotion-release-readiness-boundary">
+          <span>Snapshot IDs</span>
+          <small>
+            Follow-throughs:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.followThroughIds.join(", ") ||
+              "None"}
+          </small>
+          <small>
+            Readiness records:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.readinessRecordIds.join(", ") ||
+              "None"}
+          </small>
+          <small>
+            Apply plans:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestApplyPlanIds.join(", ") ||
+              "None"}
+          </small>
+          <small>
+            Commit records:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestCommitRecordIds.join(", ") ||
+              "None"}
+          </small>
+          <small>
+            Committed executions:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestCommittedExecutionFingerprints.join(", ") ||
+              "None"}
+          </small>
+          <small>
+            Source executions:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.latestSourceExecutionFingerprints.join(", ") ||
+              "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through execution history export text"
+          className="process-demo-promotion-release-readiness-export"
+          tabIndex={0}
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory.exportText}
+        </pre>
+        <small className="process-demo-promotion-release-readiness-status">
+          Status counts:{" "}
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionStatusSummary || "None"}
         </small>
       </div>
       <div
