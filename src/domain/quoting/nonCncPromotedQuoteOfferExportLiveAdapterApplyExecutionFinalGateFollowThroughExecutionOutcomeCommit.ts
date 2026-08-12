@@ -3,8 +3,15 @@ import {
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommandOutcomeInput,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun,
 } from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecution"
-import type { NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft } from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
-import type { NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan } from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough"
+import {
+  NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_DRAFT_VERSION,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommandOutcomeDraft,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
+} from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
+import type {
+  NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommand,
+  NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan,
+} from "./nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough"
 
 export const NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_VERSION =
   "non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-final-gate-follow-through-execution-outcome-commit.v1"
@@ -154,6 +161,12 @@ function assertDraftMatchesFollowThrough(
   followThrough: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughPlan,
   outcomeDraft: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
 ): void {
+  if (
+    outcomeDraft.draftVersion !==
+    NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_DRAFT_VERSION
+  ) {
+    throw new Error("unsupported final-gate follow-through execution outcome draft version")
+  }
   const mismatches = [
     followThrough.followThroughId === outcomeDraft.followThroughId ? undefined : "followThroughId",
     followThrough.followThroughFingerprint === outcomeDraft.followThroughFingerprint ? undefined : "followThroughFingerprint",
@@ -182,6 +195,22 @@ function assertDraftMatchesFollowThrough(
   if (mismatches.length > 0) {
     throw new Error(`final-gate follow-through execution outcome draft does not match follow-through plan: ${mismatches.join(", ")}`)
   }
+  const commandKeysMatch =
+    followThrough.commands.length === outcomeDraft.commandOutcomes.length &&
+    followThrough.commands.every((command, index) => command.key === outcomeDraft.commandOutcomes[index]?.key)
+  const commandMismatches =
+    outcomeDraft.status === "ready" && commandKeysMatch
+      ? followThrough.commands.flatMap((command, index) =>
+          commandDraftMatchesFollowThroughCommand(command, outcomeDraft.commandOutcomes[index], outcomeDraft)
+            ? []
+            : [command.key],
+        )
+      : []
+  if (commandMismatches.length > 0) {
+    throw new Error(
+      `final-gate follow-through execution outcome draft does not match follow-through plan: commandOutcomes (${commandMismatches.join(", ")})`,
+    )
+  }
 }
 
 function commandSetMismatchBlockers(
@@ -208,6 +237,79 @@ function cloneOutcome(
   }
 }
 
+function commandDraftMatchesFollowThroughCommand(
+  command: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommand,
+  outcome: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommandOutcomeDraft | undefined,
+  draft: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
+): boolean {
+  if (!outcome || !draft.targetRfqId) {
+    return false
+  }
+  const expectedExternalId = stableOutcomeId(outcomePrefix(command.key), draft.targetRfqId, draft.executionFingerprint)
+  return (
+    outcome.key === command.key &&
+    outcome.label === command.label &&
+    outcome.target === command.target &&
+    outcome.status === "ready" &&
+    outcome.idempotencyKey === command.idempotencyKey &&
+    sameArray(outcome.blockerLabels, []) &&
+    sameArray(outcome.evidenceFingerprints, command.evidenceFingerprints) &&
+    outcome.externalId === expectedExternalId &&
+    outcome.suggestedOutcome?.externalId === expectedExternalId &&
+    outcome.suggestedOutcome.key === command.key &&
+    outcome.suggestedOutcome.message === outcomeMessage(command) &&
+    outcome.suggestedOutcome.status === "applied" &&
+    sameArray(outcome.suggestedOutcome.warnings ?? [], [])
+  )
+}
+
+function outcomePrefix(
+  key: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommand["key"],
+): string {
+  return key.replaceAll("_", "-")
+}
+
+function outcomeMessage(
+  command: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughCommand,
+): string {
+  switch (command.key) {
+    case "connector_reference_final_gate":
+      return "Prepared connector reference final-gate outcome from reviewed follow-through execution evidence."
+    case "customer_offer_final_gate":
+      return "Prepared customer-offer final-gate outcome from reviewed follow-through execution evidence."
+    case "file_export_final_gate":
+      return "Prepared file export final-gate outcome from reviewed follow-through execution evidence."
+    case "release_review_final_gate":
+      return "Prepared release-review final-gate outcome from reviewed follow-through execution evidence."
+    case "rollback_evidence_final_gate":
+      return "Prepared rollback evidence final-gate outcome from reviewed follow-through execution evidence."
+    default:
+      return assertNever(command.key)
+  }
+}
+
+function stableOutcomeId(...parts: string[]): string {
+  return parts.map((part) => canonicalKeyPart(part)).join(":")
+}
+
+function canonicalKeyPart(value: string): string {
+  const token = value.trim()
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(token)) {
+    throw new Error(
+      "Non-CNC live-adapter final-gate follow-through outcome ids require canonical lowercase alphanumeric id parts separated by single hyphens.",
+    )
+  }
+  return token
+}
+
+function sameArray(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
+}
+
 function uniqueLabels(labels: string[]): string[] {
   return [...new Set(labels.filter(Boolean))]
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled final-gate follow-through command kind: ${String(value)}`)
 }

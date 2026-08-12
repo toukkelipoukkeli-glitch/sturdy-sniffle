@@ -153,6 +153,54 @@ describe("non-CNC live-adapter final-gate follow-through execution outcome commi
     )
   })
 
+  it("rejects unsupported reviewed draft versions before commit planning", () => {
+    const followThrough = readyFollowThroughPlan()
+    const outcomeDraft =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft(
+        readyDryRun(followThrough),
+      )
+
+    expect(() =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPlan({
+        followThrough,
+        outcomeDraft: {
+          ...outcomeDraft,
+          draftVersion: "unsupported-final-gate-outcome-draft-version",
+        } as unknown as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
+      }),
+    ).toThrow("unsupported final-gate follow-through execution outcome draft version")
+  })
+
+  it("rejects altered reviewed draft content that otherwise matches follow-through identity", () => {
+    const followThrough = readyFollowThroughPlan()
+    const outcomeDraft =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft(
+        readyDryRun(followThrough),
+      )
+
+    expect(() =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPlan({
+        followThrough,
+        outcomeDraft: {
+          ...outcomeDraft,
+          commandOutcomes: outcomeDraft.commandOutcomes.map((command, index) =>
+            index === 0 && command.suggestedOutcome
+              ? {
+                  ...command,
+                  suggestedOutcome: {
+                    ...command.suggestedOutcome,
+                    externalId: "customer-offer-final-gate:rfq-demo-204:forged",
+                  },
+                }
+              : command,
+          ),
+        },
+      }),
+    ).toThrow(
+      "final-gate follow-through execution outcome draft does not match follow-through plan: commandOutcomes (customer_offer_final_gate)",
+    )
+  })
+
   it("blocks reordered command outcomes without passing command outcomes to commit execution", () => {
     const followThrough = readyFollowThroughPlan()
     const outcomeDraft =
@@ -209,7 +257,7 @@ describe("non-CNC live-adapter final-gate follow-through execution outcome commi
     })
   })
 
-  it("blocks non-applied suggested outcomes before commit execution", () => {
+  it("rejects non-applied suggested outcomes as altered reviewed draft content", () => {
     const followThrough = readyFollowThroughPlan()
     const outcomeDraft =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft(
@@ -231,23 +279,16 @@ describe("non-CNC live-adapter final-gate follow-through execution outcome commi
       ),
     }
 
-    const result =
+    expect(() =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRun({
         actor,
         executedAt,
         followThrough,
         outcomeDraft: failedOutcomeDraft,
-      })
-
-    expect(result.executionRun).toBeUndefined()
-    expect(result.commitPlan).toMatchObject({
-      blockerLabels: [
-        "Suggested final-gate follow-through outcome for Review customer-offer final gate must have applied status.",
-      ],
-      commandOutcomeCount: 0,
-      commandOutcomes: [],
-      status: "blocked",
-    })
+      }),
+    ).toThrow(
+      "final-gate follow-through execution outcome draft does not match follow-through plan: commandOutcomes (customer_offer_final_gate)",
+    )
   })
 
   it("clones command outcomes so draft mutations cannot alter commit plans", () => {
