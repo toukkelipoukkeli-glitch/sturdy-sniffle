@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-11 Europe/Helsinki.
+Last refreshed: 2026-08-12 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1122cdd` (`Add final gate outcome commit boundary (#629)`).
+- Main branch checkpoint: `f92ab15` (`Refresh final gate outcome commit handoff (#630)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-persistence` — adds deterministic local persistence snapshots for reviewed final-gate follow-through outcome commit records while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
 - Latest merged sequence:
+  - `#630` refreshes the autonomous handoff after the final-gate outcome commit boundary slice and clears the merged `#629` in-flight branch.
   - `#629` adds a deterministic domain-only reviewed outcome commit boundary for final-gate follow-through execution outcome drafts, rejects unsupported or tampered reviewed draft content, and converts only ready dry-run suggestions into commit-mode audit runs while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#628` stabilizes the broad quote workspace costing smoke timeout after hosted post-`#627` main CI timed out under browser-smoke load while lint and units stayed green.
   - `#627` refreshes the autonomous handoff after the final-gate follow-through outcome-draft UI slice and clears the merged `#626` in-flight branch.
