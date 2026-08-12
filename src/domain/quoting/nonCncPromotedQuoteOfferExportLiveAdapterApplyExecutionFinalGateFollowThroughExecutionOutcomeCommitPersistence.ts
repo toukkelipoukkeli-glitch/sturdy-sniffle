@@ -17,6 +17,7 @@ export type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFoll
 export interface NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRecord {
   persistenceVersion: typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION
   commitVersion: typeof NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_VERSION
+  followThroughVersion: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPlan["followThroughVersion"]
   commitRecordId: string
   executionFingerprint: string
   committedExecutionFingerprint?: string
@@ -132,6 +133,7 @@ function buildCommitRecord({
     executionFingerprint: commitPlan.executionFingerprint,
     followThroughFingerprint: commitPlan.followThroughFingerprint,
     followThroughId: commitPlan.followThroughId,
+    followThroughVersion: commitPlan.followThroughVersion,
     latestApplyPlanId: commitPlan.latestApplyPlanId,
     latestCommitRecordId: commitPlan.latestCommitRecordId,
     latestCommittedExecutionFingerprint: commitPlan.latestCommittedExecutionFingerprint,
@@ -171,6 +173,7 @@ function assertExecutionMatchesCommitPlan(
 
   const mismatches = [
     executionRun.followThroughId === commitPlan.followThroughId ? undefined : "followThroughId",
+    executionRun.followThroughVersion === commitPlan.followThroughVersion ? undefined : "followThroughVersion",
     executionRun.followThroughFingerprint === commitPlan.followThroughFingerprint ? undefined : "followThroughFingerprint",
     executionRun.targetRfqId === commitPlan.targetRfqId ? undefined : "targetRfqId",
     executionRun.readinessRecordId === commitPlan.readinessRecordId ? undefined : "readinessRecordId",
@@ -287,6 +290,7 @@ function normalizeRecord(
     executionFingerprint: nonBlank(record.executionFingerprint, "executionFingerprint"),
     followThroughFingerprint: nonBlank(record.followThroughFingerprint, "followThroughFingerprint"),
     followThroughId: nonBlank(record.followThroughId, "followThroughId"),
+    followThroughVersion: normalizeFollowThroughVersion(record.followThroughVersion),
     latestApplyPlanId: optionalTrim(record.latestApplyPlanId),
     latestCommitRecordId: optionalTrim(record.latestCommitRecordId),
     latestCommittedExecutionFingerprint: optionalTrim(record.latestCommittedExecutionFingerprint),
@@ -387,6 +391,7 @@ function cloneRecord(
     executionFingerprint: record.executionFingerprint,
     followThroughFingerprint: record.followThroughFingerprint,
     followThroughId: record.followThroughId,
+    followThroughVersion: record.followThroughVersion,
     latestApplyPlanId: record.latestApplyPlanId,
     latestCommitRecordId: record.latestCommitRecordId,
     latestCommittedExecutionFingerprint: record.latestCommittedExecutionFingerprint,
@@ -412,6 +417,7 @@ function sortNewestFirst(
     compareLex(left.commitRecordId, right.commitRecordId) ||
     compareLex(left.executionFingerprint, right.executionFingerprint) ||
     compareLex(left.followThroughId, right.followThroughId) ||
+    compareLex(left.followThroughVersion, right.followThroughVersion) ||
     compareLex(left.followThroughFingerprint, right.followThroughFingerprint) ||
     compareLex(left.status, right.status) ||
     compareLex(left.disposition, right.disposition) ||
@@ -487,6 +493,15 @@ function normalizeCommitVersion(
     NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_VERSION
   ) {
     throw new Error("commitVersion is not a supported final-gate follow-through outcome commit version")
+  }
+  return version
+}
+
+function normalizeFollowThroughVersion(
+  version: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRecord["followThroughVersion"],
+): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPlan["followThroughVersion"] {
+  if (typeof version !== "string" || version.trim().length === 0) {
+    throw new Error("followThroughVersion must be non-blank")
   }
   return version
 }

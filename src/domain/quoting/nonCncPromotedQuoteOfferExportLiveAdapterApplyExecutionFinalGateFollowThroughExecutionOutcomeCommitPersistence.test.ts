@@ -117,6 +117,20 @@ describe("non-CNC final-gate follow-through outcome commit persistence", () => {
         commitPlan,
         executionRun: {
           ...executionRun!,
+          followThroughVersion:
+            "non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-final-gate-follow-through.v0" as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun["followThroughVersion"],
+        },
+        recordedAt,
+        recordedBy: actor,
+      }),
+    ).rejects.toThrow(
+      "final-gate follow-through outcome commit execution run does not match commit plan: followThroughVersion",
+    )
+    await expect(
+      persistence.recordCommit({
+        commitPlan,
+        executionRun: {
+          ...executionRun!,
           readinessRecordId: "non-cnc-apply-readiness:rfq-demo-204:other",
         },
         recordedAt,
@@ -184,6 +198,7 @@ describe("non-CNC final-gate follow-through outcome commit persistence", () => {
       executionFingerprint: commitPlan.executionFingerprint,
       followThroughFingerprint: commitPlan.followThroughFingerprint,
       followThroughId: commitPlan.followThroughId,
+      followThroughVersion: commitPlan.followThroughVersion,
       latestExecutionFingerprint: "non-cnc-apply-execution:rfq-demo-204:leaked",
       persistenceVersion:
         NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
@@ -265,6 +280,7 @@ function readyRecord(
     executionFingerprint: commitPlan.executionFingerprint,
     followThroughFingerprint: commitPlan.followThroughFingerprint,
     followThroughId: commitPlan.followThroughId,
+    followThroughVersion: commitPlan.followThroughVersion,
     latestApplyPlanId: commitPlan.latestApplyPlanId,
     latestCommitRecordId: commitPlan.latestCommitRecordId,
     latestCommittedExecutionFingerprint: commitPlan.latestCommittedExecutionFingerprint,
