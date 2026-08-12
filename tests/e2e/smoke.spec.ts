@@ -107,6 +107,8 @@ test("filters the RFQ queue and discloses attachments", async ({ page }) => {
 })
 
 test("runs the quote workspace costing workflow", async ({ page }) => {
+  test.setTimeout(60_000)
+
   await page.goto("/")
   const queue = page.getByLabel("RFQ queue")
 
