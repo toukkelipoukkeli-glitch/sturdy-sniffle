@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `e2240ff` (`Stabilize quote workspace smoke timeout (#628)`).
+- Main branch checkpoint: `1122cdd` (`Add final gate outcome commit boundary (#629)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-boundary` — adds a deterministic domain-only reviewed outcome commit boundary for final-gate follow-through execution outcome drafts while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#629` adds a deterministic domain-only reviewed outcome commit boundary for final-gate follow-through execution outcome drafts, rejects unsupported or tampered reviewed draft content, and converts only ready dry-run suggestions into commit-mode audit runs while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#628` stabilizes the broad quote workspace costing smoke timeout after hosted post-`#627` main CI timed out under browser-smoke load while lint and units stayed green.
   - `#627` refreshes the autonomous handoff after the final-gate follow-through outcome-draft UI slice and clears the merged `#626` in-flight branch.
   - `#626` surfaces deterministic non-CNC live-adapter final-gate follow-through execution outcome drafts in the guarded registry preview as ready review-only outcome suggestions while blocked, committed, malformed, or partial-evidence runs withhold external evidence and keep live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled.
