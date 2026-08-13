@@ -370,6 +370,12 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFo
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecution"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot,
@@ -8258,6 +8264,37 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRun({
+        actor: "FactoryBid Operator",
+        executedAt: promotionPlan.requestedAt,
+        followThrough: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
+        outcomeDraft: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
+      }),
+    [
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough,
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft,
+      promotionPlan.requestedAt,
+    ],
+  )
+  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence] =
+    useState(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence(),
+    )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistenceSnapshot>(
+    () => promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence.snapshot(),
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistorySummary(
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8308,6 +8345,10 @@ export function ProcessQuotePreviewCard({
   const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionStatusSummary = buildStatusCountSummary(
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.statusCounts,
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitStatusSummary =
+    buildStatusCountSummary(
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.statusCounts,
+    )
   useEffect(() => {
     if (!promotionRecord) {
       return undefined
@@ -8524,6 +8565,41 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionRun,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionSnapshot.records,
   ])
+  useEffect(() => {
+    if (
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.records.some(
+        (record) =>
+          record.executionFingerprint ===
+            promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.commitPlan
+              .executionFingerprint &&
+          record.followThroughId ===
+            promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.commitPlan.followThroughId,
+      )
+    ) {
+      return undefined
+    }
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence
+      .recordCommit({
+        commitPlan: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.commitPlan,
+        executionRun: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.executionRun,
+        recordedAt: promotionPlan.requestedAt,
+        recordedBy: "FactoryBid Operator",
+      })
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot(snapshot)
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
+  }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.records,
+    promotionPlan.requestedAt,
+  ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -8545,6 +8621,12 @@ export function ProcessQuotePreviewCard({
       summaryText: copyableSummaryText,
     })
   }
+  const finalGateOutcomeCommitHistory =
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory
+  const finalGateOutcomeCommitSnapshot =
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot
+  const finalGateOutcomeCommitStatusSummary =
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitStatusSummary
 
   return (
     <article className="process-demo-card" aria-label="Selected non-CNC quote preview">
@@ -11938,6 +12020,113 @@ export function ProcessQuotePreviewCard({
               .latestSourceExecutionFingerprint ?? "Source execution evidence withheld"}
           </small>
         </div>
+      </section>
+      <section
+        className="rounded-lg border border-slate-200 bg-white p-4 text-slate-950 shadow-sm"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit history"
+        data-status={finalGateOutcomeCommitHistory.status}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-xs font-semibold uppercase text-slate-500">
+              Offer export live adapter final gate follow-through outcome commit history
+            </span>
+            <strong className="mt-1 block break-words text-base font-semibold">
+              {finalGateOutcomeCommitHistory.title}
+            </strong>
+          </div>
+          <small className="max-w-full break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
+            {finalGateOutcomeCommitSnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">{finalGateOutcomeCommitHistory.operatorSummary}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Local commits</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(finalGateOutcomeCommitHistory.totalRecords, "record")}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              {formatCount(finalGateOutcomeCommitHistory.warningCount, "warning")}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Reviewed outcomes</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(finalGateOutcomeCommitHistory.commandOutcomeCount, "reviewed outcome")}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              Committed {finalGateOutcomeCommitHistory.committedCount}, blocked{" "}
+              {finalGateOutcomeCommitHistory.blockedCount}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Latest evidence</span>
+            <strong className="mt-1 block break-words text-sm font-semibold">
+              {humanizeKey(finalGateOutcomeCommitHistory.latestRecord?.disposition ?? "none")}
+            </strong>
+            <small className="mt-1 block break-all text-xs text-slate-600">
+              {finalGateOutcomeCommitHistory.latestRecord?.commitRecordId ??
+                "No final-gate outcome commit record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <span className="block text-xs font-semibold uppercase text-slate-500">Boundary</span>
+          <small className="mt-1 block break-words text-xs leading-5 text-slate-600">
+            Final-gate follow-through outcome commit history is deterministic review data only; live customer-offer,
+            file, release-review, export, connector, and final-gate follow-through writes stay disabled.
+          </small>
+        </div>
+        <ul
+          className="mt-4 grid gap-2"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit history actions"
+        >
+          {finalGateOutcomeCommitHistory.actionItems.map((actionItem) => (
+            <li
+              className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"
+              data-status={finalGateOutcomeCommitHistory.severity}
+              key={actionItem}
+            >
+              <strong className="break-words font-semibold">{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase text-slate-500">Snapshot IDs</span>
+          <small className="break-words">
+            Commit-ready records: {finalGateOutcomeCommitHistory.commitReadyRecordIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Blocked records: {finalGateOutcomeCommitHistory.blockedCommitRecordIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Follow-throughs: {finalGateOutcomeCommitHistory.followThroughIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Readiness records: {finalGateOutcomeCommitHistory.readinessRecordIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Apply plans: {finalGateOutcomeCommitHistory.latestApplyPlanIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Committed executions:{" "}
+            {finalGateOutcomeCommitHistory.committedExecutionFingerprints.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Source executions: {finalGateOutcomeCommitHistory.latestSourceExecutionFingerprints.join(", ") || "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through outcome commit history export text"
+          className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-50"
+          tabIndex={0}
+        >
+          {finalGateOutcomeCommitHistory.exportText}
+        </pre>
+        <small className="mt-3 block break-words text-xs text-slate-600">
+          Status counts: {finalGateOutcomeCommitStatusSummary || "None"}
+        </small>
       </section>
       <div
         className="process-demo-promotion-release-readiness process-demo-promotion-offer-export-live-adapter-execution-history"
