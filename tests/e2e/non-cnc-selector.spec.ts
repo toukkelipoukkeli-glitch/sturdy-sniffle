@@ -630,6 +630,58 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcom
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toBeVisible()
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Offer export live adapter final gate follow-through outcome commit history",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Final-gate follow-through outcome commit history blocked",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Latest non-CNC live-adapter final-gate follow-through outcome commit is blocked",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText("1 record")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText("0 reviewed outcomes")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Committed 0, blocked 1",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Resolve final-gate follow-through outcome commit blockers before retrying release follow-through wiring.",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Final-gate follow-through outcome commit history is deterministic review data only",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Commit-ready records: None",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Blocked records: non-cnc-final-gate-follow-through-outcome-commit:",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Follow-throughs: non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-final-gate-follow-through-",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Committed executions: None",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Non-CNC live adapter final-gate follow-through outcome commit history",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toContainText(
+    "Status counts: blocked",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -706,6 +758,7 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterFinalGateFollowThroughHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

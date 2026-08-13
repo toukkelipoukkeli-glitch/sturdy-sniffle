@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `499a97d` (`Refresh final gate outcome commit persistence handoff (#632)`).
+- Main branch checkpoint: `a9d01ea` (`Add final gate outcome commit history summary (#633)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-history-overseer` is adding deterministic domain-only history/read summaries for reviewed final-gate follow-through outcome commit persistence snapshots.
+- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-history-ui-overseer` is surfacing reviewed final-gate follow-through outcome commit histories in the guarded registry preview.
 - Latest merged sequence:
+  - `#633` adds deterministic domain-only history/read summaries for reviewed final-gate follow-through outcome commit persistence snapshots, including committed/blocked counts, final-gate evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#632` refreshes the autonomous handoff after the final-gate outcome commit persistence slice and clears the merged `#631` in-flight branch.
   - `#631` adds deterministic local persistence snapshots for reviewed final-gate follow-through outcome commit records, validates/preserves `followThroughVersion` compatibility, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled.
   - `#630` refreshes the autonomous handoff after the final-gate outcome commit boundary slice and clears the merged `#629` in-flight branch.

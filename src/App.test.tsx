@@ -72,6 +72,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_PLAN_PERSISTENCE
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_EXECUTION_PLAN_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterExecutionPlan"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -1524,6 +1525,70 @@ describe("FactoryBid workspace (component)", () => {
     )
     expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft).toHaveTextContent(
       "Source execution: Source execution evidence withheld",
+    )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit history",
+        ),
+      ).toHaveTextContent("Final-gate follow-through outcome commit history blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory = within(
+      processDemos,
+    ).getByLabelText(
+      "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveAttribute(
+      "data-status",
+      "blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Offer export live adapter final gate follow-through outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Latest non-CNC live-adapter final-gate follow-through outcome commit is blocked after 1 record; live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "1 record",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "0 reviewed outcomes",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Committed 0, blocked 1",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Resolve final-gate follow-through outcome commit blockers before retrying release follow-through wiring.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Final-gate follow-through outcome commit history is deterministic review data only; live customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Commit-ready records: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Blocked records: non-cnc-final-gate-follow-through-outcome-commit:",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Follow-throughs: non-cnc-promoted-quote-offer-export-live-adapter-apply-execution-final-gate-follow-through-",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Readiness records: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Apply plans: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Committed executions: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Non-CNC live adapter final-gate follow-through outcome commit history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory).toHaveTextContent(
+      "Status counts: blocked",
     )
     await waitFor(() => {
       expect(
