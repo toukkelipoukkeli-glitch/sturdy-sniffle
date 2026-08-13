@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-12 Europe/Helsinki.
+Last refreshed: 2026-08-13 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f92ab15` (`Refresh final gate outcome commit handoff (#630)`).
+- Main branch checkpoint: `65181f8` (`Add final gate outcome commit persistence (#631)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-persistence` — adds deterministic local persistence snapshots for reviewed final-gate follow-through outcome commit records while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+- In-flight branch at this checkpoint: none — continue from fresh `origin/main` and avoid the merged `codex/final-gate-outcome-commit-persistence` branch.
 - Latest merged sequence:
+  - `#631` adds deterministic local persistence snapshots for reviewed final-gate follow-through outcome commit records, validates/preserves `followThroughVersion` compatibility, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled.
   - `#630` refreshes the autonomous handoff after the final-gate outcome commit boundary slice and clears the merged `#629` in-flight branch.
   - `#629` adds a deterministic domain-only reviewed outcome commit boundary for final-gate follow-through execution outcome drafts, rejects unsupported or tampered reviewed draft content, and converts only ready dry-run suggestions into commit-mode audit runs while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#628` stabilizes the broad quote workspace costing smoke timeout after hosted post-`#627` main CI timed out under browser-smoke load while lint and units stayed green.
