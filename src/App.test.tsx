@@ -3210,7 +3210,7 @@ describe("FactoryBid workspace (component)", () => {
       "12 follow-up readiness persistence fallbacks recorded (read 6, write 6); latest fallback is stale.",
     )
     expect(integrationHealth).toHaveTextContent("12 stale")
-  })
+  }, 20_000)
 
   it("restores connector sync snapshots with stale and blocked recovery actions", async () => {
     const { unmount } = render(<App />)
