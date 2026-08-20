@@ -682,6 +682,60 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcom
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit adapter boundary history",
+    { exact: true },
+  )
+
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toBeVisible()
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toHaveAttribute(
+    "data-status",
+    "blocked",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Offer export live adapter final gate follow-through adapter-boundary history",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Final-gate follow-through adapter boundary history blocked",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Latest non-CNC live-adapter final-gate follow-through adapter boundary is blocked",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText("1 record")
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "6 commands",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Planned 0, blocked 6",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Resolve final-gate follow-through adapter-boundary blockers before retrying follow-through review.",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Final-gate follow-through adapter-boundary history is deterministic review data only",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Ready boundaries: None",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Blocked boundaries: non-cnc-final-gate-follow-through-outcome-commit-adapter-boundary-",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Idempotency keys: None",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Non-CNC live adapter final-gate follow-through adapter boundary history",
+  )
+  await expect(liveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory).toContainText(
+    "Status counts: blocked",
+  )
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -759,6 +813,10 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeDraft(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory(
+        nonCncDemos,
+        page,
+      )
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

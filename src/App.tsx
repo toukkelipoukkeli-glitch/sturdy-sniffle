@@ -371,11 +371,18 @@ import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFo
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionHistory"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeDraft"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionPersistenceSnapshot,
@@ -8295,6 +8302,54 @@ export function ProcessQuotePreviewCard({
       ),
     [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot],
   )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel({
+        followThroughId: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.followThroughId,
+        snapshot: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot,
+      }),
+    [
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThrough.followThroughId,
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot,
+    ],
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary =
+    useMemo(
+      () =>
+        buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary(
+          {
+            readModel:
+              promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel,
+            requestedAt: promotionPlan.requestedAt,
+            requestedBy: promotionPlan.requestedBy,
+          },
+        ),
+      [
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitReadModel,
+        promotionPlan.requestedAt,
+        promotionPlan.requestedBy,
+      ],
+    )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence,
+  ] = useState(() =>
+    createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence(),
+  )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistenceSnapshot>(
+    () =>
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence.snapshot(),
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory =
+    useMemo(
+      () =>
+        buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistorySummary(
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot,
+        ),
+      [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot],
+    )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8600,6 +8655,56 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.records,
     promotionPlan.requestedAt,
   ])
+  useEffect(() => {
+    const currentOutcomeCommitPersisted =
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.records.some(
+        (record) =>
+          record.executionFingerprint ===
+            promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.commitPlan
+              .executionFingerprint &&
+          record.followThroughId ===
+            promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit.commitPlan
+              .followThroughId,
+      )
+    if (!currentOutcomeCommitPersisted) {
+      return undefined
+    }
+    if (
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot.records.some(
+        (record) =>
+          record.adapterBoundaryId ===
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary
+            .adapterBoundaryId,
+      )
+    ) {
+      return undefined
+    }
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence
+      .recordAdapterBoundary({
+        adapterBoundary:
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary,
+        recordedAt: promotionPlan.requestedAt,
+        recordedBy: "FactoryBid Operator",
+      })
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot(
+            snapshot,
+          )
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
+  }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommit,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.records,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot.records,
+    promotionPlan.requestedAt,
+  ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
     summaryText: string
@@ -8627,6 +8732,13 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot
   const finalGateOutcomeCommitStatusSummary =
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitStatusSummary
+  const finalGateOutcomeCommitAdapterBoundaryHistory =
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory
+  const finalGateOutcomeCommitAdapterBoundarySnapshot =
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot
+  const finalGateOutcomeCommitAdapterBoundaryStatusSummary = buildStatusCountSummary(
+    finalGateOutcomeCommitAdapterBoundarySnapshot.statusCounts,
+  )
 
   return (
     <article className="process-demo-card" aria-label="Selected non-CNC quote preview">
@@ -12126,6 +12238,115 @@ export function ProcessQuotePreviewCard({
         </pre>
         <small className="mt-3 block break-words text-xs text-slate-600">
           Status counts: {finalGateOutcomeCommitStatusSummary || "None"}
+        </small>
+      </section>
+      <section
+        className="rounded-lg border border-slate-200 bg-white p-4 text-slate-950 shadow-sm"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit adapter boundary history"
+        data-status={finalGateOutcomeCommitAdapterBoundaryHistory.status}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-xs font-semibold uppercase text-slate-500">
+              Offer export live adapter final gate follow-through adapter-boundary history
+            </span>
+            <strong className="mt-1 block break-words text-base font-semibold">
+              {finalGateOutcomeCommitAdapterBoundaryHistory.title}
+            </strong>
+          </div>
+          <small className="max-w-full break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
+            {finalGateOutcomeCommitAdapterBoundarySnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          {finalGateOutcomeCommitAdapterBoundaryHistory.operatorSummary}
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Local boundaries</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(finalGateOutcomeCommitAdapterBoundaryHistory.totalRecords, "record")}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              {formatCount(finalGateOutcomeCommitAdapterBoundaryHistory.warningCount, "warning")}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Review commands</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(finalGateOutcomeCommitAdapterBoundaryHistory.commandCount, "command")}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              Planned {finalGateOutcomeCommitAdapterBoundaryHistory.plannedCommandCount}, blocked{" "}
+              {finalGateOutcomeCommitAdapterBoundaryHistory.blockedCommandCount}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Latest evidence</span>
+            <strong className="mt-1 block break-words text-sm font-semibold">
+              {humanizeKey(finalGateOutcomeCommitAdapterBoundaryHistory.latestRecord?.disposition ?? "none")}
+            </strong>
+            <small className="mt-1 block break-all text-xs text-slate-600">
+              {finalGateOutcomeCommitAdapterBoundaryHistory.latestRecord?.adapterBoundaryId ??
+                "No final-gate adapter-boundary record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <span className="block text-xs font-semibold uppercase text-slate-500">Boundary</span>
+          <small className="mt-1 block break-words text-xs leading-5 text-slate-600">
+            Final-gate follow-through adapter-boundary history is deterministic review data only; live
+            customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay
+            disabled.
+          </small>
+        </div>
+        <ul
+          className="mt-4 grid gap-2"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through execution outcome commit adapter boundary history actions"
+        >
+          {finalGateOutcomeCommitAdapterBoundaryHistory.actionItems.map((actionItem) => (
+            <li
+              className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"
+              data-status={finalGateOutcomeCommitAdapterBoundaryHistory.severity}
+              key={actionItem}
+            >
+              <strong className="break-words font-semibold">{actionItem}</strong>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase text-slate-500">Snapshot IDs</span>
+          <small className="break-words">
+            Ready boundaries: {finalGateOutcomeCommitAdapterBoundaryHistory.readyBoundaryIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Blocked boundaries: {finalGateOutcomeCommitAdapterBoundaryHistory.blockedBoundaryIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Commit records: {finalGateOutcomeCommitAdapterBoundaryHistory.commitRecordIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Follow-throughs: {finalGateOutcomeCommitAdapterBoundaryHistory.followThroughIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Readiness records: {finalGateOutcomeCommitAdapterBoundaryHistory.readinessRecordIds.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Idempotency keys: {finalGateOutcomeCommitAdapterBoundaryHistory.commandIdempotencyKeys.join(", ") || "None"}
+          </small>
+          <small className="break-words">
+            Evidence fingerprints: {finalGateOutcomeCommitAdapterBoundaryHistory.evidenceFingerprints.join(", ") || "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through adapter boundary history export text"
+          className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-50"
+          tabIndex={0}
+        >
+          {finalGateOutcomeCommitAdapterBoundaryHistory.exportText}
+        </pre>
+        <small className="mt-3 block break-words text-xs text-slate-600">
+          Status counts: {finalGateOutcomeCommitAdapterBoundaryStatusSummary || "None"}
         </small>
       </section>
       <div
