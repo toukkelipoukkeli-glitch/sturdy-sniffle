@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8bd442f` (`Add final gate outcome commit read model (#636)`).
+- Main branch checkpoint: `546084e` (`[codex] Refresh final gate outcome commit read model handoff (#637)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none. Continue from fresh `origin/main` on the next smallest deterministic FactoryBid OS slice.
+- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-adapter-boundary` — adding a deterministic final-gate follow-through outcome commit adapter-boundary helper over the #636 read model while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
 - Latest merged sequence:
+  - `#637` refreshes the autonomous handoff after the final-gate outcome commit read-model slice and clears the merged `#636` in-flight branch.
   - `#636` adds a deterministic final-gate follow-through outcome commit read-model boundary over persisted commit snapshots, withholding live-write evidence unless committed records and snapshot indexes agree while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#635` refreshes the autonomous handoff after the final-gate outcome commit history UI slice and clears the merged `#634` in-flight branch.
   - `#634` surfaces reviewed final-gate follow-through outcome commit histories in the guarded registry preview with deterministic read-summary copy, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
