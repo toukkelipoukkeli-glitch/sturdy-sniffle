@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f7d8d16` (`Add final gate adapter boundary history (#643)`).
+- Main branch checkpoint: `1bcb28a` (`Refresh final gate adapter boundary history handoff (#644)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-adapter-boundary-history-ui` — surfacing persisted final-gate follow-through outcome commit adapter-boundary history/read summaries in the guarded registry preview while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
 - Latest merged sequence:
+  - `#644` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary history helper slice and clears the merged `#643` in-flight branch.
   - `#643` adds deterministic history/read-summary helpers over persisted final-gate follow-through outcome commit adapter-boundary records with ready/blocked counts, command/evidence aggregates, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#642` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary persistence slice and clears the merged `#641` in-flight branch.
   - `#641` adds deterministic local persistence snapshots for final-gate follow-through outcome commit adapter-boundary records with ready/blocked review-only descriptors, command aggregates, duplicate conflict handling, clone-safe snapshots, seeded-record validation, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
