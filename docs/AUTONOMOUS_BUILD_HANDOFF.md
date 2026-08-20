@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `f6049bb` (`[codex] Stabilize follow-up readiness sync fallback test (#639)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-outcome-adapter-boundary-persistence` — adding deterministic local persistence snapshots for final-gate follow-through outcome commit adapter-boundary records while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
 - Latest merged sequence:
   - `#639` stabilizes the hosted App follow-up readiness sync fallback test timeout after post-`#638` main CI hit a timing-only unit failure, restoring green main CI.
   - `#638` adds a deterministic final-gate follow-through outcome commit adapter-boundary helper over the `#636` read model, emitting review-only command descriptors with stable idempotency keys while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.

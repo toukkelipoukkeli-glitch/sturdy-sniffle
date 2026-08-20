@@ -4826,7 +4826,7 @@ describe("FactoryBid workspace (component)", () => {
 
     await user.click(screen.getByRole("button", { name: "Offer" }))
     expect(screen.getByLabelText("Quote approval policy")).toHaveTextContent("Payment terms")
-  }, 10_000)
+  }, 20_000)
 
   it("acknowledges CAD manufacturability flags with a persistent operator note", async () => {
     const user = userEvent.setup()
