@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-13 Europe/Helsinki.
+Last refreshed: 2026-08-20 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `a9d01ea` (`Add final gate outcome commit history summary (#633)`).
+- Main branch checkpoint: `f14bf09` (`Surface final gate outcome commit history (#634)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-history-ui-overseer` is surfacing reviewed final-gate follow-through outcome commit histories in the guarded registry preview.
+- In-flight branch at this checkpoint: none. Continue from fresh `origin/main` on the next smallest deterministic FactoryBid OS slice.
 - Latest merged sequence:
+  - `#634` surfaces reviewed final-gate follow-through outcome commit histories in the guarded registry preview with deterministic read-summary copy, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#633` adds deterministic domain-only history/read summaries for reviewed final-gate follow-through outcome commit persistence snapshots, including committed/blocked counts, final-gate evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#632` refreshes the autonomous handoff after the final-gate outcome commit persistence slice and clears the merged `#631` in-flight branch.
   - `#631` adds deterministic local persistence snapshots for reviewed final-gate follow-through outcome commit records, validates/preserves `followThroughVersion` compatibility, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled.
