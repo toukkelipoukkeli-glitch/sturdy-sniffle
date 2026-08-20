@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `546084e` (`[codex] Refresh final gate outcome commit read model handoff (#637)`).
+- Main branch checkpoint: `f6049bb` (`[codex] Stabilize follow-up readiness sync fallback test (#639)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-adapter-boundary` — adding a deterministic final-gate follow-through outcome commit adapter-boundary helper over the #636 read model while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#639` stabilizes the hosted App follow-up readiness sync fallback test timeout after post-`#638` main CI hit a timing-only unit failure, restoring green main CI.
+  - `#638` adds a deterministic final-gate follow-through outcome commit adapter-boundary helper over the `#636` read model, emitting review-only command descriptors with stable idempotency keys while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#637` refreshes the autonomous handoff after the final-gate outcome commit read-model slice and clears the merged `#636` in-flight branch.
   - `#636` adds a deterministic final-gate follow-through outcome commit read-model boundary over persisted commit snapshots, withholding live-write evidence unless committed records and snapshot indexes agree while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#635` refreshes the autonomous handoff after the final-gate outcome commit history UI slice and clears the merged `#634` in-flight branch.
