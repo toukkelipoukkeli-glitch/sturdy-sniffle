@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f14bf09` (`Surface final gate outcome commit history (#634)`).
+- Main branch checkpoint: `8bd442f` (`Add final gate outcome commit read model (#636)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-commit-read-model` is adding a deterministic final-gate follow-through outcome commit read-model boundary over persisted commit snapshots before any live customer-offer, file, release-review, export, connector, or final-gate follow-through writes are enabled.
+- In-flight branch at this checkpoint: none. Continue from fresh `origin/main` on the next smallest deterministic FactoryBid OS slice.
 - Latest merged sequence:
+  - `#636` adds a deterministic final-gate follow-through outcome commit read-model boundary over persisted commit snapshots, withholding live-write evidence unless committed records and snapshot indexes agree while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+  - `#635` refreshes the autonomous handoff after the final-gate outcome commit history UI slice and clears the merged `#634` in-flight branch.
   - `#634` surfaces reviewed final-gate follow-through outcome commit histories in the guarded registry preview with deterministic read-summary copy, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#633` adds deterministic domain-only history/read summaries for reviewed final-gate follow-through outcome commit persistence snapshots, including committed/blocked counts, final-gate evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#632` refreshes the autonomous handoff after the final-gate outcome commit persistence slice and clears the merged `#631` in-flight branch.
