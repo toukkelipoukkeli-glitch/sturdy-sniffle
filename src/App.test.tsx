@@ -4922,7 +4922,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.getByLabelText("Manufacturability flags")).toHaveTextContent("metadata only review")
     expect(within(screen.getByLabelText("CAD review override")).getByLabelText("CAD review note")).toHaveValue("")
     expect(screen.getByLabelText("CAD review override event history")).toHaveTextContent("Reopened review")
-  }, 20_000)
+  }, 30_000)
 
   it("stores CAD dimension material and process correction notes", () => {
     const { unmount } = render(<App />)

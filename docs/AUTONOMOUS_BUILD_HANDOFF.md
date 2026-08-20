@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1bcb28a` (`Refresh final gate adapter boundary history handoff (#644)`).
+- Main branch checkpoint: `432eb9d` (`Surface final gate adapter boundary history (#645)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-adapter-boundary-history-ui` — surfacing persisted final-gate follow-through outcome commit adapter-boundary history/read summaries in the guarded registry preview while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#645` surfaces persisted final-gate follow-through outcome commit adapter-boundary history/read summaries in the guarded registry preview with blocked/ready command evidence, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#644` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary history helper slice and clears the merged `#643` in-flight branch.
   - `#643` adds deterministic history/read-summary helpers over persisted final-gate follow-through outcome commit adapter-boundary records with ready/blocked counts, command/evidence aggregates, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#642` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary persistence slice and clears the merged `#641` in-flight branch.
