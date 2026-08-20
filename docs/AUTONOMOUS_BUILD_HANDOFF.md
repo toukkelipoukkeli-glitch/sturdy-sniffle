@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `f6049bb` (`[codex] Stabilize follow-up readiness sync fallback test (#639)`).
+- Main branch checkpoint: `f0cf1d5` (`[codex] Add final gate outcome adapter persistence (#641)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-outcome-adapter-boundary-persistence` — adding deterministic local persistence snapshots for final-gate follow-through outcome commit adapter-boundary records while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#641` adds deterministic local persistence snapshots for final-gate follow-through outcome commit adapter-boundary records with ready/blocked review-only descriptors, command aggregates, duplicate conflict handling, clone-safe snapshots, seeded-record validation, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
+  - `#640` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary helper slice and clears the merged `#638` in-flight branch.
   - `#639` stabilizes the hosted App follow-up readiness sync fallback test timeout after post-`#638` main CI hit a timing-only unit failure, restoring green main CI.
   - `#638` adds a deterministic final-gate follow-through outcome commit adapter-boundary helper over the `#636` read model, emitting review-only command descriptors with stable idempotency keys while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#637` refreshes the autonomous handoff after the final-gate outcome commit read-model slice and clears the merged `#636` in-flight branch.
