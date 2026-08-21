@@ -173,6 +173,31 @@ describe("non-CNC final-gate follow-through live-write provider read-model persi
     ).toThrow("conflicting final-gate follow-through live-write provider read-model records cannot share providerReadModelRecordId and recordedAt")
   })
 
+  it("normalizes reordered blocker labels and review warnings without seeded conflicts", () => {
+    const blocked = {
+      ...recordFromReadModel(blockedReadModel(), {
+        recordedAt: "2026-08-21T11:00:00Z",
+        recordedBy: "Sari",
+      }),
+      blockerLabels: ["Needs ready history.", "Needs operator review.", "Needs ready history."],
+      reviewWarnings: ["Second warning.", "First warning.", "Second warning."],
+    }
+    const reordered = {
+      ...blocked,
+      blockerLabels: ["Needs operator review.", "Needs ready history."],
+      reviewWarnings: ["First warning.", "Second warning."],
+    }
+
+    const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderReadModelPersistence({
+      initialSnapshot: { records: [blocked, reordered] },
+    })
+    const snapshot = persistence.snapshot()
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.latestRecord?.blockerLabels).toEqual(["Needs operator review.", "Needs ready history."])
+    expect(snapshot.latestRecord?.reviewWarnings).toEqual(["First warning.", "Second warning."])
+  })
+
   it("keeps snapshots and records clone-safe", async () => {
     const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderReadModelPersistence()
     const snapshot = await persistence.recordProviderReadModel({
