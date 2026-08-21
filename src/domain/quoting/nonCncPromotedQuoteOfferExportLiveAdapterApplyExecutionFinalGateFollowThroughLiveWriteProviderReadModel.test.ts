@@ -103,6 +103,42 @@ describe("non-CNC final-gate follow-through live-write provider read model", () 
     expect(readModel.providerBoundary).toContain("customer-offer, file, release-review, export, connector")
   })
 
+  it("scopes provider-preparation evidence to the latest ready live-write boundary record", () => {
+    const readModel = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderReadModel(
+      historySummary([
+        {
+          ...readyRecord(),
+          commandIdempotencyKeys: ["older-command-key"],
+          evidenceFingerprints: ["older-evidence-fingerprint"],
+          liveWriteBoundaryId: "live-write-boundary-older",
+          liveWriteBoundaryFingerprint: "live-write-boundary-older:fingerprint",
+          recordedAt: "2026-08-21T08:35:00Z",
+        },
+        readyRecord(),
+      ]),
+    )
+
+    expect(readModel).toMatchObject({
+      liveWriteBoundaryId: "live-write-boundary-ready",
+      status: "ready_to_prepare",
+    })
+    expect(readModel.commandIdempotencyKeys).toEqual([
+      "live-write-boundary-ready:connector_reference_follow_through",
+      "live-write-boundary-ready:customer_offer_follow_through",
+      "live-write-boundary-ready:file_export_follow_through",
+      "live-write-boundary-ready:final_gate_follow_through",
+      "live-write-boundary-ready:release_review_follow_through",
+      "live-write-boundary-ready:rollback_evidence_follow_through",
+    ])
+    expect(readModel.commandIdempotencyKeys).not.toContain("older-command-key")
+    expect(readModel.evidenceFingerprints).toEqual([
+      "adapter-boundary-ready:fingerprint",
+      "commit-record-1",
+      "committed-execution-1",
+    ])
+    expect(readModel.evidenceFingerprints).not.toContain("older-evidence-fingerprint")
+  })
+
   it("blocks ready-looking history when latest ready indexes are inconsistent", () => {
     const summary = historySummary(readyRecord())
     const readModel = buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderReadModel(
@@ -131,11 +167,15 @@ describe("non-CNC final-gate follow-through live-write provider read model", () 
 })
 
 function historySummary(
-  record?: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryRecord,
+  records?:
+    | NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryRecord
+    | NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryRecord[],
 ): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistorySummary {
   return buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistorySummary(
     createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence({
-      initialSnapshot: record ? { records: [record] } : undefined,
+      initialSnapshot: records
+        ? { records: Array.isArray(records) ? records : [records] }
+        : undefined,
     }).snapshot(),
   )
 }

@@ -87,10 +87,10 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFina
     adapterBoundaryFingerprint: latestRecord.adapterBoundaryFingerprint,
     adapterBoundaryId: latestRecord.adapterBoundaryId,
     blockerLabels: [],
-    commandIdempotencyKeys: uniqueSorted(history.commandIdempotencyKeys),
+    commandIdempotencyKeys: uniqueSorted(latestRecord.commandIdempotencyKeys),
     committedExecutionFingerprint: latestRecord.committedExecutionFingerprint,
     commitRecordId: latestRecord.commitRecordId,
-    evidenceFingerprints: uniqueSorted(history.evidenceFingerprints),
+    evidenceFingerprints: uniqueSorted(latestRecord.evidenceFingerprints),
     followThroughId: latestRecord.followThroughId,
     liveWriteBoundaryFingerprint: latestRecord.liveWriteBoundaryFingerprint,
     liveWriteBoundaryId: latestRecord.liveWriteBoundaryId,
@@ -148,8 +148,14 @@ function providerReadModelBlockers(
   if (latestRecord.pendingCommandCount === 0 || history.pendingCommandCount === 0) {
     blockers.push("Provider read-model evidence requires at least one pending live-write intent.")
   }
-  if (history.commandIdempotencyKeys.length === 0 || history.evidenceFingerprints.length === 0) {
-    blockers.push("Provider read-model evidence requires command idempotency keys and evidence fingerprints.")
+  if (latestRecord.commandIdempotencyKeys.length === 0 || latestRecord.evidenceFingerprints.length === 0) {
+    blockers.push("Provider read-model evidence requires latest command idempotency keys and evidence fingerprints.")
+  }
+  if (latestRecord.commandIdempotencyKeys.some((key) => !history.commandIdempotencyKeys.includes(key))) {
+    blockers.push("Latest final-gate follow-through live-write command evidence is missing from the history index.")
+  }
+  if (latestRecord.evidenceFingerprints.some((fingerprint) => !history.evidenceFingerprints.includes(fingerprint))) {
+    blockers.push("Latest final-gate follow-through live-write evidence fingerprint is missing from the history index.")
   }
   return blockers
 }
