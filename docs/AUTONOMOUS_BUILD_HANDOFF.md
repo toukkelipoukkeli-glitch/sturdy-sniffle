@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-20 Europe/Helsinki.
+Last refreshed: 2026-08-21 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `c3954d4` (`Refresh final gate live write persistence handoff (#652)`).
+- Main branch checkpoint: `5628dcd` (`Add final gate live write boundary history (#653)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-live-write-boundary-history`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#653` adds deterministic history/read-summary helpers over final-gate follow-through live-write boundary persistence snapshots with ready/blocked counts, pending write evidence, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#652` refreshes the autonomous handoff after the final-gate live-write boundary persistence slice and clears the merged `#651` in-flight branch.
   - `#651` adds deterministic local persistence snapshots for final-gate follow-through live-write boundary records with ready/blocked pending-write intents, seeded-record validation, duplicate conflict handling, clone-safe snapshots, command aggregates, and blocked evidence gating while customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#650` refreshes the autonomous handoff after the final-gate live-write boundary slice and clears the merged `#649` in-flight branch.
