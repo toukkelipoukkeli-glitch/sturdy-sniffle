@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `10ca94a` (`[codex] Surface final gate live write history (#655)`).
+- Main branch checkpoint: `687528b` (`[codex] Refresh final gate live write UI handoff (#656)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-live-write-provider-read-model`.
 - Latest merged sequence:
+  - `#656` refreshes the autonomous handoff after the final-gate live-write boundary history UI slice and clears the merged `#655` in-flight branch.
   - `#655` surfaces persisted final-gate follow-through live-write boundary history/read summaries in the guarded registry preview with blocked write intents, evidence identifiers, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#654` refreshes the autonomous handoff after the final-gate live-write boundary history helper slice and clears the merged `#653` in-flight branch.
   - `#653` adds deterministic history/read-summary helpers over final-gate follow-through live-write boundary persistence snapshots with ready/blocked counts, pending write evidence, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
