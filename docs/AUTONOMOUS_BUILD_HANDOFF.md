@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `432eb9d` (`Surface final gate adapter boundary history (#645)`).
+- Main branch checkpoint: `ea56fc7` (`Stabilize manual RFQ due date main CI (#647)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#647` stabilizes the hosted manual RFQ winter due-date App test timeout after post-`#646` main CI hit a timing-only unit failure, restoring green main CI.
+  - `#646` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary history UI slice and clears the merged `#645` in-flight branch.
   - `#645` surfaces persisted final-gate follow-through outcome commit adapter-boundary history/read summaries in the guarded registry preview with blocked/ready command evidence, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
   - `#644` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary history helper slice and clears the merged `#643` in-flight branch.
   - `#643` adds deterministic history/read-summary helpers over persisted final-gate follow-through outcome commit adapter-boundary records with ready/blocked counts, command/evidence aggregates, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled.
