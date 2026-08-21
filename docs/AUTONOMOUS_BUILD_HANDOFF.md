@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `5628dcd` (`Add final gate live write boundary history (#653)`).
+- Main branch checkpoint: `10ca94a` (`[codex] Surface final gate live write history (#655)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-live-write-boundary-history-ui`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#655` surfaces persisted final-gate follow-through live-write boundary history/read summaries in the guarded registry preview with blocked write intents, evidence identifiers, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
+  - `#654` refreshes the autonomous handoff after the final-gate live-write boundary history helper slice and clears the merged `#653` in-flight branch.
   - `#653` adds deterministic history/read-summary helpers over final-gate follow-through live-write boundary persistence snapshots with ready/blocked counts, pending write evidence, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#652` refreshes the autonomous handoff after the final-gate live-write boundary persistence slice and clears the merged `#651` in-flight branch.
   - `#651` adds deterministic local persistence snapshots for final-gate follow-through live-write boundary records with ready/blocked pending-write intents, seeded-record validation, duplicate conflict handling, clone-safe snapshots, command aggregates, and blocked evidence gating while customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
