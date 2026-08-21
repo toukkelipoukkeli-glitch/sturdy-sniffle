@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `3ed986c` (`[codex] Refresh final gate live write provider handoff (#658)`).
+- Main branch checkpoint: `ed5f4a2` (`[codex] Add final gate provider read model persistence (#659)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-live-write-provider-read-model-persistence` (domain-only local persistence snapshots for final-gate live-write provider read-model records; live writes remain disabled by default).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#659` adds deterministic local persistence snapshots for final-gate follow-through live-write provider read-model records, including ready/blocked seeded-record validation, duplicate conflict handling, clone-safe snapshots, provider evidence aggregates, canonicalized labels/warnings, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#658` refreshes the autonomous handoff after the final-gate live-write provider read-model slice and clears the merged `#657` in-flight branch.
   - `#657` adds a deterministic domain-only final-gate follow-through live-write provider read model over live-write boundary history, withholding provider-preparation evidence unless the latest ready boundary record and history indexes agree while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#656` refreshes the autonomous handoff after the final-gate live-write boundary history UI slice and clears the merged `#655` in-flight branch.
