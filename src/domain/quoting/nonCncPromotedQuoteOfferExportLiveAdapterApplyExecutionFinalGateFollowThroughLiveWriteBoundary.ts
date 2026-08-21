@@ -1,4 +1,4 @@
-import { normalizeIsoTimestamp } from "../shared/deterministic"
+import { compareLex, normalizeIsoTimestamp } from "../shared/deterministic"
 import { nonBlank, optionalTrim } from "../shared/stringValidation"
 import {
   fingerprintNonCncPromotedQuoteOfferExportPackagePayload,
@@ -409,7 +409,7 @@ function stableJson(value: unknown): string {
   if (value && typeof value === "object") {
     return `{${Object.entries(value)
       .filter(([, entryValue]) => entryValue !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => compareLex(left, right))
       .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableJson(entryValue)}`)
       .join(",")}}`
   }
@@ -421,7 +421,7 @@ function uniqueLabels(labels: string[]): string[] {
 }
 
 function uniqueSorted(values: string[]): string[] {
-  return [...new Set(values)].sort((left, right) => left.localeCompare(right))
+  return [...new Set(values)].sort(compareLex)
 }
 
 function formatCount(count: number, singular: string, plural = `${singular}s`): string {
