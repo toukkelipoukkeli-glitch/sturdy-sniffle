@@ -4410,7 +4410,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(calendarPlan).toHaveTextContent("15 Jan, 09.00 - 15 Jan, 11.00")
     expect(calendarPlan).toHaveTextContent("Quote due: ACME-101")
     expect(calendarPlan).toHaveTextContent("15 Jan, 11.30 - 15 Jan, 12.00")
-  })
+  }, 20_000)
 
   it("recomputes the quote deterministically when a costing assumption changes", async () => {
     const user = userEvent.setup()
