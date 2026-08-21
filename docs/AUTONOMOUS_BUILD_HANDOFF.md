@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9f6ba55` (`Refresh final gate live write handoff (#650)`).
+- Main branch checkpoint: `6d4d66b` (`Add final gate live write persistence (#651)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-live-write-boundary-persistence`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#651` adds deterministic local persistence snapshots for final-gate follow-through live-write boundary records with ready/blocked pending-write intents, seeded-record validation, duplicate conflict handling, clone-safe snapshots, command aggregates, and blocked evidence gating while customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#650` refreshes the autonomous handoff after the final-gate live-write boundary slice and clears the merged `#649` in-flight branch.
   - `#649` adds a deterministic domain-only final-gate follow-through live-write boundary over adapter-boundary history, producing pending write intents only after operator review while customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#648` refreshes the autonomous handoff after the manual RFQ winter due-date App timeout stabilization and clears the merged `#647` branch.
