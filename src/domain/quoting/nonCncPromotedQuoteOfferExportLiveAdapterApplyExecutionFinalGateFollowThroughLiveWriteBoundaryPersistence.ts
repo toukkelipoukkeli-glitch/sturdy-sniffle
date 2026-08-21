@@ -110,7 +110,7 @@ export function createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecuti
       const record = buildLiveWriteBoundaryRecord(input)
       snapshotState = normalizeSnapshot({
         records: [
-          ...snapshotState.records.filter((candidate) => candidate.liveWriteBoundaryId !== record.liveWriteBoundaryId),
+          ...snapshotState.records,
           record,
         ],
       })
@@ -278,6 +278,16 @@ function normalizeRecord(
   }
   if (normalized.commandStatuses.length !== normalized.commandCount) {
     throw new Error("commandStatuses length must equal commandCount")
+  }
+  const pendingStatusCount = normalized.commandStatuses.filter(
+    (status) => status === "pending_enablement",
+  ).length
+  const blockedStatusCount = normalized.commandStatuses.filter((status) => status === "blocked").length
+  if (
+    pendingStatusCount !== normalized.pendingCommandCount ||
+    blockedStatusCount !== normalized.blockedCommandCount
+  ) {
+    throw new Error("command status counts must match aggregate command counts")
   }
   if (normalized.blockerCount !== normalized.blockerLabels.length) {
     throw new Error("blockerCount must equal blockerLabels length")

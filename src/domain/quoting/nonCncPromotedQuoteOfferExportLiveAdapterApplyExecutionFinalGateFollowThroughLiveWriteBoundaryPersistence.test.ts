@@ -100,6 +100,49 @@ describe("non-CNC final-gate follow-through live-write boundary persistence", ()
     expect(snapshot.warningCount).toBe(1)
   })
 
+  it("keeps a newer recorded boundary when a stale write arrives later", async () => {
+    const liveWriteBoundary = buildBoundary()
+    const newer = recordFromBoundary(liveWriteBoundary, {
+      recordedAt: "2026-08-21T09:00:00Z",
+      recordedBy: "Mika",
+    })
+    const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence({
+      initialSnapshot: { records: [newer] },
+    })
+
+    const snapshot = await persistence.recordLiveWriteBoundary({
+      liveWriteBoundary,
+      recordedAt: "2026-08-21T08:00:00Z",
+      recordedBy: "Sari",
+    })
+
+    expect(snapshot.recordCount).toBe(1)
+    expect(snapshot.latestRecord?.recordedAt).toBe("2026-08-21T09:00:00.000Z")
+    expect(snapshot.latestRecord?.recordedBy).toBe("Mika")
+  })
+
+  it("rejects conflicting recorded boundaries with the same ID and recordedAt", async () => {
+    const liveWriteBoundary = buildBoundary()
+    const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence({
+      initialSnapshot: {
+        records: [
+          recordFromBoundary(liveWriteBoundary, {
+            recordedAt: "2026-08-21T08:00:00Z",
+            recordedBy: "Sari",
+          }),
+        ],
+      },
+    })
+
+    await expect(
+      persistence.recordLiveWriteBoundary({
+        liveWriteBoundary,
+        recordedAt: "2026-08-21T08:00:00Z",
+        recordedBy: "Mika",
+      }),
+    ).rejects.toThrow("conflicting final-gate follow-through live-write boundary records cannot share liveWriteBoundaryId and recordedAt")
+  })
+
   it("rejects seeded blocked records that expose ready live-write evidence", () => {
     const blocked = recordFromBoundary(buildBoundary({ operatorReviewApproved: false }), {
       recordedAt: "2026-08-21T08:00:00Z",
@@ -118,6 +161,26 @@ describe("non-CNC final-gate follow-through live-write boundary persistence", ()
         },
       }),
     ).toThrow("blocked final-gate follow-through live-write boundary records cannot include ready evidence identifiers")
+  })
+
+  it("rejects seeded records whose command statuses disagree with aggregate counts", () => {
+    const ready = recordFromBoundary(buildBoundary(), {
+      recordedAt: "2026-08-21T08:00:00Z",
+      recordedBy: "Sari",
+    })
+
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...ready,
+              commandStatuses: ["blocked", "pending_enablement", "pending_enablement", "pending_enablement", "pending_enablement", "pending_enablement"],
+            },
+          ],
+        },
+      }),
+    ).toThrow("command status counts must match aggregate command counts")
   })
 
   it("keeps snapshots and records clone-safe", async () => {
