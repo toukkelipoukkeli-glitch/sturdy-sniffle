@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1841334` (`Refresh manual RFQ due date stabilization handoff (#648)`).
+- Main branch checkpoint: `f9bc6c2` (`Add final gate live write boundary (#649)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-follow-through-live-write-boundary` (domain-only explicit live follow-through write boundary after operator review; no live writes enabled).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#649` adds a deterministic domain-only final-gate follow-through live-write boundary over adapter-boundary history, producing pending write intents only after operator review while customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#648` refreshes the autonomous handoff after the manual RFQ winter due-date App timeout stabilization and clears the merged `#647` branch.
   - `#647` stabilizes the hosted manual RFQ winter due-date App test timeout after post-`#646` main CI hit a timing-only unit failure, restoring green main CI.
   - `#646` refreshes the autonomous handoff after the final-gate outcome commit adapter-boundary history UI slice and clears the merged `#645` in-flight branch.
