@@ -9,7 +9,7 @@ This file is the durable continuation note for Codex threads or a human working 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
 - Main branch checkpoint: `5628dcd` (`Add final gate live write boundary history (#653)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-live-write-boundary-history-ui`.
 - Latest merged sequence:
   - `#653` adds deterministic history/read-summary helpers over final-gate follow-through live-write boundary persistence snapshots with ready/blocked counts, pending write evidence, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#652` refreshes the autonomous handoff after the final-gate live-write boundary persistence slice and clears the merged `#651` in-flight branch.
