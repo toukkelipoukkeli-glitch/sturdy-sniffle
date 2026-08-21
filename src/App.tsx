@@ -377,6 +377,12 @@ import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence,
@@ -8350,6 +8356,37 @@ export function ProcessQuotePreviewCard({
         ),
       [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot],
     )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary({
+        adapterBoundaryHistory:
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory,
+        requestedAt: promotionPlan.requestedAt,
+        requestedBy: promotionPlan.requestedBy,
+      }),
+    [
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryHistory,
+      promotionPlan.requestedAt,
+      promotionPlan.requestedBy,
+    ],
+  )
+  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence] =
+    useState(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence(),
+    )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistenceSnapshot>(
+    () => promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence.snapshot(),
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory = useMemo(
+    () =>
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistorySummary(
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot,
+      ),
+    [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot],
+  )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8404,6 +8441,8 @@ export function ProcessQuotePreviewCard({
     buildStatusCountSummary(
       promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitSnapshot.statusCounts,
     )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryStatusSummary =
+    buildStatusCountSummary(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot.statusCounts)
   useEffect(() => {
     if (!promotionRecord) {
       return undefined
@@ -8703,6 +8742,49 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundaryPersistence,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot.records,
+    promotionPlan.requestedAt,
+  ])
+  useEffect(() => {
+    const currentAdapterBoundaryPersisted =
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot.records.some(
+        (record) =>
+          record.adapterBoundaryId ===
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary
+            .adapterBoundaryId,
+      )
+    if (!currentAdapterBoundaryPersisted) {
+      return undefined
+    }
+    if (
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot.records.some(
+        (record) =>
+          record.liveWriteBoundaryId ===
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary.liveWriteBoundaryId,
+      )
+    ) {
+      return undefined
+    }
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence
+      .recordLiveWriteBoundary({
+        liveWriteBoundary: promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary,
+        recordedAt: promotionPlan.requestedAt,
+        recordedBy: "FactoryBid Operator",
+      })
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot(snapshot)
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
+  }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundary,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitAdapterBoundarySnapshot.records,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundary,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot.records,
     promotionPlan.requestedAt,
   ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
@@ -12347,6 +12429,156 @@ export function ProcessQuotePreviewCard({
         </pre>
         <small className="mt-3 block break-words text-xs text-slate-600">
           Status counts: {finalGateOutcomeCommitAdapterBoundaryStatusSummary || "None"}
+        </small>
+      </section>
+      <section
+        className="rounded-lg border border-slate-200 bg-white p-4 text-slate-950 shadow-sm"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through live-write boundary history"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.status}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-xs font-semibold uppercase text-slate-500">
+              Offer export live adapter final gate follow-through live-write boundary history
+            </span>
+            <strong className="mt-1 block break-words text-base font-semibold">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.title}
+            </strong>
+          </div>
+          <small className="max-w-full break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundarySnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.operatorSummary}
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Local boundaries</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.totalRecords,
+                "record",
+              )}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              Ready {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.readyCount},
+              blocked{" "}
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.blockedCount}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Pending writes</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.pendingCommandCount,
+                "pending write intent",
+              )}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              Commands{" "}
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.commandCount},
+              blocked{" "}
+              {
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.blockedCommandCount
+              }
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Latest evidence</span>
+            <strong className="mt-1 block break-words text-sm font-semibold">
+              {humanizeKey(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.latestRecord
+                  ?.disposition ?? "none",
+              )}
+            </strong>
+            <small className="mt-1 block break-all text-xs text-slate-600">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.latestRecord
+                ?.liveWriteBoundaryId ?? "No final-gate live-write boundary record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <span className="block text-xs font-semibold uppercase text-slate-500">Boundary</span>
+          <small className="mt-1 block break-words text-xs leading-5 text-slate-600">
+            Final-gate follow-through live-write boundary history is deterministic review data only; live
+            customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay
+            disabled by default.
+          </small>
+        </div>
+        <ul
+          className="mt-4 grid gap-2"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through live-write boundary history actions"
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.actionItems.map(
+            (actionItem) => (
+              <li
+                className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"
+                data-status={
+                  promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.severity
+                }
+                key={actionItem}
+              >
+                <strong className="break-words font-semibold">{actionItem}</strong>
+              </li>
+            ),
+          )}
+        </ul>
+        <div className="mt-4 grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase text-slate-500">Snapshot IDs</span>
+          <small className="break-words">
+            Ready boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.readyBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Blocked boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.blockedBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Adapter boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.adapterBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Commit records:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.commitRecordIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Follow-throughs:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.followThroughIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Idempotency keys:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.commandIdempotencyKeys.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Evidence fingerprints:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.evidenceFingerprints.join(
+              ", ",
+            ) || "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through live-write boundary history export text"
+          className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-50"
+          tabIndex={0}
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryHistory.exportText}
+        </pre>
+        <small className="mt-3 block break-words text-xs text-slate-600">
+          Status counts:{" "}
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryStatusSummary || "None"}
         </small>
       </section>
       <div

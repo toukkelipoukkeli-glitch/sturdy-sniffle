@@ -736,6 +736,48 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughExecutionOutcom
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBoundaryHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const liveWriteBoundaryHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through live-write boundary history",
+    { exact: true },
+  )
+
+  await expect(liveWriteBoundaryHistory).toBeVisible()
+  await expect(liveWriteBoundaryHistory).toHaveAttribute("data-status", "blocked")
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Offer export live adapter final gate follow-through live-write boundary history",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Final-gate follow-through live-write boundary history blocked",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Latest non-CNC final-gate follow-through live-write boundary is blocked",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText("1 record")
+  await expect(liveWriteBoundaryHistory).toContainText("0 pending write intents")
+  await expect(liveWriteBoundaryHistory).toContainText("Commands 6, blocked 6")
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Resolve final-gate follow-through live-write boundary blockers before retrying write-adapter preparation.",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Final-gate follow-through live-write boundary history is deterministic review data only",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText("Ready boundaries: None")
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Blocked boundaries: non-cnc-final-gate-follow-through-live-write-boundary-",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText("Adapter boundaries: None")
+  await expect(liveWriteBoundaryHistory).toContainText("Idempotency keys: None")
+  await expect(liveWriteBoundaryHistory).toContainText(
+    "Non-CNC final-gate follow-through live-write boundary history",
+  )
+  await expect(liveWriteBoundaryHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -817,6 +859,7 @@ for (const viewport of operatorViewports) {
         nonCncDemos,
         page,
       )
+      await assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBoundaryHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
