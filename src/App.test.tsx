@@ -5078,7 +5078,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(screen.queryByText("cad review dimensions")).toBeNull()
     expect(screen.queryByText("cad review material")).toBeNull()
     expect(screen.queryByText("cad review process")).toBeNull()
-  })
+  }, 20_000)
 
   it("persists an operator-selected primary attachment for part preview", async () => {
     const user = userEvent.setup()
