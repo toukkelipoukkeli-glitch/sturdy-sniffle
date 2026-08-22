@@ -1713,6 +1713,60 @@ describe("FactoryBid workspace (component)", () => {
     )
     await waitFor(() => {
       expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter final gate follow-through provider read-model history",
+        ),
+      ).toHaveTextContent("Final-gate follow-through provider read-model history blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory =
+      within(processDemos).getByLabelText(
+        "Non-CNC promoted quote customer export live adapter final gate follow-through provider read-model history",
+      )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveAttribute(
+      "data-status",
+      "blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Offer export live adapter final gate follow-through provider read-model history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Latest non-CNC final-gate follow-through live-write provider read model is blocked after 1 record; provider-preparation evidence remains withheld and live writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "1 record",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "0 pending write intents",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Commands 6, blocked 6",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Resolve provider read-model blockers before retrying final-gate follow-through provider preparation.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Final-gate follow-through provider read-model history is deterministic review data only; live customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay disabled by default.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Provider-ready records: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Blocked records: final-gate-live-write-provider-read-model:blocked:blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Live-write boundaries: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Idempotency keys: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Non-CNC final-gate follow-through live-write provider read-model history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory).toHaveTextContent(
+      "Status counts: blocked",
+    )
+    await waitFor(() => {
+      expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
       ).toHaveTextContent("Live-adapter execution history blocked")
     })
