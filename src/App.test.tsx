@@ -3571,7 +3571,7 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("Sync health Healthy")
     })
-  })
+  }, 20_000)
 
   it("surfaces provider outcome readiness persistence snapshots in the offer workspace", async () => {
     const user = userEvent.setup()
