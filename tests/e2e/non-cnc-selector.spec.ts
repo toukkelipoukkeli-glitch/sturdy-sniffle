@@ -778,6 +778,50 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBounda
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const providerReadModelHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through provider read-model history",
+    { exact: true },
+  )
+
+  await expect(providerReadModelHistory).toBeVisible()
+  await expect(providerReadModelHistory).toHaveAttribute("data-status", "blocked")
+  await expect(providerReadModelHistory).toContainText(
+    "Offer export live adapter final gate follow-through provider read-model history",
+  )
+  await expect(providerReadModelHistory).toContainText(
+    "Final-gate follow-through provider read-model history blocked",
+  )
+  await expect(providerReadModelHistory).toContainText(
+    "Latest non-CNC final-gate follow-through live-write provider read model is blocked",
+  )
+  await expect(providerReadModelHistory).toContainText("1 record")
+  await expect(providerReadModelHistory).toContainText("0 pending write intents")
+  await expect(providerReadModelHistory).toContainText("Commands 6, blocked 6")
+  await expect(providerReadModelHistory).toContainText(
+    "Resolve provider read-model blockers before retrying final-gate follow-through provider preparation.",
+  )
+  await expect(providerReadModelHistory).toContainText(
+    "Final-gate follow-through provider read-model history is deterministic review data only",
+  )
+  await expect(providerReadModelHistory).toContainText("Provider-ready records: None")
+  await expect(providerReadModelHistory).toContainText(
+    "Blocked records: final-gate-live-write-provider-read-model:blocked:blocked",
+  )
+  await expect(providerReadModelHistory).toContainText(
+    "Live-write boundaries: None",
+  )
+  await expect(providerReadModelHistory).toContainText("Idempotency keys: None")
+  await expect(providerReadModelHistory).toContainText(
+    "Non-CNC final-gate follow-through live-write provider read-model history",
+  )
+  await expect(providerReadModelHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -860,6 +904,7 @@ for (const viewport of operatorViewports) {
         page,
       )
       await assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBoundaryHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)

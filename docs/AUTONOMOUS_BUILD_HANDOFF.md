@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-21 Europe/Helsinki.
+Last refreshed: 2026-08-22 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `d098b63` (`[codex] Refresh final gate provider persistence handoff (#660)`).
+- Main branch checkpoint: `cacfdaa` (`[codex] Add final gate provider read model history (#661)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-live-write-provider-read-model-history` (domain-only history/read-summary helpers for persisted final-gate live-write provider read-model records; live writes remain disabled by default).
+- In-flight branch at this checkpoint: `codex/final-gate-provider-read-model-history-ui` (guarded registry-preview surfacing for persisted final-gate live-write provider read-model history/read-summary helpers; live writes remain disabled by default).
 - Latest merged sequence:
+  - `#661` adds deterministic domain-only provider read-model history/read-summary helpers over final-gate follow-through live-write provider readiness records with ready/blocked aggregates, provider evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#660` refreshes the autonomous handoff after the final-gate live-write provider read-model persistence slice and clears the merged `#659` in-flight branch.
   - `#659` adds deterministic local persistence snapshots for final-gate follow-through live-write provider read-model records, including ready/blocked seeded-record validation, duplicate conflict handling, clone-safe snapshots, provider evidence aggregates, canonicalized labels/warnings, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#658` refreshes the autonomous handoff after the final-gate live-write provider read-model slice and clears the merged `#657` in-flight branch.
