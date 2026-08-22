@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `8fb2c60` (`[codex] Refresh final gate provider adapter handoff (#666)`).
+- Main branch checkpoint: `e5510f6` (`[codex] Add final gate provider adapter persistence (#667)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-boundary-persistence` (domain-only local persistence snapshots for the final-gate provider-adapter boundary).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#667` adds deterministic local persistence snapshots for final-gate provider-adapter boundary records with ready/blocked review-only command descriptors, seeded-record validation, duplicate conflict handling, clone-safe snapshots, command/evidence aggregates, command-status consistency validation, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#666` refreshes the autonomous handoff after the final-gate provider-adapter boundary slice and clears the merged `#665` in-flight branch.
   - `#665` adds a deterministic domain-only explicit final-gate provider-adapter boundary over provider read-model history, gating readiness on the latest indexed ready provider read-model record, exposing only latest-record command/evidence IDs, and emitting review-only provider-preparation commands while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#664` stabilizes the hosted RFQ intake readiness App test timeout after post-`#663` main CI hit a timing-only unit failure, restoring green main CI.
