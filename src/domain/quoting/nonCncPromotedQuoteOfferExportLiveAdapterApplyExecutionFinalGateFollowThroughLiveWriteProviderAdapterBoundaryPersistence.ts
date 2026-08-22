@@ -328,8 +328,14 @@ function normalizeRecord(
   if (normalized.status === "ready" && normalized.disposition !== "provider_adapter_ready") {
     throw new Error("ready final-gate follow-through provider-adapter boundary records must use provider_adapter_ready disposition")
   }
+  if (normalized.status === "ready" && normalized.blockedCommandCount !== 0) {
+    throw new Error("ready final-gate follow-through provider-adapter boundary records cannot include blocked commands")
+  }
   if (normalized.status === "blocked" && normalized.disposition !== "review_only") {
     throw new Error("blocked final-gate follow-through provider-adapter boundary records must use review_only disposition")
+  }
+  if (normalized.status === "blocked" && normalized.plannedCommandCount !== 0) {
+    throw new Error("blocked final-gate follow-through provider-adapter boundary records cannot include planned commands")
   }
   validateReadyEvidence(normalized)
   validateBlockedEvidenceGating(normalized)

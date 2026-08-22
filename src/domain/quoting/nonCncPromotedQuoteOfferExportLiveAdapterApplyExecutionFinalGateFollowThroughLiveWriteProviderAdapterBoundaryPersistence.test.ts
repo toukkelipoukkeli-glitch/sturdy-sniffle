@@ -124,6 +124,64 @@ describe("non-CNC final-gate follow-through provider-adapter boundary persistenc
     ).toThrow("blocked final-gate follow-through provider-adapter boundary records cannot include provider evidence identifiers")
   })
 
+  it("rejects seeded blocked records with planned command aggregates", () => {
+    const blocked = recordFromBoundary(buildBoundary({ historyRecords: [] }), {
+      recordedAt: "2026-08-22T11:00:00Z",
+      recordedBy: "Sari",
+    })
+
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...blocked,
+              blockedCommandCount: 5,
+              commandStatuses: [
+                "planned",
+                "blocked",
+                "blocked",
+                "blocked",
+                "blocked",
+                "blocked",
+              ],
+              plannedCommandCount: 1,
+            },
+          ],
+        },
+      }),
+    ).toThrow("blocked final-gate follow-through provider-adapter boundary records cannot include planned commands")
+  })
+
+  it("rejects seeded ready records with blocked command aggregates", () => {
+    const ready = recordFromBoundary(buildBoundary(), {
+      recordedAt: "2026-08-22T11:00:00Z",
+      recordedBy: "Sari",
+    })
+
+    expect(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence({
+        initialSnapshot: {
+          records: [
+            {
+              ...ready,
+              blockedCommandCount: 1,
+              commandStatuses: [
+                "blocked",
+                "planned",
+                "planned",
+                "planned",
+                "planned",
+                "planned",
+              ],
+              plannedCommandCount: 5,
+            },
+          ],
+        },
+      }),
+    ).toThrow("ready final-gate follow-through provider-adapter boundary records cannot include blocked commands")
+  })
+
   it("keeps snapshots and records clone-safe", async () => {
     const persistence = createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence()
     const snapshot = await persistence.recordProviderAdapterBoundary({
