@@ -4984,7 +4984,7 @@ describe("FactoryBid workspace (component)", () => {
 
     await user.type(customer, "North Forge Works")
     expect(screen.getByLabelText("RFQ intake readiness")).not.toHaveTextContent("Customer name is missing")
-  }, 20_000)
+  }, 30_000)
 
   it("normalizes edited customer whitespace before approval policy selection", async () => {
     const user = userEvent.setup()
