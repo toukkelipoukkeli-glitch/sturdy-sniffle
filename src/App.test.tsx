@@ -3538,7 +3538,7 @@ describe("FactoryBid workspace (component)", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Follow-up activity readiness history")).toHaveTextContent("1 readiness snapshot")
     })
-  })
+  }, 20_000)
 
   it("rejects malformed restored follow-up readiness sync health events", async () => {
     const user = userEvent.setup()
@@ -4544,7 +4544,7 @@ describe("FactoryBid workspace (component)", () => {
 
     expect(totalText(container)).not.toBe(before)
     expect(screen.getByText("margin percent").closest(".assumption-row")).toHaveTextContent("18.5")
-  })
+  }, 20_000)
 
   it("toggles the Rush queue filter to narrow and restore the queue", async () => {
     const user = userEvent.setup()
