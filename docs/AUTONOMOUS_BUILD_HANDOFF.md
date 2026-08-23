@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0a432ab` (`[codex] Stabilize post-handoff App test timeouts (#671)`).
+- Main branch checkpoint: `4baa6ac` (`[codex] Surface final gate provider adapter history (#672)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-history-ui` (guarded registry-preview surfacing for final-gate provider-adapter boundary history/read summaries; live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#672` surfaces persisted final-gate provider-adapter boundary history/read summaries in the guarded registry preview with blocked provider-preparation command evidence, action items, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#671` stabilizes two hosted App timing-only failures after post-`#670` main CI timed out in follow-up readiness history and editable costing rate specs, restoring green main CI.
   - `#670` refreshes the autonomous handoff after the final-gate provider-adapter history helper slice and clears the merged `#669` in-flight branch.
   - `#669` adds deterministic domain-only history/read-summary helpers over final-gate provider-adapter boundary persistence snapshots with ready/blocked aggregates, command/evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
