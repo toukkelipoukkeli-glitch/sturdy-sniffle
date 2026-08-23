@@ -1,16 +1,17 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-22 Europe/Helsinki.
+Last refreshed: 2026-08-23 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `0b06d98` (`[codex] Refresh final gate provider adapter persistence handoff (#668)`).
+- Main branch checkpoint: `147203f` (`[codex] Add final gate provider adapter history (#669)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-boundary-history` (domain-only history/read-summary helper over final-gate provider-adapter boundary persistence snapshots).
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#669` adds deterministic domain-only history/read-summary helpers over final-gate provider-adapter boundary persistence snapshots with ready/blocked aggregates, command/evidence IDs, action items, clone-safe recent records, and copyable export text while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#668` refreshes the autonomous handoff after the final-gate provider-adapter persistence slice and clears the merged `#667` in-flight branch.
   - `#667` adds deterministic local persistence snapshots for final-gate provider-adapter boundary records with ready/blocked review-only command descriptors, seeded-record validation, duplicate conflict handling, clone-safe snapshots, command/evidence aggregates, command-status consistency validation, and blocked evidence gating while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#666` refreshes the autonomous handoff after the final-gate provider-adapter boundary slice and clears the merged `#665` in-flight branch.
