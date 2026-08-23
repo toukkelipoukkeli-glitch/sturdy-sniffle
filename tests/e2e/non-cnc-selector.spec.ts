@@ -822,6 +822,48 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughProviderReadMod
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterBoundaryHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const providerAdapterBoundaryHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter boundary history",
+    { exact: true },
+  )
+
+  await expect(providerAdapterBoundaryHistory).toBeVisible()
+  await expect(providerAdapterBoundaryHistory).toHaveAttribute("data-status", "blocked")
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Offer export live adapter final gate follow-through provider-adapter history",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Final-gate follow-through provider-adapter history blocked",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Latest non-CNC final-gate follow-through provider-adapter boundary is blocked",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText("1 record")
+  await expect(providerAdapterBoundaryHistory).toContainText("6 commands")
+  await expect(providerAdapterBoundaryHistory).toContainText("Planned 0, blocked 6")
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Resolve provider-adapter boundary blockers before retrying final-gate follow-through provider preparation.",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Final-gate follow-through provider-adapter boundary history is deterministic review data only",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText("Ready boundaries: None")
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Blocked boundaries: non-cnc-final-gate-follow-through-live-write-provider-adapter-boundary-",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText("Provider read models: None")
+  await expect(providerAdapterBoundaryHistory).toContainText("Idempotency keys: None")
+  await expect(providerAdapterBoundaryHistory).toContainText(
+    "Non-CNC final-gate follow-through provider-adapter boundary history",
+  )
+  await expect(providerAdapterBoundaryHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -905,6 +947,7 @@ for (const viewport of operatorViewports) {
       )
       await assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBoundaryHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterBoundaryHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
