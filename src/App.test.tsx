@@ -77,6 +77,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_BOUNDARY_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_BOUNDARY_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -1883,6 +1884,70 @@ describe("FactoryBid workspace (component)", () => {
     )
     await waitFor(() => {
       expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution outcome draft",
+        ),
+      ).toHaveTextContent("blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft =
+      within(processDemos).getByLabelText(
+        "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution outcome draft",
+      )
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveAttribute("data-status", "blocked")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent(
+      "Offer export live adapter final gate follow-through provider-adapter execution outcome draft",
+    )
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION,
+    )
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent(
+      "Provider-adapter execution requires ready provider-adapter boundary history.",
+    )
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("0 ready outcomes")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("6 blocked outcomes")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("dry run")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Provider-adapter evidence withheld")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Prepare customer offer provider write")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("blocked · customer offer")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Provider outcome external id withheld")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent(
+      "Final-gate provider-adapter execution outcome drafts are deterministic review data only",
+    )
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Target RFQ: Final-gate provider target withheld")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Pending write intents: 0")
+    expect(
+      promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeDraft,
+    ).toHaveTextContent("Reviewed outcomes: 0")
+    await waitFor(() => {
+      expect(
         within(processDemos).getByLabelText("Non-CNC promoted quote customer export live adapter execution history"),
       ).toHaveTextContent("Live-adapter execution history blocked")
     })
@@ -3273,7 +3338,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 local follow-up activity available; Convex follow-up activity reads are not configured.",
     )
-  })
+  }, 20_000)
 
   it("labels non-empty persisted follow-up activity reads as Convex activity", async () => {
     const user = userEvent.setup()
@@ -3330,7 +3395,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 persisted follow-up activity read from Convex and merged with 0 local fallback activities.",
     )
-  })
+  }, 20_000)
 
   it("labels rejected persisted follow-up activity reads as fallback while preserving local activity", async () => {
     const user = userEvent.setup()
@@ -3375,7 +3440,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
       "Retry activity read",
     )
-  })
+  }, 20_000)
 
   it("restores follow-up activity readiness history snapshots from local storage", async () => {
     const user = userEvent.setup()
@@ -3953,7 +4018,7 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.change(within(fabricationEditor).getByLabelText("Complexity multiplier"), { target: { value: "1.45" } })
     expect(fabricationEditor).toHaveTextContent("Fabrication preview quote recalculated through the non-CNC edit registry.")
     expect(fabricationPreview).toHaveTextContent("€1,789.89")
-  }, 20_000)
+  }, 45_000)
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
@@ -5053,7 +5118,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 0, local 0, fallback 1")
     expect(writeText.mock.calls[0]?.[0]).toContain("Retry outcome read")
     expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
-  })
+  }, 20_000)
 
   it("records workspace actions with the deterministic local operator context", async () => {
     const user = userEvent.setup()
