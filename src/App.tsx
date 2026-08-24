@@ -395,6 +395,12 @@ import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence,
   type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistenceSnapshot,
 } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecution"
+import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory"
+import {
+  createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence,
+  type NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistenceSnapshot,
+} from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence"
 import { buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistorySummary } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitHistory"
 import {
   createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence,
@@ -8455,6 +8461,42 @@ export function ProcessQuotePreviewCard({
         ),
       [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundarySnapshot],
     )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun =
+    useMemo(
+      () =>
+        buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun(
+          {
+            actor: "FactoryBid Operator",
+            executedAt: promotionPlan.requestedAt,
+            history:
+              promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistory,
+            mode: "dry_run",
+          },
+        ),
+      [
+        promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistory,
+        promotionPlan.requestedAt,
+      ],
+    )
+  const [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence] =
+    useState(() =>
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence(),
+    )
+  const [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot,
+    setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot,
+  ] = useState<NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistenceSnapshot>(
+    () =>
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence.snapshot(),
+  )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory =
+    useMemo(
+      () =>
+        buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistorySummary(
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot,
+        ),
+      [promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot],
+    )
   const promotionOfferExportLiveAdapterExecutionHistory = useMemo(
     () =>
       buildNonCncPromotedQuoteOfferExportLiveAdapterExecutionHistorySummary(
@@ -8518,6 +8560,10 @@ export function ProcessQuotePreviewCard({
   const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryStatusSummary =
     buildStatusCountSummary(
       promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundarySnapshot.statusCounts,
+    )
+  const promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionStatusSummary =
+    buildStatusCountSummary(
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot.statusCounts,
     )
   useEffect(() => {
     if (!promotionRecord) {
@@ -8947,6 +8993,39 @@ export function ProcessQuotePreviewCard({
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundarySnapshot.records,
     promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderReadModelHistory.latestRecord,
     promotionPlan.requestedAt,
+  ])
+  useEffect(() => {
+    if (!promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistory.latestRecord) {
+      return undefined
+    }
+    if (
+      promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot.records.some(
+        (record) =>
+          record.executionFingerprint ===
+          promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun
+            .executionFingerprint,
+      )
+    ) {
+      return undefined
+    }
+    let isCurrent = true
+    void promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence
+      .recordRun(promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun)
+      .then((snapshot) => {
+        if (isCurrent) {
+          setPromotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot(
+            snapshot,
+          )
+        }
+      })
+    return () => {
+      isCurrent = false
+    }
+  }, [
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistory.latestRecord,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun,
+    promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot.records,
   ])
   const [summaryFeedback, setSummaryFeedback] = useState<{
     kind: "idle" | "copied" | "error"
@@ -13033,6 +13112,162 @@ export function ProcessQuotePreviewCard({
         <small className="mt-3 block break-words text-xs text-slate-600">
           Status counts:{" "}
           {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryStatusSummary ||
+            "None"}
+        </small>
+      </section>
+      <section
+        className="rounded-lg border border-slate-200 bg-white p-4 text-slate-950 shadow-sm"
+        aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution history"
+        data-status={promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.status}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <span className="block text-xs font-semibold uppercase text-slate-500">
+              Offer export live adapter final gate follow-through provider-adapter execution history
+            </span>
+            <strong className="mt-1 block break-words text-base font-semibold">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.title}
+            </strong>
+          </div>
+          <small className="max-w-full break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionSnapshot.persistenceVersion}
+          </small>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.operatorSummary}
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Provider execution runs</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.totalRuns,
+                "run",
+              )}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.nextActionCount,
+                "next action",
+              )}
+              ,{" "}
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.warningCount,
+                "warning",
+              )}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Command outcomes</span>
+            <strong className="mt-1 block text-sm font-semibold">
+              {formatCount(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.commandCount,
+                "command",
+              )}
+            </strong>
+            <small className="mt-1 block text-xs text-slate-600">
+              Prepared {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.preparedCommandCount},
+              pending {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.pendingCommandCount},
+              applied {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.appliedCommandCount},
+              failed {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.failedCommandCount},
+              blocked {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.blockedCommandCount}
+            </small>
+          </div>
+          <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <span className="block text-xs font-semibold uppercase text-slate-500">Latest execution</span>
+            <strong className="mt-1 block break-words text-sm font-semibold">
+              {humanizeKey(
+                promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.latestRun?.status ??
+                  "none",
+              )}
+            </strong>
+            <small className="mt-1 block break-all text-xs text-slate-600">
+              {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.latestRun
+                ?.executionFingerprint ?? "No final-gate provider-adapter execution record yet"}
+            </small>
+          </div>
+        </div>
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <span className="block text-xs font-semibold uppercase text-slate-500">Boundary</span>
+          <small className="mt-1 block break-words text-xs leading-5 text-slate-600">
+            Final-gate follow-through provider-adapter execution history is deterministic review data only; live
+            customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay
+            disabled by default.
+          </small>
+        </div>
+        <ul
+          className="mt-4 grid gap-2"
+          aria-label="Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution history actions"
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.actionItems.map(
+            (actionItem) => (
+              <li
+                className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"
+                data-status={
+                  promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.severity
+                }
+                key={actionItem}
+              >
+                <strong className="break-words font-semibold">{actionItem}</strong>
+              </li>
+            ),
+          )}
+        </ul>
+        <div className="mt-4 grid gap-1 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase text-slate-500">Snapshot IDs</span>
+          <small className="break-words">
+            Provider boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.providerAdapterBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Provider read models:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.providerReadModelRecordIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Live-write boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.liveWriteBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Adapter boundaries:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.adapterBoundaryIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Idempotency keys:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.commandIdempotencyKeys.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            Evidence fingerprints:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.evidenceFingerprints.join(
+              ", ",
+            ) || "None"}
+          </small>
+          <small className="break-words">
+            External IDs:{" "}
+            {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.externalIds.join(
+              ", ",
+            ) || "None"}
+          </small>
+        </div>
+        <pre
+          aria-label="Live adapter final gate follow-through provider adapter execution history export text"
+          className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border border-slate-200 bg-slate-950 p-3 text-xs leading-5 text-slate-50"
+          tabIndex={0}
+        >
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionHistory.exportText}
+        </pre>
+        <small className="mt-3 block break-words text-xs text-slate-600">
+          Status counts:{" "}
+          {promotionOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionStatusSummary ||
             "None"}
         </small>
       </section>

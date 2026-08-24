@@ -76,6 +76,7 @@ import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_EXECUTION_OUTCOME_COMMIT_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughExecutionOutcomeCommitPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_BOUNDARY_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteBoundaryPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_BOUNDARY_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryPersistence"
+import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionPersistence"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModel"
 import { NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_PACKAGE_PROVIDER_READ_MODEL_PERSISTENCE_VERSION } from "./domain/quoting/nonCncPromotedQuoteOfferExportPackageProviderReadModelPersistence"
 import { NON_CNC_PROMOTED_QUOTE_APPLICATION_MUTATION_EXECUTION_OUTCOME_DRAFT_VERSION } from "./domain/quoting/nonCncPromotedQuoteApplicationMutationExecutionOutcomeDraft"
@@ -1821,6 +1822,63 @@ describe("FactoryBid workspace (component)", () => {
       "Non-CNC final-gate follow-through provider-adapter boundary history",
     )
     expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterBoundaryHistory).toHaveTextContent(
+      "Status counts: blocked",
+    )
+    await waitFor(() => {
+      expect(
+        within(processDemos).getByLabelText(
+          "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution history",
+        ),
+      ).toHaveTextContent("Final-gate provider-adapter execution history blocked")
+    })
+    const promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory =
+      within(processDemos).getByLabelText(
+        "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution history",
+      )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveAttribute(
+      "data-status",
+      "blocked",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Offer export live adapter final gate follow-through provider-adapter execution history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_PERSISTENCE_VERSION,
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Latest non-CNC final-gate provider-adapter execution is blocked after 1 run; provider execution evidence remains withheld and live writes remain disabled.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "1 run",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "6 commands",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Prepared 0, pending 0, applied 0, failed 0, blocked 6",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Resolve final-gate provider-adapter execution blockers before recording provider outcomes.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Final-gate follow-through provider-adapter execution history is deterministic review data only; live customer-offer, file, release-review, export, connector, and final-gate follow-through writes stay disabled by default.",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Provider boundaries: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Provider read models: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Idempotency keys: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "External IDs: None",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
+      "Non-CNC final-gate follow-through provider-adapter execution history",
+    )
+    expect(promotedQuoteOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionHistory).toHaveTextContent(
       "Status counts: blocked",
     )
     await waitFor(() => {
