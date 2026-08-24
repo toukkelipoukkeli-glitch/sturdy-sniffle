@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `2220293` (`[codex] Add final gate provider adapter execution audit (#676)`).
+- Main branch checkpoint: `4df1b09` (`[codex] Refresh final gate provider adapter execution handoff (#677)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-execution-persistence`.
 - Latest merged sequence:
+  - `#677` refreshes the autonomous handoff after the final-gate provider-adapter execution audit slice and records `#676` as the latest product checkpoint.
   - `#676` adds a deterministic domain-only final-gate provider-adapter execution audit over persisted provider-adapter history summaries, covering dry-run prepared commands plus pending, succeeded, partial, failed, and blocked commit outcomes while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#675` refreshes the autonomous handoff after the main App timeout repair and records `#674` as the restored green-main checkpoint.
   - `#674` stabilizes the two hosted App timing-only failures after post-`#673` main CI timed out in pending follow-up activity reads and deterministic local operator context specs, restoring green main CI.
