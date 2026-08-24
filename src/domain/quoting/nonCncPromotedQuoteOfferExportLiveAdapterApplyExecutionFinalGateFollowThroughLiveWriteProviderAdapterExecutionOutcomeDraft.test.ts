@@ -177,6 +177,20 @@ describe("non-CNC final-gate provider-adapter execution outcome drafts", () => {
     expect(committedDraft.nextOperatorMessage).toContain(
       "Final-gate provider-adapter outcome drafts must be based on a dry-run execution.",
     )
+    expect(committedDraft.providerAdapterBoundaryId).toBeUndefined()
+    expect(committedDraft.providerAdapterBoundaryFingerprint).toBeUndefined()
+    expect(committedDraft.providerReadModelRecordId).toBeUndefined()
+    expect(committedDraft.liveWriteBoundaryId).toBeUndefined()
+    expect(committedDraft.liveWriteBoundaryFingerprint).toBeUndefined()
+    expect(committedDraft.adapterBoundaryId).toBeUndefined()
+    expect(committedDraft.adapterBoundaryFingerprint).toBeUndefined()
+    expect(committedDraft.commitRecordId).toBeUndefined()
+    expect(committedDraft.committedExecutionFingerprint).toBeUndefined()
+    expect(committedDraft.followThroughId).toBeUndefined()
+    expect(committedDraft.targetRfqId).toBeUndefined()
+    expect(committedDraft.readinessRecordId).toBeUndefined()
+    expect(committedDraft.commandOutcomes.every((command) => command.evidenceFingerprints.length === 0)).toBe(true)
+    expect(committedDraft.commandOutcomes.every((command) => command.externalId === undefined)).toBe(true)
     expect(committedDraft.commandOutcomes.every((command) => command.suggestedOutcome === undefined)).toBe(true)
   })
 
