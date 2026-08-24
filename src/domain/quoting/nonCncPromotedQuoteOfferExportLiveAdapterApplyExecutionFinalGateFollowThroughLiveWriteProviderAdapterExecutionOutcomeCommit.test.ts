@@ -127,25 +127,22 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
       commandOutcomeCount: 0,
       commandOutcomes: [],
       pendingWriteIntentCount: 0,
-      providerAdapterBoundaryId: undefined,
-      providerReadModelRecordId: undefined,
       reviewedOutcomeCount: 0,
       status: "blocked",
-      targetRfqId: undefined,
     })
     expect(result.commitPlan.nextOperatorMessage).toContain(
       "Final-gate provider-adapter execution outcome draft must be ready",
     )
   })
 
-  it("rejects ready drafts that do not match provider-adapter boundary history identity", () => {
+  it("blocks ready drafts that do not match provider-adapter boundary history identity", () => {
     const history = readyHistory()
     const outcomeDraft =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
         readyDryRun(history),
       )
 
-    expect(() =>
+    const mismatchedReadModel =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan(
         {
           history,
@@ -154,11 +151,17 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
             providerReadModelRecordId: "final-gate-live-write-provider-read-model:other",
           },
         },
-      ),
-    ).toThrow(
-      "final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: providerReadModelRecordId",
-    )
-    expect(() =>
+      )
+    expect(mismatchedReadModel).toMatchObject({
+      blockerLabels: [
+        "Final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: providerReadModelRecordId.",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+
+    const mismatchedFingerprint =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan(
         {
           history,
@@ -167,42 +170,58 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
             providerAdapterBoundaryFingerprint: "final-gate-provider-adapter-boundary:other:fingerprint",
           },
         },
-      ),
-    ).toThrow(
-      "final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: providerAdapterBoundaryFingerprint",
-    )
+      )
+    expect(mismatchedFingerprint).toMatchObject({
+      blockerLabels: [
+        "Final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: providerAdapterBoundaryFingerprint.",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
   })
 
-  it("rejects unsupported reviewed draft versions before commit planning", () => {
+  it("blocks unsupported reviewed draft versions before commit execution", () => {
     const history = readyHistory()
     const outcomeDraft =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
         readyDryRun(history),
       )
 
-    expect(() =>
-      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan(
+    const result =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitRun(
         {
+          actor,
+          executedAt,
           history,
           outcomeDraft: {
             ...outcomeDraft,
             draftVersion: "unsupported-final-gate-provider-adapter-execution-outcome-draft-version",
           } as unknown as NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft,
         },
-      ),
-    ).toThrow("unsupported final-gate provider-adapter execution outcome draft version")
+      )
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: ["Unsupported final-gate provider-adapter execution outcome draft version."],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
   })
 
-  it("rejects altered reviewed draft content that otherwise matches provider-adapter identity", () => {
+  it("blocks altered reviewed draft content that otherwise matches provider-adapter identity", () => {
     const history = readyHistory()
     const outcomeDraft =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
         readyDryRun(history),
       )
 
-    expect(() =>
-      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan(
+    const result =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitRun(
         {
+          actor,
+          executedAt,
           history,
           outcomeDraft: {
             ...outcomeDraft,
@@ -219,10 +238,17 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
             ),
           },
         },
-      ),
-    ).toThrow(
-      "final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: commandOutcomes (customer_offer_provider_prepare)",
-    )
+      )
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: [
+        "Final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: commandOutcomes (customer_offer_provider_prepare).",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
   })
 
   it("blocks reordered command outcomes without passing outcomes to commit execution", () => {
@@ -289,7 +315,7 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
     })
   })
 
-  it("rejects non-applied suggested outcomes as altered reviewed draft content", () => {
+  it("blocks non-applied suggested outcomes as altered reviewed draft content", () => {
     const history = readyHistory()
     const outcomeDraft =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
@@ -312,7 +338,7 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
         ),
       }
 
-    expect(() =>
+    const result =
       buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitRun(
         {
           actor,
@@ -320,10 +346,17 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
           history,
           outcomeDraft: failedOutcomeDraft,
         },
-      ),
-    ).toThrow(
-      "final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: commandOutcomes (customer_offer_provider_prepare)",
-    )
+      )
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: [
+        "Final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: commandOutcomes (customer_offer_provider_prepare).",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
   })
 
   it("clones command outcomes so draft mutations cannot alter commit plans", () => {

@@ -120,8 +120,10 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFina
   history,
   outcomeDraft,
 }: BuildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlanInput): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan {
-  assertDraftVersion(outcomeDraft)
-  assertReadyDraftMatchesHistory(history, outcomeDraft)
+  const validationBlockers = draftValidationBlockerLabels(history, outcomeDraft)
+  if (validationBlockers.length > 0) {
+    return buildBlockedCommitPlan(outcomeDraft, validationBlockers)
+  }
   const historyBlockers = providerAdapterExecutionOutcomeCommitHistoryBlockers(history)
   const commandSetBlockers = commandSetMismatchBlockers(outcomeDraft)
   const invalidCommandLabels = outcomeDraft.commandOutcomes.flatMap((command) =>
@@ -174,39 +176,39 @@ export function buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFina
     modeBlockers.length === 0
       ? "ready"
       : "blocked"
-  const latestRecord = status === "ready" ? history.latestRecord : undefined
+  if (status !== "ready") {
+    return buildBlockedCommitPlan(outcomeDraft, blockerLabels)
+  }
+  const latestRecord = history.latestRecord
 
   return {
-    adapterBoundaryFingerprint: status === "ready" ? outcomeDraft.adapterBoundaryFingerprint : undefined,
-    adapterBoundaryId: status === "ready" ? outcomeDraft.adapterBoundaryId : undefined,
-    blockerLabels: status === "ready" ? [] : blockerLabels,
-    commandOutcomeCount: status === "ready" ? commandOutcomes.length : 0,
-    commandOutcomes: status === "ready" ? commandOutcomes : [],
-    committedExecutionFingerprint: status === "ready" ? outcomeDraft.committedExecutionFingerprint : undefined,
-    commitRecordId: status === "ready" ? outcomeDraft.commitRecordId : undefined,
+    adapterBoundaryFingerprint: outcomeDraft.adapterBoundaryFingerprint,
+    adapterBoundaryId: outcomeDraft.adapterBoundaryId,
+    blockerLabels: [],
+    commandOutcomeCount: commandOutcomes.length,
+    commandOutcomes,
+    committedExecutionFingerprint: outcomeDraft.committedExecutionFingerprint,
+    commitRecordId: outcomeDraft.commitRecordId,
     commitVersion:
       NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_OUTCOME_COMMIT_VERSION,
     executionFingerprint: outcomeDraft.executionFingerprint,
-    followThroughId: status === "ready" ? outcomeDraft.followThroughId : undefined,
-    liveWriteBoundaryFingerprint: status === "ready" ? outcomeDraft.liveWriteBoundaryFingerprint : undefined,
-    liveWriteBoundaryId: status === "ready" ? outcomeDraft.liveWriteBoundaryId : undefined,
+    followThroughId: outcomeDraft.followThroughId,
+    liveWriteBoundaryFingerprint: outcomeDraft.liveWriteBoundaryFingerprint,
+    liveWriteBoundaryId: outcomeDraft.liveWriteBoundaryId,
     nextOperatorMessage:
-      status === "ready"
-        ? `Commit ${formatCount(commandOutcomes.length, "reviewed non-CNC final-gate provider-adapter execution outcome")}.`
-        : blockerLabels.join(" ") ||
-          "Final-gate provider-adapter execution outcome commit is blocked until the reviewed draft fully matches ready provider-adapter boundary history.",
-    pendingWriteIntentCount: status === "ready" ? outcomeDraft.pendingWriteIntentCount : 0,
-    providerAdapterBoundaryFingerprint: status === "ready" ? outcomeDraft.providerAdapterBoundaryFingerprint : undefined,
-    providerAdapterBoundaryId: status === "ready" ? outcomeDraft.providerAdapterBoundaryId : undefined,
-    providerAdapterBoundaryVersion: status === "ready" ? latestRecord?.providerAdapterBoundaryVersion : undefined,
+      `Commit ${formatCount(commandOutcomes.length, "reviewed non-CNC final-gate provider-adapter execution outcome")}.`,
+    pendingWriteIntentCount: outcomeDraft.pendingWriteIntentCount,
+    providerAdapterBoundaryFingerprint: outcomeDraft.providerAdapterBoundaryFingerprint,
+    providerAdapterBoundaryId: outcomeDraft.providerAdapterBoundaryId,
+    providerAdapterBoundaryVersion: latestRecord?.providerAdapterBoundaryVersion,
     providerAdapterExecutionOutcomeCommitBoundary:
       "Final-gate provider-adapter execution outcome commit plans are deterministic review data only; customer-offer, file, release-review, export, connector, final-gate follow-through, RFQ quote, offer, and release state stay unchanged until a later adapter applies them.",
-    providerReadModelRecordId: status === "ready" ? outcomeDraft.providerReadModelRecordId : undefined,
-    readinessRecordId: status === "ready" ? outcomeDraft.readinessRecordId : undefined,
-    reviewedOutcomeCount: status === "ready" ? outcomeDraft.reviewedOutcomeCount : 0,
+    providerReadModelRecordId: outcomeDraft.providerReadModelRecordId,
+    readinessRecordId: outcomeDraft.readinessRecordId,
+    reviewedOutcomeCount: outcomeDraft.reviewedOutcomeCount,
     reviewWarnings: [...outcomeDraft.reviewWarnings],
     status,
-    targetRfqId: status === "ready" ? outcomeDraft.targetRfqId : undefined,
+    targetRfqId: outcomeDraft.targetRfqId,
   }
 }
 
@@ -244,6 +246,43 @@ function assertDraftVersion(
     NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_OUTCOME_DRAFT_VERSION
   ) {
     throw new Error("unsupported final-gate provider-adapter execution outcome draft version")
+  }
+}
+
+function draftValidationBlockerLabels(
+  history: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistorySummary,
+  outcomeDraft: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft,
+): string[] {
+  try {
+    assertDraftVersion(outcomeDraft)
+    assertReadyDraftMatchesHistory(history, outcomeDraft)
+    return []
+  } catch (error) {
+    return [formatValidationBlockerLabel(error)]
+  }
+}
+
+function buildBlockedCommitPlan(
+  outcomeDraft: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft,
+  blockerLabels: string[],
+): NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan {
+  const blockers = uniqueLabels(blockerLabels)
+  return {
+    blockerLabels: blockers,
+    commandOutcomeCount: 0,
+    commandOutcomes: [],
+    commitVersion:
+      NON_CNC_PROMOTED_QUOTE_OFFER_EXPORT_LIVE_ADAPTER_APPLY_EXECUTION_FINAL_GATE_FOLLOW_THROUGH_LIVE_WRITE_PROVIDER_ADAPTER_EXECUTION_OUTCOME_COMMIT_VERSION,
+    executionFingerprint: outcomeDraft.executionFingerprint,
+    nextOperatorMessage:
+      blockers.join(" ") ||
+      "Final-gate provider-adapter execution outcome commit is blocked until the reviewed draft fully matches ready provider-adapter boundary history.",
+    pendingWriteIntentCount: 0,
+    providerAdapterExecutionOutcomeCommitBoundary:
+      "Final-gate provider-adapter execution outcome commit plans are deterministic review data only; customer-offer, file, release-review, export, connector, final-gate follow-through, RFQ quote, offer, and release state stay unchanged until a later adapter applies them.",
+    reviewedOutcomeCount: 0,
+    reviewWarnings: [...outcomeDraft.reviewWarnings],
+    status: "blocked",
   }
 }
 
@@ -453,6 +492,16 @@ function sameArray(left: string[], right: string[]): boolean {
 
 function uniqueLabels(labels: string[]): string[] {
   return [...new Set(labels.filter(Boolean))]
+}
+
+function formatValidationBlockerLabel(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Invalid final-gate provider-adapter execution outcome draft"
+  const trimmed = message.trim()
+  if (!trimmed) {
+    return "Invalid final-gate provider-adapter execution outcome draft."
+  }
+  const capitalized = `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`
 }
 
 function formatCount(count: number, noun: string): string {
