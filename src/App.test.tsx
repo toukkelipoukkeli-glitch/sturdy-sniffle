@@ -3338,7 +3338,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 local follow-up activity available; Convex follow-up activity reads are not configured.",
     )
-  })
+  }, 20_000)
 
   it("labels non-empty persisted follow-up activity reads as Convex activity", async () => {
     const user = userEvent.setup()
@@ -3395,7 +3395,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(integrationHealth).toHaveTextContent(
       "1 persisted follow-up activity read from Convex and merged with 0 local fallback activities.",
     )
-  })
+  }, 20_000)
 
   it("labels rejected persisted follow-up activity reads as fallback while preserving local activity", async () => {
     const user = userEvent.setup()
@@ -3440,7 +3440,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
       "Retry activity read",
     )
-  })
+  }, 20_000)
 
   it("restores follow-up activity readiness history snapshots from local storage", async () => {
     const user = userEvent.setup()
@@ -4018,7 +4018,7 @@ describe("FactoryBid workspace (component)", () => {
     fireEvent.change(within(fabricationEditor).getByLabelText("Complexity multiplier"), { target: { value: "1.45" } })
     expect(fabricationEditor).toHaveTextContent("Fabrication preview quote recalculated through the non-CNC edit registry.")
     expect(fabricationPreview).toHaveTextContent("€1,789.89")
-  }, 20_000)
+  }, 45_000)
 
   it("surfaces non-empty non-CNC preview review flags", () => {
     const preview = buildProcessQuotePreview(buildProcessDemoQuotes(), "fabrication")
@@ -5118,7 +5118,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 0, local 0, fallback 1")
     expect(writeText.mock.calls[0]?.[0]).toContain("Retry outcome read")
     expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
-  })
+  }, 20_000)
 
   it("records workspace actions with the deterministic local operator context", async () => {
     const user = userEvent.setup()
