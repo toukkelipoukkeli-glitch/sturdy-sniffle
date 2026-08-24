@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `9beacbd` (`[codex] Refresh provider adapter execution history handoff (#681)`).
+- Main branch checkpoint: `e781716` (`[codex] Add provider adapter execution outcome drafts (#682)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-execution-outcome-drafts`.
+- In-flight branch at this checkpoint: none; next candidate is `codex/final-gate-provider-adapter-execution-outcome-commit-boundary`.
 - Latest merged sequence:
+  - `#682` adds deterministic final-gate provider-adapter execution outcome drafts, surfaces guarded provider-adapter execution outcome draft state in the non-CNC registry preview, fixes the CodeRabbit-requested committed-run withholding assertions, and stabilizes hosted App timeout coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#681` refreshes the autonomous handoff after the provider-adapter execution history/read-summary slice and records `#680` as the latest product checkpoint.
   - `#680` adds deterministic final-gate provider-adapter execution history/read-summary helpers, surfaces guarded provider-adapter execution history in the non-CNC registry preview, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled by default.
   - `#679` refreshes the autonomous handoff after the provider-adapter execution persistence slice and records `#678` as the latest product checkpoint.
