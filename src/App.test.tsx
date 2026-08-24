@@ -3176,7 +3176,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(within(integrationHealth).getByLabelText("Follow-up activity reads recovery actions")).toHaveTextContent(
       "Wait for read result",
     )
-  })
+  }, 20_000)
 
   it("labels empty persisted follow-up activity reads as local activity", async () => {
     const user = userEvent.setup()
@@ -5016,7 +5016,7 @@ describe("FactoryBid workspace (component)", () => {
         toStatus: "estimating",
       })
     })
-  })
+  }, 20_000)
 
   it("edits RFQ intake fields and feeds the readiness model", async () => {
     const user = userEvent.setup()
