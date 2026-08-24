@@ -1,16 +1,18 @@
 # FactoryBid OS Autonomous Build Handoff
 
-Last refreshed: 2026-08-23 Europe/Helsinki.
+Last refreshed: 2026-08-24 Europe/Helsinki.
 
 This file is the durable continuation note for Codex threads or a human working from another machine. Keep it current when a long autonomous run pauses, when a major milestone lands, or before handing off to another environment.
 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `4baa6ac` (`[codex] Surface final gate provider adapter history (#672)`).
+- Main branch checkpoint: `c2dab60` (`[codex] Stabilize main App timeout specs (#674)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#674` stabilizes the two hosted App timing-only failures after post-`#673` main CI timed out in pending follow-up activity reads and deterministic local operator context specs, restoring green main CI.
+  - `#673` refreshes the autonomous handoff after the final-gate provider-adapter history UI slice and clears the merged `#672` in-flight branch.
   - `#672` surfaces persisted final-gate provider-adapter boundary history/read summaries in the guarded registry preview with blocked provider-preparation command evidence, action items, copyable export text, App/unit/e2e coverage, and desktop/mobile browser verification while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#671` stabilizes two hosted App timing-only failures after post-`#670` main CI timed out in follow-up readiness history and editable costing rate specs, restoring green main CI.
   - `#670` refreshes the autonomous handoff after the final-gate provider-adapter history helper slice and clears the merged `#669` in-flight branch.
