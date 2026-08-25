@@ -163,6 +163,30 @@ describe("non-CNC final-gate provider-adapter execution outcome commit read mode
     )
   })
 
+  it("blocks provider-adapter outcome commits that are indexed as both ready and blocked", () => {
+    const validSnapshot = snapshot(readyRecord())
+    const readModel =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitReadModel({
+        snapshot: {
+          ...validSnapshot,
+          blockedCommitRecordIds: [...validSnapshot.commitReadyRecordIds],
+        },
+      })
+
+    expect(readModel).toMatchObject({
+      commandIdempotencyKeys: [],
+      commandOutcomeKeys: [],
+      evidenceFingerprints: [],
+      externalIds: [],
+      liveWriteTargets: [],
+      status: "blocked",
+    })
+    expect(readModel.providerAdapterExecutionOutcomeCommitRecordId).toBeUndefined()
+    expect(readModel.blockerLabels).toContain(
+      "Final-gate provider-adapter execution outcome commit provider-adapter execution outcome commit record is present in the blocked snapshot index.",
+    )
+  })
+
   it("selects the latest matching target RFQ while ignoring newer unrelated records", () => {
     const olderMatch = readyRecord({
       recordedAt: "2026-08-24T12:00:00Z",

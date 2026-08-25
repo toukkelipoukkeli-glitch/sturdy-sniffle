@@ -243,6 +243,12 @@ function requiredIndexedEvidenceBlockers(
     record.providerAdapterExecutionOutcomeCommitRecordId,
     snapshot.commitReadyRecordIds,
   )
+  requireAbsentIndexedEvidence(
+    blockers,
+    "provider-adapter execution outcome commit record",
+    record.providerAdapterExecutionOutcomeCommitRecordId,
+    snapshot.blockedCommitRecordIds,
+  )
   requireIndexedEvidence(blockers, "outcome draft execution fingerprint", record.executionFingerprint, snapshot.executionFingerprints)
   requireIndexedEvidence(
     blockers,
@@ -305,6 +311,17 @@ function requireIndexedEvidence(
 ): void {
   if (!value || !index.includes(value)) {
     blockers.push(`Final-gate provider-adapter execution outcome commit ${label} is missing from the snapshot index.`)
+  }
+}
+
+function requireAbsentIndexedEvidence(
+  blockers: string[],
+  label: string,
+  value: string | undefined,
+  index: string[],
+): void {
+  if (value && index.includes(value)) {
+    blockers.push(`Final-gate provider-adapter execution outcome commit ${label} is present in the blocked snapshot index.`)
   }
 }
 
