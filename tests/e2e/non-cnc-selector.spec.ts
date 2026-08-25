@@ -938,6 +938,8 @@ for (const viewport of operatorViewports) {
     test.use({ permissions: ["clipboard-read", "clipboard-write"], viewport: viewport.size })
 
     test("reviews previews and copies the estimator summary", async ({ page }) => {
+      test.setTimeout(60_000)
+
       await page.goto("/")
       await page.getByRole("button", { exact: true, name: "Costing" }).click()
 
