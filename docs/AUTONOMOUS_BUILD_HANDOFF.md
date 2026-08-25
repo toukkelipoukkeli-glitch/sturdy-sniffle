@@ -7,10 +7,12 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `ea806c0` (`[codex] Surface provider adapter outcome commit history (#687)`).
+- Main branch checkpoint: `7ad82c6` (`[codex] Stabilize non-CNC smoke timeout (#689)`).
 - Open PRs at this checkpoint: none.
 - In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#689` stabilizes the broad non-CNC registry smoke timeout after post-`#688` main CI hit a hosted browser-smoke timeout, giving the expanded desktop/mobile process-preview smoke scenario the same explicit 60s budget used by other long browser smoke coverage and restoring green main CI.
+  - `#688` refreshes the autonomous handoff after the provider-adapter outcome commit history UI slice and records `#687` as the latest product checkpoint.
   - `#687` surfaces guarded provider-adapter execution outcome commit history in the non-CNC registry preview, persists the local commit snapshot after provider-adapter execution history records a run, shows reviewed/blocked counts, withheld provider execution evidence, action items, and copyable export text, and adds App plus desktop/mobile Playwright coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#686` adds deterministic local provider-adapter execution outcome commit persistence/history for ready/blocked reviewed provider outcome snapshots, records committed provider-adapter execution evidence, aggregates command/external/evidence IDs, keeps blocked drafts outcome-free, and resolves CodeRabbit's reviewed-outcome wording and blocked-plan regression coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#685` refreshes the autonomous handoff after the provider-adapter execution outcome commit boundary slice and records `#684` as the latest product checkpoint.
