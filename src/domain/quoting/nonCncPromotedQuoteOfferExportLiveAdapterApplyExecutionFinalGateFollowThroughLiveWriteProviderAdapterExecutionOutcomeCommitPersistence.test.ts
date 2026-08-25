@@ -116,6 +116,55 @@ describe("non-CNC final-gate provider-adapter execution outcome commit persisten
     })
   })
 
+  it("records later-blocked provider-adapter outcome commits with zeroed draft fields", async () => {
+    const history = readyHistory()
+    const outcomeDraft =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
+        readyDryRun(history),
+      )
+    const { commitPlan, executionRun } =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitRun(
+        {
+          actor,
+          executedAt,
+          history,
+          outcomeDraft: {
+            ...outcomeDraft,
+            mode: "commit",
+          },
+        },
+      )
+    const persistence =
+      createLocalNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPersistence()
+
+    const snapshot = await persistence.recordCommit({
+      commitPlan,
+      recordedAt,
+      recordedBy: actor,
+    })
+
+    expect(executionRun).toBeUndefined()
+    expect(commitPlan).toMatchObject({
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      pendingWriteIntentCount: 0,
+      reviewedOutcomeCount: 0,
+      status: "blocked",
+    })
+    expect(snapshot).toMatchObject({
+      commandOutcomeCount: 0,
+      latestRecord: {
+        commandOutcomeCount: 0,
+        pendingWriteIntentCount: 0,
+        reviewedOutcomeCount: 0,
+        status: "blocked",
+      },
+      pendingWriteIntentCount: 0,
+      reviewedOutcomeCount: 0,
+      statusCounts: { blocked: 1 },
+    })
+  })
+
   it("rejects ready plans without matching provider-adapter commit execution runs", async () => {
     const { commitPlan, executionRun } = readyCommitResult()
     const persistence =

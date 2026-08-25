@@ -163,7 +163,7 @@ function operatorSummary(
   if (status === "blocked") {
     return `Latest non-CNC final-gate provider-adapter execution outcome commit is blocked after ${formatCount(totalRecords, "record")}; provider outcome evidence remains withheld and live writes remain disabled.`
   }
-  return `Latest non-CNC final-gate provider-adapter execution outcome commit persisted ${formatCount(latestRecord.commandOutcomeCount, "reviewed provider outcome")} with provider-adapter commit execution evidence for review-only follow-through.`
+  return `Latest non-CNC final-gate provider-adapter execution outcome commit persisted ${formatCount(latestRecord.reviewedOutcomeCount, "reviewed provider outcome")} with provider-adapter commit execution evidence for review-only follow-through.`
 }
 
 function actionItems(

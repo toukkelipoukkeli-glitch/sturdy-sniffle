@@ -75,7 +75,7 @@ describe("non-CNC final-gate provider-adapter execution outcome commit history",
       totalRecords: 1,
       warningCount: 1,
     })
-    expect(summary.operatorSummary).toContain("persisted 6 reviewed provider outcomes")
+    expect(summary.operatorSummary).toContain("persisted 5 reviewed provider outcomes")
     expect(summary.exportText).toContain("Non-CNC final-gate provider-adapter execution outcome commit history")
     expect(summary.exportText).toContain("Provider-adapter commit executions: provider-adapter-execution:commit")
     expect(summary.exportText).toContain(
