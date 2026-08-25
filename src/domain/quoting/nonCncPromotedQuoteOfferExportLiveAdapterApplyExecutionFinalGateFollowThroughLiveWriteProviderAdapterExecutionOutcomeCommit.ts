@@ -116,6 +116,8 @@ const commandDefinitions = [
   target: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterCommandOutcomeDraft["target"]
 }>
 
+const trustedProviderAdapterExecutionDraftActor = "FactoryBid Operator"
+
 export function buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitPlan({
   history,
   outcomeDraft,
@@ -299,10 +301,12 @@ function assertReadyDraftMatchesHistory(
       "final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: latestRecord",
     )
   }
+  const expectedExecutionFingerprint = trustedProviderAdapterExecutionFingerprint(history, latestRecord)
   const mismatches = [
     history.status === "ready" ? undefined : "historyStatus",
     latestRecord.status === "ready" ? undefined : "recordStatus",
     latestRecord.disposition === "provider_adapter_ready" ? undefined : "disposition",
+    expectedExecutionFingerprint === outcomeDraft.executionFingerprint ? undefined : "executionFingerprint",
     includesValue(history.readyBoundaryIds, latestRecord.providerAdapterBoundaryId) ? undefined : "readyBoundaryIds",
     latestRecord.commandIdempotencyKeys.every((key) => includesValue(history.commandIdempotencyKeys, key))
       ? undefined
@@ -349,7 +353,13 @@ function assertReadyDraftMatchesHistory(
     return
   }
   const commandMismatches = commandDefinitions.flatMap((command, index) =>
-    commandDraftMatchesProviderAdapterCommand(command, outcomeDraft.commandOutcomes[index], outcomeDraft, latestRecord)
+    commandDraftMatchesProviderAdapterCommand(
+      command,
+      outcomeDraft.commandOutcomes[index],
+      outcomeDraft,
+      latestRecord,
+      expectedExecutionFingerprint,
+    )
       ? []
       : [command.key],
   )
@@ -425,6 +435,7 @@ function commandDraftMatchesProviderAdapterCommand(
     | undefined,
   outcomeDraft: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft,
   record: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryRecord,
+  expectedExecutionFingerprint: string,
 ): boolean {
   if (!outcome || !outcomeDraft.targetRfqId) {
     return false
@@ -439,7 +450,7 @@ function commandDraftMatchesProviderAdapterCommand(
   const expectedExternalId = stableOutcomeId(
     outcomePrefix(command.key),
     outcomeDraft.targetRfqId,
-    outcomeDraft.executionFingerprint,
+    expectedExecutionFingerprint,
   )
   return (
     outcome.key === command.key &&
@@ -456,6 +467,20 @@ function commandDraftMatchesProviderAdapterCommand(
     outcome.suggestedOutcome.status === "applied" &&
     sameArray(outcome.suggestedOutcome.warnings ?? [], [])
   )
+}
+
+function trustedProviderAdapterExecutionFingerprint(
+  history: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryHistorySummary,
+  latestRecord: NonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterBoundaryRecord,
+): string {
+  return buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun(
+    {
+      actor: trustedProviderAdapterExecutionDraftActor,
+      executedAt: latestRecord.requestedAt,
+      history,
+      mode: "dry_run",
+    },
+  ).executionFingerprint
 }
 
 function commandIdempotencyKeyForSuffix(commandIdempotencyKeys: string[], suffix: string): string | undefined {

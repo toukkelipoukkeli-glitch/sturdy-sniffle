@@ -251,6 +251,52 @@ describe("non-CNC final-gate provider-adapter execution outcome commits", () => 
     })
   })
 
+  it("blocks forged execution fingerprints even when command external ids are recomputed", () => {
+    const history = readyHistory()
+    const outcomeDraft =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeDraft(
+        readyDryRun(history),
+      )
+    const forgedExecutionFingerprint =
+      "non-cnc-promoted-quote-offer-export-live-adapter-final-gate-provider-adapter-execution-00000000000000000000000000000000"
+
+    const result =
+      buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionOutcomeCommitRun(
+        {
+          actor,
+          executedAt,
+          history,
+          outcomeDraft: {
+            ...outcomeDraft,
+            commandOutcomes: outcomeDraft.commandOutcomes.map((command) => {
+              const externalId = `${command.key.replaceAll("_", "-")}:rfq-900:${forgedExecutionFingerprint}`
+              return {
+                ...command,
+                externalId,
+                suggestedOutcome: command.suggestedOutcome
+                  ? {
+                      ...command.suggestedOutcome,
+                      externalId,
+                    }
+                  : command.suggestedOutcome,
+              }
+            }),
+            executionFingerprint: forgedExecutionFingerprint,
+          },
+        },
+      )
+
+    expect(result.executionRun).toBeUndefined()
+    expect(result.commitPlan).toMatchObject({
+      blockerLabels: [
+        "Final-gate provider-adapter execution outcome draft does not match provider-adapter boundary history: executionFingerprint.",
+      ],
+      commandOutcomeCount: 0,
+      commandOutcomes: [],
+      status: "blocked",
+    })
+  })
+
   it("blocks reordered command outcomes without passing outcomes to commit execution", () => {
     const history = readyHistory()
     const outcomeDraft =
@@ -392,7 +438,7 @@ function readyDryRun(
   return buildNonCncPromotedQuoteOfferExportLiveAdapterApplyExecutionFinalGateFollowThroughLiveWriteProviderAdapterExecutionRun(
     {
       actor,
-      executedAt,
+      executedAt: history.latestRecord?.requestedAt ?? executedAt,
       history,
       mode: "dry_run",
     },
