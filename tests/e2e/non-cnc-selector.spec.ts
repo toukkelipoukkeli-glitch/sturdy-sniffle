@@ -864,6 +864,49 @@ async function assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapter
   await assertNoHorizontalOverflow(page)
 }
 
+async function assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeCommitHistory(
+  nonCncDemos: Locator,
+  page: Page,
+) {
+  const providerAdapterExecutionOutcomeCommitHistory = nonCncDemos.getByLabel(
+    "Non-CNC promoted quote customer export live adapter final gate follow-through provider adapter execution outcome commit history",
+    { exact: true },
+  )
+
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toBeVisible()
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toHaveAttribute("data-status", "blocked")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Offer export live adapter final gate follow-through provider-adapter execution outcome commit history",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Final-gate provider-adapter execution outcome commit history blocked",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Latest non-CNC final-gate provider-adapter execution outcome commit is blocked",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("1 record")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("0 reviewed provider outcomes")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("Committed 0, blocked 1")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Resolve final-gate provider-adapter execution outcome commit blockers before retrying provider follow-through wiring.",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Final-gate provider-adapter execution outcome commit history is deterministic review data only",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("Commit-ready records: None")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Blocked records: non-cnc-final-gate-provider-adapter-execution-outcome-commit:",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("Provider commit executions: None")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("Provider boundaries: None")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("External IDs: None")
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText(
+    "Non-CNC final-gate provider-adapter execution outcome commit history",
+  )
+  await expect(providerAdapterExecutionOutcomeCommitHistory).toContainText("Status counts: blocked")
+  await assertNoHorizontalOverflow(page)
+}
+
 async function assertOfferExportLiveAdapterExecutionHistory(nonCncDemos: Locator, page: Page) {
   const liveAdapterExecutionHistory = nonCncDemos.getByLabel(
     "Non-CNC promoted quote customer export live adapter execution history",
@@ -948,6 +991,10 @@ for (const viewport of operatorViewports) {
       await assertOfferExportLiveAdapterFinalGateFollowThroughLiveWriteBoundaryHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughProviderReadModelHistory(nonCncDemos, page)
       await assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterBoundaryHistory(nonCncDemos, page)
+      await assertOfferExportLiveAdapterFinalGateFollowThroughProviderAdapterExecutionOutcomeCommitHistory(
+        nonCncDemos,
+        page,
+      )
       await assertOfferExportLiveAdapterExecutionHistory(nonCncDemos, page)
       await assertOfferExportPackageExecutionHistory(nonCncDemos, page)
       await assertMutationApplyHistory(nonCncDemos, page)
