@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `6e87579` (`[codex] Add provider adapter execution outcome commits (#684)`).
+- Main branch checkpoint: `7c96ae5` (`[codex] Refresh provider adapter execution outcome commit handoff (#685)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: none.
+- In-flight branch at this checkpoint: `codex/final-gate-provider-adapter-execution-outcome-commit-persistence`.
 - Latest merged sequence:
+  - `#685` refreshes the autonomous handoff after the provider-adapter execution outcome commit boundary slice and records `#684` as the latest product checkpoint.
   - `#684` adds a deterministic reviewed final-gate provider-adapter execution outcome commit boundary, converts only ready dry-run suggestions into commit-mode provider-adapter execution audit runs, blocks invalid drafts without exposing outcomes, binds reviewed draft fingerprints to trusted boundary history, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled by default.
   - `#683` refreshes the autonomous handoff after the provider-adapter execution outcome draft slice and records `#682` as the latest product checkpoint.
   - `#682` adds deterministic final-gate provider-adapter execution outcome drafts, surfaces guarded provider-adapter execution outcome draft state in the non-CNC registry preview, fixes the CodeRabbit-requested committed-run withholding assertions, and stabilizes hosted App timeout coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
