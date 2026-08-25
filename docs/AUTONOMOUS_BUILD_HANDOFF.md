@@ -7,10 +7,11 @@ This file is the durable continuation note for Codex threads or a human working 
 ## Current Checkpoint
 
 - Repository: `toukkelipoukkeli-glitch/sturdy-sniffle`.
-- Main branch checkpoint: `1177eaa` (`[codex] Add provider adapter outcome commit persistence (#686)`).
+- Main branch checkpoint: `ea806c0` (`[codex] Surface provider adapter outcome commit history (#687)`).
 - Open PRs at this checkpoint: none.
-- In-flight branch at this checkpoint: `codex/provider-adapter-outcome-commit-history-ui`.
+- In-flight branch at this checkpoint: none.
 - Latest merged sequence:
+  - `#687` surfaces guarded provider-adapter execution outcome commit history in the non-CNC registry preview, persists the local commit snapshot after provider-adapter execution history records a run, shows reviewed/blocked counts, withheld provider execution evidence, action items, and copyable export text, and adds App plus desktop/mobile Playwright coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#686` adds deterministic local provider-adapter execution outcome commit persistence/history for ready/blocked reviewed provider outcome snapshots, records committed provider-adapter execution evidence, aggregates command/external/evidence IDs, keeps blocked drafts outcome-free, and resolves CodeRabbit's reviewed-outcome wording and blocked-plan regression coverage while live customer-offer, file, release-review, export, connector, and final-gate follow-through writes remain disabled by default.
   - `#685` refreshes the autonomous handoff after the provider-adapter execution outcome commit boundary slice and records `#684` as the latest product checkpoint.
   - `#684` adds a deterministic reviewed final-gate provider-adapter execution outcome commit boundary, converts only ready dry-run suggestions into commit-mode provider-adapter execution audit runs, blocks invalid drafts without exposing outcomes, binds reviewed draft fingerprints to trusted boundary history, and keeps live customer-offer, file, release-review, export, connector, and final-gate follow-through writes disabled by default.
