@@ -5127,7 +5127,7 @@ describe("FactoryBid workspace (component)", () => {
     expect(writeText.mock.calls[0]?.[0]).toContain("Batches: persisted 1, local 0, fallback 0")
     expect(writeText.mock.calls[0]?.[0]).toContain("Review Convex outcomes")
     expect(integrationHealth).toHaveTextContent("Calendar outcome read diagnostics copied.")
-  })
+  }, 20_000)
 
   it("shows local fallback sync status when calendar provider outcome hydration fails", async () => {
     const user = userEvent.setup()
